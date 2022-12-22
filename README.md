@@ -10,9 +10,9 @@ Following an educational approach that can be followed by people with minimal de
 
 ## Packages Involved in Elements
 
-[pyECSS](https://github.com/papagiannakis/pyECSS): A package for applying ECS to any Scenegraph
-[pyGLV](https://github.com/papagiannakis/pyGLV): A package applying ECSS to CG oriented examples
-[pyEEL](https://github.com/papagiannakis/pyEEL): An information hub for various topics where ECSS can be applied
+* [pyECSS](https://github.com/papagiannakis/pyECSS): A package for applying ECS to any Scenegraph
+* [pyGLV](https://github.com/papagiannakis/pyGLV): A package applying ECSS to CG oriented examples
+* [pyEEL](https://github.com/papagiannakis/pyEEL): An information hub for various topics where ECSS can be applied
 
 ## Contact Us
 
