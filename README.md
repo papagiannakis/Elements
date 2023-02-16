@@ -22,21 +22,12 @@ If you have any questions or would like to learn more about our project, please 
 If you are using the Elements project, please cite:
 
 ```
-@misc{https://doi.org/10.48550/arxiv.2302.07691,
-  doi = {10.48550/ARXIV.2302.07691},
-  
-  url = {https://arxiv.org/abs/2302.07691},
-  
-  author = {Papagiannakis, George and Kamarianakis, Manos and Protopsaltis, Antonis and Angelis, Dimitris and Zikas, Paul},
-  
-  keywords = {Graphics (cs.GR), FOS: Computer and information sciences, FOS: Computer and information sciences},
-  
+@misc{projectElements,
   title = {Project Elements: A computational entity-component-system in a scene-graph pythonic framework, for a neural, geometric computer graphics curriculum},
-  
+  author = {Papagiannakis, George and Kamarianakis, Manos and Protopsaltis, Antonis and Angelis, Dimitris and Zikas, Paul},
+  doi = {10.48550/ARXIV.2302.07691},
+  url = {https://arxiv.org/abs/2302.07691},
   publisher = {arXiv},
-  
-  year = {2023},
-  
-  copyright = {arXiv.org perpetual, non-exclusive license}
+  year = {2023}
 }
 ```
