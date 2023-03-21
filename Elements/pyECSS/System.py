@@ -302,7 +302,7 @@ class CameraSystem(System):
         """Calculate the root to camera matrix
         
         Root2Camera is to get all parent BasicTransforms till root node (as usual)
-        then get their inverse, since Mr2c = Inv(Ti) * Inv(Ti+1) * Proj = Inv(Ti+1 * Ti) *Proj
+        then get their inverse, since Mr2c = Inv(Ti)*Inv(Ti+1)*Proj = Inv(Ti+1*Ti)*Proj
         since we run first the System on a camera node, it is enough to get its Entity'w BasicTrasform
         and from there just retrieve its l2world camera, which was calculated before from the scenegraph 
         l2world traversal (always first system that one to run)

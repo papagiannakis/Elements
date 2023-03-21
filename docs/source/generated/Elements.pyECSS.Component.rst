@@ -1,8 +1,8 @@
-﻿pyECSS.Component
-================
+﻿Elements.pyECSS.Component
+=========================
 
-.. automodule:: pyECSS.Component
-
+.. automodule:: Elements.pyECSS.Component
+  
    
    
    
@@ -16,6 +16,7 @@
    .. rubric:: Classes
 
    .. autosummary::
+      :toctree:                                                      
    
       BasicTransform
       BasicTransformDecorator

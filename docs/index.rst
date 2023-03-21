@@ -41,7 +41,7 @@ Following an educational approach that can be followed by people with minimal de
    source/pyEEL/index
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
    :caption: API Documentation
    :hidden:
 

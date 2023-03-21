@@ -12,9 +12,11 @@ import sphinx_rtd_theme
 
 import pathlib
 import sys
-sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
+# sys.path.insert(0, pathlib.Path(__file__).parents[2].resolve().as_posix())
 
-# from pyECSS import __version__
+sys.path.insert(0, os.path.abspath('..'))
+
+# from Elements import __version__
 
 # The short X.Y version.
 # version = __version__
@@ -23,7 +25,7 @@ version = "1.0.0docs"
 # release = __version__
 release = "1.0.0docs"
 
-project = 'pyECSS'
+project = 'Elements'
 copyright = '2022, George Papagiannakis'
 author = 'George Papagiannakis'
 
@@ -31,26 +33,18 @@ author = 'George Papagiannakis'
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 extensions = [
-    # 'nbsphinx',
-    # 'sphinx_automodapi.automodapi',
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
+    'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
-    #'sphinx.ext.pngmath',\
-    # 'sphinx.ext.napoleon',
+    'sphinx.ext.napoleon',
     'sphinx.ext.mathjax',
-    # 'sphinx.ext.viewcode',
-    # 'IPython.sphinxext.ipython_directive',
-    # 'IPython.sphinxext.ipython_console_highlighting',
-    #'numpydoc',
-    # 'sphinx.ext.viewcode',
-    #'sphinxcontrib.bibtex',
-
-    #'sphinx.ext.mathjax',
+    'sphinx.ext.coverage',
 ]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
+bibtex_bibfiles = ['refs.bib']
 numpydoc_show_class_members = False
 
 
@@ -91,8 +85,10 @@ html_theme_options = dict(
 # pixels large.
 #html_favicon = None
 
+autosummary_generate = True
 
-# autosummary_generate=['api/Component']
+## Include Python objects as they appear in source files
+## Default: alphabetically ('alphabetical')
 autodoc_member_order = 'bysource'
 numpydoc_show_class_members = True
 
@@ -122,7 +118,7 @@ html_static_path = ['_static']
 #html_additional_pages = {}
 
 # If false, no module index is generated.
-#html_domain_indices = True
+# html_domain_indices = True
 
 # If false, no index is generated.
 #html_use_index = True
@@ -148,4 +144,4 @@ html_static_path = ['_static']
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'pyECSSDoc'
+htmlhelp_basename = 'ElementsDoc'
