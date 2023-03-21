@@ -7,7 +7,7 @@ Following an educational approach that can be followed by people with minimal de
 
 
 
-.. image:: source/_static/teapot.png
+.. image:: _static/teapot.png
     :width: 700 px
     :align: center
 

@@ -44,14 +44,13 @@ extensions = [
     # 'IPython.sphinxext.ipython_console_highlighting',
     #'numpydoc',
     # 'sphinx.ext.viewcode',
-    'sphinxcontrib.bibtex',
+    #'sphinxcontrib.bibtex',
 
     #'sphinx.ext.mathjax',
 ]
 
 templates_path = ['_templates']
 exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-bibtex_bibfiles = ['refs.bib']
 numpydoc_show_class_members = False
 
 
