@@ -14,8 +14,8 @@ each of which implements an accept() method that accepts a visitor object as an 
 .. note::
    In our case, the visitor pattern is implemented into Systems.
 
-For more information on the visitor pattern check `here <https://refactoring.guru/design-patterns/visitor>`_
-Read more about game programming patterns `here <https://gameprogrammingpatterns.com/contents.html>`_
+For more information on the visitor pattern check `here. <https://refactoring.guru/design-patterns/visitor>`_
+Read more about game programming patterns `here <https://gameprogrammingpatterns.com/contents.html>`_ .
 
 Implementation in pyECSS
 ------------------------------

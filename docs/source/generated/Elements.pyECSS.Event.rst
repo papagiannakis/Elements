@@ -1,8 +1,8 @@
-﻿pyECSS.Event
-============
+﻿Elements.pyECSS.Event
+=====================
 
-.. automodule:: pyECSS.Event
-
+.. automodule:: Elements.pyECSS.Event
+  
    
    
    
@@ -16,6 +16,7 @@
    .. rubric:: Classes
 
    .. autosummary::
+      :toctree:                                                      
    
       Event
       EventManager

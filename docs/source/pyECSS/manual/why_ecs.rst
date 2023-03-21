@@ -77,6 +77,7 @@ based on their velocities. A rendering system might operate on all entities that
 The code below initiates a new TransformSystem System to visit all scenegraph components.
 
 .. code-block:: python
+    
         transUpdate = TransformSystem("transUpdate", "TransformSystem", "001")
         trans5.accept(transUpdate)
 

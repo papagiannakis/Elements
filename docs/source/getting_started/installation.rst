@@ -66,6 +66,7 @@ In order to contribute to contribute to the ``pyECSS`` package:
     pip3 install -e .
 
   at the directory where the `setup.py` file is located. 
+  
 4. Create a feature branch from the develop branch, and work on it. 
 5. Push your feature branch to your github repo. 
 6. Open a Pull Request to the `original develop branch <https://github.com/papagiannakis/pyECSS.git>`_.

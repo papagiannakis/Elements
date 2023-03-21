@@ -1,8 +1,8 @@
-﻿pyECSS.System
-=============
+﻿Elements.pyECSS.System
+======================
 
-.. automodule:: pyECSS.System
-
+.. automodule:: Elements.pyECSS.System
+  
    
    
    
@@ -16,6 +16,7 @@
    .. rubric:: Classes
 
    .. autosummary::
+      :toctree:                                                      
    
       CameraSystem
       RenderSystem

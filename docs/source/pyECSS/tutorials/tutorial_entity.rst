@@ -8,6 +8,7 @@ In this tutorial we will demonstrate how to create and use an entity.
 The code below creates a simple entity by calling the class constructor. We also name this entity as root
 
 .. code-block:: python
+    
     gameObject = Entity("root")
 
 

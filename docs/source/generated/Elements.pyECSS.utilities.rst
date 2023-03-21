@@ -1,8 +1,8 @@
-﻿pyECSS.utilities
-================
+﻿Elements.pyECSS.utilities
+=========================
 
-.. automodule:: pyECSS.utilities
-
+.. automodule:: Elements.pyECSS.utilities
+  
    
    
    
@@ -12,6 +12,7 @@
    .. rubric:: Functions
 
    .. autosummary::
+      :toctree:                                         
    
       calculateNormals
       distance
