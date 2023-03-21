@@ -25,7 +25,7 @@ setup(
     url='https://github.com/papagiannakis/Elements',
     keywords = ['ECS','Scenegraph','Python design patterns','Computer Graphics'],
     package_dir={'Elements':'Elements'},
-    packages=find_packages(exclude=["tests","tests.*", "tests/*" ]),
+    packages=find_packages(exclude=["tests","tests.*", "tests/*", "pyEEL/*" ]),
     install_requires=[
         'pip',
         'setuptools>=61',
@@ -51,7 +51,7 @@ setup(
         "Operating System :: Microsoft :: Windows",
         "Operating System :: MacOS",
         "Operating System :: Unix",
-        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
     ],
     project_urls={
@@ -60,5 +60,5 @@ setup(
         "Documentation" : "https://Elements.readthedocs.io",
     },
 
-    python_requires=">=3.7,<3.10",
+    python_requires=">=3.8,<3.10",
 )
