@@ -16,14 +16,15 @@ import sys
 
 sys.path.insert(0, os.path.abspath('..'))
 
-# from Elements import __version__
+from Elements import __version__
 
+# print("VERSION = ", __version__)
 # The short X.Y version.
-# version = __version__
-version = "1.0.0docs"
+version = __version__
+# version = "1.0.0docs"
 # The full version, including alpha/beta/rc tags.
-# release = __version__
-release = "1.0.0docs"
+release = __version__
+# release = "1.0.0docs"
 
 project = 'Elements'
 copyright = '2022, George Papagiannakis'
