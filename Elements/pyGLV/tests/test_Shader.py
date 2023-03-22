@@ -19,7 +19,7 @@ from Elements.pyECSS.ECSSManager import ECSSManager
 
 from Elements.pyGLV.GL.Shader import Shader
 
-@unittest.skip("Requires active GL context, skipping the test")
+# @unittest.skip("Requires active GL context, skipping the test")
 class TestShader(unittest.TestCase):
     
     def setUp(self):
@@ -40,13 +40,5 @@ class TestShader(unittest.TestCase):
         print("TestShader:test_init END".center(100, '-'))
     
     
-    def test_update(self):
-        print("TestShader:test_update START".center(100, '-'))
-        
-        
-        
-        print("TestShader:test_update END".center(100, '-'))
-        
-
 if __name__ == "__main__":
     unittest.main(argv=[''], verbosity=3, exit=False)

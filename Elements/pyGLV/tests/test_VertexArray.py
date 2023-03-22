@@ -20,7 +20,7 @@ from Elements.pyECSS.ECSSManager import ECSSManager
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 
-@unittest.skip("Requires active GL context, skipping the test")
+
 class TestVertexArray(unittest.TestCase):
     
     def setUp(self):
@@ -39,13 +39,7 @@ class TestVertexArray(unittest.TestCase):
         print("TestVertexArray:test_init END".center(100, '-'))
     
     
-    def test_update(self):
-        print("TestVertexArray:test_update START".center(100, '-'))
-        
-        
-        
-        print("TestVertexArray:test_update END".center(100, '-'))
-        
+
 
 if __name__ == "__main__":
     unittest.main(argv=[''], verbosity=3, exit=False)
