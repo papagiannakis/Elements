@@ -17,6 +17,7 @@ Following an educational approach that can be followed by people with minimal de
    :caption: Getting started
    :hidden:
 
+   source/getting_started/about
    source/getting_started/installation
 
 .. toctree::
