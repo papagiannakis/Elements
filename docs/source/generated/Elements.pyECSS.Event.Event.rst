@@ -1,4 +1,4 @@
-Elements.pyECSS.Event.Event
+﻿Elements.pyECSS.Event.Event
 ===========================
 
 .. currentmodule:: Elements.pyECSS.Event
@@ -18,13 +18,5 @@ Elements.pyECSS.Event.Event
    
 
    
-   
-   .. rubric:: Attributes
-
-   .. autosummary::
-   
-      ~Event.name
-      ~Event.id
-      ~Event.value
    
    

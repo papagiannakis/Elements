@@ -1,11 +1,11 @@
-Getting Started
+Introduction
 ========================
 
 .. toctree::
    :maxdepth: 2
-   :name: sec-getting-started
+   :name: sec-introduction
 
-   getting_started/step_by_step
+   introduction/introduction
 
 
 Manual
