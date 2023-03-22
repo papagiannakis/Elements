@@ -62,8 +62,8 @@ html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 # further.  For a list of options available for each theme, see the
 # documentation.
 html_theme_options = dict(
-    navigation_depth=6,  # tutorials are quite deeply nested
-    # collapse_navigation=False,
+    navigation_depth=7,  # tutorials are quite deeply nested
+    collapse_navigation=False,
 )
 
 # Add any paths that contain custom themes here, relative to this directory.
