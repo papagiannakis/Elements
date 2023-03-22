@@ -1,65 +1,100 @@
 Installation
 ============
 
-The pyECSS can be installed via the standard mechanisms for Python packages, and is available through PyPI for standalone use, 
-or Github, for development. We strongly propose to **install and use** pyECSS within a new environment created via ``conda``.
+Clone the repository
+------------------------------
+
+Clone the Elements repository from the following link: 
+
+`https://github.com/papagiannakis/Elements <https://github.com/papagiannakis/Elements>`_.
+
+
+Visual studio code preparation
+--------------------------------
+
+Download the python extension in your visual studio code
+
+.. image:: img/pythonExtension.png
+    :align: center
+
+
+Open the Elements folder with the visual studio code
 
 
 Creating a Conda Environment
-------------------------------
-After downloading the proper 
-`Anaconda python distribution <https://www.anaconda.com/distribution/#download-section>`_, 
-based on your system, you may create a virtual environment via the ``conda`` command.
+----------------------------------------
 
-Typically, you may create a new envirnment via the command::
+We suggest to download the Anaconda package management system to keep your system clean (optional step)
 
-    conda create -n myenv python==3.8
+Download the proper `Anaconda python distribution <https://www.anaconda.com/distribution/#download-section>`_ based on your system.
 
-This creates a new environment, named myenv, with a python version 3.8, which is the proper version to run pyECSS.
+
+Installation
+--------------------------------
+
+Open a new command prompt in visual studio code
+
+.. image:: img/cmd.png
+    :align: center
+
+Create a new elements conda environment with the command::
+
+    conda create -n elements python=3.8
+
+This creates a new environment, named elements, with a python version 3.8, which is the proper version to run Elements.
 
 You may now activate the environment by running::
 
-    conda activate myenv
+    conda activate elements
 
-When finished, you may deactivate it by running::
+Install the needed packages to your elements environment with the following command::
 
-    conda deactivate
+    pip install -e .
 
+.. image:: img/pipInstall.png
+    :align: center
 
+Your elements project is now ready!
 
-Stable Version - Standalone Use
+Run the unit Tests
 --------------------------------
-For standalone use, you may install pyECSS, via ``pip3`` ::
 
-    pip3 install pyECSS
+To run the unit tests 
 
-.. note ::
+Click the unit test icon on the left side panel. Then to run the test click the run test button.
 
-    The version installed via pip3 may be a few versions behind the current version in development. 
-    If you need to test the latest version, you should install it via ``git`` and local install.
+.. image:: img/unitTests.png
+    :align: center
 
-Latest Version - Standalone Use
-----------------------------------
+Make sure that all the tests run properly.
 
-If you want the latest (development) version of ``pyECSS`` you can locally pip install it from the latest develop branch with::
+Run the examples
+--------------------------------
 
-    pip3 install git+https://github.com/papagiannakis/pyECSS.git
+Now let's run some Elements examples
 
-Latest Version - For development
------------------------------------
+Navigate to the **pyGLV/examples** folder and click the **example_9_textures_with_lighting.py** example.
 
-If you want to run and modify ``pyECSS``, you should use an editable (``-e``) installation::
+Click the python version button on the bottom right and select the elements environment we created.
 
-    git clone https://github.com/papagiannakis/pyECSS.git
-    pip3 install -e ./pyECSS
+.. image:: img/runExample.png
+    :align: center
+
+Then press the F5 button to run the example
 
 
-Contributing to ``pyECSS``
------------------------------------
+.. image:: img/rotatingCube.png
+    :align: center
 
-In order to contribute to contribute to the ``pyECSS`` package: 
 
-1. Fork the `develop branch <https://github.com/papagiannakis/pyECSS.git>`_.
+The rotating cube should appear!
+
+Contributing to the Elements project
+---------------------------------------
+
+In order to contribute to contribute to the Elements package: 
+
+1. Fork the `develop branch <https://github.com/papagiannakis/Elements>`_.
 2. Clone your forked repo to your computer.
 3. Install it in editable mode by running::
 
@@ -69,5 +104,5 @@ In order to contribute to contribute to the ``pyECSS`` package:
   
 4. Create a feature branch from the develop branch, and work on it. 
 5. Push your feature branch to your github repo. 
-6. Open a Pull Request to the `original develop branch <https://github.com/papagiannakis/pyECSS.git>`_.
+6. Open a Pull Request to the `original develop branch <https://github.com/papagiannakis/Elements>`_.
 
