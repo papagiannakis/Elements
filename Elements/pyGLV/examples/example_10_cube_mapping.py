@@ -9,7 +9,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-import Elements.pyGLV.GL.normals as norm
+import Elements.pyGLV.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
