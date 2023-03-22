@@ -15,5 +15,5 @@ sphinxcontrib-bibtex>=2.3.0
 pygments>=2.4.1
 
 # -r ../requirements.txt
-
+git+https://github.com/papagiannakis/Elements.git@feature/ultra_merge
 
