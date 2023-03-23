@@ -19,4 +19,12 @@
 
    
    
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Event.name
+      ~Event.id
+      ~Event.value
+   
    
