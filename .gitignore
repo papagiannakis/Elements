@@ -8,6 +8,7 @@ __pycache__/
 
 # Distribution / packaging
 .Python
+.DS_Store/
 build/
 develop-eggs/
 dist/
@@ -127,3 +128,8 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# imgui preferences file
+imgui.ini
+.DS_Store
