@@ -264,7 +264,7 @@ class TransformSystem(System):
         #check if the visitor visits a node that it should not
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!
-        print(self.getClassName(), ": apply(BasicTransform) called")
+        # print(self.getClassName(), ": apply(BasicTransform) called")
         
         # getLocal2World returns result to be set in BasicTransform::update(**kwargs) below
         l2worldTRS = self.getLocal2World(basicTransform)
@@ -335,7 +335,7 @@ class CameraSystem(System):
         """
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!
-        print(self.getClassName(), ": apply(BasicTransform) called from CameraSystem - Calc: Local2Cam")
+        # print(self.getClassName(), ": apply(BasicTransform) called from CameraSystem - Calc: Local2Cam")
         
         #l2world of basicTransform has been calculated by the TransformSystem before this System
         l2w = basicTransform.l2world;
@@ -357,7 +357,7 @@ class CameraSystem(System):
         """
         if (isinstance(cam,Elements.pyECSS.Component.Camera)) == False:
             return #in Python due to duck typing we need to verify this!
-        print(self.getClassName(), ": apply2Camera called from CameraSystem - Calc: Root2Cam")
+        # print(self.getClassName(), ": apply2Camera called from CameraSystem - Calc: Root2Cam")
         
         # getRoot2Cam returns the one component of the Local2Cam = Local2World * Root2Cam
         r2cam = self.getRoot2Camera(cam)
@@ -375,17 +375,3 @@ class RenderSystem(System):
     """
     pass
                
-
-# if __name__=="__main__":
-#     from Elements.pyECSS.GA.GA_Component import GATransform
-#     from Elements.pyECSS.GA.quaternion import Quaternion
-#     # a = GATransform(trs=util.scale(1,2,3))
-#     a = GATransform(q = Quaternion(0,1,0,1))
-#     q = Quaternion(0,1,0,1)
-#     print(q.to_transformation_matrix())
-#     # q = Quaternion(0,1,0,1)
-#     b = GATransformSystem()
-#     a.accept(b)
-#     print(a.trs)
-#     # print (" we want to translate the point (5,3,2) by t = (2,3,14) ")    
-#     # print( 'translated point: ', a.translate_dual_quaternion(5,3,2,2,3,14) )
