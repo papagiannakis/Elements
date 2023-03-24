@@ -239,7 +239,7 @@ class SDL2Window(RenderWindow):
             exit(1)
         sdl2.SDL_GL_MakeCurrent(self._gWindow, self._gContext)
         if sdl2.SDL_GL_SetSwapInterval(1) < 0:
-            print("Warning: Unable to set VSync! SDL Error: " + sdl2.SDL_GetError())
+            print("Warning: Unable to set VSync! SDL Error: ", sdl2.SDL_GetError())
             # exit(1)
         #obtain the GL versioning system info
         self._gVersionLabel = f'OpenGL {gl.glGetString(gl.GL_VERSION).decode()} GLSL {gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION).decode()} Renderer {gl.glGetString(gl.GL_RENDERER).decode()}'
@@ -425,7 +425,8 @@ class ImGUIDecorator(RenderDecorator):
             print("Window could not be created! ImGUI Error: ")
             exit(1)
         else:
-            print("Yay! ImGUI context created successfully")
+            # print("Yay! ImGUI context created successfully")
+            pass
         
         # GPTODO here is the issue: SDL2Decorator takes an SDLWindow as wrappee wheras
         # ImGUIDEcorator takes and SDL2Decorator and decorates it!
@@ -440,13 +441,13 @@ class ImGUIDecorator(RenderDecorator):
             self._wrapeeWindow.eventManager._events[self._updateWireframe.name] = self._updateWireframe
             self._wrapeeWindow.eventManager._publishers[self._updateWireframe.name] = self
         
-        # MANOS - START
+        
         self._updateCamera = Elements.pyECSS.Event.Event(name="OnUpdateCamera", id=300, value=None)
         if self._wrapeeWindow.eventManager is not None:
             self._wrapeeWindow.eventManager._events[self._updateCamera.name] = self._updateCamera
             self._wrapeeWindow.eventManager._publishers[self._updateCamera.name] = self
-        # MANOS - END
-        print(f'{self.getClassName()}: init()')
+        
+        # print(f'{self.getClassName()}: init()')
         
         
     def display(self):
@@ -777,14 +778,13 @@ class RenderGLStateSystem(System):
         :type event: [type], optional
         """
         if event.name == "OnUpdateWireframe":
-            print(f"RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
+            # print(f"RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
             sdlWindow._wireframeMode = event.value
 
-        # MANOS - START
         if event.name == "OnUpdateCamera":
-            print(f"OnUpdateCamera: RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
+            # print(f"OnUpdateCamera: RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
             sdlWindow._myCamera = event.value
-        # MANOS - END
+        
         
 
 

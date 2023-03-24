@@ -455,10 +455,10 @@ class Camera(Component):
         
         Arguments could be "root2cam=" to set respective matrices 
         """
-        print(self.getClassName(), ": update() called")
+        # print(self.getClassName(), ": update() called")
         arg1 = "root2cam"
         if arg1 in kwargs:
-            print("Setting: ", arg1," with: \n", kwargs[arg1])
+            # print("Setting: ", arg1," with: \n", kwargs[arg1])
             self._root2cam = kwargs[arg1]  
        
     def accept(self, system: Elements.pyECSS.System, event = None):
@@ -533,7 +533,8 @@ class RenderMesh(Component):
         self._vertex_index = value
         
     def update(self):
-        print(self.getClassName(), ": update() called")
+        pass
+        # print(self.getClassName(), ": update() called")
    
    
     def accept(self, system: Elements.pyECSS.System, event = None):
