@@ -11,7 +11,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='Elements',
+    name='ElementsProject',
     version=__version__, 
     license='Apache 2', 
     description = "The Elements project",
@@ -57,7 +57,7 @@ setup(
     project_urls={
         "Homepage" : "https://papagiannakis.github.io/Elements",
         "Source" : "https://github.com/papagiannakis/Elements",
-        "Documentation" : "https://Elements.readthedocs.io",
+        "Documentation" : "https://ElementsProject.readthedocs.io",
     },
 
     python_requires=">=3.8,<3.10",

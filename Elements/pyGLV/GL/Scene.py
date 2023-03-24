@@ -64,9 +64,8 @@ class Scene():
             gGUI = customImGUIdecorator(self._renderWindow)
             self._gContext = gGUI
     
-        print("mark 1");
+        
         self._gContext.init()
-        print("mark 2");
         self._gContext.init_post()
     
     

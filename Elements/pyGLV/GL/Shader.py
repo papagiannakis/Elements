@@ -570,7 +570,7 @@ class Shader(Component):
         gl.glCompileShader(shader)
         status = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
         src = ('%3d: %s' % (i+1, l) for i,l in enumerate(src.splitlines()) ) 
-        print('Compile shader success for %s\n%s\n%s' % (shader_type, status, src))
+        # print('Compile shader success for %s\n%s\n%s' % (shader_type, status, src))
         if not status:
             log = gl.glGetShaderInfoLog(shader).decode('ascii')
             gl.glDeleteShader(shader)
@@ -581,7 +581,8 @@ class Shader(Component):
         
     
     def update(self):
-        print(self.getClassName(), ": update() called")
+        # print(self.getClassName(), ": update() called")
+        pass
         
    
     def accept(self, system: System):
@@ -694,7 +695,7 @@ class InitGLShaderSystem(System):
         when visits Components.
         
         """
-        print(f'\n{renderMesh} accessed within {self.getClassName()}::apply2RenderMesh() \n')
+        # print(f'\n{renderMesh} accessed within {self.getClassName()}::apply2RenderMesh() \n')
         self.update()
         
     def apply2VertexArray(self, vertexArray:VertexArray):
@@ -703,7 +704,7 @@ class InitGLShaderSystem(System):
         when visits Components.
         
         """
-        print(f'\n{vertexArray} accessed within {self.getClassName()}::apply2RenderMesh() \n')
+        # print(f'\n{vertexArray} accessed within {self.getClassName()}::apply2RenderMesh() \n')
         # Access parent Entity's RenderMesh
         parentEntity = vertexArray.parent
         parentRenderMesh = parentEntity.getChildByType(RenderMesh.getClassName())
@@ -726,7 +727,7 @@ class InitGLShaderSystem(System):
         # for the moment assume that the user will not be directly adding both a shader and shaderDecorator at scenegraph level
         # we can prevent this at ECSSManager level, but not at scenegraph direct access level
         shader.init()
-        print(f'\n{shader} accessed within {self.getClassName()}::apply2Shader() \n')
+        # print(f'\n{shader} accessed within {self.getClassName()}::apply2Shader() \n')
     
     def apply2ShaderGLDecorator(self, shaderGLDecorator:ShaderGLDecorator):
         """
@@ -736,7 +737,7 @@ class InitGLShaderSystem(System):
         """
         #init ShaderGLDecorator if there is such a node
         shaderGLDecorator.init()
-        print(f'\n{shaderGLDecorator} accessed within {self.getClassName()}::apply2ShaderGLDecorator() \n')
+        # print(f'\n{shaderGLDecorator} accessed within {self.getClassName()}::apply2ShaderGLDecorator() \n')
 
 
 class RenderGLShaderSystem(System):
@@ -787,5 +788,4 @@ class RenderGLShaderSystem(System):
         vertexArray.update()
         compShader.disableShader()
         
-        # MANOS DISABLED THE LINE BELOW
-        # print(f'\nMain shader GL render within {self.getClassName()}::render() \n')
+        # print (f'\nMain shader GL render within {self.getClassName()}::render() \n')
