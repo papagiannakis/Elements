@@ -609,7 +609,7 @@ class TestScene(unittest.TestCase):
         eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
         eManager._subscribers['OnUpdateCamera'] = gWindow 
         eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-        # MANOS END
+        # END
         # Add RenderWindow to the EventManager publishers
         # eManager._publishers[updateBackground.name] = gGUI
 
@@ -817,7 +817,7 @@ class TestScene(unittest.TestCase):
         eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
         eManager._subscribers['OnUpdateCamera'] = gWindow 
         eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-        # MANOS END
+        # END
         # Add RenderWindow to the EventManager publishers
         # eManager._publishers[updateBackground.name] = gGUI
 

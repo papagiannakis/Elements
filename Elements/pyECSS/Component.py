@@ -455,10 +455,8 @@ class Camera(Component):
         
         Arguments could be "root2cam=" to set respective matrices 
         """
-        # print(self.getClassName(), ": update() called")
         arg1 = "root2cam"
         if arg1 in kwargs:
-            # print("Setting: ", arg1," with: \n", kwargs[arg1])
             self._root2cam = kwargs[arg1]  
        
     def accept(self, system: Elements.pyECSS.System, event = None):
@@ -587,4 +585,3 @@ class BasicTransformDecorator(ComponentDecorator):
     
     def accept(self, system: Elements.pyECSS.System, event = None):
         pass # we want the decorator first to accept the visitor and only if needed the wrappe to accept it too
-        #self._component.accept(system)
