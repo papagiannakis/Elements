@@ -109,7 +109,7 @@ class ECSSManager():
             self._entities.append(entity)
             self._entities_components[entity] = [None]
 
-            # @@@GPTODO: refactor so that only first entity is set to root
+            # @@@TODO: refactor so that only first entity is set to root
             # now it is hardcoded with the name root 
             if entity.name.lower() == "root":
                 self._root = entity
@@ -222,20 +222,12 @@ class ECSSManager():
             # add entity_child in the _entities_components dictionary
             # loop through all dictionary elements of _entities_components
             
-            # Zack code:
+
             if entity_parent not in self._entities_components:
                 self._entities_components[entity_parent] = [];
             self._entities_components[entity_parent].append(entity_child);
 
-            # # Original code: Slow for no reason I think?!
-            # for key, value in self._entities_components.items():
-            #     if key is entity_parent:  # find key [entity]
-            #         if (value[0] == None):
-            #             # replace None with the entity_child
-            #             value[0] = entity_child
-            #         else:
-            #             # just add entity_child in the children's components list
-            #             value.append(entity_child)
+
 
     
     def traverse_visit_pre_camera(self, camUpdate: Elements.pyECSS.System, camera: Elements.pyECSS.Component.Camera):
@@ -269,15 +261,13 @@ class ECSSManager():
 
         if isinstance(system, Elements.pyECSS.System.System) and iterator is not None:
             tic1 = time.perf_counter()
-            # MANOS DISABLED THE LINE BELOW
-            # print(f"\nthis is the {system.name} traversal START".center(100, '-'))
+
             done_traversing = False
             while(not done_traversing):
                 try:
                     traversedComp = next(iterator)
                 except StopIteration:
-                    # MANOS DISABLED THE ONE BELOW
-                    # print("\n--- end of Scene reached, traversed all Components!---")
+
                     done_traversing = True
                 else:
                     # only if we reached end of Entity's children traversedComp is None
@@ -288,8 +278,7 @@ class ECSSManager():
                         traversedComp.accept(system)
 
             toc1 = time.perf_counter()
-            # print( ## MANOS DISABLED THIS
-            #     f"\n{system.name} traversal took {(toc1 - tic1)*1000:0.4f} msecs".center(100, '-'))
+
 
     def print(self):
         """

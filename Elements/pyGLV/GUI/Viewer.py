@@ -406,7 +406,7 @@ class ImGUIDecorator(RenderDecorator):
         self._imguiRenderer = None
         #setup a simple Event: change to wireframe mode via the GUI
         self._updateWireframe = None
-        self._updateCamera = None # MANOS
+        self._updateCamera = None
         # extra UI elements
         self._wireframeMode = False
         self._changed = False 
@@ -536,7 +536,7 @@ class ImGUIDecorator(RenderDecorator):
             print(f"_colorEditor: {self._colorEditor}")
         imgui.separator()
         #
-        # MANOS - START
+        # START
         # simple slider for eye - IMPORTANT PART HERE
         self._changed, self._eye = imgui.drag_float3( "Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
         if self._changed:
@@ -565,7 +565,7 @@ class ImGUIDecorator(RenderDecorator):
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
             print(f"_up: {self._up}")
         imgui.separator()
-        # MANOS - END
+        # END
         # simple FPS counter
         strFrameRate = str(("Application average: ", imgui.get_io().framerate, " FPS"))
         imgui.text(strFrameRate)

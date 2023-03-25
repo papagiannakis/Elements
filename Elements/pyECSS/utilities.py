@@ -31,7 +31,7 @@ def normalise(vector):
     :param vector: iterable vector to normalise
     :type vector: numpy array
     """
-    #norm = math.sqrt(vector*vector)
+
     if isinstance(vector, np.ndarray)==False:
         vector = vec(vector)
     norm = np.linalg.norm(vector,2) #equivalent to norm = np.sqrt(np.sum(vector**2))
@@ -73,7 +73,6 @@ def calculateNormals(p1, p2, p3):
     normal[0] = (U[1] * V[2]) - (U[2] * V[1])
     normal[1] = (U[2] * V[0]) - (U[0] * V[2])
     normal[2] = (U[0] * V[1]) - (U[1] * V[0])
-    # normal = normal/normalise(normal);
 
     return normal;
 
@@ -158,7 +157,7 @@ def perspective(fovy, aspect, near, far):
     :type far: [type]
     """
     _scale = 1.0/math.tan(math.radians(fovy)/2.0)
-    #_scale = 1.0/math.tan(math.radians(fovy/2.0))
+
     sx, sy = _scale / aspect, _scale
     zz = (far + near) / (near - far)
     zw = 2 * far * near/(near - far)
@@ -214,9 +213,7 @@ def translate(x=0.0, y=0.0, z=0.0):
     :type z: float, optional
     """
     Tmat = np.identity(4, np.float32)
-    #Tmat[0,3] = x
-    #Tmat[1,3] = y
-    #Tmat[2,3] = z
+
     if isinstance(x, Number):
         Tmat[:3,3] = vec(x,y,z)  #slicing is [start:end:step], :3,3 = all 3 rows on 3 column
     else:

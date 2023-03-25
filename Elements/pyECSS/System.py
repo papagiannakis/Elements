@@ -232,7 +232,7 @@ class TransformSystem(System):
         componentEntity = leafComp.parent
         topAccessedEntity = componentEntity
 
-        # l2worldTRS = leafComp.l2world # wrong line
+
         l2worldTRS = util.identity(); # # correct one   
         
         while(componentEntity is not topComp):
@@ -264,9 +264,9 @@ class TransformSystem(System):
         #check if the visitor visits a node that it should not
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!
-        # print(self.getClassName(), ": apply(BasicTransform) called")
+
         
-        # getLocal2World returns result to be set in BasicTransform::update(**kwargs) below
+
         l2worldTRS = self.getLocal2World(basicTransform)
         #update l2world of basicTransform
         basicTransform.update(l2world=l2worldTRS) 
