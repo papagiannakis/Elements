@@ -1,6 +1,7 @@
 # Welcome to the Elements Homepage
 
 [![Documentation](https://readthedocs.org/projects/elementsproject/badge/)](http://ElementsProject.readthedocs.io/en/latest/)
+[![Project's GitHub Page](https://github.com/papagiannakis/Elements/actions/workflows/pages/pages-build-deployment/badge.svg?branch=github_page)](https://github.com/papagiannakis/Elements/actions/workflows/pages/pages-build-deployment)
 
 This is the homepage for the project Elements. 
 
