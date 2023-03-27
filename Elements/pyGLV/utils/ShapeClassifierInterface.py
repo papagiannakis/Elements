@@ -7,6 +7,15 @@ from torch_geometric.nn import MessagePassing, global_max_pool
 
 
 class PointNetLayer(MessagePassing):
+    """ 
+    Here is the explanation for the PointNetLayer class:
+    1. The MLP takes the concatenated feature vector and the spatial relation between the central node and the neighbor as input.
+    2. The MLP is a simple two-layer MLP with ReLU activation function.
+    3. The MLP outputs the feature vector of the neighbor nodes.
+    4. The message function is called for every edge and the output is aggregated to the central node. 
+    """
+
+
     def __init__(self, in_channels, out_channels):
         # Message passing with "max" aggregation.
         super().__init__(aggr='max')
@@ -40,6 +49,19 @@ class PointNetLayer(MessagePassing):
 
 
 class PointNet(torch.nn.Module):
+
+    """ 
+    Here is the explanation for the main functionality of the PointNet class:
+        1. We first need to convert the point cloud data to a graph data object.
+        2. We then perform a kNN graph construction on the point cloud data with
+   k=16 (i.e., each point is connected to its 16 nearest neighbors).
+        3. We start bipartite message passing by first updating the node embeddings
+   using the `conv1` module.
+        4. We then perform global pooling by computing the maximum over all node
+   embeddings per graph.
+        5. Finally, we pass the resulting graph embeddings to the `classifier` module. 
+        """
+    
     def __init__(self):
         super().__init__()
 
@@ -133,6 +155,15 @@ def visualize_mesh(pos, face):
 
 
 def pyECSToGnnFormat(vertices, indices):
+    """ 
+    Here is the explanation for the pyECSToGnnFormat method:
+    1. The input of this function is a list of vertices and a list of indices (the indices list is a list of lists, each sublist contains 3 indices)
+    2. The output of this function is a list of Data objects, each Data object contains the information of one triangle
+    3. The code first extracts the vertices of one triangle from the input list, and then extracts the indices of the vertices of the triangle from the input list
+    4. The code then creates a list of edges from the indices of the vertices of the triangle
+    5. The code then creates a list of indices of the vertices of the triangle, and puts the indices of the vertices of the triangle into a Data object
+    6. The code returns a list of Data objects, each Data object contains the information of one triangle 
+    """
     v = vertices[:, 0:3]
 
     ind = []
