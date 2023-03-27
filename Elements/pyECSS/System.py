@@ -199,6 +199,7 @@ class TransformSystem(System):
     that are needed in a Scenegraph DAG hierarchy
 
     Here is the explanation for Transform System class:
+    
     1. I have a BasicTransform component that has a TRS matrix and a l2worldTRS matrix
     2. For each BasicTransform component, I calculate the l2worldTRS matrix of that component based on the hierarchy of its parent nodes
     3. Then I update the l2worldTRS matrix of that BasicTransform component
@@ -338,7 +339,7 @@ class CameraSystem(System):
         when visits Components. 
         
         In this case calculate the l2w BasicTransform component matrix
-        
+
         """
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!
