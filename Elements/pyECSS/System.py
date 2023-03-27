@@ -197,6 +197,14 @@ class TransformSystem(System):
     """
     System that operates on BasicTransform Components and calculates Local2World matrices
     that are needed in a Scenegraph DAG hierarchy
+
+    Here is the explanation for Transform System class:
+    1. I have a BasicTransform component that has a TRS matrix and a l2worldTRS matrix
+    2. For each BasicTransform component, I calculate the l2worldTRS matrix of that component based on the hierarchy of its parent nodes
+    3. Then I update the l2worldTRS matrix of that BasicTransform component
+    4. The l2worldTRS matrix of a component is calculated in the following way:
+        a. if the component is the root node, then the l2worldTRS matrix is the TRS matrix of that component
+        b. if the component is not the root node, then the l2worldTRS matrix is calculated by multiplying the TRS matrix of that component with the l2worldTRS matrix of its parent node
     
     :param System: [description]
     :type System: [type]
@@ -239,8 +247,7 @@ class TransformSystem(System):
             # get that parent's TRS by type
             parentBasicTrans = componentEntity.getChildByType("BasicTransform")
             if(parentBasicTrans is not None and parentBasicTrans):
-                # l2worldTRS = l2worldTRS @ parentBasicTrans.trs # This doesnt work for me (mostly on rot/scale);
-                l2worldTRS = parentBasicTrans.trs @ l2worldTRS # This works for me ;
+                l2worldTRS = parentBasicTrans.trs @ l2worldTRS
 
             topAccessedEntity = componentEntity
             componentEntity = componentEntity.parent

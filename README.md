@@ -1,18 +1,20 @@
 # Welcome to the Elements Homepage
 
-This is the homepage for our academic project, called Elements, where you can find information about our research and the progress we have made so far.
+This is the homepage for the project Elements. 
+
+For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691)
 
 ## Overview
  
-Elements aims to combine the power of the Entity-Component-System (ECS) with the versatility of Scenegraphs, in the context of Computer Graphics (CG). It also aims to provide the basic tools to anyone that want to be involved with Computer Graphics related topics such as Machine Learning, Geometric Algebra and many many more.
+Elements introduces for the first time the power of the Entity-Component-System (ECS) with the versatility of Scenegraphs, in the context of Computer Graphics (CG), Deep Learning (DL) for Scientific Visualization (SciViz). It also aims to provide the basic tools to anyone that wants to be involved with basic Computer Graphics as well as advanced topics such as Geometric Deep Learning, Geometric Algebra and many many more.
 
-Following an educational approach that can be followed by people with minimal development experience, all related packages are in Python.
+Following a modern educational approach, all related packages are in the Python programming language.
 
 ## Packages Involved in Elements
 
 * pyECSS: A package for applying ECS to any Scenegraph
-* pyGLV : A package applying ECSS to CG oriented examples
-* pyEEL : An information hub for various topics where ECSS can be applied
+* pyGLV : A package applying ECSS to CG, DL and SciViz problems
+* pyEEL : A learning hub for various topics where ECSS can be applied
 
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 

@@ -26,6 +26,16 @@ class EntityDfsIterator(Iterator, ComponentIterator):
 
     :param Iterator: [description]
     :type Iterator: [type]
+
+    Here is the explanation for the code above:
+        1. This is a depth-first-iterator for Hierarchical Entities (Iterables) and their Components, 
+    based on the Iterator design pattern
+        2. We have a stack to keep track of the iterators that we have to go through.
+        3. We push the Entity's iterator on the stack, that is the iterator that iterates through the Entity's children.
+        4. We get the iterator from the top of the stack, and try to get the next child.
+        5. If we get a StopIteration exception, then we have reached the end of the iterator, and we pop it off the stack.
+        6. If we get a node, then we check if it is an Entity, and if it is, we push the Entity's iterator on the stack, and return the node.
+        7. If we get a node and it is not an Entity, then we return the node.
     """
             
     # List stack to push/pop iterators
