@@ -1,7 +1,6 @@
 # Welcome to the Elements Homepage
 
-[![Documentation](https://ElementsProject.org/projects/pyglv/badge/?version=latest)](http://ElementsProject.readthedocs.io/en/latest/?badge=latest)
-
+[![Documentation](https://readthedocs.org/projects/ElementsProject/badge/?version=latest)](http://ElementsProject.readthedocs.io/en/latest/?badge=latest)
 This is the homepage for the project Elements. 
 
 For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691)
