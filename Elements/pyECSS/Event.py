@@ -16,9 +16,7 @@ from dataclasses import dataclass
 import numpy as np
 
 import Elements.pyECSS.utilities as util
-#from Elements.pyECSS.Entity import Entity, EntityDfsIterator
-#from Elements.pyECSS.Component import BasicTransform, Camera, Component
-#from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
+
 
 
 @dataclass
@@ -75,10 +73,10 @@ class EventManager(EventPublisher):
                 print(f'\n{event.name}: will be actuated from the appropriate system\n')
             elif event.name == "OnUpdateWireframe":
                 print(f'\n{event.name}: will be actuated from the appropriate system\n')
-            # MANOS - START
+
             elif event.name == "OnUpdateCamera":
                 print(f'\n{event.name}: will be actuated from the appropriate system - OnUpdateCamera\n')
-            # MANOS - END
+
 
             if event.name in self._subscribers:
                 subscriber  = self._subscribers[event.name] 
@@ -92,7 +90,7 @@ class EventManager(EventPublisher):
        
         
     '''
-    @GPTODO NEED REFACTORING these methods once API is stable
+    @TODO NEED REFACTORING these methods once API is stable
     # value should be a List
     # any new subscriber to same key::Event of the Dict should be appended on the value:: List
     #
