@@ -560,10 +560,10 @@ eManager._subscribers[updateBackground.name] = gGUI
 eManager._subscribers['OnUpdateWireframe'] = gWindow
 eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
 
-# MANOS - START
+# START
 eManager._subscribers['OnUpdateCamera'] = gWindow
 eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-# MANOS - END
+# END
 
 # Add RenderWindow to the EventManager publishers
 eManager._publishers[updateBackground.name] = gGUI
