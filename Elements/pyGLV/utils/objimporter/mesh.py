@@ -1,6 +1,7 @@
 import numpy as np
+import Elements.pyGLV.utils.normals as norm
 
-from Elements.pyGLV.GL.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
+from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
 
 class Mesh:
     """
@@ -35,12 +36,13 @@ class Mesh:
         self.name = name
         self.vertices = np.array([]) # Array with float4 with (x, y, z, w) like [[1.0, 1.0, 1.0, 1.0], [2.0, 1.5, 2.65, 1.0], ...]
         self.normals = np.array([])
+        self.has_uv = False
         self.uv = np.array([])
         self.indices = np.array([], dtype=np.uint32)
         self.material = ""
     
     @staticmethod
-    def from_objmesh(vertices, normals, texture_coords, obj_mesh: WavefrontObjectMesh) -> None:
+    def from_objmesh(vertices, normals, texture_coords, obj_mesh: WavefrontObjectMesh, calculate_smooth_normals:bool = False) -> None:
         """
         Creates a Mesh from a WavefrontObjectMesh
 
@@ -65,11 +67,12 @@ class Mesh:
 
         indices = []
 
+        has_normals = False
         for face in obj_mesh.faces:
             # Check face is valid?
             face_valid = True
             for index in face.vertex_indices:
-                if index > len(vertices): # Indexes in .obj start from, not 0 apparently
+                if index > len(vertices): # Indexes in .obj start from 1, not 0 apparently
                     face_valid = False
                     print("Found invalid face, ignoring... %d %d" %(index, len(vertices)))
             
@@ -81,17 +84,36 @@ class Mesh:
                 indices.append(index)
 
                 # Did obj have normal information?
-                if face.normal_indices[i]>0:
+                if face.has_normals:
                     new_normals[index] = normals[face.normal_indices[i]-1]
+                    has_normals = True # At least one face has normals then this object must have normals imported
                 
                 # Did obj have uv information?
-                if face.texture_coords_indices[i] >0:
+                if face.has_texture_coords:
                     uv[index] = [texture_coords[face.texture_coords_indices[i]-1][0], texture_coords[face.texture_coords_indices[i]-1][1]] # Only pass the u,v and not w values
-        
+                    mesh.has_uv = True # At least one face has uv texture data, then this object must have uvs as a whole
+
         mesh.vertices = np.array(vertices)
+        print(len(mesh.vertices))
+        print(len(np.unique(mesh.vertices)))
         mesh.indices = np.array(indices, dtype=np.uint32)
-        mesh.normals = np.array(new_normals)
-        mesh.uv = np.array(uv)
+        
+        uv = np.array(uv)
+
+        if calculate_smooth_normals:
+            # Calculate Flat shaded normals
+            mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateSmoothNormalsMesh(mesh.vertices, mesh.indices, colors= (uv if mesh.has_uv else None))
+            pass
+        else:
+            if has_normals:
+                mesh.normals = np.array(new_normals)
+            else:
+                # Calculate Flat shaded normals
+                mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateFlatNormalsMesh(mesh.vertices, mesh.indices, color= (uv if mesh.has_uv else None))
+
+        # Apply uvs to mesh
+        if mesh.has_uv:
+            mesh.uv = uv
 
         return mesh
 

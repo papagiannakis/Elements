@@ -1,18 +1,49 @@
 import codecs
-from Elements.pyGLV.GL.objimporter.wavefront_obj_face import WavefrontObjectFace
-from Elements.pyGLV.GL.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
-from Elements.pyGLV.GL.objimporter.mesh import Mesh
+from Elements.pyGLV.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
+from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
+from Elements.pyGLV.utils.objimporter.mesh import Mesh
 
 class Wavefront:
     """
-    Class to import a Wavefront .obj file
+    Imports a Wavefront .obj file
 
-    Most common .obj file formats are supported.
+    Most common .obj file formats are supported. An .obj file may contain multiple meshes either named or anonymous.
+    
+    Parameters
+    ----------
+    file_path : str
+        The file path where the .obj file to import is.
+    calculate_smooth_normals : bool, default False
+        Whether to calculate smooth normals or import/flat shade the model. 
+        If set to False, the imported normals will populate the normals array of each mesh. If the file does not contain normals, then flat shading normals will be used.
+        If set to True, the normals will not be imported, but rather calculated in order to achieve a smooth shading result.
+    encoding : str, default 'utf-8'
+        The encoding the .obj file has
+
+    Examples
+    --------
+    >>> x = Wavefront('./teapot.obj')
+    >>> x.meshes['teapot'] # used to get a named mesh of the .obj file with the name teapot
+    >>> x.mesh_list[0] # used to get the first mesh found in the .obj file, either named or not. This is only recommended for use when there are anonymous meshes in the file.
     """
-    def __init__(self, file_path) -> None:
+    meshes : dict # The named meshes of the imported object in a dict with their names as keys, each containing its vertices/normals/uvs
+    mesh_list : list # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
+
+    __file_path : str
+    __calculate_normals : bool
+    __mtllibs : list
+    __vertices : list
+    __normals : list
+    __texture_coords : list
+    __obj_meshes : dict
+    __obj_mesh_list : list
+
+    __parse_dispatch : dict
+
+    def __init__(self, file_path, calculate_smooth_normals=False, encoding = 'utf-8') -> None:
         self.__file_path = file_path
+        self.__calculate_smooth_normals = calculate_smooth_normals
         self.__mtllibs = []
-        self.materials = {}
         
         self.__vertices = [] # Array with float4 with (x, y, z, w) like [[1.0, 1.0, 1.0, 1.0], [2.0, 1.5, 2.65, 1.0], ...]
         self.__normals = [] # Array with float3 with (x, y, z) like [[1.0, 1.0, 1.0], [2.0, 1.5, 2.65], ...]
@@ -20,7 +51,6 @@ class Wavefront:
 
         self.__obj_meshes = {}
         self.__obj_mesh_list = []
-
 
         self.meshes = {} # Dictionary to store the Meshes of the obj file imported by name
         self.mesh_list = [] # Stores all the meshes of the obj file imported. (Can also have anonymous meshes)
@@ -35,21 +65,21 @@ class Wavefront:
             "usemtl" : self.__parse_use_material,
         }
 
-        self.__parse_from_file()
+        self.__parse_from_file(encoding)
 
         self.__convert_obj_meshes_to_meshes()
 
     def __get_current_mesh(self) -> WavefrontObjectMesh:
         if len(self.__obj_mesh_list) > 0:
             return self.__obj_mesh_list[len(self.__obj_mesh_list)-1]
-        else:
-            current_mesh = WavefrontObjectMesh()
+        else: # If current mesh not exists create a new anonymous one
+            current_mesh = WavefrontObjectMesh("")
             self.__obj_mesh_list.append(current_mesh)
             return current_mesh 
     
-    def __parse_from_file(self) -> None:
+    def __parse_from_file(self, encoding) -> None:
         try:
-            with codecs.open(self.__file_path, encoding='utf-8') as f:
+            with codecs.open(self.__file_path, encoding=encoding) as f:
                 
                 line_number = 0
                 # Parse file lines
@@ -58,8 +88,8 @@ class Wavefront:
 
                     line = line.strip()
 
-                    # Line is comment? Skip
-                    if line[0] == "#" or len(line)<=1:
+                    # Line is empty or comment? Skip
+                    if len(line)<1 or line[0] == "#":
                         continue
 
                     parse_function = self.__parse_dispatch.get(line.split(' ')[0], self.__parse_unknown)
@@ -156,14 +186,15 @@ class Wavefront:
 
             face.vertex_indices.append(vertex_index)
 
-            # Has color index?
+            # Has texture coord index?
             if len(index_set)>1 and index_set[1]!="":
-                color_index = int(index_set[1])
-                if color_index<0:
+                texture_coords_index = int(index_set[1])
+                if texture_coords_index<0:
                     print("Relative color indices (%d) are not supported" % color_index)
                     color_index = -1
                 
-                face.texture_coords_indices.append(color_index)
+                face.has_texture_coords = True
+                face.texture_coords_indices.append(texture_coords_index)
             else:
                 face.texture_coords_indices.append(-1)
 
@@ -174,6 +205,7 @@ class Wavefront:
                     print("Relative normal indices (%d) are not supported" % normal_index)
                     normal_index = -1
 
+                face.has_normals = True
                 face.normal_indices.append(normal_index)
             else:
                 face.normal_indices.append(-1)
@@ -207,7 +239,7 @@ class Wavefront:
         
         for obj_mesh in self.__obj_mesh_list:
 
-            mesh = Mesh.from_objmesh(self.__vertices, self.__normals, self.__texture_coords, obj_mesh)
+            mesh = Mesh.from_objmesh(self.__vertices, self.__normals, self.__texture_coords, obj_mesh, self.__calculate_smooth_normals)
 
             self.mesh_list.append(mesh)
             if mesh.name != "":
