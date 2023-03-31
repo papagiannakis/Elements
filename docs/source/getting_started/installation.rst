@@ -1,6 +1,16 @@
 Installation
 ============
 
+OS requirements
+------------------------------
+
+The Elements framework has been tested on the following operating systems:
+
+1. Windows 11
+2. Max OS Monterey-Ventura
+3. Ubuntu 22
+
+
 Clone the repository
 ------------------------------
 
