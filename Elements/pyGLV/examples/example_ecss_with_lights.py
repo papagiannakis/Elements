@@ -1,14 +1,3 @@
-"""
-BasicWindow example, showcasing the pyglGA SDK ECSS
-    
-glGA SDK v2021.0.5 ECSS (Entity Component System in a Scenegraph)
-@Coopyright 2020-2021 George Papagiannakis
-    
-The classes below are all related to the GUI and Display of 3D 
-content using the OpenGL, GLSL and SDL2, ImGUI APIs, on top of the
-Elements ECSS package
-"""
-
 from __future__         import annotations
 from asyncore import dispatcher
 from math import sin, cos, radians
@@ -232,13 +221,7 @@ def main(imguiFlag = False):
     # Instantiate a simple complete ECSS with Entities, 
     # Components, Camera, Shader, VertexArray and RenderMesh
     #########################################################
-    #Light
-    Lposition = util.vec(0, 2, 8.0) #uniform lightpos
-    Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
-    Lambientstr = 0.3 #uniform ambientStr
-    LviewPos = util.vec(0, 0, 8.0) #uniform viewpos
-    Lcolor = util.vec(1.0,1.0,1.0)
-    Lintensity = 0.8
+    
     #Material
     Mshininess = 0.4 
     Mcolor = util.vec(0.8, 0.0, 0.8)
@@ -363,7 +346,7 @@ def main(imguiFlag = False):
             home1.getChild(i).shaderDec.setUniformVariable(key='matColor',value=Mcolor,float3=True)
             
                 
-        # home1.getChild(1).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
+        
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render(running)
         # call the GL State render System
