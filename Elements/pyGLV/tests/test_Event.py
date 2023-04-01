@@ -270,7 +270,6 @@ class TestEvent(unittest.TestCase):
         gGUI = self.scene.gContext
         
 
-        # print("\nManos3: ", gWindow._myCamera)
         #simple Event actuator System
         renderGLEventActuator = RenderGLStateSystem()
         
@@ -296,10 +295,10 @@ class TestEvent(unittest.TestCase):
         eManager._subscribers['OnUpdateWireframe'] = gWindow
         eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
         
-        # MANOS START
+        # START
         eManager._subscribers['OnUpdateCamera'] = gWindow #CHOOSE THE CORRECT ONE
         eManager._actuators['OnUpdateCamera'] = renderGLEventActuator #CHOOSE THE CORRECT ONE
-        # MANOS END
+        # END
         # Add RenderWindow to the EventManager publishers
         eManager._publishers[updateBackground.name] = gGUI
         
@@ -311,7 +310,6 @@ class TestEvent(unittest.TestCase):
             mvpMat = gWindow._myCamera
             self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
             self.scene.render_post()
-            # print("\nManos3: ", gWindow._myCamera)
             
         self.scene.shutdown()
         

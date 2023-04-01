@@ -199,6 +199,7 @@ class TransformSystem(System):
     that are needed in a Scenegraph DAG hierarchy
 
     Here is the explanation for Transform System class:
+    
     1. I have a BasicTransform component that has a TRS matrix and a l2worldTRS matrix
     2. For each BasicTransform component, I calculate the l2worldTRS matrix of that component based on the hierarchy of its parent nodes
     3. Then I update the l2worldTRS matrix of that BasicTransform component
@@ -240,7 +241,7 @@ class TransformSystem(System):
         componentEntity = leafComp.parent
         topAccessedEntity = componentEntity
 
-        # l2worldTRS = leafComp.l2world # wrong line
+
         l2worldTRS = util.identity(); # # correct one   
         
         while(componentEntity is not topComp):
@@ -271,9 +272,9 @@ class TransformSystem(System):
         #check if the visitor visits a node that it should not
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!
-        # print(self.getClassName(), ": apply(BasicTransform) called")
+
         
-        # getLocal2World returns result to be set in BasicTransform::update(**kwargs) below
+
         l2worldTRS = self.getLocal2World(basicTransform)
         #update l2world of basicTransform
         basicTransform.update(l2world=l2worldTRS) 
@@ -338,7 +339,7 @@ class CameraSystem(System):
         when visits Components. 
         
         In this case calculate the l2w BasicTransform component matrix
-        
+
         """
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!
