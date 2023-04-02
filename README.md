@@ -25,9 +25,17 @@ Following a modern educational approach, all related packages are in the Python 
 
 ## Quick Start
 
-Download (or clone) this repo (or your fork) and in a python 3.8 environment, run ```pip install -e .```. 
+Download (or clone) this repo (or your fork) and, in a python 3.8 environment, run ```pip install -e .```
+
 Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying one of the existing examples.
 
+## Folder Structure
+
+* [docs](./docs): Files used to generate the [documentation](https://elementsproject.readthedocs.io/en/latest/index.html)
+* [Elements](./Elements/): Contains all the source code of Elements
+  * [pyECSS] (./Elements/pyECSS): Contains all the source code for pyECSS - Entity, Component, System, Scenegraph functionality
+  * [pyGLV] (./Elements/pyGLV): Contains all the source code for pyGLV - graphics, shading, imgui functionality
+  * [pyEEL] (./Elements/pyEEL): Contains all the jupyter notebooks of pyEEL
 
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
