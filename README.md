@@ -1,4 +1,4 @@
-# Welcome to the Elements Homepage
+# Welcome to project Elements!
 
 [![Documentation](https://readthedocs.org/projects/elementsproject/badge/)](http://ElementsProject.readthedocs.io/en/latest/)
 [![Project's GitHub Page](https://github.com/papagiannakis/Elements/actions/workflows/pages/pages-build-deployment/badge.svg?branch=github_page)](https://papagiannakis.github.io/Elements)
@@ -20,6 +20,14 @@ Following a modern educational approach, all related packages are in the Python 
 * pyECSS: A package for applying ECS to any Scenegraph
 * pyGLV : A package applying ECSS to CG, DL and SciViz problems
 * pyEEL : A learning hub for various topics where ECSS can be applied
+
+
+
+## Quick Start
+
+Download (or clone) this repo (or your fork) and in a python 3.8 environment, run ```pip install -e .```. 
+Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying one of the existing examples.
+
 
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
