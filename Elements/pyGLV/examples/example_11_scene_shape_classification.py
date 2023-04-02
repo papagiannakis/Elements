@@ -1,3 +1,10 @@
+####################################################################
+#                             IMPORTANT                            # 
+####################################################################
+# Running example 11 requires additional packages to be installed. # 
+# Check requirements_example_11.md for more information.           #
+####################################################################
+
 from __future__ import annotations
 
 from enum import Enum
