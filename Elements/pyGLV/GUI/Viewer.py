@@ -226,8 +226,8 @@ class SDL2Window(RenderWindow):
                                               self._windowWidth,
                                               self._windowHeight,
                                             #   sdl2.SDL_WINDOW_ALLOW_HIGHDPI)
-                                              sdl2.SDL_WINDOW_OPENGL,
-                                              sdl2.SDL_WINDOW_RESIZABLE)
+                                              sdl2.SDL_WINDOW_OPENGL | sdl2.SDL_WINDOW_RESIZABLE)
+        
         if self._gWindow is None:
             print("Window could not be created! SDL Error: ", sdl2.SDL_GetError())
             exit(1)
