@@ -34,7 +34,15 @@ Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying
 * [docs](./docs): Files used to generate the [documentation](https://elementsproject.readthedocs.io/en/latest/index.html)
 * [Elements](./Elements/): Contains all the source code of Elements
   * [pyECSS](./Elements/pyECSS): Contains all the source code for pyECSS - Entity, Component, System, Scenegraph functionality
+    * [examples](./Elements/pyECSS): Example files related to pyECSS
+    * [GA](./Elements/pyECSS/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
+    * [tests](./Elements/pyECSS/tests): Test files for pyECSS
   * [pyGLV](./Elements/pyGLV): Contains all the source code for pyGLV - graphics, shading, imgui functionality
+    * [examples](./Elements/pyGLV): Example files related to pyGLV
+    * [tests](./Elements/pyGLV/tests): Test files for pyGLV
+    * [GL](./Elements/pyGLV/GL): The basic Graphics Library files (Scene, Shader, Texture, VertexArray)
+    * [GUI](./Elements/pyGLV/GUI): Files related to the window and GUI instantiation.
+    * [utils](./Elements/pyGLV/utils): Utility files and functions for pyGLV.
   * [pyEEL](./Elements/pyEEL): Contains all the jupyter notebooks of pyEEL
 
 ## Contribute to Elements</h2>
