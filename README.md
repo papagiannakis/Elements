@@ -43,7 +43,13 @@ Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying
     * [GL](./Elements/pyGLV/GL): The basic Graphics Library files (Scene, Shader, Texture, VertexArray)
     * [GUI](./Elements/pyGLV/GUI): Files related to the window and GUI instantiation.
     * [utils](./Elements/pyGLV/utils): Utility files and functions for pyGLV.
-  * [pyEEL](./Elements/pyEEL): Contains all the jupyter notebooks of pyEEL
+  * [pyEEL](./Elements/pyEEL): The pyEEL learning hub
+    * [examples](./Elements/pyEEL/examples): Contains all the jupyter notebooks of pyEEL  
+      * [SciCom](./Elements/pyEEL/examples/SciCom): Scientific Computation related notebooks
+      * [neuralCG](./Elements/pyEEL/examples/neuralCG): Neural networks in CG related notebooks
+      * [DL](./Elements/pyEEL/examples/DL): Deep Learning related notebooks
+      * [CG](./Elements/pyEEL/examples/CG): Computer Graphics (CG) related notebooks
+      * [GATE](./Elements/pyEEL/examples/GATE): Geometric Algebra Transformation Engine related notebooks
 
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
