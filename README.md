@@ -5,7 +5,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2302.07691-b31b1b.svg)](https://arxiv.org/abs/2302.07691)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-This is the homepage for the project Elements. 
+<iframe width="560" height="315" src="https://www.youtube.com/embed/XZ7sW3hxzRA" title="The Elements Project" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
 
 For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691)
 
