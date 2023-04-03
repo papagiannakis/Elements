@@ -11,7 +11,7 @@ https://user-images.githubusercontent.com/13041399/229489757-f0f3d208-a26d-4fa2-
 
 
 
-For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691)
+For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691).
 
 ## Overview
  
