@@ -5,7 +5,7 @@
 [![arXiv](https://img.shields.io/badge/arXiv-2302.07691-b31b1b.svg)](https://arxiv.org/abs/2302.07691)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-[![Elements_in_a_gif](./docs/_static/Project_Elements.gif)]
+![Elements_in_a_gif](https://github.com/papagiannakis/pyGLV/blob/14e285b80bbb52283f28fbdd31999f6541a334c9/docs/_static/edu1003_AdobeExpress.gif)
 
 
 For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691)
