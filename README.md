@@ -11,13 +11,14 @@ https://user-images.githubusercontent.com/13041399/229489757-f0f3d208-a26d-4fa2-
 
 
 
-For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691).
 
 ## Overview
  
 Elements introduces for the first time the power of the Entity-Component-System (ECS) with the versatility of Scenegraphs, in the context of Computer Graphics (CG), Deep Learning (DL) for Scientific Visualization (SciViz). It also aims to provide the basic tools to anyone that wants to be involved with basic Computer Graphics as well as advanced topics such as Geometric Deep Learning, Geometric Algebra and many many more.
 
 Following a modern educational approach, all related packages are in the Python programming language.
+
+To dive in the details of the project check [its detailed developer documentation](https://elementsproject.readthedocs.io/en/latest/index.html) and [the research paper behind this project](https://arxiv.org/abs/2302.07691).
 
 ## Packages Involved in Elements
 
