@@ -1,11 +1,12 @@
-# Welcome to the Elements Homepage
+# Welcome to project Elements!
 
 [![Documentation](https://readthedocs.org/projects/elementsproject/badge/)](http://ElementsProject.readthedocs.io/en/latest/)
 [![Project's GitHub Page](https://github.com/papagiannakis/Elements/actions/workflows/pages/pages-build-deployment/badge.svg?branch=github_page)](https://papagiannakis.github.io/Elements)
 [![arXiv](https://img.shields.io/badge/arXiv-2302.07691-b31b1b.svg)](https://arxiv.org/abs/2302.07691)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-This is the homepage for the project Elements. 
+[![Elements_in_a_gif](./docs/_static/Project_Elements.gif)]
+
 
 For a more detailed developer documentation please refer [here](https://elementsproject.readthedocs.io/en/latest/index.html). The research paper behind this project can be found [here](https://arxiv.org/abs/2302.07691)
 
@@ -20,6 +21,36 @@ Following a modern educational approach, all related packages are in the Python 
 * pyECSS: A package for applying ECS to any Scenegraph
 * pyGLV : A package applying ECSS to CG, DL and SciViz problems
 * pyEEL : A learning hub for various topics where ECSS can be applied
+
+
+
+## Quick Start
+
+Download (or clone) this repo (or your fork) and, in a python 3.8 environment, run ```pip install -e .```
+
+Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying one of the existing examples.
+
+## Folder Structure
+
+* [docs](./docs): Files used to generate the [documentation](https://elementsproject.readthedocs.io/en/latest/index.html)
+* [Elements](./Elements/): Contains all the source code of Elements
+  * [pyECSS](./Elements/pyECSS): Contains all the source code for pyECSS - Entity, Component, System, Scenegraph functionality
+    * [examples](./Elements/pyECSS): Example files related to pyECSS
+    * [GA](./Elements/pyECSS/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
+    * [tests](./Elements/pyECSS/tests): Test files for pyECSS
+  * [pyGLV](./Elements/pyGLV): Contains all the source code for pyGLV - graphics, shading, imgui functionality
+    * [examples](./Elements/pyGLV): Example files related to pyGLV
+    * [tests](./Elements/pyGLV/tests): Test files for pyGLV
+    * [GL](./Elements/pyGLV/GL): The basic Graphics Library files (Scene, Shader, Texture, VertexArray)
+    * [GUI](./Elements/pyGLV/GUI): Files related to the window and GUI instantiation.
+    * [utils](./Elements/pyGLV/utils): Utility files and functions for pyGLV.
+  * [pyEEL](./Elements/pyEEL): The pyEEL learning hub
+    * [examples](./Elements/pyEEL/examples): Contains all the jupyter notebooks of pyEEL  
+      * [SciCom](./Elements/pyEEL/examples/SciCom): Scientific Computation related notebooks
+      * [neuralCG](./Elements/pyEEL/examples/neuralCG): Neural networks in CG related notebooks
+      * [DL](./Elements/pyEEL/examples/DL): Deep Learning related notebooks
+      * [CG](./Elements/pyEEL/examples/CG): Computer Graphics (CG) related notebooks
+      * [GATE](./Elements/pyEEL/examples/GATE): Geometric Algebra Transformation Engine related notebooks
 
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
