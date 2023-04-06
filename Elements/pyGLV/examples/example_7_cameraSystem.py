@@ -28,7 +28,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
-
+from OpenGL.GL import GL_LINES
 
 class IndexedConverter():
     
@@ -157,7 +157,7 @@ def main(imguiFlag = False):
     # Instantiate a simple complete ECSS with Entities, 
     # Components, Camera, Shader, VertexArray and RenderMesh
     #########################################################
-
+    
     scene = Scene()    
 
     # Initialize Systems used for this script
@@ -188,6 +188,20 @@ def main(imguiFlag = False):
     cube_top.trans.trs = util.translate(0, 1, 0);
     cube_top.name = "TOP CUBE"
     
+    # Generate terrain
+    from Elements.pyGLV.utils.terrain import generateTerrain
+    vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
+    # Add terrain
+    terrain = scene.world.createEntity(Entity(name="terrain"))
+    scene.world.addEntityChild(rootEntity, terrain)
+    terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
+    terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
+    terrain_mesh.vertex_attributes.append(vertexTerrain) 
+    terrain_mesh.vertex_attributes.append(colorTerrain)
+    terrain_mesh.vertex_index.append(indexTerrain)
+    terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
+    terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
     
     # MAIN RENDERING LOOP
     running = True
@@ -246,7 +260,9 @@ def main(imguiFlag = False):
 
     
     while running:
-
+        #running = scene._gContext.event_input_process()
+        #if not running :
+           # continue
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
@@ -255,7 +271,7 @@ def main(imguiFlag = False):
                 
         home1.getChild(1).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
         # call SDLWindow/ImGUI display() and ImGUI event input process
-        running = scene.render(running)
+        running = scene.render()
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         # ImGUI post-display calls and SDLWindow swap 

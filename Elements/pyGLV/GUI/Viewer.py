@@ -305,10 +305,12 @@ class SDL2Window(RenderWindow):
             sdl2.SDL_Quit()   
 
 
-    def event_input_process(self, running = True):
+    def event_input_process(self):
+    #def event_input_process(self, running = True):
         """
         process SDL2 basic events and input
         """
+        running = True
         events = sdl2.ext.get_events()
         for event in events:
             if event.type == sdl2.SDL_KEYDOWN:
@@ -364,13 +366,13 @@ class RenderDecorator(RenderWindow):
         print(f'RenderDecorator: shutdown()')   
         
         
-    def event_input_process(self, running = True):
+    def event_input_process(self):
         """
         extra decorator method to handle input events
         :param running: [description], defaults to True
         :type running: bool, optional
         """
-        self._wrapeeWindow.event_input_process(running)
+        return self._wrapeeWindow.event_input_process()
     
     
     def display_post(self):
@@ -464,22 +466,6 @@ class ImGUIDecorator(RenderDecorator):
         #print(f'{self.getClassName()}: display()')
         
         
-    def event_input_process(self, running = True):
-        """
-        process SDL2 basic events and input
-        """
-        events = sdl2.ext.get_events()
-        for event in events:
-            if event.type == sdl2.SDL_KEYDOWN:
-                if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
-                    running = False
-            if event.type == sdl2.SDL_QUIT:
-                running = False
-            #imgui event
-            self._imguiRenderer.process_event(event)
-        #imgui input
-        self._imguiRenderer.process_inputs()
-        return running
         
         
     def display_post(self):
@@ -605,7 +591,10 @@ class ImGUIecssDecorator(ImGUIDecorator):
         self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
 
         self.color = [255, 50, 50];
+        self._mouse_x = 0
+        self._mouse_y = 0
         
+        self.traverseCamera()
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
@@ -738,6 +727,214 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     
                     self.drawNode(comp) # recursive call of this method to traverse hierarchy
                     imgui.unindent(10) # Corrent placement of unindent
+
+    
+    def traverseCamera(self):
+        self.cam = None
+        rootComp = self.wrapeeWindow.scene.world.root
+        if rootComp._children is not None:
+            Iterator = iter(rootComp._children)
+            done_traversing = False
+            found = False
+            while not found and not done_traversing:
+                try:
+                    comp = next(Iterator)
+                except StopIteration:
+                    done_traversing = True
+                else:
+                    if comp.name == "Simple Camera":
+                        self.cam = comp
+                        found = True
+            if not found:
+                # do it with lookAt
+                pass
+                        
+    def updateCamera(self):                   
+        transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
+        rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
+        rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
+        rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
+        scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+        self.cam.trans1.trs = self.cam.trans1.trs @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+        
+    def on_mouse_drag(self, event, x, y, dx, dy, button):
+        """Called when mouse buttons are pressed and the mouse is dragged.
+        
+            event: sdl2.events.SDL_Event, 
+            x: horiz coord relative to window, y: vert coord relative to window,
+            dx: relative horizontal motion, dy: relative vertical motion
+            button: RIGHT - MIDDLE - LEFT
+        """
+
+        print("mouse drag ")
+        print(button, x, y, dx, dy)
+
+        if button == "RIGHT":
+            self.translation["x"] = 0
+            self.translation["y"] = 0
+            self.translation["z"] = 0
+            self.rotation["x"] = dy
+            self.rotation["y"] = dx
+            self.rotation["z"] = 0
+            
+        elif button == "LEFT":
+            self.translation["x"] = dx 
+            self.translation["y"] = dy
+            self.translation["z"] = 0
+            self.rotation["x"] = 0
+            self.rotation["y"] = 0
+            self.rotation["z"] = 0
+        self.scale["x"]= 1
+        self.scale["y"]= 1
+        self.scale["z"]= 1
+        self.updateCamera()   
+
+
+    def on_mouse_motion(self, event, x, y, dx, dy):
+        """Called when the mouse is moved.
+
+            event: sdl2.events.SDL_Event, 
+            x: horiz coord relative to window, y: vert coord relative to window,
+            dx: relative horizontal motion, dy: relative vertical motion
+        """
+        pass
+
+    def on_mouse_press(self, event, x, y, button, dclick):
+        """Called when mouse buttons are pressed.
+
+            event: sdl2.events.SDL_Event, 
+            x: horiz coord relative to window, y: vert coord relative to window,
+            dx: relative horizontal motion, dy: relative vertical motion
+            button: RIGHT - MIDDLE - LEFT
+            dclick: True - False if button was double click
+        """
+        #self.translation["x"] = 0 
+        #self.translation["y"] = 0
+        #self.translation["z"] = 0
+        #self.rotation["x"] = 0
+        #self.rotation["y"] = 0
+        #self.rotation["z"] = 0
+        #self.scale["x"]= 1
+        #self.scale["y"]= 1
+        #self.scale["z"]= 1
+        #self.updateCamera()
+
+    def on_mouse_scroll(self, event, offset_x, offset_y):
+        """Called when the mouse wheel is scrolled.
+
+            event: sdl2.events.SDL_Event, 
+            offset_x: horizontal scroll, positive - negative 
+            offset_y (int): vertical scroll, positive - negative 
+        """
+        print("mouse scroll ")
+        print(offset_x, offset_y)
+
+        self.translation["x"] = 0 
+        self.translation["y"] = 0
+        self.translation["z"] = -offset_y
+        self.rotation["x"] = 0
+        self.rotation["y"] = 0
+        self.rotation["z"] = 0
+        self.scale["x"]= 1
+        self.scale["y"]= 1
+        self.scale["z"]= 1
+        self.updateCamera()
+ 
+    #def event_input_process(self, running = True):
+    def event_input_process(self):
+        """
+        process SDL2 basic events and input
+        """
+        #width = self.wrapeeWindow.scene._renderWindow.windowWidth
+        running = True
+        events = sdl2.ext.get_events()
+        for event in events:
+            
+            #height = self.wrapeeWindow.scene._gWindow._windowHeight
+            #width = self._gWindow._windowWidth
+            #on mouse motion on_mouse_drag
+            if event.type == sdl2.SDL_MOUSEMOTION:
+                x = event.motion.x
+                y = event.motion.y
+                buttons = event.motion.state
+
+                if buttons & sdl2.SDL_BUTTON_LMASK:
+                    #width = event.window.data1
+                    #height = event.window.data2 
+                    dx = (x - self._mouse_x)/1024*60
+                    dy = (y - self._mouse_y)/1024*60
+                    button = "LEFT"
+                    self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+                elif buttons & sdl2.SDL_BUTTON_MMASK:
+                    button = "MIDDLE"
+                    self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+                elif buttons & sdl2.SDL_BUTTON_RMASK:
+                    dx = (x - self._mouse_x)/1024*360
+                    dy = (y - self._mouse_y)/1024*360
+                    button = "RIGHT"
+                    self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+                else:
+                    #dx = (x - self._mouse_x)
+                    #dx = (y - self._mouse_y)
+                    #self.on_mouse_motion(event, self._mouse_x, self._mouse_y, dx, dy,)
+                    pass
+                self._mouse_x = x
+                self._mouse_y = y
+                continue
+
+            if event.type == sdl2.SDL_MOUSEBUTTONUP:
+                pass
+
+            # on_mouse_press
+            if event.type == sdl2.SDL_MOUSEBUTTONDOWN:
+                x = event.button.x
+                y = event.button.y
+                self._mouse_x = x
+                self._mouse_y = y
+                
+                button_n = event.button.button
+                if button_n == sdl2.SDL_BUTTON_LEFT:
+                    button = "LEFT"
+                elif button_n == sdl2.SDL_BUTTON_RIGHT:
+                    button = "RIGHT"
+                elif button_n == sdl2.SDL_BUTTON_MIDDLE:
+                    button = "MIDDLE"
+
+                double = bool(event.button.clicks - 1)
+                self.on_mouse_press(event, x, y, button, double)
+                continue
+
+            # on_mouse_scroll (wheel)
+            if event.type == sdl2.SDL_MOUSEWHEEL:
+                offset_x = event.wheel.x/1024*60
+                offset_y = event.wheel.y/1024*60
+                self.on_mouse_scroll(event, offset_x, offset_y)
+                continue 
+
+            #keyboard events
+            if event.type == sdl2.SDL_KEYDOWN:
+                if event.key.keysym.sym == sdl2.SDLK_UP or event.key.keysym.sym == sdl2.SDLK_w :
+                    pass
+                if event.key.keysym.sym == sdl2.SDLK_DOWN or event.key.keysym.sym == sdl2.SDLK_s :
+                    pass
+                if event.key.keysym.sym == sdl2.SDLK_LEFT or event.key.keysym.sym == sdl2.SDLK_a :
+                    pass
+                if event.key.keysym.sym == sdl2.SDLK_RIGHT or event.key.keysym.sym == sdl2.SDLK_d :
+                    pass
+                if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
+                    running = False
+            
+            if event.type == sdl2.SDL_QUIT:
+                running = False
+            #imgui event
+            self._imguiRenderer.process_event(event)
+            
+        #imgui input
+        self._imguiRenderer.process_inputs()
+        
+        return running
+        
+
 class RenderGLStateSystem(System):
     """
     System that operates on a RenderDecorator (ImGUIDecorator) and affect GL State
