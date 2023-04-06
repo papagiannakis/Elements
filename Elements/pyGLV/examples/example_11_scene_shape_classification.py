@@ -447,6 +447,8 @@ def SpawnHome3():
 import os
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+# Addresses a potential issue: 
+# https://stackoverflow.com/questions/53014306/error-15-initializing-libiomp5-dylib-but-found-libiomp5-dylib-already-initial
 
 scene = Scene()
 
