@@ -106,7 +106,7 @@ scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "A
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     

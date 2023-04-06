@@ -192,7 +192,7 @@ texture = os.path.join(os.path.dirname(__file__), "textures/uoc_logo.png")
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
     mvp_terrain_axes = projMat @ view @ model_terrain_axes

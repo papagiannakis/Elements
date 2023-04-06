@@ -10,7 +10,8 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
+#from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
+from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIecssDecorator
 
 class Scene():
     """
@@ -81,11 +82,11 @@ class Scene():
         pass
     
         
-    def render(self, running:bool = True) ->bool :
+    def render(self):
         """call the render() of all systems attached to this Scene based on the Visitor pattern
         """
+        still_runnning = self._gContext.event_input_process()
         self._gContext.display()
-        still_runnning = self._gContext.event_input_process(running)
         
         return still_runnning
     

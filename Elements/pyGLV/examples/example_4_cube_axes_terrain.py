@@ -198,7 +198,7 @@ model_terrain_axes = terrain.getChild(0).trs # notice that terrain.getChild(0) =
 # model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
     mvp_cube = projMat @ view @ model_cube

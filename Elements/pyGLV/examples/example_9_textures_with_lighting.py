@@ -217,7 +217,7 @@ texture = os.path.join(os.path.dirname(__file__), "textures/dark_wood_texture.jp
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

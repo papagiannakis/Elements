@@ -683,7 +683,7 @@ while running:
             object.shaderDec.setUniformVariable(key='lightIntensity', value=pointLight.intensity, float1=True);
 
     # 4. call SDLWindow/ImGUI display() and ImGUI event input process
-    running = scene.render(running)
+    running = scene.render()
     # 5. call the GL State render System
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     # 6. ImGUI post-display calls and SDLWindow swap
