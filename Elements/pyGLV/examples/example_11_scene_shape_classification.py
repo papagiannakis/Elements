@@ -444,6 +444,10 @@ def SpawnHome3():
 # Components, Camera, Shader, VertexArray and RenderMesh
 #
 
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 scene = Scene()
 
 # Initialize Systems used for this script
