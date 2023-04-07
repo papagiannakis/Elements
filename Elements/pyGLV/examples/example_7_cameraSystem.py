@@ -111,7 +111,7 @@ def CubeSpawn(cubename = "Cube"):
         dtype=np.uint32
     ) #rhombus out of two triangles
 
-    vertices, colors, indices, normals = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
+    vertices, colors, indices, normals = Convert(vertices, colors, indices, produceNormals=True);
     cube.SetVertexAttributes(vertices, colors, indices, normals);
     
     return cube;
@@ -137,7 +137,7 @@ def main(imguiFlag = False):
     rootEntity = scene.world.createEntity(Entity(name="Root"))
 
     # Spawn Camera
-    mainCamera = SimpleCamera("Simple Camera")
+    mainCamera = SimpleCamera().mainCamera
     # Camera Settings
     mainCamera.trans2.trs = util.translate(0, 0, 8) # VIEW
     mainCamera.trans1.trs = util.rotate((1, 0, 0), -45); 
