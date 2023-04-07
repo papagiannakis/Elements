@@ -321,6 +321,8 @@ class SDL2Window(RenderWindow):
                 if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                     print("Window Resized to ", event.window.data1, " X " , event.window.data2)
                     # new width and height: event.window.data1 and event.window.data2
+                    window._windowWidth = event.window.data1
+                    window._windowHeight = event.window.data2
                     gl.glViewport(0, 0, event.window.data1, event.window.data2)
         return running
     
@@ -485,6 +487,8 @@ class ImGUIDecorator(RenderDecorator):
                 window = self.wrapeeWindow
                 if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                     print("Window Resized to ", event.window.data1, " X " , event.window.data2)
+                    window._windowWidth = event.window.data1
+                    window._windowHeight = event.window.data2
                     # new width and height: event.window.data1 and event.window.data2
                     gl.glViewport(0, 0, event.window.data1, event.window.data2)
             #imgui event
@@ -809,6 +813,8 @@ if __name__ == "__main__":
     # MAIN RENDERING LOOP
     while running:
         gWindow.display()
+        windowaspect = gWindow._windowWidth/gWindow._windowHeight
+        print("windowaspect : ", windowaspect)
         running = gWindow.event_input_process(running)
         gWindow.display_post()
     gWindow.shutdown()
