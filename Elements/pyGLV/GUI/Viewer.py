@@ -857,9 +857,10 @@ class ImGUIecssDecorator(ImGUIDecorator):
                 x = event.motion.x
                 y = event.motion.y
                 buttons = event.motion.state
-
-                if buttons & sdl2.SDL_BUTTON_LMASK:
-                    #width = event.window.data1
+                keystatus = sdl2.SDL_GetKeyboardState(None)
+                if buttons and sdl2.SDL_BUTTON_LMASK and keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
+                    # print("keystatus for w:", keystatus[sdl2.SDL_SCANCODE_W])
+                    # width = event.window.data1
                     #height = event.window.data2 
                     dx = (x - self._mouse_x)/1024*60
                     dy = (y - self._mouse_y)/1024*60
