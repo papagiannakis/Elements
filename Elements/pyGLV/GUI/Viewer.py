@@ -593,8 +593,10 @@ class ImGUIecssDecorator(ImGUIDecorator):
         self.color = [255, 50, 50];
         self._mouse_x = 0
         self._mouse_y = 0
+        self.lctrl = False
         
         self.traverseCamera()
+
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
@@ -731,11 +733,11 @@ class ImGUIecssDecorator(ImGUIDecorator):
     
     def traverseCamera(self):
         self.cam = None
+        found = False
         rootComp = self.wrapeeWindow.scene.world.root
         if rootComp._children is not None:
             Iterator = iter(rootComp._children)
             done_traversing = False
-            found = False
             while not found and not done_traversing:
                 try:
                     comp = next(Iterator)
@@ -745,19 +747,23 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     if comp.name == "Simple Camera":
                         self.cam = comp
                         found = True
-            if not found:
-                # do it with lookAt
-                pass
                         
     def updateCamera(self):                   
-        transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
-        rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
-        rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
-        rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
-        scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-        self.cam.trans1.trs = self.cam.trans1.trs @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+        if self.cam != None:
+            transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
+            rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
+            rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
+            rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
+            scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+            self.cam.trans1.trs = self.cam.trans1.trs @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+        else:
+            self._eye = self.translation
+            self._target = self.rotation
+            self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            if self._wrapeeWindow.eventManager is not None:
+                self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
         
-    def on_mouse_drag(self, event, x, y, dx, dy, button):
+    def cameraRotate(self, offset_x, offset_y, offset_z):
         """Called when mouse buttons are pressed and the mouse is dragged.
         
             event: sdl2.events.SDL_Event, 
@@ -766,24 +772,15 @@ class ImGUIecssDecorator(ImGUIDecorator):
             button: RIGHT - MIDDLE - LEFT
         """
 
-        print("mouse drag ")
-        print(button, x, y, dx, dy)
-
-        if button == "RIGHT":
-            self.translation["x"] = 0
-            self.translation["y"] = 0
-            self.translation["z"] = 0
-            self.rotation["x"] = dy
-            self.rotation["y"] = dx
-            self.rotation["z"] = 0
-            
-        elif button == "LEFT":
-            self.translation["x"] = dx 
-            self.translation["y"] = dy
-            self.translation["z"] = 0
-            self.rotation["x"] = 0
-            self.rotation["y"] = 0
-            self.rotation["z"] = 0
+        print("camera rotate ")
+        print(offset_x, offset_y, offset_z)
+  
+        self.translation["x"] = 0
+        self.translation["y"] = 0
+        self.translation["z"] = 0
+        self.rotation["x"] = offset_x
+        self.rotation["y"] = offset_y
+        self.rotation["z"] = offset_z
         self.scale["x"]= 1
         self.scale["y"]= 1
         self.scale["z"]= 1
@@ -808,30 +805,21 @@ class ImGUIecssDecorator(ImGUIDecorator):
             button: RIGHT - MIDDLE - LEFT
             dclick: True - False if button was double click
         """
-        #self.translation["x"] = 0 
-        #self.translation["y"] = 0
-        #self.translation["z"] = 0
-        #self.rotation["x"] = 0
-        #self.rotation["y"] = 0
-        #self.rotation["z"] = 0
-        #self.scale["x"]= 1
-        #self.scale["y"]= 1
-        #self.scale["z"]= 1
-        #self.updateCamera()
+        pass
 
-    def on_mouse_scroll(self, event, offset_x, offset_y):
+    def cameraMove(self, offset_x, offset_y, offset_z):
         """Called when the mouse wheel is scrolled.
 
             event: sdl2.events.SDL_Event, 
             offset_x: horizontal scroll, positive - negative 
             offset_y (int): vertical scroll, positive - negative 
         """
-        print("mouse scroll ")
-        print(offset_x, offset_y)
+        print("mouse move ")
+        print(offset_x, offset_y, offset_z)
 
-        self.translation["x"] = 0 
-        self.translation["y"] = 0
-        self.translation["z"] = -offset_y
+        self.translation["x"] = offset_x 
+        self.translation["y"] = offset_y
+        self.translation["z"] = offset_z
         self.rotation["x"] = 0
         self.rotation["y"] = 0
         self.rotation["z"] = 0
@@ -840,7 +828,6 @@ class ImGUIecssDecorator(ImGUIDecorator):
         self.scale["z"]= 1
         self.updateCamera()
  
-    #def event_input_process(self, running = True):
     def event_input_process(self):
         """
         process SDL2 basic events and input
@@ -853,34 +840,48 @@ class ImGUIecssDecorator(ImGUIDecorator):
             #height = self.wrapeeWindow.scene._gWindow._windowHeight
             #width = self._gWindow._windowWidth
             #on mouse motion on_mouse_drag
-            if event.type == sdl2.SDL_MOUSEMOTION:
-                x = event.motion.x
-                y = event.motion.y
-                buttons = event.motion.state
+            if event.type == sdl2.SDL_MOUSEWHEEL:
                 keystatus = sdl2.SDL_GetKeyboardState(None)
-                if buttons and sdl2.SDL_BUTTON_LMASK and keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
-                    # print("keystatus for w:", keystatus[sdl2.SDL_SCANCODE_W])
-                    # width = event.window.data1
-                    #height = event.window.data2 
-                    dx = (x - self._mouse_x)/1024*60
-                    dy = (y - self._mouse_y)/1024*60
-                    button = "LEFT"
-                    self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
-                elif buttons & sdl2.SDL_BUTTON_MMASK:
-                    button = "MIDDLE"
-                    self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
-                elif buttons & sdl2.SDL_BUTTON_RMASK:
-                    dx = (x - self._mouse_x)/1024*360
-                    dy = (y - self._mouse_y)/1024*360
-                    button = "RIGHT"
-                    self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+
+                if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
+                    offset_x = event.wheel.x/1024*60
+                    offset_y = event.wheel.y/1024*60
+                    offset_z = 0
+                    self.cameraMove(offset_x, offset_y, offset_z)
+                elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
+                    offset_x = 0
+                    offset_y = 0
+                    offset_z = -event.wheel.y/1024*60
+                    self.cameraMove(offset_x, offset_y, offset_z)
                 else:
-                    #dx = (x - self._mouse_x)
-                    #dx = (y - self._mouse_y)
-                    #self.on_mouse_motion(event, self._mouse_x, self._mouse_y, dx, dy,)
-                    pass
-                self._mouse_x = x
-                self._mouse_y = y
+                    offset_x = -event.wheel.y/1024*360*5
+                    offset_y = event.wheel.x/1024*360*5
+                    offset_z = 0
+                    self.cameraRotate(offset_x, offset_y, offset_z)
+                
+                # x = event.motion.x
+                # y = event.motion.y
+                # buttons = event.motion.state
+                # if buttons & sdl2.SDL_BUTTON_LMASK and 
+                #     dx = (x - self._mouse_x)/1024*60
+                #     dy = (y - self._mouse_y)/1024*60
+                #     button = "LEFT"
+                #     self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+                # elif buttons & sdl2.SDL_BUTTON_MMASK:
+                #     button = "MIDDLE"
+                #     self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+                # elif buttons & sdl2.SDL_BUTTON_RMASK:
+                #     dx = (x - self._mouse_x)/1024*360
+                #     dy = (y - self._mouse_y)/1024*360
+                #     button = "RIGHT"
+                #     self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
+                # else:
+                #     #dx = (x - self._mouse_x)
+                #     #dx = (y - self._mouse_y)
+                #     #self.on_mouse_motion(event, self._mouse_x, self._mouse_y, dx, dy,)
+                #     pass
+                # self._mouse_x = x
+                # self._mouse_y = y
                 continue
 
             if event.type == sdl2.SDL_MOUSEBUTTONUP:
@@ -888,29 +889,22 @@ class ImGUIecssDecorator(ImGUIDecorator):
 
             # on_mouse_press
             if event.type == sdl2.SDL_MOUSEBUTTONDOWN:
-                x = event.button.x
-                y = event.button.y
-                self._mouse_x = x
-                self._mouse_y = y
+                # x = event.button.x
+                # y = event.button.y
+                # self._mouse_x = x
+                # self._mouse_y = y
                 
-                button_n = event.button.button
-                if button_n == sdl2.SDL_BUTTON_LEFT:
-                    button = "LEFT"
-                elif button_n == sdl2.SDL_BUTTON_RIGHT:
-                    button = "RIGHT"
-                elif button_n == sdl2.SDL_BUTTON_MIDDLE:
-                    button = "MIDDLE"
+                # button_n = event.button.button
+                # if button_n == sdl2.SDL_BUTTON_LEFT:
+                #     button = "LEFT"
+                # elif button_n == sdl2.SDL_BUTTON_RIGHT:
+                #     button = "RIGHT"
+                # elif button_n == sdl2.SDL_BUTTON_MIDDLE:
+                #     button = "MIDDLE"
 
-                double = bool(event.button.clicks - 1)
-                self.on_mouse_press(event, x, y, button, double)
+                # double = bool(event.button.clicks - 1)
+                # self.on_mouse_press(event, x, y, button, double)
                 continue
-
-            # on_mouse_scroll (wheel)
-            if event.type == sdl2.SDL_MOUSEWHEEL:
-                offset_x = event.wheel.x/1024*60
-                offset_y = event.wheel.y/1024*60
-                self.on_mouse_scroll(event, offset_x, offset_y)
-                continue 
 
             #keyboard events
             if event.type == sdl2.SDL_KEYDOWN:
@@ -922,9 +916,14 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     pass
                 if event.key.keysym.sym == sdl2.SDLK_RIGHT or event.key.keysym.sym == sdl2.SDLK_d :
                     pass
+                if event.key.keysym.sym == sdl2.SDLK_LCTRL:
+                    self.lctrl=True
                 if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
-            
+
+            if event.type == sdl2.SDL_KEYUP:
+                self.lctrl = False
+
             if event.type == sdl2.SDL_QUIT:
                 running = False
             #imgui event
@@ -995,6 +994,6 @@ if __name__ == "__main__":
     # MAIN RENDERING LOOP
     while running:
         gWindow.display()
-        running = gWindow.event_input_process(running)
+        running = gWindow.event_input_process()
         gWindow.display_post()
     gWindow.shutdown()
