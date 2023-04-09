@@ -226,8 +226,8 @@ class SDL2Window(RenderWindow):
                                               self._windowWidth,
                                               self._windowHeight,
                                             #   sdl2.SDL_WINDOW_ALLOW_HIGHDPI)
-                                              sdl2.SDL_WINDOW_OPENGL,
-                                              sdl2.SDL_WINDOW_RESIZABLE)
+                                              sdl2.SDL_WINDOW_OPENGL | sdl2.SDL_WINDOW_RESIZABLE | sdl2.SDL_WINDOW_SHOWN )
+        
         if self._gWindow is None:
             print("Window could not be created! SDL Error: ", sdl2.SDL_GetError())
             exit(1)
@@ -316,6 +316,14 @@ class SDL2Window(RenderWindow):
                     running = False
             if event.type == sdl2.SDL_QUIT:
                 running = False
+            if  event.type == sdl2.SDL_WINDOWEVENT:
+                window = self.gWindow
+                if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
+                    print("Window Resized to ", event.window.data1, " X " , event.window.data2)
+                    # new width and height: event.window.data1 and event.window.data2
+                    window._windowWidth = event.window.data1
+                    window._windowHeight = event.window.data2
+                    gl.glViewport(0, 0, event.window.data1, event.window.data2)
         return running
     
     def accept(self, system: Elements.pyECSS.System, event = None):
@@ -475,6 +483,14 @@ class ImGUIDecorator(RenderDecorator):
                     running = False
             if event.type == sdl2.SDL_QUIT:
                 running = False
+            if  event.type == sdl2.SDL_WINDOWEVENT:
+                window = self.wrapeeWindow
+                if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
+                    print("Window Resized to ", event.window.data1, " X " , event.window.data2)
+                    window._windowWidth = event.window.data1
+                    window._windowHeight = event.window.data2
+                    # new width and height: event.window.data1 and event.window.data2
+                    gl.glViewport(0, 0, event.window.data1, event.window.data2)
             #imgui event
             self._imguiRenderer.process_event(event)
         #imgui input
@@ -797,6 +813,8 @@ if __name__ == "__main__":
     # MAIN RENDERING LOOP
     while running:
         gWindow.display()
+        windowaspect = gWindow._windowWidth/gWindow._windowHeight
+        print("windowaspect : ", windowaspect)
         running = gWindow.event_input_process(running)
         gWindow.display_post()
     gWindow.shutdown()
