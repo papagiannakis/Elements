@@ -749,19 +749,34 @@ class ImGUIecssDecorator(ImGUIDecorator):
                         found = True
                         
     def updateCamera(self):                   
+        transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
+        rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
+        rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
+        rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
+        scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+        combinedMat = transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
         if self.cam != None:
-            transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
-            rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
-            rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
-            rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
-            scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-            self.cam.trans1.trs = self.cam.trans1.trs @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
-        else:
-            self._eye = self.translation
-            self._target = self.rotation
-            self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
-            if self._wrapeeWindow.eventManager is not None:
-                self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+            self.cam.trans1.trs = self.cam.trans1.trs @ combinedMat
+        # else:
+        #     eyeMat = combinedMat @ np.transpose(np.matrix([self._eye[0], self._eye[1], self._eye[2], 1])) 
+
+        #     temp = list(self._eye)
+        #     temp[0] = eyeMat[0,0] 
+        #     temp[1] = eyeMat[1,0] 
+        #     temp[2] = eyeMat[2,0]
+        #     #self._eye = tuple(temp)
+
+        #     targetMat = transMat @ np.transpose(np.matrix([self._eye[0], self._eye[1], self._eye[2], 1]))  
+            
+        #     temp = list(self._target)
+        #     temp[0] = targetMat[0,0] 
+        #     temp[1] = targetMat[1,0] 
+        #     temp[2] = targetMat[2,0]
+        #     self._target = tuple(temp)
+
+        #     self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+        #     if self._wrapeeWindow.eventManager is not None:
+        #         self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
         
     def cameraRotate(self, offset_x, offset_y, offset_z):
         """Called when mouse buttons are pressed and the mouse is dragged.
@@ -775,15 +790,15 @@ class ImGUIecssDecorator(ImGUIDecorator):
         print("camera rotate ")
         print(offset_x, offset_y, offset_z)
   
-        self.translation["x"] = 0
-        self.translation["y"] = 0
-        self.translation["z"] = 0
+        self.translation["x"] = 0.0
+        self.translation["y"] = 0.0
+        self.translation["z"] = 0.0
         self.rotation["x"] = offset_x
         self.rotation["y"] = offset_y
         self.rotation["z"] = offset_z
-        self.scale["x"]= 1
-        self.scale["y"]= 1
-        self.scale["z"]= 1
+        self.scale["x"]= 1.0
+        self.scale["y"]= 1.0
+        self.scale["z"]= 1.0
         self.updateCamera()   
 
 
@@ -820,12 +835,12 @@ class ImGUIecssDecorator(ImGUIDecorator):
         self.translation["x"] = offset_x 
         self.translation["y"] = offset_y
         self.translation["z"] = offset_z
-        self.rotation["x"] = 0
-        self.rotation["y"] = 0
-        self.rotation["z"] = 0
-        self.scale["x"]= 1
-        self.scale["y"]= 1
-        self.scale["z"]= 1
+        self.rotation["x"] = 0.0
+        self.rotation["y"] = 0.0
+        self.rotation["z"] = 0.0
+        self.scale["x"]= 1.0
+        self.scale["y"]= 1.0
+        self.scale["z"]= 1.0
         self.updateCamera()
  
     def event_input_process(self):
@@ -846,17 +861,17 @@ class ImGUIecssDecorator(ImGUIDecorator):
                 if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
                     offset_x = event.wheel.x/1024*60
                     offset_y = event.wheel.y/1024*60
-                    offset_z = 0
+                    offset_z = 0.0
                     self.cameraMove(offset_x, offset_y, offset_z)
                 elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
-                    offset_x = 0
-                    offset_y = 0
+                    offset_x = 0.0
+                    offset_y = 0.0
                     offset_z = -event.wheel.y/1024*60
                     self.cameraMove(offset_x, offset_y, offset_z)
                 else:
                     offset_x = -event.wheel.y/1024*360*5
                     offset_y = event.wheel.x/1024*360*5
-                    offset_z = 0
+                    offset_z = 0.0
                     self.cameraRotate(offset_x, offset_y, offset_z)
                 
                 # x = event.motion.x
@@ -921,7 +936,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
                 if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
 
-            if event.type == sdl2.SDL_KEYUP:
+            if event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
                 self.lctrl = False
 
             if event.type == sdl2.SDL_QUIT:
