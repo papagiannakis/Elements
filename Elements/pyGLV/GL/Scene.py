@@ -11,7 +11,7 @@ from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
 #from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
-from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIecssDecorator, ImGUIDecorator
 
 class Scene():
     """

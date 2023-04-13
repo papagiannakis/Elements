@@ -748,60 +748,65 @@ class ImGUIecssDecorator(ImGUIDecorator):
                         self.cam = comp
                         found = True
                         
-    def updateCamera(self):                   
-        transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
-        rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
-        rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
-        rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
-        scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-        combinedMat = transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+    def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):  
         if self.cam != None:
+            #for examples 7-11 and pyJANVRED implementations
+            cameraspeed = 5
+            scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+            combinedMat = scaleMat
+            if rotateX or rotateY: 
+                rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
+                rotMatY = util.rotate((0, 1, 0), self.rotation["x"] * cameraspeed)
+                rotMatZ = util.rotate((0, 0, 1), self.rotation["z"] * cameraspeed)
+                combinedMat = rotMatX @ rotMatY @ rotMatZ @ combinedMat  
+            if moveX or moveY or moveZ:
+                transMat = util.translate(self.translation["x"], self.translation["y"], -self.translation["z"])
+                combinedMat = transMat @ combinedMat
             self.cam.trans1.trs = self.cam.trans1.trs @ combinedMat
-        # else:
-        #     eyeMat = combinedMat @ np.transpose(np.matrix([self._eye[0], self._eye[1], self._eye[2], 1])) 
+        else:
+            #for examples 4-5-6-8-9-10 implementations
+            cameraspeed = 0.2
+            teye = np.array(self._eye)
+            ttarget = np.array(self._target)
+            tup = np.array(self._up)
 
-        #     temp = list(self._eye)
-        #     temp[0] = eyeMat[0,0] 
-        #     temp[1] = eyeMat[1,0] 
-        #     temp[2] = eyeMat[2,0]
-        #     #self._eye = tuple(temp)
+            forwardDir = util.normalise(ttarget - teye)
+            rightDir = util.normalise(np.cross(tup, forwardDir))
 
-        #     targetMat = transMat @ np.transpose(np.matrix([self._eye[0], self._eye[1], self._eye[2], 1]))  
-            
-        #     temp = list(self._target)
-        #     temp[0] = targetMat[0,0] 
-        #     temp[1] = targetMat[1,0] 
-        #     temp[2] = targetMat[2,0]
-        #     self._target = tuple(temp)
+            eyeUpd = np.array([0.0, 0.0, 0.0])
+            targetUpd = np.array([0.0, 0.0, 0.0])   
 
-        #     self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
-        #     if self._wrapeeWindow.eventManager is not None:
-        #         self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+            if rotateX:
+                eyeUpd = rightDir * self.rotation["x"] * cameraspeed
+            elif rotateY:
+                s,c = util.sincos(1)
+                rotDir = util.normalise(util.vec(s, c, 0.0)) * tup
+                eyeUpd = rotDir * self.rotation["y"] * cameraspeed
+                
+            if moveX:
+                eyeUpd = -cameraspeed * self.translation["x"] * rightDir
+                targetUpd =  eyeUpd
+            if moveY:
+                eyeUpd = -self.translation["y"] * cameraspeed * tup
+                targetUpd = eyeUpd
+            if moveZ: 
+                eyeUpd =  np.sign(self.translation["z"]) * cameraspeed * forwardDir
+
+            teye += eyeUpd
+            ttarget += targetUpd
+            if (rotateX or rotateY):
+                newForwardDir = util.normalise(ttarget - teye)
+                tup = util.normalise(np.cross(newForwardDir, rightDir)) 
+
+            self._eye = tuple(teye)
+            self._target = tuple(ttarget)
+            self._up = tuple(tup)
+
+            self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            if self._wrapeeWindow.eventManager is not None:
+                self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
         
-    def cameraRotate(self, offset_x, offset_y, offset_z):
-        """Called when mouse buttons are pressed and the mouse is dragged.
-        
-            event: sdl2.events.SDL_Event, 
-            x: horiz coord relative to window, y: vert coord relative to window,
-            dx: relative horizontal motion, dy: relative vertical motion
-            button: RIGHT - MIDDLE - LEFT
-        """
-
-        print("camera rotate ")
-        print(offset_x, offset_y, offset_z)
-  
-        self.translation["x"] = 0.0
-        self.translation["y"] = 0.0
-        self.translation["z"] = 0.0
-        self.rotation["x"] = offset_x
-        self.rotation["y"] = offset_y
-        self.rotation["z"] = offset_z
-        self.scale["x"]= 1.0
-        self.scale["y"]= 1.0
-        self.scale["z"]= 1.0
-        self.updateCamera()   
-
-
+ 
     def on_mouse_motion(self, event, x, y, dx, dy):
         """Called when the mouse is moved.
 
@@ -822,57 +827,57 @@ class ImGUIecssDecorator(ImGUIDecorator):
         """
         pass
 
-    def cameraMove(self, offset_x, offset_y, offset_z):
-        """Called when the mouse wheel is scrolled.
-
-            event: sdl2.events.SDL_Event, 
-            offset_x: horizontal scroll, positive - negative 
-            offset_y (int): vertical scroll, positive - negative 
-        """
-        print("mouse move ")
-        print(offset_x, offset_y, offset_z)
-
-        self.translation["x"] = offset_x 
-        self.translation["y"] = offset_y
-        self.translation["z"] = offset_z
+    def resetAll(self):
+        self.translation["x"] = 0.0
+        self.translation["y"] = 0.0
+        self.translation["z"] = 0.0
         self.rotation["x"] = 0.0
         self.rotation["y"] = 0.0
         self.rotation["z"] = 0.0
         self.scale["x"]= 1.0
         self.scale["y"]= 1.0
         self.scale["z"]= 1.0
-        self.updateCamera()
+
  
     def event_input_process(self):
         """
         process SDL2 basic events and input
         """
         #width = self.wrapeeWindow.scene._renderWindow.windowWidth
+        #height = self.wrapeeWindow.scene._gContext().windowWidth
+        #width = self.wrapeeWindow._gWindow.windowWidth
         running = True
         events = sdl2.ext.get_events()
+        width = 1200    #TODO get the window width and height
+        height = 800
+        
+
         for event in events:
             
-            #height = self.wrapeeWindow.scene._gWindow._windowHeight
-            #width = self._gWindow._windowWidth
             #on mouse motion on_mouse_drag
             if event.type == sdl2.SDL_MOUSEWHEEL:
                 keystatus = sdl2.SDL_GetKeyboardState(None)
+                self.resetAll()
 
                 if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
-                    offset_x = event.wheel.x/1024*60
-                    offset_y = event.wheel.y/1024*60
-                    offset_z = 0.0
-                    self.cameraMove(offset_x, offset_y, offset_z)
+                    if abs(event.wheel.x) > abs(event.wheel.y):
+                        self.translation["x"] = event.wheel.x/width*60 #np.sign(event.wheel.x)
+                        self.updateCamera(True, False, False, False, False)
+                    else:
+                        self.translation["y"] =  event.wheel.y/height*60 #np.sign(event.wheel.y)
+                        self.updateCamera(False, True, False, False, False)
                 elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
-                    offset_x = 0.0
-                    offset_y = 0.0
-                    offset_z = -event.wheel.y/1024*60
-                    self.cameraMove(offset_x, offset_y, offset_z)
+                    self.translation["z"] =  event.wheel.y/height*60 #-np.sign(event.wheel.y) 
+                    self.updateCamera(False, False, True, False, False)
                 else:
-                    offset_x = -event.wheel.y/1024*360*5
-                    offset_y = event.wheel.x/1024*360*5
-                    offset_z = 0.0
-                    self.cameraRotate(offset_x, offset_y, offset_z)
+                    if abs(event.wheel.x) > abs(event.wheel.y):
+                        self.rotation["x"] = np.sign(event.wheel.x) #event.wheel.x/height*180
+                        self.updateCamera(False, False,False, True, False)
+                    else:
+                        self.rotation["y"] = np.sign(event.wheel.y) #event.wheel.y/width*180
+                        self.updateCamera(False, False,False, False, True)
+                    
+                    
                 
                 # x = event.motion.x
                 # y = event.motion.y
