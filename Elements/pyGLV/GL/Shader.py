@@ -15,6 +15,7 @@ Based on the Composite and Iterator design patterns:
 
 from __future__         import annotations
 from abc                import ABC, abstractmethod
+import sys
 from typing             import List
 import os  
 
@@ -417,7 +418,7 @@ class Shader(Component):
     """
 
 
-    def __init__(self, name=None, type=None, id=None, vertex_source=None, fragment_source=None):
+    def __init__(self, name=None, type=None, id=None, vertex_source=None, fragment_source=None, vertex_import_file=None, fragment_import_file=None ):
         super().__init__(name, type, id)
         
         self._parent = self
@@ -435,15 +436,35 @@ class Shader(Component):
         self._textureDict = {}
         self._texture3DDict ={}
         
-        if not vertex_source:
-            self._vertex_source = Shader.COLOR_VERT
+        # Prioritize import from file, and then from shader name
+        if vertex_import_file is not None:
+            try:
+                f = open(vertex_import_file, 'r')
+            except OSError:
+                print ("Could not open/read vertex shader file:", vertex_import_file)
+                sys.exit()
+            with f:
+                self._vertex_source = f.read()
         else:
-            self._vertex_source = vertex_source
-            
-        if not fragment_source:
-            self._fragment_source = Shader.COLOR_FRAG
+            if not vertex_source:
+                self._vertex_source = Shader.COLOR_VERT
+            else:
+                self._vertex_source = vertex_source
+        
+        if fragment_import_file is not None:
+            try:
+                f = open(fragment_import_file, 'r')
+            except OSError:
+                print ("Could not open/read fragment shader file:", fragment_import_file)
+                sys.exit()
+            with f:
+                self._fragment_source = f.read()
         else:
-            self._fragment_source = fragment_source
+            if not fragment_source:
+                self._fragment_source = Shader.COLOR_FRAG
+            else:
+                self._fragment_source = fragment_source
+        
         #self.init(vertex_source, fragment_source) #init Shader under a valid GL context
     
     @property
