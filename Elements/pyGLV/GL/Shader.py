@@ -35,6 +35,7 @@ class Shader(Component):
     
     # ---------------------------------------------------
     #  basic pass-through Vertex-Fragment Shader examples
+    #  other custom shaders can be imported from files
     # ---------------------------------------------------
     COLOR_VERT = """#version 410
         layout (location=0) in vec4 vPosition;
@@ -573,7 +574,7 @@ class Shader(Component):
             for key,value in self._textureDict.items():
                 if self._texture is None:
                     loc = gl.glGetUniformLocation(self._glid,key)
-                    gl.glUniform1i(loc,0)
+                    gl.glUniform1i(loc, value._texture_id)
                     value.bind()
         if self._texture3DDict is not None:
             for key,value in self._texture3DDict.items():
@@ -669,7 +670,7 @@ class ShaderGLDecorator(ComponentDecorator):
         if float4:
             self.component.float4fDict[key]=value
         if texture:
-            self.component.textureDict[key]=Texture(value)
+            self.component.textureDict[key]= value
             #self.component.textureDict[key]=Texture(value)
         if texture3D:
             self.component.texture3DDict[key]=Texture3D(value)
