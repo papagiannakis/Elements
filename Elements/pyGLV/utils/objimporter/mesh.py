@@ -94,16 +94,13 @@ class Mesh:
                     mesh.has_uv = True # At least one face has uv texture data, then this object must have uvs as a whole
 
         mesh.vertices = np.array(vertices)
-        print(len(mesh.vertices))
-        print(len(np.unique(mesh.vertices)))
         mesh.indices = np.array(indices, dtype=np.uint32)
         
         uv = np.array(uv)
 
         if calculate_smooth_normals:
-            # Calculate Flat shaded normals
-            mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateSmoothNormalsMesh(mesh.vertices, mesh.indices, colors= (uv if mesh.has_uv else None))
-            pass
+            # Calculate Smooth shaded normals
+            mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateSmoothNormalsMesh(mesh.vertices, mesh.indices, color= (uv if mesh.has_uv else None))
         else:
             if has_normals:
                 mesh.normals = np.array(new_normals)

@@ -30,7 +30,7 @@ class Wavefront:
     mesh_list : list # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
 
     __file_path : str
-    __calculate_normals : bool
+    __calculate_smooth_normals : bool
     __mtllibs : list
     __vertices : list
     __normals : list
@@ -122,7 +122,7 @@ class Wavefront:
 
         line = line.split(' ')
 
-        vertex = [[float(line[1]), float(line[2]), float(line[3])]]
+        vertex = [float(line[1]), float(line[2]), float(line[3])]
 
         # Check if w component exists in line, else use 1.0
         if len(line) > 4:
@@ -130,7 +130,7 @@ class Wavefront:
         else:
             vertex.append(1.0)
 
-        self.__vertices.append([float(line[1]), float(line[2]), float(line[3])])
+        self.__vertices.append(vertex)
 
     def __parse_normal(self, line, line_number) -> None:
         line = line.split(' ')
