@@ -1,11 +1,12 @@
-import codecs
+import codecs, os
 from Elements.pyGLV.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
 from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
 from Elements.pyGLV.utils.objimporter.mesh import Mesh
+from Elements.pyGLV.utils.objimporter.model import Model
 
-class Wavefront:
+class Wavefront(Model):
     """
-    Imports a Wavefront .obj file
+    Imports a Wavefront .obj file as a Model
 
     Most common .obj file formats are supported. An .obj file may contain multiple meshes either named or anonymous.
     
@@ -26,9 +27,6 @@ class Wavefront:
     >>> x.meshes['teapot'] # used to get a named mesh of the .obj file with the name teapot
     >>> x.mesh_list[0] # used to get the first mesh found in the .obj file, either named or not. This is only recommended for use when there are anonymous meshes in the file.
     """
-    meshes : dict # The named meshes of the imported object in a dict with their names as keys, each containing its vertices/normals/uvs
-    mesh_list : list # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
-
     __file_path : str
     __calculate_smooth_normals : bool
     __mtllibs : list
@@ -41,6 +39,11 @@ class Wavefront:
     __parse_dispatch : dict
 
     def __init__(self, file_path, calculate_smooth_normals=False, encoding = 'utf-8') -> None:
+
+        assert(file_path is not (None or ""))
+
+        super().__init__(self.__get_model_name_from_path(file_path))
+        
         self.__file_path = file_path
         self.__calculate_smooth_normals = calculate_smooth_normals
         self.__mtllibs = []
@@ -51,9 +54,6 @@ class Wavefront:
 
         self.__obj_meshes = {}
         self.__obj_mesh_list = []
-
-        self.meshes = {} # Dictionary to store the Meshes of the obj file imported by name
-        self.mesh_list = [] # Stores all the meshes of the obj file imported. (Can also have anonymous meshes)
 
         self.__parse_dispatch = {
             "mtllib" : self.__parse_mtllib,
@@ -74,9 +74,15 @@ class Wavefront:
             return self.__obj_mesh_list[len(self.__obj_mesh_list)-1]
         else: # If current mesh not exists create a new anonymous one
             current_mesh = WavefrontObjectMesh("")
+            current_mesh.vertices = self.__vertices
+            current_mesh.normals = self.__normals
+            current_mesh.uv = self.__texture_coords
             self.__obj_mesh_list.append(current_mesh)
             return current_mesh 
     
+    def __get_model_name_from_path(self, path) -> str:
+        return os.path.basename(path)
+
     def __parse_from_file(self, encoding) -> None:
         try:
             with codecs.open(self.__file_path, encoding=encoding) as f:
@@ -112,6 +118,9 @@ class Wavefront:
             mesh_name = ""
 
         current_mesh = WavefrontObjectMesh(name = mesh_name)
+        current_mesh.vertices = self.__vertices
+        current_mesh.normals = self.__normals
+        current_mesh.uv = self.__texture_coords
 
         # Add current mesh to imported meshes
         self.__obj_mesh_list.append(current_mesh)
@@ -183,6 +192,7 @@ class Wavefront:
             if vertex_index<0:
                 print("Relative vertex indices (%d) are not supported" % vertex_index)
                 vertex_index = 0
+                exit()
 
             face.vertex_indices.append(vertex_index)
 
@@ -192,6 +202,7 @@ class Wavefront:
                 if texture_coords_index<0:
                     print("Relative color indices (%d) are not supported" % color_index)
                     color_index = -1
+                    exit()
                 
                 face.has_texture_coords = True
                 face.texture_coords_indices.append(texture_coords_index)
@@ -204,6 +215,7 @@ class Wavefront:
                 if normal_index<0:
                     print("Relative normal indices (%d) are not supported" % normal_index)
                     normal_index = -1
+                    exit()
 
                 face.has_normals = True
                 face.normal_indices.append(normal_index)
@@ -230,7 +242,8 @@ class Wavefront:
         line = line.split(' ')
         
         current_mesh = self.__get_current_mesh()
-        current_mesh.material = line[1]
+        # TODO parse material
+        # current_mesh.material = line[1] 
 
     def __parse_unknown(self, line, line_number) -> None:
         print("Unsupported command %s in line %d" % (line, line_number))
@@ -238,9 +251,7 @@ class Wavefront:
     def __convert_obj_meshes_to_meshes(self) -> None:
         
         for obj_mesh in self.__obj_mesh_list:
+            
+            obj_mesh.convert_to_mesh(self.__calculate_smooth_normals)
 
-            mesh = Mesh.from_objmesh(self.__vertices, self.__normals, self.__texture_coords, obj_mesh, self.__calculate_smooth_normals)
-
-            self.mesh_list.append(mesh)
-            if mesh.name != "":
-                self.meshes[mesh.name] = mesh
+            super().add_mesh(obj_mesh)
