@@ -574,7 +574,7 @@ class Shader(Component):
             for key,value in self._textureDict.items():
                 if self._texture is None:
                     loc = gl.glGetUniformLocation(self._glid,key)
-                    gl.glUniform1i(loc, value._texture_id)
+                    gl.glUniform1i(loc, value._texure_channel)
                     value.bind()
         if self._texture3DDict is not None:
             for key,value in self._texture3DDict.items():
