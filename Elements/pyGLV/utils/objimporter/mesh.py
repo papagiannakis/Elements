@@ -1,7 +1,18 @@
+import os
 import numpy as np
-import Elements.pyGLV.utils.normals as norm
+from Elements.pyECSS import utilities
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.System import System
+import Elements.pyECSS.utilities as util
+from Elements.pyGLV.GL.Textures import Texture
+from Elements.pyGLV.GL.VertexArray import VertexArray
+from Elements.pyGLV.GL import Shader
+from Elements.pyGLV.GL.Shader import ShaderGLDecorator, Shader
+from Elements.pyGLV.utils.objimporter.material import Material
+from Elements.pyECSS.Entity import Entity
 
-from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
+from Elements.pyECSS.Component import Component
+
 
 class Mesh:
     """
@@ -32,6 +43,14 @@ class Mesh:
         Creates a Mesh instance from a mesh of a WavefrontObjectMesh
     """
 
+    name : str
+    vertices: np.array
+    normals: np.array
+    has_uv: bool
+    uv: np.array
+    indices: np.array
+    material: Material
+
     def __init__(self, name=""):
         self.name = name
         self.vertices = np.array([]) # Array with float4 with (x, y, z, w) like [[1.0, 1.0, 1.0, 1.0], [2.0, 1.5, 2.65, 1.0], ...]
@@ -39,81 +58,85 @@ class Mesh:
         self.has_uv = False
         self.uv = np.array([])
         self.indices = np.array([], dtype=np.uint32)
-        self.material = ""
-    
-    @staticmethod
-    def from_objmesh(vertices, normals, texture_coords, obj_mesh: WavefrontObjectMesh, calculate_smooth_normals:bool = False) -> None:
-        """
-        Creates a Mesh from a WavefrontObjectMesh
+        self.material = None
 
-        Parameters
-        ----------
-        vertices : List
-            The common vertices of the WavefrontObjectMesh, same across all meshes in it
-        normals : List
-            The common normals of the WavefrontObjectMesh, same across all meshes in it
-        texture_coords : str
-            The common texture coordinates of the WavefrontObjectMesh, same across all meshes in it
-        obj_mesh : WavefrontObjectMesh
-            The specific mesh of the WavefrontObjectMesh to source from
-        """
+    # def add_to_ecss_scene(self, scene, parent):
+    #     """
+    #     Adds an entity, for the mesh, with all the components needed
+
+    #     Parameters
+    #     ----------
+    #     scene : Scene
+    #         The ECSS scene to add this mesh to.
+    #     parent : Entity
+    #         The ECSS Entity to be the parent of this mesh.
         
-        mesh = Mesh(name=obj_mesh.name)
-        mesh.material = obj_mesh.material
-        
-        # init normals and texture_coords with 0
-        new_normals = [[0.0, 1.0, 0.0]] * len(vertices)
-        uv = [[0.0, 0.0]] * len(vertices)
+    #     Returns
+    #     -------
+    #     Entity
+    #     The entity, added in the scene
+    #     """
 
-        indices = []
-
-        has_normals = False
-        for face in obj_mesh.faces:
-            # Check face is valid?
-            face_valid = True
-            for index in face.vertex_indices:
-                if index > len(vertices): # Indexes in .obj start from 1, not 0 apparently
-                    face_valid = False
-                    print("Found invalid face, ignoring... %d %d" %(index, len(vertices)))
-            
-            if not face_valid:
-                continue
-
-            for i in range(3):
-                index = face.vertex_indices[i]-1
-                indices.append(index)
-
-                # Did obj have normal information?
-                if face.has_normals:
-                    new_normals[index] = normals[face.normal_indices[i]-1]
-                    has_normals = True # At least one face has normals then this object must have normals imported
-                
-                # Did obj have uv information?
-                if face.has_texture_coords:
-                    uv[index] = [texture_coords[face.texture_coords_indices[i]-1][0], texture_coords[face.texture_coords_indices[i]-1][1]] # Only pass the u,v and not w values
-                    mesh.has_uv = True # At least one face has uv texture data, then this object must have uvs as a whole
-
-        mesh.vertices = np.array(vertices)
-        mesh.indices = np.array(indices, dtype=np.uint32)
-        
-        uv = np.array(uv)
-
-        if calculate_smooth_normals:
-            # Calculate Smooth shaded normals
-            mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateSmoothNormalsMesh(mesh.vertices, mesh.indices, color= (uv if mesh.has_uv else None))
-        else:
-            if has_normals:
-                mesh.normals = np.array(new_normals)
-            else:
-                # Calculate Flat shaded normals
-                mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateFlatNormalsMesh(mesh.vertices, mesh.indices, color= (uv if mesh.has_uv else None))
-
-        # Apply uvs to mesh
-        if mesh.has_uv:
-            mesh.uv = uv
-
-        return mesh
+    #     node = scene.world.createEntity(Entity(name=self.name))
+    #     scene.world.addEntityChild(parent, node)
 
 
+    #     transform = scene.world.addComponent(node, BasicTransform(name=self.name+"_Transform", type="BasicTransform"))
+    #     mesh_renderer = scene.world.addComponent(node, RenderMesh(name=self.name+"_RenderMesh", type="RenderMesh"))
+
+    #     mesh_renderer.vertex_attributes.append(self.vertices)
+    #     mesh_renderer.vertex_attributes.append(self.normals)
+    #     # If imported object has uv data, pass them or create all zeros array
+    #     if self.has_uv: 
+    #         mesh_renderer.vertex_attributes.append(self.uv)
+    #     else:
+    #         object_uvs = np.array([[1.0, 1.0]] * len(self.vertices))
+    #         mesh_renderer.vertex_attributes.append(object_uvs)
+
+    #     mesh_renderer.vertex_index.append(self.indices)
 
 
+    #     vertex_array = scene.world.addComponent(node, VertexArray())
+    #     shader = Shader(vertex_import_file=os.path.join(os.path.dirname(__file__), "default_resources/shaders/Lit.vert"), fragment_import_file= os.path.join(os.path.dirname(__file__), "default_resources/shaders/Lit.frag"))
+    #     shader_decorator = scene.world.addComponent(node, ShaderGLDecorator(shader, type="ShaderGLDecorator"))
+
+    #     # print(len(self.vertices), len(self.normals), len(self.uv))
+    #     # exit()
+
+    #     # # ---- Configure Shader -----
+
+    #     # # Set object mesh shader static data
+    #     # # Light
+    #     # Lposition = utilities.vec(0, 1.1, 1.0) #uniform lightpos
+    #     # Lcolor = utilities.vec(1.0,1.0,1.0)
+    #     # Lintensity = 10.0
+
+    #     # shader_decorator.setUniformVariable(key='lightPos', value=Lposition, float3=True)
+    #     # shader_decorator.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
+    #     # shader_decorator.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
+    #     # # Material
+    #     # # Albedo
+    #     # shader_decorator.setUniformVariable(key='albedoColor', value=np.array([1.0, 0.0, 0.0]), float3=True)
+    #     # texturePath = os.path.join(os.path.dirname(__file__), "default_resources/textures/white1x1.png")
+    #     # texture = Texture(texturePath, texture_channel=0)
+    #     # shader_decorator.setUniformVariable(key='albedoMap', value=texture, texture=True)
+    #     # exit()
+    #     # # Normal map
+    #     # shader_decorator.setUniformVariable(key='normalMapIntensity', value=1.0, float1=True)
+    #     # texturePath = os.path.join(os.path.dirname(__file__), "default_resources/textures/normal1x1.png")
+    #     # texture = Texture(texturePath, texture_channel=1)
+    #     # shader_decorator.setUniformVariable(key='normalMap', value=texture, texture=True)
+    #     # # Metallic map
+    #     # texturePath = os.path.join(os.path.dirname(__file__), "default_resources/textures/white1x1.png")
+    #     # texture = Texture(texturePath, texture_channel=2)
+    #     # shader_decorator.setUniformVariable(key='metallicMap', value=texture, texture=True)
+    #     # # Roughness
+    #     # texturePath = os.path.join(os.path.dirname(__file__), "default_resources/textures/black1x1.png")
+    #     # texture = Texture(texturePath, texture_channel=3)
+    #     # shader_decorator.setUniformVariable(key='roughnessMap', value=texture, texture=True)
+    #     # # Ambient Occlusion
+    #     # texturePath = os.path.join(os.path.dirname(__file__), "default_resources/textures/white1x1.png")
+    #     # texture = Texture(texturePath, texture_channel=4)
+    #     # shader_decorator.setUniformVariable(key='aoMap', value=texture, texture=True)
+
+    #     return node
