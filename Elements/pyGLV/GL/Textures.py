@@ -30,8 +30,8 @@ class Texture:
         ------
         filepath: str
             The filepath to import the texture image from.
-        img_data: bytes, default None
-            If filepath is not specified, these bytes will be used as texture.
+        img_data: Tuple[bytes, int, int], default None
+            If filepath is not specified, these bytes will be used as texture. The format is (image bytes: bytes, image width: int, image height: int)
         texture_channel: int, default 0
             A texture channel from 0 to 31
         """
@@ -39,8 +39,6 @@ class Texture:
         img = None
         if filepath is not None:
             img = Image.open(filepath)
-            # img = img.resize((1024, 1024))
-            # img = img.transpose(Image.FLIP_TOP_BOTTOM)
             img_bytes = img.tobytes("raw", "RGBA", 0, -1)
 
         self._texture = gl.glGenTextures(1)

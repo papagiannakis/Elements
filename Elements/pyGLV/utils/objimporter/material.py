@@ -1,8 +1,12 @@
+import os
 from Elements.pyECSS.System import System
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 import numpy as np
+from typing import Tuple
+
 
 from Elements.pyGLV.GL.Textures import Texture
+from Elements import definitions
 
 class Material:
     def __init__(self, name=None):
@@ -10,9 +14,6 @@ class Material:
 
     def init(self):
         pass
-
-    def accept(self, system: System):
-        system.apply2Material(self)
 
     def update_shader_properties(self, shader_decorator_component: ShaderGLDecorator):
         pass
@@ -22,28 +23,43 @@ class Material:
 class StandardMaterial(Material):
 
     __WHITE = (b'\xff\xff\xff\xff',1,1)
-    __BLACK = (b'\x00\x00\x00\x00',1,1)
-
-    # Light Data
-
+    __BLACK = (b'\x00\x00\x00\xff',1,1)
+    __NORMAL = (b'\x7f\x7f\xff\xff',1,1)
 
     # Texture Data
-    __albedo_color: np.array
-    __albedo_map : bytes
-    __normal_map : bytes
-    __normal_map_intensity: float
-    __metallic_map : bytes
-    __roughness_map : bytes
-    __ambient_occlusion_map : bytes
+    # All texture maps are stored in a tuple with in this format (bytes of the image:bytes, width:int, height:int)
+    albedo_color: np.array
+    albedo_map : Tuple[bytes, int, int]
+    normal_map : Tuple[bytes, int, int]
+    normal_map_intensity: float
+    metallic_map : Tuple[bytes, int, int]
+    roughness_map : Tuple[bytes, int, int]
+    ambient_occlusion_map : Tuple[bytes, int, int]
 
-    albedo_map = property(
-        fget= lambda self: self.__albedo_map
-    )
 
-    def __init__(self, name=None, id=None, light_position=np.array([0.0,0.0,0.0]), light_color=np.array([1.0,1.0,1.0]), light_intensity=1.0 , albedo_color=None, albedo_map=None, normal_map = None, normal_map_intensity = None, metallic_map =None, roughness_map = None, ambient_occlusion_map= None):
+    def __init__(   self, 
+                    name:str=None,
+                    albedo_color=np.array([1.0, 1.0, 1.0]), 
+                    albedo_map:Tuple[bytes, int, int] = None, 
+                    normal_map:Tuple[bytes, int, int] = None, 
+                    normal_map_intensity = 1.0, 
+                    metallic_map:Tuple[bytes, int, int] = None, 
+                    roughness_map:Tuple[bytes, int, int] = None, 
+                    ambient_occlusion_map:Tuple[bytes, int, int] = None):
         super().__init__(name)
 
-        # Init texture bytes with default color
+        # Init material properties
+        self.albedo_color = albedo_color
+        self.normal_map_intensity = normal_map_intensity
+
+        # Init texture bytes with default color, if not provided
+        self.albedo_map = albedo_map if albedo_map is not None else self.__WHITE
+        self.normal_map = normal_map if normal_map is not None else self.__NORMAL
+        self.metallic_map = metallic_map if metallic_map is not None else self.__BLACK
+        self.roughness_map = roughness_map if roughness_map is not None else self.__BLACK
+        self.ambient_occlusion_map = ambient_occlusion_map if ambient_occlusion_map is not None else self.__WHITE
+
+    
     def update_shader_properties(self, shader_decorator_component: ShaderGLDecorator):
         """
         Updates the shader decorator with the properties of this material
@@ -56,24 +72,19 @@ class StandardMaterial(Material):
         
         # Material
         # Albedo
-        shader_decorator_component.setUniformVariable(key='albedoColor', value=np.array([1.0, 1.0, 1.0]), float3=True)
-        # texturePath = os.path.join(os.path.dirname(__file__), "models/bowel/albedo.png")
-        texture = Texture(img_data=self.__WHITE, texture_channel=0)
+        shader_decorator_component.setUniformVariable(key='albedoColor', value=self.albedo_color, float3=True)
+        texture = Texture(img_data=self.albedo_map, texture_channel=0)
         shader_decorator_component.setUniformVariable(key='albedoMap', value=texture, texture=True)
         # Normal map
         shader_decorator_component.setUniformVariable(key='normalMapIntensity', value=1.0, float1=True)
-        # texturePath = os.path.join(os.path.dirname(__file__), "models/bowel/normal.png")
-        texture = Texture(img_data=self.__BLACK, texture_channel= 1)
+        texture = Texture(img_data=self.normal_map, texture_channel= 1)
         shader_decorator_component.setUniformVariable(key='normalMap', value=texture, texture=True)
         # Metallic map
-        # texturePath = os.path.join(os.path.dirname(__file__), "models/bowel/metallic.png")
-        texture = Texture(img_data=self.__WHITE, texture_channel=2)
+        texture = Texture(img_data=self.metallic_map, texture_channel=2)
         shader_decorator_component.setUniformVariable(key='metallicMap', value=texture, texture=True)
         # Roughness
-        # texturePath = os.path.join(os.path.dirname(__file__), "textures/black1x1.png")
-        texture = Texture(img_data=self.__WHITE, texture_channel=3)
+        texture = Texture(img_data=self.roughness_map, texture_channel=3)
         shader_decorator_component.setUniformVariable(key='roughnessMap', value=texture, texture=True)
         # Ambient Occlusion
-        # texturePath = os.path.join(os.path.dirname(__file__), "textures/black1x1.png")
-        texture = Texture(img_data=self.__WHITE, texture_channel=4)
+        texture = Texture(img_data=self.ambient_occlusion_map, texture_channel=4)
         shader_decorator_component.setUniformVariable(key='aoMap', value=texture, texture=True)
