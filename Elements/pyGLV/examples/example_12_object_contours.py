@@ -61,7 +61,8 @@ def get_intersection_point(p1,p2,plane):
     p1_dist = abs(p1[1]-plane)
     p2_dist = abs(plane-p2[1])
     total = p1_dist +p2_dist
-    return point_add((point_scalar_mult(p1,(p2_dist/total))),(point_scalar_mult(p2,(p1_dist/total))))
+    point = point_add((point_scalar_mult(p1,(p2_dist/total))),(point_scalar_mult(p2,(p1_dist/total))))
+    return point
 
 def on_different_sides(p1,p2,plane):
     if(0 > ((p1[1] - plane) * (p2[1] - plane))):
@@ -196,8 +197,9 @@ vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
 upper = get_highest_coords(vert)
 lower = get_lowest_coords(vert)
 x_diff = upper[0]-lower[0]
-vert = translate_x(vert,-x_diff/2)
 vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
+vert = translate_x(vert,-x_diff)
+
 
 mesh4.vertex_attributes.append(vertices)
 mesh4.vertex_attributes.append(colors)
@@ -207,7 +209,8 @@ vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
 ###
-contours_vertices = create_contours(vertices,indices,.1)
+contours_vertices = create_contours(vert,indices,.1)
+
 contours_color = np.array([(1.,1.,1.,1.)] * len(contours_vertices))
 contours_indices = np.array(range(len(contours_vertices)))
 
@@ -220,6 +223,7 @@ contours_mesh.vertex_attributes.append(contours_vertices)
 contours_mesh.vertex_attributes.append(contours_color)
 contours_mesh.vertex_index.append(contours_indices)
 contours_vArray = scene.world.addComponent(contours, VertexArray(primitive=GL_LINES)) # note the primitive change
+contours_shader = scene.world.addComponent(contours, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
 
 # Generate terrain
@@ -303,6 +307,7 @@ while running:
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    contours_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
