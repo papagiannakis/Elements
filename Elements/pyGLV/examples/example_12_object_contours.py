@@ -19,6 +19,81 @@ import Elements.pyGLV.utils.normals as norm
 from Elements.pyGLV.utils.terrain import generateTerrain
 from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
 
+def frange(start, stop, step):
+    i = 0.0
+    while start + i * step < stop:
+        yield start + i * step
+        i += 1.0
+
+def get_highest_coords(vectors):
+    highest_coords = [float('-inf')] * 3
+    for vector in vectors:
+        for i in range(3):
+            if vector[i] > highest_coords[i]:
+                highest_coords[i] = vector[i]
+    highest_coords.append(1)
+    return highest_coords
+
+def get_lowest_coords(vectors):
+    num_coords = len(vectors[0])
+    lowest_coords = [float('inf')] * num_coords
+    for vector in vectors:
+        for i in range(num_coords):
+            if vector[i] < lowest_coords[i]:
+                lowest_coords[i] = vector[i]
+    lowest_coords.append(1)
+    return lowest_coords
+
+def translate_x(vectors, x):
+    translated_vectors = []
+    for vector in vectors:
+        translated_vector = [vector[0]+x, vector[1], vector[2], vector[3]]
+        translated_vectors.append(translated_vector)
+    return translated_vectors
+
+def point_scalar_mult(p1,s):
+    return [p1[0]*s,p1[1]*s,p1[2]*s,1.]
+
+def point_add(p1,p2):
+    return [p1[0]+p2[0],p1[1]+p2[1],p1[2]+p2[2],1.]
+
+def get_intersection_point(p1,p2,plane):
+    p1_dist = abs(p1[1]-plane)
+    p2_dist = abs(plane-p2[1])
+    total = p1_dist +p2_dist
+    return point_add((point_scalar_mult(p1,(p2_dist/total))),(point_scalar_mult(p2,(p1_dist/total))))
+
+def on_different_sides(p1,p2,plane):
+    if(0 > ((p1[1] - plane) * (p2[1] - plane))):
+        return True
+    else:
+        return False
+    
+def intersect(vertices,indices,plane):
+    contour = []
+    for i in range(0, len(vertices)-2, 3):
+        triangle = [vertices[i],vertices[i+1],vertices[i+2]]
+        line = []
+        if(on_different_sides(triangle[0],triangle[1],plane)):
+            line.append(get_intersection_point(triangle[0],triangle[1],plane))
+        if(on_different_sides(triangle[1],triangle[2],plane)):
+            line.append(get_intersection_point(triangle[1],triangle[2],plane))
+        if(on_different_sides(triangle[2],triangle[0],plane)):
+            line.append(get_intersection_point(triangle[2],triangle[0],plane))
+        if(len(line) == 2):
+            contour.extend(line)
+    return contour
+    
+
+def create_contours(vertices,indices,step=.1):
+    contours = []
+    lower = get_lowest_coords(vertices)
+    upper = get_highest_coords(vertices)
+    for x in frange(lower[1], upper[1], step):
+        contours.extend(intersect(vertices,indices,x))
+    return contours
+
+
 
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
@@ -61,7 +136,6 @@ node4 = scene.world.createEntity(Entity(name="Object"))
 scene.world.addEntityChild(rootEntity, node4)
 trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.1, 0.1, 0.1) ))
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
-
 
 # a simple triangle
 vertexData = np.array([
@@ -115,8 +189,14 @@ dirname = os.path.dirname(__file__)
 obj_to_import = os.path.join(dirname, "models", "cow.obj")
 # obj_to_import = os.path.join(dirname, "models", "teddy.obj")
 
+
+### Load and translate mesh.
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
+upper = get_highest_coords(vert)
+lower = get_lowest_coords(vert)
+x_diff = upper[0]-lower[0]
+vert = translate_x(vert,-x_diff/2)
 vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
 
 mesh4.vertex_attributes.append(vertices)
@@ -126,7 +206,20 @@ mesh4.vertex_index.append(indices)
 vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
+###
+contours_vertices = create_contours(vertices,indices,.1)
+contours_color = np.array([(1.,1.,1.,1.)] * len(contours_vertices))
+contours_indices = np.array(range(len(contours_vertices)))
 
+## ADD CONTOURS ##
+contours = scene.world.createEntity(Entity(name="contours"))
+scene.world.addEntityChild(rootEntity, contours)
+contours_trans = scene.world.addComponent(contours, BasicTransform(name="contours_trans", trs=util.identity()))
+contours_mesh = scene.world.addComponent(contours, RenderMesh(name="contours_mesh"))
+contours_mesh.vertex_attributes.append(contours_vertices) 
+contours_mesh.vertex_attributes.append(contours_color)
+contours_mesh.vertex_index.append(contours_indices)
+contours_vArray = scene.world.addComponent(contours, VertexArray(primitive=GL_LINES)) # note the primitive change
 
 
 # Generate terrain
