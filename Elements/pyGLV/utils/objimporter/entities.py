@@ -40,6 +40,9 @@ class MeshEntity(Entity):
         """
         Create an entity representation for a Mesh object
         """
+        if name is None:
+            name = mesh.name
+
         super().__init__(name, type, id)
         self.mesh = mesh
         self.transform_component = None
@@ -73,5 +76,5 @@ class MeshEntity(Entity):
         self.shader_decorator_component.setUniformVariable(key='lightIntensity', value=light_intensity, float1=True)
 
 
-        self.mesh.material = StandardMaterial("new")
+        # self.mesh.material = StandardMaterial("new")
         self.mesh.material.update_shader_properties(self.shader_decorator_component)
