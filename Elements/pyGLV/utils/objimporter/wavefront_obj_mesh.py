@@ -102,7 +102,7 @@ class WavefrontObjectMesh(Mesh):
 
         self.__optimize()
 
-    def __optimize():
+    def __optimize(self):
         """
         Optimizes vertices, indices, uv arrays in order to remove duplicates
         """
