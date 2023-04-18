@@ -206,8 +206,8 @@ class Wavefront(Model):
     __vertices : list
     __normals : list
     __texture_coords : list
-    __obj_meshes : dict
-    __obj_mesh_list : list
+    __obj_meshes : Dict[str, WavefrontObjectMesh]
+    __obj_mesh_list : List[WavefrontObjectMesh]
     __materials: Dict[str, Material]
 
     __parse_dispatch : dict
@@ -464,7 +464,6 @@ class Wavefront(Model):
             
     # ------- Conversion to standard mesh --------
     def __convert_obj_meshes_to_meshes(self) -> None:
-        
         for obj_mesh in self.__obj_mesh_list:
             
             obj_mesh.convert_to_mesh(self.__calculate_smooth_normals)

@@ -39,7 +39,7 @@ class WavefrontObjectMesh(Mesh):
         obj_mesh : WavefrontObjectMesh
             The specific mesh of the WavefrontObjectMesh to source from
         """
-                
+
         # init normals and texture_coords with 0
         new_vertices = []
         new_normals = []
@@ -81,9 +81,6 @@ class WavefrontObjectMesh(Mesh):
 
         self.vertices = np.array(new_vertices)
         self.indices = np.array(new_indices)
-
-        # self.vertices = np.array(self.vertices)
-        # self.indices = np.array(new_indices, dtype=np.uint32)
         
         # Apply uvs to mesh
         if self.has_uv:
@@ -103,10 +100,11 @@ class WavefrontObjectMesh(Mesh):
                 # Calculate Flat shaded normals
                 self.vertices, self.indices, new_uv, self.normals = norm.generateFlatNormalsMesh(self.vertices, self.indices, color= (self.uv if self.has_uv else None))
 
-
+        self.__optimize()
 
     def __optimize():
         """
         Optimizes vertices, indices, uv arrays in order to remove duplicates
         """
+        # TODO: Optimize vertices by removing duplicate
         pass
