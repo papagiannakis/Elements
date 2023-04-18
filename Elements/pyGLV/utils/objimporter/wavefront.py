@@ -27,7 +27,8 @@ class WavefrontMaterialLibrary():
             "map_Bump" : self.__parse_normal_map,
             "bump" : self.__parse_normal_map, # Alternative command for map_Bump
             "map_refl" : self.__parse_metallic_map,
-            # "map_Ks" : self.__parse_roughness_map
+            "map_Pr" : self.__parse_roughness_map,
+            "map_Ka" : self.__parse_ambient_occlusion_map
         }
 
         self.materials = []
@@ -125,7 +126,7 @@ class WavefrontMaterialLibrary():
             material:StandardMaterial = self.__get_current_material()
             material.albedo_map = image_data
         else:
-            print("Could not load texture: {}".format(image_path))
+            print("Could not load image in line {}, of file {}. Maybe the image name contains spaces, not currently supported.".format(line_number, self.__file_path))
 
     def __parse_normal_map(self, line, line_number)-> None:
         line = line.split(' ')
@@ -151,6 +152,8 @@ class WavefrontMaterialLibrary():
             material:StandardMaterial = self.__get_current_material()
             material.normal_map_intensity = multiplier
             material.normal_map = image_data
+        else:
+            print("Could not load image in line {}, of file {}. Maybe the image name contains spaces, not currently supported.".format(line_number, self.__file_path))
 
     def __parse_metallic_map(self, line, line_number)-> None:
         line = line.split(' ')
@@ -162,9 +165,34 @@ class WavefrontMaterialLibrary():
         if image_loaded:
             material:StandardMaterial = self.__get_current_material()
             material.metallic_map = image_data
+        else:
+            print("Could not load image in line {}, of file {}. Maybe the image name contains spaces, not currently supported.".format(line_number, self.__file_path))
 
-    # def __parse_texture_coord(self, line, line_number)-> None:
-    #     pass
+    def __parse_roughness_map(self, line, line_number)-> None:
+        line = line.split(' ')
+        
+        # Parse image texture
+        image_path = os.path.join(os.path.dirname(self.__file_path), line[len(line)-1])
+        image_loaded, image_data = self.__load_texture(image_path)
+
+        if image_loaded:
+            material:StandardMaterial = self.__get_current_material()
+            material.roughness_map = image_data
+        else:
+            print("Could not load image in line {}, of file {}. Maybe the image name contains spaces, not currently supported.".format(line_number, self.__file_path))
+
+    def __parse_ambient_occlusion_map(self, line, line_number)-> None:
+        line = line.split(' ')
+        
+        # Parse image texture
+        image_path = os.path.join(os.path.dirname(self.__file_path), line[len(line)-1])
+        image_loaded, image_data = self.__load_texture(image_path)
+
+        if image_loaded:
+            material:StandardMaterial = self.__get_current_material()
+            material.ambient_occlusion_map = image_data
+        else:
+            print("Could not load image in line {}, of file {}. Maybe the image name contains spaces, not currently supported.".format(line_number, self.__file_path))
 
     def __load_texture(self, texture_path) -> Tuple[bytes, int, int]:
         
