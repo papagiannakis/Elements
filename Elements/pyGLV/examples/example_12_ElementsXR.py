@@ -13,6 +13,7 @@ import Elements.pyGLV.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 
 from Elements.pyGLV.XR.ElementsXR import ElementsXR_program
+from Elements.pyGLV.XR.options import options, Blend_Mode, View_Configuration, Form_factor
 
 
 """
@@ -108,14 +109,14 @@ face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,rig
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 
 program = ElementsXR_program()
-program.createInstance("Try until you get it!!!")
+program.createInstance("gotcha")
 program.InitializeSystem()
 program.InitializeDevice()
 program.InitializeSession()
 program.create_Swapchains()
 
 while running:
-    running = scene.render(running)
+    #running = scene.render(running)
 
     if program.session_running:
         program.render_frame(renderUpdate,scene)
