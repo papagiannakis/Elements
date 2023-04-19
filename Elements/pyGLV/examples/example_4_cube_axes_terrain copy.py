@@ -89,6 +89,11 @@ indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B l
 ### Generate Random Points
 point_list = random_points_in_square(100,1)
 
+point_list.append([.5,5])
+point_list.append([.5,-5])
+point_list.append([5,.5])
+point_list.append([-5,.5])
+
 vor = Voronoi(point_list)
 vertices = add_third_coordinate(vor.vertices)
 voronoi = []
@@ -104,6 +109,35 @@ colors = np.array([(1.,1.,1.,1.)] * len(voronoi))
 voronoi = np.array(voronoi)
 indices = np.array(range(len(voronoi)))
 
+### Mesh for colored faces. Pick relevant regions.
+relevant_regions =[]
+for region in vor.regions:
+    if not (-1 in region) and len(region) != 0:
+        relevant_regions.append(region)
+#use same vertices.
+mesh_vertices = voronoi
+mesh_indices = []
+mesh_color = []
+
+for region in relevant_regions:
+    color = list(np.random.choice(range(256), size=4))
+    color[0] = color[0]/256.
+    color[1] = color[1]/256.
+    color[2] = color[2]/256.
+    color[3] = 1.
+    print(color)
+    for i in range(1,len(region)-2):
+        tri = (region[i], region[(i+1)], region[(i+2)])
+        mesh_indices.extend(tri)
+        mesh_color.append(color)
+        mesh_color.append(color)
+        mesh_color.append(color)
+        
+
+print(len(mesh_indices))
+print(len(mesh_color))
+
+
 # For point rendering
 point_list = np.array(add_third_coordinate(point_list))
 point_colors = np.array([(1.,1.,1.,1.)] * len(point_list))
@@ -118,9 +152,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 ## ADD CUBE ##
 # attach a simple cube in a RenderMesh so that VertexArray can pick it up
-#mesh4.vertex_attributes.append(vertexCube)
-#mesh4.vertex_attributes.append(colorCube)
-#mesh4.vertex_index.append(indexCube)
+mesh4.vertex_attributes.append(mesh_vertices)
+mesh4.vertex_attributes.append(mesh_color)
+mesh4.vertex_index.append(mesh_indices)
 vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
