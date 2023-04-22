@@ -591,8 +591,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
         self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
 
         self.color = [255, 50, 50];
-        self._mouse_x = 0
-        self._mouse_y = 0
+
         self.lctrl = False
         
         self.traverseCamera()
@@ -838,7 +837,29 @@ class ImGUIecssDecorator(ImGUIDecorator):
         self.scale["y"]= 1.0
         self.scale["z"]= 1.0
 
- 
+    def cameraHandling(self, x, y, height, width):
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        self.resetAll()
+
+        if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
+            if abs(x) > abs(y):
+                self.translation["x"] = x/width*60 #np.sign(event.wheel.x)
+                self.updateCamera(True, False, False, False, False)
+            else:
+                self.translation["y"] =  y/height*60 #np.sign(event.wheel.y)
+                self.updateCamera(False, True, False, False, False)
+        elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
+            self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y) 
+            self.updateCamera(False, False, True, False, False)
+        else:
+            if abs(x) > abs(y):
+                self.rotation["x"] = np.sign(x) #event.wheel.x/height*180
+                self.updateCamera(False, False,False, True, False)
+            else:
+                self.rotation["y"] = np.sign(y) #event.wheel.y/width*180
+                self.updateCamera(False, False,False, False, True)
+
+
     def event_input_process(self):
         """
         process SDL2 basic events and input
@@ -854,77 +875,23 @@ class ImGUIecssDecorator(ImGUIDecorator):
 
         for event in events:
             
-            #on mouse motion on_mouse_drag
             if event.type == sdl2.SDL_MOUSEWHEEL:
-                keystatus = sdl2.SDL_GetKeyboardState(None)
-                self.resetAll()
-
-                if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
-                    if abs(event.wheel.x) > abs(event.wheel.y):
-                        self.translation["x"] = event.wheel.x/width*60 #np.sign(event.wheel.x)
-                        self.updateCamera(True, False, False, False, False)
-                    else:
-                        self.translation["y"] =  event.wheel.y/height*60 #np.sign(event.wheel.y)
-                        self.updateCamera(False, True, False, False, False)
-                elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
-                    self.translation["z"] =  event.wheel.y/height*60 #-np.sign(event.wheel.y) 
-                    self.updateCamera(False, False, True, False, False)
-                else:
-                    if abs(event.wheel.x) > abs(event.wheel.y):
-                        self.rotation["x"] = np.sign(event.wheel.x) #event.wheel.x/height*180
-                        self.updateCamera(False, False,False, True, False)
-                    else:
-                        self.rotation["y"] = np.sign(event.wheel.y) #event.wheel.y/width*180
-                        self.updateCamera(False, False,False, False, True)
-                    
-                    
-                
-                # x = event.motion.x
-                # y = event.motion.y
-                # buttons = event.motion.state
-                # if buttons & sdl2.SDL_BUTTON_LMASK and 
-                #     dx = (x - self._mouse_x)/1024*60
-                #     dy = (y - self._mouse_y)/1024*60
-                #     button = "LEFT"
-                #     self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
-                # elif buttons & sdl2.SDL_BUTTON_MMASK:
-                #     button = "MIDDLE"
-                #     self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
-                # elif buttons & sdl2.SDL_BUTTON_RMASK:
-                #     dx = (x - self._mouse_x)/1024*360
-                #     dy = (y - self._mouse_y)/1024*360
-                #     button = "RIGHT"
-                #     self.on_mouse_drag(event, self._mouse_x, self._mouse_y, dx, dy, button)
-                # else:
-                #     #dx = (x - self._mouse_x)
-                #     #dx = (y - self._mouse_y)
-                #     #self.on_mouse_motion(event, self._mouse_x, self._mouse_y, dx, dy,)
-                #     pass
-                # self._mouse_x = x
-                # self._mouse_y = y
-                continue
+                x = event.wheel.x
+                y = event.wheel.y
+                self.cameraHandling(x,y,height,width)
+                continue   
 
             if event.type == sdl2.SDL_MOUSEBUTTONUP:
                 pass
 
             # on_mouse_press
-            if event.type == sdl2.SDL_MOUSEBUTTONDOWN:
-                # x = event.button.x
-                # y = event.button.y
-                # self._mouse_x = x
-                # self._mouse_y = y
+            buttons = event.motion.state
+            if buttons & sdl2.SDL_BUTTON_RMASK:
+                x = -event.motion.xrel  
+                y = event.motion.yrel 
+                self.cameraHandling(x, y, height, width)
                 
-                # button_n = event.button.button
-                # if button_n == sdl2.SDL_BUTTON_LEFT:
-                #     button = "LEFT"
-                # elif button_n == sdl2.SDL_BUTTON_RIGHT:
-                #     button = "RIGHT"
-                # elif button_n == sdl2.SDL_BUTTON_MIDDLE:
-                #     button = "MIDDLE"
-
-                # double = bool(event.button.clicks - 1)
-                # self.on_mouse_press(event, x, y, button, double)
-                continue
+                continue               
 
             #keyboard events
             if event.type == sdl2.SDL_KEYDOWN:
