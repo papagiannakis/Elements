@@ -69,7 +69,7 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 # Load Object
 dirname = os.path.dirname(__file__)
-obj_to_import = os.path.join(dirname, 'models','miscellanous/moon/Moon 2K.obj')
+obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
 
 imported_obj = Wavefront(obj_to_import, calculate_smooth_normals=False)
 
