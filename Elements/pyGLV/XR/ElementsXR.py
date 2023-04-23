@@ -1,4 +1,5 @@
 import xr
+import xr.raw_functions
 from ctypes import Structure, c_int32, POINTER, byref, cast, c_void_p, pointer, Array
 import logging
 from typing import List, Optional, Dict
@@ -6,6 +7,7 @@ import Elements.pyECSS.utilities as util
 import math
 import Elements.pyGLV.GL.Scene as Scene
 import Elements.pyECSS.System as System
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem
 import Elements.pyECSS.Entity as Entity
 from OpenGL import GL
 import enum
@@ -252,9 +254,11 @@ class ElementsXR_program:
         assert self.instance.handle is not None
         assert self.system.id is not None
 
-    def InitializeDevice(self):
+    def InitializeDevice(self,
+                         renderer : InitGLShaderSystem, 
+                         scene : Scene):
         "The graphics Plugin takes care of the initialization here"
-        self.graphics_plugin.initialize_device(self.instance.handle,self.system.id)
+        self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer,scene)
 
     def InitializeSession(self):
         assert self.instance is not None
@@ -277,6 +281,59 @@ class ElementsXR_program:
             session=self.session,
             create_info=get_xr_reference_space_create_info(self.options.app_space),
         )
+
+    def next_event(self)-> Optional[Structure]:
+        head = self.event_data_buffer
+        head.type = xr.StructureType.EVENT_DATA_BUFFER
+        result = xr.raw_functions.xrPollEvent(self.instance.handle, byref(self.event_data_buffer))
+
+        if result == xr.Result.SUCCESS:
+            return head
+        if result == xr.Result.EVENT_UNAVAILABLE:
+            return None
+        result2 = xr.check_result(result)
+        raise result2
+    
+    def poll_events(self):
+        exit_render_loop = False
+        while True:
+            event = self.next_event()
+            if event is None:
+                break
+            event_type = event.type
+            if event_type == xr.StructureType.EVENT_DATA_INSTANCE_LOSS_PENDING:
+                return True
+            elif event_type == xr.StructureType.EVENT_DATA_SESSION_STATE_CHANGED:
+                exit_render_loop= self.handle_event(event, exit_render_loop)
+
+        return exit_render_loop
+
+    def handle_event(self,event,exit_loop):
+        event = cast(byref(event), POINTER(xr.EventDataSessionStateChanged)).contents
+        old_state = self.session_state
+        self.session_state = xr.SessionState(event.state)
+        key = cast(self.session, c_void_p).value
+
+        if event.session is not None and hash(event.session) != hash(self.session):
+            return exit_loop
+        if self.session_state == xr.SessionState.READY:
+            assert self.session is not None
+            xr.begin_session(
+                session=self.session,
+                begin_info=xr.SessionBeginInfo(
+                    primary_view_configuration_type=self.options.parsed["view_config_type"],
+                ),
+            )
+            self.session_running = True
+        elif self.session_state == xr.SessionState.STOPPING:
+            assert self.session is not None
+            self.session_running = False
+            xr.end_session(self.session)
+        elif self.session_state == xr.SessionState.EXITING:
+            exit_loop = True
+        elif self.session_state == xr.SessionState.LOSS_PENDING:
+            exit_loop = True
+        return exit_loop
 
     def render_frame(self,renderer: System, scene: Scene) -> None:
         """Create and submit a frame."""
@@ -360,7 +417,7 @@ class ElementsXR_program:
             view.sub_image.image_rect.offset[:] = [0, 0]
             view.sub_image.image_rect.extent[:] = [view_swapchain.width, view_swapchain.height, ]
             swapchain_image_ptr = self.swapchain_image_ptr_buffers[hash(view_swapchain.handle)][swapchain_image_index]
-            self.graphics_plugin.render_view(
+            self.graphics_plugin.Render_View(
                 view,
                 swapchain_image_ptr,
                 self.color_swapchain_format,
