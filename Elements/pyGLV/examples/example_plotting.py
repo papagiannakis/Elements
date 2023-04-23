@@ -121,34 +121,19 @@ def Func_GUI():
     global f_x
 
     global superfuncchild2D
-    global toggleSuperFunc2D
     global superfuncchild3D
-    global toggleSuperFunc3D
     global funcDetail
     global platforms
-    global childplatX
-    global childplatZ
-    global plattoggleX
-    global plattoggleZ
-    global togglepoints
     imgui.begin("Give Function X,Y Values")
 
     # implementation for a,b,c,d points for X,Y functions
     changed, f_x = imgui.input_text(':F(x)', f_x, 256)
 
     Func_Button2D = imgui.button("Print f(x)")
-    imgui.same_line()
-    Func_Button2D_toggle = imgui.button("Print f(x) toggle")
 
     changed, f_x_y = imgui.input_text(':F(x,y)', f_x_y, 256)
 
     Func_Button3D = imgui.button("Print f(x,y)")
-    imgui.same_line()
-    Func_Button3D_toggle = imgui.button("Print f(x,y) toggle")
-    if (Func_Button2D_toggle):
-        toggleSuperFunc2D = not toggleSuperFunc2D
-    elif (Func_Button3D_toggle):
-        toggleSuperFunc3D = not toggleSuperFunc3D
 
     imgui.text("Give a to b values for X and c to d for Y")
     changed, FuncValues = imgui.input_float4('', *FuncValues)
@@ -158,17 +143,7 @@ def Func_GUI():
     if imgui.is_item_hovered():
         imgui.set_tooltip("Make sure the detail is between 4 to 100")
 
-    clicked, platforms = imgui.combo("platforms", platforms, ["none", "X", "Z"])
 
-    global PointSize
-    global SpotPointsColor
-    changed, PointSize = imgui.drag_float("spot point Size", PointSize, 0.02, 0.1, 40, "%.1f")
-    if (changed):
-        gl.glPointSize(PointSize)
-
-    imgui.text("PointSize: %s" % (PointSize))
-    imgui.text("")
-    changed, SpotPointsColor = imgui.color_edit3("Spot Color", *SpotPointsColor)
     if (funcDetail > 100):
         funcDetail = 100
     elif (funcDetail < 4):
@@ -294,18 +269,6 @@ def Func_GUI():
             scene.world.addEntityChild(funcPlatformZ, vars()[DynamicVariable])
         scene.world.traverse_visit(initUpdate, scene.world.root)
         bountries(FuncValues[0], FuncValues[1], minimumy, maximumy, FuncValues[2], FuncValues[3])
-    togglepointsbutton = imgui.button("toggle points")
-    if (togglepointsbutton):
-        togglepoints = not togglepoints
-    if (platforms == 1):
-        plattoggleX = True
-        plattoggleZ = False
-    elif (platforms == 2):
-        plattoggleX = False
-        plattoggleZ = True
-    else:
-        plattoggleX = False
-        plattoggleZ = False
     imgui.end()
 
 CleanData = 0
