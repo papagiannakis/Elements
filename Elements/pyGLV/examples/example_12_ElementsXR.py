@@ -1,5 +1,6 @@
 import numpy as np
 import os
+import time
 import Elements.pyECSS.utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
@@ -78,11 +79,7 @@ shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: ElementsXR Example", openGLversion = 4)
-
-# pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
-# needs an active GL context
-scene.world.traverse_visit(initUpdate, scene.world.root)
+scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: ElementsXR Example", openGLversion = 4)
 
 ################### EVENT MANAGER ###################
 
@@ -106,22 +103,22 @@ top_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "top.jpg
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 
-shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
-
 program = ElementsXR_program()
 program.createInstance("gotcha")
 program.InitializeSystem()
-program.InitializeDevice()
+program.InitializeDevice(initUpdate,scene)
 program.InitializeSession()
 program.create_Swapchains()
 
-while running:
-    #running = scene.render(running)
+shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 
+while running:
+    running = program.poll_events()
+    model = skybox.getChild(0).trs
+    shaderSkybox.setUniformVariable(key='model', value=model, mat4=True)
     if program.session_running:
         program.render_frame(renderUpdate,scene)
     else:
-        break
-
+        time.sleep(0.250)
     
 scene.shutdown()

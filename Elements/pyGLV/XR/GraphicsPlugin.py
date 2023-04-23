@@ -4,10 +4,12 @@ import logging
 from typing import List, Optional, Dict
 import Elements.pyECSS.utilities as util
 from ctypes import Structure, POINTER, cast, byref
-import Elements.pyGLV.GL.Scene as Scene
+from Elements.pyGLV.GL.Scene import Scene
 import Elements.pyECSS.System as System
-from Elements.pyGLV.GL.Shader import ShaderGLDecorator
-import Elements.pyECSS.Entity as Entity
+from Elements.pyGLV.GL.Shader import ShaderGLDecorator, InitGLShaderSystem
+from Elements.pyECSS.Component import BasicTransform
+from Elements.pyECSS.Entity import Entity
+import Elements.pyECSS.Component as Component
 from OpenGL import GL, WGL
 import glfw
 
@@ -88,7 +90,11 @@ class OpenGLPlugin(GraphicsPlugin):
     def instance_extensions(self) -> List[str]:
         return [xr.KHR_OPENGL_ENABLE_EXTENSION_NAME]
     
-    def initialize_device(self, instance: xr.Instance, system_id: xr.SystemId):
+    def initialize_device(self, 
+                          instance: xr.Instance, 
+                          system_id: xr.SystemId,
+                          renderer: InitGLShaderSystem,
+                          scene :Scene):
         # extension function must be loaded by name
         pfn_get_open_gl_graphics_requirements_khr = cast(
             xr.get_instance_proc_addr(
@@ -129,10 +135,11 @@ class OpenGLPlugin(GraphicsPlugin):
         #TODO add Linux case here
 
         GL.glEnable(GL.GL_DEBUG_OUTPUT)
-        
-        #self.debug_message_proc = GL.GLDEBUGPROC(self.opengl_debug_message_callback)
-        #GL.glDebugMessageCallback(self.debug_message_proc, None)
-        #Might need to add something here, or not
+        self.initialize_resources(renderer,scene)
+
+    def initialize_resources(self,renderer,scene):
+        self.swapchain_framebuffer = GL.glGenFramebuffers(1)
+        scene.world.traverse_visit(renderer, scene.world.root)
 
     @property
     def swapchain_image_type(self):
@@ -215,17 +222,19 @@ class OpenGLPlugin(GraphicsPlugin):
 
         up = util.vec(1.0,
                     1.0,
-                    1.0) #openXR calls this fov I think
+                    1.0)
             
         view = util.lookat(eye,target,up)
-
-        #Traverse world
-        scene.world.traverse_visit(renderUpdate, scene.world.root)
 
         #Update each component's view
         element: Entity
         for element in scene.world.root:
-            element.getChildByType(ShaderGLDecorator).setUniformVariable(key='Proj', value=proj, mat4=True)
-            element.getChildByType(ShaderGLDecorator).setUniformVariable(key='View', value=view, mat4=True)
+            if element is not None and element.getClassName()=="ShaderGLDecorator":
+                #Note: All shaders should get their model-view-projection the same way for this loop to work
+                element.setUniformVariable(key='Proj', value=proj, mat4=True)
+                element.setUniformVariable(key='View', value=view, mat4=True)
+
+        #Traverse world
+        scene.world.traverse_visit(renderUpdate, scene.world.root)
 
         scene.render_post()
