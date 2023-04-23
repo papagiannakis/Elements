@@ -677,23 +677,7 @@ def main(imguiFlag=False):
     renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
     initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
-    """
-    test_renderPointGenaratorEVENT
-    """
-    # Generate terrain
-    from Elements.pyGLV.GL.terrain import generateTerrain
-    vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
-    # Add terrain
-    terrain = scene.world.createEntity(Entity(name="terrain"))
-    scene.world.addEntityChild(rootEntity, terrain)
-    terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
-    terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
-    terrain_mesh.vertex_attributes.append(vertexTerrain)
-    terrain_mesh.vertex_attributes.append(colorTerrain)
-    terrain_mesh.vertex_index.append(indexTerrain)
-    terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-    terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+
 
     ## ADD AXES ##
 
@@ -802,7 +786,6 @@ def main(imguiFlag=False):
         mvp_terrain_axes = projMat @ view @ model_terrain_axes
         displayGUI()
         axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-        terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
         Display()
 
     scene.shutdown()
