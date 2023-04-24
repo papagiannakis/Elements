@@ -102,18 +102,8 @@ FuncValues = 0., 1., 0., 1.
 f_x = 'x**2+x*4'
 f_x_y = 'x**2+y**2'
 superfuncchild2D = 0
-toggleSuperFunc2D = True
-
 superfuncchild3D = 0
-toggleSuperFunc3D = True
 funcDetail = 10
-
-platforms = 0
-childplatX = 0
-childplatZ = 0
-plattoggleX = True
-plattoggleZ = True
-togglepoints = True
 
 def Func_GUI():
     global FuncValues
@@ -699,12 +689,10 @@ def main(imguiFlag=False):
     model_terrain_axes = util.translate(0.0, 0.0, 0.0)
 
     global superfuncchild2D
-    global toggleSuperFunc2D
 
     global superfuncchild3D
-    global toggleSuperFunc3D
 
-    def function_plotting_display_nodes(function_entity, child_count, toggleFlag):
+    def function_plotting_display_nodes(function_entity, child_count):
         Lambientcolor = util.vec(1.0, 1.0, 5.0)  # uniform ambient color
         Lambientstr = 0.1  # uniform ambientStr
         LviewPos = util.vec(2.5, 2.8, 5.0)  # uniform viewpos
@@ -734,8 +722,8 @@ def main(imguiFlag=False):
     # Displays all nodes created
     def Display():
         # print SuperFunction
-        function_plotting_display_nodes(SuperFunction2D, superfuncchild2D, toggleSuperFunc2D)
-        function_plotting_display_nodes(SuperFunction3D, superfuncchild3D, toggleSuperFunc3D)
+        function_plotting_display_nodes(SuperFunction2D, superfuncchild2D)
+        function_plotting_display_nodes(SuperFunction3D, superfuncchild3D)
 
         scene.render_post()
 
