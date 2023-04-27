@@ -105,7 +105,21 @@ superfuncchild2D = 0
 superfuncchild3D = 0
 funcDetail = 10
 
-def Func_GUI():
+def bezier_curve(points, x):
+    n = len(points) - 1
+    t = np.linspace(0, 1, 100)
+
+    coefficients = np.zeros((n + 1, n + 1))
+    for i in range(n + 1):
+        coefficients[i] = np.math.comb(n, i) * ((1 - t) ** (n - i)) * (t ** i)
+
+    y = np.dot(coefficients[:, x], points)
+
+    return y
+
+points = [(0, 0), (1, 3), (2, -1), (3, 2)]
+
+def Bezier_GUI():
     global FuncValues
     global f_x_y
     global f_x
@@ -142,7 +156,20 @@ def Func_GUI():
         removeEntityChilds(SuperFunction2D)
         superfuncchild2D = 0
         x = np.linspace(FuncValues[0], FuncValues[1], funcDetail)
-        y = f_X(x)
+
+        b_points = [(0, 0), (1, 3), (2, -1), (3, 2)]
+        print("bezier_curve", bezier_curve(b_points, 0.5))
+
+        print("all x", x)
+        y = []
+        for single_x in x:
+            print("single x", single_x)
+            y.append(bezier_curve(points, single_x))
+
+        print(y)
+
+
+
         l = 0
         while (l < len(x) - 1):
             superfuncchild2D += 1
@@ -291,7 +318,7 @@ def displayGUI():
     """
         displays ImGui
     """
-    Func_GUI()
+    Bezier_GUI()
 
     CleanData()
 
