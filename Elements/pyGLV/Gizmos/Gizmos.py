@@ -9,6 +9,7 @@ from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from ctypes import c_int, byref
 import OpenGL.GL as gl
 import numpy as np
+from math import tan, pi
 
 class Gizmos:
     GIZMOS_X=np.array([
@@ -43,7 +44,7 @@ class Gizmos:
 
     GIZMOS_INDEX = np.array((0,1), np.uint32)
 
-    def __init__(self,rootEntity: Entity,Projection, View):
+    def __init__(self,rootEntity: Entity,Projection=None, View=None):
         sdl.ext.init()
         self.scene = Scene()
         self.selected = -1
@@ -56,6 +57,11 @@ class Gizmos:
         self.projection = Projection
         self.view = View
         self.is_selected = False
+        self.cameraInUse = ""
+        self.fov = 0.0
+        self.aspect_ratio = 0.0
+        self.near = 0.0
+        self.far = 0.0
 
         self.gizmos_x = self.scene.world.createEntity(Entity(name="Gizmos_X"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_x)
@@ -101,9 +107,18 @@ class Gizmos:
 
         if self.selected<0 or self.selected==entities-1:
             self.selected = 0
+            self.selected_pos = self.trs_table[self.selected]
         else:
             self.selected +=1
-        self.selected_pos = self.trs_table[self.selected]
+            self.selected_pos = self.trs_table[self.selected]
+            name = self.scene.world.root.getChild(self.selected).name
+            while (name=="Gizmos_X" or name=="Gizmos_Y" or name=="Gizmos_Z") and entities>3:
+                    self.selected +=1
+                    self.selected_pos = self.trs_table[self.selected]
+                    if self.selected == entities-1:
+                        self.selected = 0
+                        self.selected_pos = self.trs_table[self.selected]
+                    name = self.scene.world.root.getChild(self.selected).name
 
     def update_mouse_position(self):
         """
@@ -114,6 +129,7 @@ class Gizmos:
             None
         """
         self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
+        self.raycast()
         #print("Mouse Position: (",self.mouse_x.value,",",self.mouse_y.value,")")
         #print("Left Mouse Button state: ",self.mouse_state)
 
@@ -150,12 +166,10 @@ class Gizmos:
             self.key_down = True
             self.change_target()
             self.is_selected = True
-            print(self.scene.world.root.getChild(self.selected))
-            print(self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs)
+            print("Selected: ",self.scene.world.root.getChild(self.selected))
             self.gizmos_x_trans.trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
             self.gizmos_y_trans.trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
             self.gizmos_z_trans.trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
-            self.update_gizmos()
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             #print('TAB key released')
             self.key_down = False
@@ -169,15 +183,66 @@ class Gizmos:
             None
         """
         if self.is_selected:
-            #model = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
-            model = self.gizmos_x_trans.trs #hmm
-            mvp = self.projection @ self.view @ model
-            self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
-            self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
-            self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+            model_x = self.gizmos_x_trans.trs
+            model_y = self.gizmos_y_trans.trs
+            model_z = self.gizmos_z_trans.trs
+            mvp_x = self.projection @ self.view @ model_x
+            mvp_y = self.projection @ self.view @ model_y
+            mvp_z = self.projection @ self.view @ model_z
+            self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
+            self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
+            self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
 
     def update_view(self, View):
         self.view = View
 
+    def set_camera_in_use(self,camera: str):
+        self.cameraInUse = camera
+
     def update_projection(self, Proj):
         self.projection = Proj
+    
+    def raycast(self):
+        """
+        Raycast from mouse position
+        Arguments:
+            self: that's me
+        Returns:
+            None
+        """
+        imagewidth = 1024.0 #modifications
+        imageheight = 768.0 #modifications
+        fov = 50.0 #modifications
+        aspectratio = imagewidth/imageheight #modifications
+        x = (2 * ( (self.mouse_x.value+0.5)/imagewidth)-1) * tan(fov/2*pi/180) * aspectratio
+        y = (1-2*((self.mouse_y.value+0.5)/imageheight)) * tan(fov/2*pi/180)
+        rayDirection = util.vec(x,y,1) # -1?
+        rayDirection = util.normalise(rayDirection)
+        #print(rayDirection)
+    
+    def translate_selected(self,x=0.0,y=0.0,z=0.0):
+        """
+        Translate Selected Element
+        Arguments:
+            self: that's me
+            x: x value
+            y: y value
+            z: z value
+        Returns:
+            None
+        """
+        selected_trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
+        self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs = selected_trs @ util.translate(x,y,z)
+    
+    def rotate_selected(self,angle=0.0,axis=(1.0,0.0,0.0)):
+        """
+        Rotate Selected Element
+        Arguments:
+            self: that's me
+            angle: Rotation Angle
+            axis: axis to rotate
+        Returns:
+            None
+        """
+        pass
+        #selected_trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
