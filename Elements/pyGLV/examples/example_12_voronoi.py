@@ -34,7 +34,7 @@ def random_points_in_square(n, side_length):
     return points
 
 def add_third_coordinate(points):
-    return [(x, y, 1) for x, y in points]
+    return [(x, y, -.1, 1) for x, y in points]
 
 
 scene = Scene()    
@@ -126,8 +126,8 @@ for region in relevant_regions:
     color[2] = color[2]/256.
     color[3] = 1.
     print(color)
-    for i in range(1,len(region)-2):
-        tri = (region[0], region[(i+1)], region[(i+2)])
+    for i in range(1,len(region)-1):
+        tri = (region[0], region[(i)], region[(i+1)])
         mesh_vertices.append(vertices[tri[0]])
         mesh_vertices.append(vertices[tri[1]])
         mesh_vertices.append(vertices[tri[2]])
@@ -143,7 +143,7 @@ print(len(mesh_color))
 
 # For point rendering
 point_list = np.array(add_third_coordinate(point_list))
-point_colors = np.array([(1.,1.,1.,1.)] * len(point_list))
+point_colors = np.array([(0.,0.,0.,1.)] * len(point_list))
 point_indices = np.array(range(len(point_list)))
 
 # Systems
@@ -189,14 +189,15 @@ axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES)) # 
 
 ## ADD POINTS ##
 
-#points = scene.world.createEntity(Entity(name="points"))
-#scene.world.addEntityChild(rootEntity, points)
-#points_trans = scene.world.addComponent(points, BasicTransform(name="points_trans", trs=util.identity()))
-#points_mesh = scene.world.addComponent(points, RenderMesh(name="points_mesh"))
-#points_mesh.vertex_attributes.append(point_list)
-#points_mesh.vertex_attributes.append(point_colors)
-#points_mesh.vertex_index.append(point_indices)
-#points_vArray = scene.world.addComponent(points, VertexArray(primitive=GL_POINTS)) # note the primitive change
+points = scene.world.createEntity(Entity(name="points"))
+scene.world.addEntityChild(rootEntity, points)
+points_trans = scene.world.addComponent(points, BasicTransform(name="points_trans", trs=util.identity()))
+points_mesh = scene.world.addComponent(points, RenderMesh(name="points_mesh"))
+points_mesh.vertex_attributes.append(point_list)
+points_mesh.vertex_attributes.append(point_colors)
+points_mesh.vertex_index.append(point_indices)
+points_vArray = scene.world.addComponent(points, VertexArray(primitive=GL_POINTS)) # note the primitive change
+points_shader = scene.world.addComponent(points, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
 # shaderDec_axes = scene.world.addComponent(axes, Shader())
 # OR
@@ -259,6 +260,7 @@ while running:
     mvp_cube = projMat @ view @ model_cube
     mvp_terrain_axes = projMat @ view @ model_terrain_axes
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+    points_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
     scene.render_post()
