@@ -34,7 +34,7 @@ def random_points_in_square(n, side_length):
     return points
 
 def add_third_coordinate(points):
-    return [(x, y, -.1, 1) for x, y in points]
+    return [(x, y, 0, 1) for x, y in points]
 
 
 scene = Scene()    
@@ -52,7 +52,7 @@ trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="trans2", trs=
 
 node4 = scene.world.createEntity(Entity(name="node4"))
 scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0,0.5,0))) #util.identity()
+trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.identity())) #util.identity()
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 
 axes = scene.world.createEntity(Entity(name="axes"))
@@ -143,6 +143,8 @@ print(len(mesh_color))
 
 # For point rendering
 point_list = np.array(add_third_coordinate(point_list))
+for i in range(len(point_list)):
+    point_list[i][2] = 0.01
 point_colors = np.array([(0.,0.,0.,1.)] * len(point_list))
 point_indices = np.array(range(len(point_list)))
 
@@ -232,7 +234,7 @@ eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 # eManager._publishers[updateBackground.name] = gGUI
 
 
-eye = util.vec(.5, .5, 5)
+eye = util.vec(.5, .5, 2)
 target = util.vec(0.5, 0.5, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
