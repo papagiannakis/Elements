@@ -15,6 +15,8 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 import imgui
 
+import bezier
+
 scene = Scene()
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
 entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
@@ -117,7 +119,7 @@ def bezier_curve(points, x):
 
     return y
 
-points = [(0, 0), (1, 3), (2, -1), (3, 2)]
+points = [[0, 0], [1,2]]
 
 def Bezier_GUI():
     global FuncValues
@@ -128,16 +130,16 @@ def Bezier_GUI():
     global superfuncchild3D
     global funcDetail
     global platforms
-    imgui.begin("Give Function X,Y Values")
+    imgui.begin("Print Bezier Curve")
 
     # implementation for a,b,c,d points for X,Y functions
-    changed, f_x = imgui.input_text(':F(x)', f_x, 256)
+    changed, points_input = imgui.input_text('Points', f_x, 256)
 
-    Func_Button2D = imgui.button("Print f(x)")
+    #points = eval(points_input)
 
-    changed, f_x_y = imgui.input_text(':F(x,y)', f_x_y, 256)
+    button_bezier_pressed = imgui.button("Print Bezier")
 
-    Func_Button3D = imgui.button("Print f(x,y)")
+
 
     imgui.text("Give a to b values for X and c to d for Y")
     changed, FuncValues = imgui.input_float4('', *FuncValues)
@@ -152,21 +154,25 @@ def Bezier_GUI():
         funcDetail = 100
     elif (funcDetail < 4):
         funcDetail = 4
-    if (Func_Button2D):
+
+    if (button_bezier_pressed):
         removeEntityChilds(SuperFunction2D)
         superfuncchild2D = 0
         x = np.linspace(FuncValues[0], FuncValues[1], funcDetail)
 
-        b_points = [(0, 0), (1, 3), (2, -1), (3, 2)]
-        print("bezier_curve", bezier_curve(b_points, 0.5))
 
-        print("all x", x)
-        y = []
-        for single_x in x:
-            print("single x", single_x)
-            y.append(bezier_curve(points, single_x))
+        y = bezier.Curve(points, 1)
 
-        print(y)
+
+        print("bezier y", y)
+
+        # print("all x", x)
+        # y = []
+        # for single_x in x:
+        #     print("single x", single_x)
+        #     y.append(bezier_curve(points, single_x))
+        #
+        # print(y)
 
 
 
@@ -181,111 +187,7 @@ def Bezier_GUI():
             scene.world.addEntityChild(SuperFunction2D, vars()[DynamicVariable])
 
         scene.world.traverse_visit(initUpdate, scene.world.root)
-    if (Func_Button3D):
-        removeEntityChilds(SuperFunction3D)
-        superfuncchild3D = 0
 
-        removeEntityChilds(funcPlatformX)
-        childplatX = 0
-        removeEntityChilds(funcPlatformZ)
-        childplatZ = 0
-
-        x = np.linspace(FuncValues[0], FuncValues[1], funcDetail)
-        z = np.linspace(FuncValues[2], FuncValues[3], funcDetail)
-        yValues = []
-        for xiterate in x:
-            for ziterate in z:
-                yValues.append(f_Z(xiterate, ziterate))
-
-        maximumy = np.max(yValues)  # NEEDED to print the color based on y axis
-        minimumy = np.min(yValues)  # NEEDED to print the color based on y axis
-        if (maximumy == 0):
-            maximumy = 1
-        q = 0
-        r = 0.34
-        g = 0.15
-        b = 0.
-        while (q < len(z) - 1):
-            q += 1
-            l = 0
-            while (l < len(x) - 1):
-                currY = f_Z(x[l], z[q])
-                r = 0.34 + ((currY - minimumy) / (maximumy + abs(minimumy))) * 0.6
-                g = 0.15 + ((currY - minimumy) / (maximumy + abs(minimumy))) * 0.6
-                b = ((currY - minimumy) / (maximumy + abs(minimumy))) * 0.6
-
-                l += 1
-                # first triangle
-                superfuncchild3D += 1
-                DynamicVariable = "Function" + str(superfuncchild3D)
-                point1 = x[l - 1], f_Z(x[l - 1], z[q - 1]), z[q - 1], 1
-                point2 = x[l], f_Z(x[l], z[q - 1]), z[q - 1], 1
-                point3 = x[l], f_Z(x[l], z[q]), z[q], 1
-                vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, r, g,
-                                                                          b)
-                scene.world.addEntityChild(SuperFunction3D, vars()[DynamicVariable])
-                # second triangle
-                superfuncchild3D += 1
-                DynamicVariable = "Function" + str(superfuncchild3D)
-                point1 = x[l - 1], f_Z(x[l - 1], z[q - 1]), z[q - 1], 1
-                point2 = x[l], f_Z(x[l], z[q]), z[q], 1
-                point3 = x[l - 1], f_Z(x[l - 1], z[q]), z[q], 1
-                vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, r, g,
-                                                                          b)
-                scene.world.addEntityChild(SuperFunction3D, vars()[DynamicVariable])
-        # for X platform
-        znext = FuncValues[3]
-        zold = FuncValues[2]
-
-        l = 0
-        while (l < len(x)):
-            l += 1
-            # first triangle
-            childplatX += 1
-            DynamicVariable = "funcPlatform" + str(childplatX)
-            point1 = x[l - 1], minimumy, zold, 1
-            point2 = x[l - 1], maximumy, zold, 1
-            point3 = x[l - 1], maximumy, znext, 1
-            vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, 0.6, 0.6,
-                                                                      0.6)
-            scene.world.addEntityChild(funcPlatformX, vars()[DynamicVariable])
-            # second triangle
-            childplatX += 1
-            DynamicVariable = "funcPlatform" + str(childplatX)
-            point1 = x[l - 1], minimumy, zold, 1
-            point2 = x[l - 1], maximumy, znext, 1
-            point3 = x[l - 1], minimumy, znext, 1
-            vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, 0.6, 0.6,
-                                                                      0.6)
-
-            scene.world.addEntityChild(funcPlatformX, vars()[DynamicVariable])
-        # for Z platform
-        xnext = FuncValues[1]
-        xold = FuncValues[0]
-        l = 0
-        while (l < len(z)):
-            l += 1
-            # first triangle
-            childplatZ += 1
-            DynamicVariable = "funcPlatform" + str(childplatZ)
-            point1 = xold, maximumy, z[l - 1], 1
-            point2 = xnext, minimumy, z[l - 1], 1
-            point3 = xnext, maximumy, z[l - 1], 1
-            vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, 0.6, 0.6,
-                                                                      0.6)
-            scene.world.addEntityChild(funcPlatformZ, vars()[DynamicVariable])
-            # second triangle
-            childplatZ += 1
-            DynamicVariable = "funcPlatform" + str(childplatZ)
-            point1 = xold, minimumy, z[l - 1], 1
-            point2 = xnext, minimumy, z[l - 1], 1
-            point3 = xold, maximumy, z[l - 1], 1
-            vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, 0.6, 0.6,
-                                                                      0.6)
-
-            scene.world.addEntityChild(funcPlatformZ, vars()[DynamicVariable])
-        scene.world.traverse_visit(initUpdate, scene.world.root)
-        bountries(FuncValues[0], FuncValues[1], minimumy, maximumy, FuncValues[2], FuncValues[3])
     imgui.end()
 
 CleanData = 0
@@ -478,85 +380,7 @@ class IndexedConverter():
 
         return iVertices, iColors, iIndices, iNormals
 
-class GameObjectEntity_Point(Entity):
-    def __init__(self, name=None, type=None, id=None, primitiveID=gl.GL_LINES) -> None:
-        super().__init__(name, type, id)
 
-        # Gameobject basic properties
-        self._color = [1, 0.5, 0.2, 1.0]  # this will be used as a uniform var
-        # Create basic components of a primitive object
-        self.trans = BasicTransform(name="trans", trs=util.identity())
-        self.mesh = RenderMesh(name="mesh")
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
-        self.shaderDec = ShaderGLDecorator(Shader(vertex_source=COLOR_VERT_MVP, fragment_source=COLOR_FRAG))
-        self.vArray = VertexArray(primitive=primitiveID)
-        # Add components to entity
-        scene = Scene()
-        scene.world.createEntity(self)
-        scene.world.addComponent(self, self.trans)
-        scene.world.addComponent(self, self.mesh)
-        scene.world.addComponent(self, self.shaderDec)
-        scene.world.addComponent(self, self.vArray)
-
-    @property
-    def color(self):
-        return self._color
-
-    @color.setter
-    def color(self, colorArray):
-        self._color = colorArray
-
-    def drawSelfGui(self, imgui):
-        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2])
-        self.color = [value[0], value[1], value[2], 1.0]
-
-    def SetVertexAttributes(self, vertex, color, index, normals=None):
-        self.mesh.vertex_attributes.append(vertex)
-        self.mesh.vertex_attributes.append(color)
-        self.mesh.vertex_index.append(index)
-        if normals is not None:
-            self.mesh.vertex_attributes.append(normals)
-
-
-class GameObjectEntity(Entity):
-
-    def __init__(self, name=None, type=None, id=None, primitiveID=gl.GL_LINES) -> None:
-        super().__init__(name, type, id)
-
-        # Gameobject basic properties
-        self._color = [1, 0.5, 0.2, 1.0]  # this will be used as a uniform var
-        # Create basic components of a primitive object
-        self.trans = BasicTransform(name="trans", trs=util.identity())
-        self.mesh = RenderMesh(name="mesh")
-        self.shaderDec = ShaderGLDecorator(Shader(vertex_source=VERT_PHONG_MVP, fragment_source=FRAG_PHONG))
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
-        self.vArray = VertexArray(primitive=primitiveID)
-        # Add components to entity
-        scene = Scene()
-        scene.world.createEntity(self)
-        scene.world.addComponent(self, self.trans)
-        scene.world.addComponent(self, self.mesh)
-        scene.world.addComponent(self, self.shaderDec)
-        scene.world.addComponent(self, self.vArray)
-
-    @property
-    def color(self):
-        return self._color
-
-    @color.setter
-    def color(self, colorArray):
-        self._color = colorArray
-
-    def drawSelfGui(self, imgui):
-        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2])
-        self.color = [value[0], value[1], value[2], 1.0]
-
-    def SetVertexAttributes(self, vertex, color, index, normals=None):
-        self.mesh.vertex_attributes.append(vertex)
-        self.mesh.vertex_attributes.append(color)
-        self.mesh.vertex_index.append(index)
-        if normals is not None:
-            self.mesh.vertex_attributes.append(normals)
 
 
 def TriangleSpawn(trianglename="Triangle", p1=[0, 0, 0, 1], p2=[0.4, 0.4, 0, 1], p3=[0.8, 0.0, 0, 1], r=0.55, g=0.55,
@@ -768,3 +592,84 @@ def main(imguiFlag=False):
 
 if __name__ == "__main__":
     main(imguiFlag=True)
+
+
+class GameObjectEntity_Point(Entity):
+    def __init__(self, name=None, type=None, id=None, primitiveID=gl.GL_LINES) -> None:
+        super().__init__(name, type, id)
+
+        # Gameobject basic properties
+        self._color = [1, 0.5, 0.2, 1.0]  # this will be used as a uniform var
+        # Create basic components of a primitive object
+        self.trans = BasicTransform(name="trans", trs=util.identity())
+        self.mesh = RenderMesh(name="mesh")
+        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
+        self.shaderDec = ShaderGLDecorator(Shader(vertex_source=COLOR_VERT_MVP, fragment_source=COLOR_FRAG))
+        self.vArray = VertexArray(primitive=primitiveID)
+        # Add components to entity
+        scene = Scene()
+        scene.world.createEntity(self)
+        scene.world.addComponent(self, self.trans)
+        scene.world.addComponent(self, self.mesh)
+        scene.world.addComponent(self, self.shaderDec)
+        scene.world.addComponent(self, self.vArray)
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, colorArray):
+        self._color = colorArray
+
+    def drawSelfGui(self, imgui):
+        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2])
+        self.color = [value[0], value[1], value[2], 1.0]
+
+    def SetVertexAttributes(self, vertex, color, index, normals=None):
+        self.mesh.vertex_attributes.append(vertex)
+        self.mesh.vertex_attributes.append(color)
+        self.mesh.vertex_index.append(index)
+        if normals is not None:
+            self.mesh.vertex_attributes.append(normals)
+
+
+class GameObjectEntity(Entity):
+
+    def __init__(self, name=None, type=None, id=None, primitiveID=gl.GL_LINES) -> None:
+        super().__init__(name, type, id)
+
+        # Gameobject basic properties
+        self._color = [1, 0.5, 0.2, 1.0]  # this will be used as a uniform var
+        # Create basic components of a primitive object
+        self.trans = BasicTransform(name="trans", trs=util.identity())
+        self.mesh = RenderMesh(name="mesh")
+        self.shaderDec = ShaderGLDecorator(Shader(vertex_source=VERT_PHONG_MVP, fragment_source=FRAG_PHONG))
+        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+        self.vArray = VertexArray(primitive=primitiveID)
+        # Add components to entity
+        scene = Scene()
+        scene.world.createEntity(self)
+        scene.world.addComponent(self, self.trans)
+        scene.world.addComponent(self, self.mesh)
+        scene.world.addComponent(self, self.shaderDec)
+        scene.world.addComponent(self, self.vArray)
+
+    @property
+    def color(self):
+        return self._color
+
+    @color.setter
+    def color(self, colorArray):
+        self._color = colorArray
+
+    def drawSelfGui(self, imgui):
+        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2])
+        self.color = [value[0], value[1], value[2], 1.0]
+
+    def SetVertexAttributes(self, vertex, color, index, normals=None):
+        self.mesh.vertex_attributes.append(vertex)
+        self.mesh.vertex_attributes.append(color)
+        self.mesh.vertex_index.append(index)
+        if normals is not None:
+            self.mesh.vertex_attributes.append(normals)
