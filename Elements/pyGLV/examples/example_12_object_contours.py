@@ -44,10 +44,10 @@ def get_lowest_coords(vectors):
     lowest_coords.append(1)
     return lowest_coords
 
-def translate_x(vectors, x):
+def translate_z(vectors, z):
     translated_vectors = []
     for vector in vectors:
-        translated_vector = [vector[0]+x, vector[1], vector[2], vector[3]]
+        translated_vector = [vector[0], vector[1], vector[2]+z, vector[3]]
         translated_vectors.append(translated_vector)
     return translated_vectors
 
@@ -72,8 +72,9 @@ def on_different_sides(p1,p2,plane):
     
 def intersect(vertices,indices,plane):
     contour = []
-    for i in range(0, len(vertices)-2, 3):
-        triangle = [vertices[i],vertices[i+1],vertices[i+2]]
+    for i in range(0, len(indices)-2, 3):
+        triangle_indices = [indices[i],indices[i+1],indices[i+2]]
+        triangle = [vertices[triangle_indices[0]],vertices[triangle_indices[1]],vertices[triangle_indices[2]]]
         line = []
         if(on_different_sides(triangle[0],triangle[1],plane)):
             line.append(get_intersection_point(triangle[0],triangle[1],plane))
@@ -135,7 +136,7 @@ orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","5
 
 node4 = scene.world.createEntity(Entity(name="Object"))
 scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.1, 0.1, 0.1) ))
+trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.identity() ))
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
 
 # a simple triangle
@@ -196,9 +197,10 @@ obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
 upper = get_highest_coords(vert)
 lower = get_lowest_coords(vert)
-x_diff = upper[0]-lower[0]
+z_diff = upper[2]-lower[2]
 vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
-vert = translate_x(vert,-x_diff)
+slice_vertices = translate_z(vertices,-(z_diff/2))
+vertices = translate_z(vertices, z_diff/2)
 
 
 mesh4.vertex_attributes.append(vertices)
@@ -209,8 +211,7 @@ vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
 ###
-contours_vertices = create_contours(vert,indices,.1)
-
+contours_vertices = create_contours(slice_vertices,indices,.025)
 contours_color = np.array([(1.,1.,1.,1.)] * len(contours_vertices))
 contours_indices = np.array(range(len(contours_vertices)))
 
@@ -292,7 +293,7 @@ projMat = util.perspective(50.0, 1200/800, 0.01, 100.0)
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
 model_terrain_axes = util.translate(0.0,0.0,0.0)
-model_cube = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
+model_cube = util.translate(0.0,0.5,0.0)
 
 
 
