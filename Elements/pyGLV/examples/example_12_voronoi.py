@@ -234,7 +234,7 @@ eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 # eManager._publishers[updateBackground.name] = gGUI
 
 
-eye = util.vec(.5, .5, 2)
+eye = util.vec(.5, .5, 1.5)
 target = util.vec(0.5, 0.5, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
