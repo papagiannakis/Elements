@@ -91,7 +91,8 @@ def CubeSpawn(cubename = "Cube", color = None):
     cube.SetVertexAttributes(vertices, colors, indices, normals);
     return cube.entity;
 
-
+# Creates a sphere with the given name and color
+# Returns the entity that contains the sphere
 def SphereSpawn(spherename = "Sphere", color = None):
     sphere = ObjectCreator(spherename);
     if color is None:
@@ -120,6 +121,10 @@ def SphereSpawn(spherename = "Sphere", color = None):
     sphere.SetVertexAttributes(vertices, colors, indices, normals);
     return sphere.entity;
 
+# Creates a cylinder with the given name and color
+# Returns the entity that contains the cylinder
+# The cylinder is oriented along the z axis
+# The cylinder is centered at the origin
 def CylinderSpawn(cylindername = "Cylinder", color = None):
     cylinder = ObjectCreator(cylindername);
     if color is None:
@@ -148,6 +153,10 @@ def CylinderSpawn(cylindername = "Cylinder", color = None):
     cylinder.SetVertexAttributes(vertices, colors, indices, normals);
     return cylinder.entity;
 
+# Creates a cone with the given name and color
+# Returns the entity that contains the cone
+# The cone is oriented along the z axis
+# The cone is centered at the origin
 def ConeSpawn(conename = "Cone", color = None):
     cone = ObjectCreator(conename);
     if color is None:
@@ -176,6 +185,8 @@ def ConeSpawn(conename = "Cone", color = None):
     cone.SetVertexAttributes(vertices, colors, indices, normals);
     return cone.entity;
 
+# Creates a torus with the given name and color
+# Returns the entity that contains the torus
 def TorusSpawn(torusname = "Torus", color = None):
     torus = ObjectCreator(torusname);
     if color is None:

@@ -142,9 +142,9 @@ def main(imguiFlag = False):
     sphere = BasicShapes.SphereSpawn()
     scene.world.addEntityChild(home1, sphere);
 
-    torus.trans.trs = util.translate(0, 1.5, 0)@util.scale(0.5)
+    torus.trans.trs = util.translate(-0.5, 0, 0)@util.scale(0.5)
     cylinder.trans.trs = util.translate(0, 0.5, 0)@util.scale(0.5)
-    cube.trans.trs = util.translate(0, 0, 0)@util.scale(0.5)
+    cube.trans.trs = util.translate(0.5, 0, 0)@util.scale(0.5)
     sphere.trans.trs = util.translate(0, -0.5, 0)@util.scale(0.5)
 
     
