@@ -10,6 +10,7 @@ from ctypes import c_int, byref
 import OpenGL.GL as gl
 import numpy as np
 from math import tan, pi
+import imgui
 
 class Gizmos:
     GIZMOS_X=np.array([
@@ -58,7 +59,7 @@ class Gizmos:
         self.is_selected = False
         self.selected_trs = None
         self.selected_mesh = None
-        self.selected_comp = ""
+        self.selected_comp = "None"
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
                                 "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
                                 "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh"])
@@ -99,9 +100,7 @@ class Gizmos:
         self.gizmos_z_vArray = self.scene.world.addComponent(self.gizmos_z, VertexArray(primitive=gl.GL_LINES))
         self.gizmos_z_shader = self.scene.world.addComponent(self.gizmos_z, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         
-        self.count_components()
-
-        
+        self.count_components()        
 
     def change_target(self):
         """
@@ -122,12 +121,9 @@ class Gizmos:
                 count = count-1
                 if(count==0):
                     self.selected_trs = component
-                    self.selected_comp = self.selected_trs.parent
+                    self.selected_comp = self.selected_trs.parent.name
                     #add selected mesh here
                     break
-        print(self.selected_comp)
-        #here add the name of the parent
-
 
     def update_mouse_position(self):
         """
@@ -195,6 +191,12 @@ class Gizmos:
             self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
             self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
             self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
+
+    def update_imgui(self):
+        imgui.set_next_window_size(200.0,100.0)
+        imgui.begin("Selected Entity")
+        imgui.text_ansi(self.selected_comp)
+        imgui.end()
 
     def update_view(self, View):
         self.view = View

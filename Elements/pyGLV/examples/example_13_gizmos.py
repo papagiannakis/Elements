@@ -175,6 +175,7 @@ while running:
     gizmos.update_view(view)
     gizmos.get_keyboard_Event()
     gizmos.update_gizmos()
+    gizmos.update_imgui()
 
     model_cube = trans4.trs
     model_terrain = terrain.getChild(0).trs     

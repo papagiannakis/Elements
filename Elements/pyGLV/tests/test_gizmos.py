@@ -66,6 +66,7 @@ class TestGizmos(unittest.TestCase):
             gizmos.update_mouse_position()
             gizmos.get_keyboard_Event()
             gizmos.update_gizmos()
+            gizmos.update_imgui()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
