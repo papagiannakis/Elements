@@ -175,6 +175,11 @@ while running:
     gizmos.update_view(view)
     gizmos.get_keyboard_Event()
     gizmos.update_gizmos()
+
+    model_cube = trans4.trs
+    model_terrain = terrain.getChild(0).trs     
+    model_cube2 = trans4_2.trs
+    
     mvp_cube = projMat @ view @ model_cube
     mvp_cube2 = projMat @ view @ model_cube2
     mvp_terrain = projMat @ view @ model_terrain
