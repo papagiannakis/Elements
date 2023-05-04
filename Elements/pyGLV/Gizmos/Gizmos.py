@@ -2,7 +2,7 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform
 import Elements.pyECSS.utilities as util
-from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.Component import BasicTransform, RenderMesh, Component
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import sdl2 as sdl
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
@@ -47,16 +47,22 @@ class Gizmos:
     def __init__(self,rootEntity: Entity,Projection=None, View=None):
         sdl.ext.init()
         self.scene = Scene()
-        self.selected = -1
-        self.selected_pos = -1
+        self.selected = 0
+        self.total = 0
         self.mouse_x, self.mouse_y = c_int(0), c_int(0)
         self.mouse_state = 0 #LMB not clicked
         self.key_states = sdl.SDL_GetKeyboardState(None)
         self.key_down = False
-        self.trs_table = {}
         self.projection = Projection
         self.view = View
         self.is_selected = False
+        self.selected_trs = None
+        self.selected_mesh = None
+        self.selected_comp = ""
+        self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
+                                "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
+                                "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh"])
+
         self.cameraInUse = ""
         self.fov = 0.0
         self.aspect_ratio = 0.0
@@ -92,8 +98,10 @@ class Gizmos:
         self.gizmos_z_mesh.vertex_index.append(Gizmos.GIZMOS_INDEX)
         self.gizmos_z_vArray = self.scene.world.addComponent(self.gizmos_z, VertexArray(primitive=gl.GL_LINES))
         self.gizmos_z_shader = self.scene.world.addComponent(self.gizmos_z, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        
+        self.count_components()
 
-        self.index_components(self.scene)
+        
 
     def change_target(self):
         """
@@ -103,22 +111,23 @@ class Gizmos:
         Returns:
             None
         """
-        entities = self.scene.world.root.getNumberOfChildren()
+        self.selected = self.selected+1
+        count = self.selected
+        if(count>self.total):
+            count = 1
+            self.selected = 1
 
-        if self.selected<0 or self.selected==entities-1:
-            self.selected = 0
-            self.selected_pos = self.trs_table[self.selected]
-        else:
-            self.selected +=1
-            self.selected_pos = self.trs_table[self.selected]
-            name = self.scene.world.root.getChild(self.selected).name
-            while (name=="Gizmos_X" or name=="Gizmos_Y" or name=="Gizmos_Z") and entities>3:
-                    self.selected +=1
-                    self.selected_pos = self.trs_table[self.selected]
-                    if self.selected == entities-1:
-                        self.selected = 0
-                        self.selected_pos = self.trs_table[self.selected]
-                    name = self.scene.world.root.getChild(self.selected).name
+        for component in self.scene.world.root:
+            if component is not None and component.getClassName()=="BasicTransform" and not component.name in  self.gizmos_comps:
+                count = count-1
+                if(count==0):
+                    self.selected_trs = component
+                    self.selected_comp = self.selected_trs.parent
+                    #add selected mesh here
+                    break
+        print(self.selected_comp)
+        #here add the name of the parent
+
 
     def update_mouse_position(self):
         """
@@ -133,26 +142,18 @@ class Gizmos:
         #print("Mouse Position: (",self.mouse_x.value,",",self.mouse_y.value,")")
         #print("Left Mouse Button state: ",self.mouse_state)
 
-    def index_components(self,
-                         scene: Scene):
+    def count_components(self):
         """
-        Create an indexing for each entity's "BasicTransform" and "RenderMesh" components' position
+        Count transform components in the scene
         Arguments:
             self: that's me
-            scene: Scene component that stores all entities
         Returns:
             None
         """
-        entities = scene.world.root.getNumberOfChildren()
-        for i in range(entities):
-            entity = scene.world.root.getChild(i)
-            children = entity.getNumberOfChildren()
-            for j in range(children):
-                comp = entity.getChild(j)
-                if comp is not None and comp.getClassName()=="BasicTransform":
-                    self.trs_table[i] = j
-                    break
-    
+        for component in self.scene.world.root:
+            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps:
+                self.total = self.total + 1
+
     def get_keyboard_Event(self):
         """
         When TAB is pressed change selected entity
@@ -166,13 +167,15 @@ class Gizmos:
             self.key_down = True
             self.change_target()
             self.is_selected = True
-            print("Selected: ",self.scene.world.root.getChild(self.selected))
-            self.gizmos_x_trans.trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
-            self.gizmos_y_trans.trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
-            self.gizmos_z_trans.trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
+            self.gizmos_x_trans.trs = self.selected_trs.trs
+            self.gizmos_y_trans.trs = self.selected_trs.trs
+            self.gizmos_z_trans.trs = self.selected_trs.trs
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             #print('TAB key released')
             self.key_down = False
+        #if self.key_states[sdl.SDL_SCANCODE_A] and self.selected_trs is not None:
+        #    print("Translating selected")
+        #    self.translate_selected(x=0.1)
     
     def update_gizmos(self):
         """
@@ -231,8 +234,11 @@ class Gizmos:
         Returns:
             None
         """
-        selected_trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
-        self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs = selected_trs @ util.translate(x,y,z)
+        self.selected_trs.trs = self.selected_trs.trs @ util.translate(x,y,z)
+        #selected = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos)
+        #selected.trs = selected.trs @ util.translate(x,y,z)
+        #selected_trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
+        #self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs = selected_trs @ util.translate(x,y,z)
     
     def rotate_selected(self,angle=0.0,axis=(1.0,0.0,0.0)):
         """
