@@ -97,28 +97,28 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
 
-#### BEZIER ####
+#### BEZIER 2D ####
 
 
 bezier_control_nodes = [[0, 0], [1, 2], [0, 3]]
 
-def separate_coordinates(coordinates):
-    x_coordinates = [coord[0] for coord in coordinates]
-    y_coordinates = [coord[1] for coord in coordinates]
-    return [x_coordinates, y_coordinates]
+# def separate_coordinates(coordinates):
+#     x_coordinates = [coord[0] for coord in coordinates]
+#     y_coordinates = [coord[1] for coord in coordinates]
+#     return [x_coordinates, y_coordinates]
+#
+# def combine_coordinates(coordinates):
+#     return [[coord[0], coord[1]] for coord in zip(coordinates[0], coordinates[1])]
+#
+# def xy_to_vertecies(coords):
+#     return [coord + [0.0, 1.0] for coord in coords]
 
-def combine_coordinates(coordinates):
-    return [[coord[0], coord[1]] for coord in zip(coordinates[0], coordinates[1])]
-
-def xy_to_vertex(coord):
-    return coord + [0.0, 1.0]
-def xy_coords_to_line_vertecies(coordinates):
+def vertecies_to_line_vertecies(coordinates):
     vertecies = []
-    vertecies.append(xy_to_vertex(coordinates[0]))
+    vertecies.append(coordinates[0])
     for coord in coordinates[1:-1]:
-        vertex = xy_to_vertex(coord)
-        vertecies.extend([vertex, vertex])
-    vertecies.append(xy_to_vertex(coordinates[-1]))
+        vertecies.extend([coord, coord])
+    vertecies.append(coordinates[-1])
     return vertecies
 
 def generate_bezier_data(bezier_nodes, numberPoints, start_x, end_x):
@@ -129,7 +129,7 @@ def generate_bezier_data(bezier_nodes, numberPoints, start_x, end_x):
     xy_values = combine_coordinates(bezier_curve.evaluate_multi(x_values))
     print("xy_values:", xy_values)
 
-    vertexBezier = np.array(xy_coords_to_line_vertecies(xy_values), dtype=np.float32)
+    vertexBezier = np.array(vertecies_to_line_vertecies(xy_to_vertecies(xy_values)), dtype=np.float32)
     print("vertexBezier", vertexBezier)
 
     colorBezier = np.array([[1.0, 0.0, 1.0, 1.0]] * len(vertexBezier), dtype=np.float32)
@@ -140,7 +140,57 @@ def generate_bezier_data(bezier_nodes, numberPoints, start_x, end_x):
     return vertexBezier, colorBezier, indexBezier
 
 
-vertexBezier, colorBezier, indexBezier = generate_bezier_data(bezier_control_nodes, 100, -1, 1)
+
+#### BEZIER 3D ####
+
+
+bezier_control_nodes_3D = [[0, 0, 0], [1, 2, 1], [0, 3, 2]]
+
+def separate_coordinates_3D(coordinates):
+    x_coordinates = [coord[0] for coord in coordinates]
+    y_coordinates = [coord[1] for coord in coordinates]
+    z_coordinates = [coord[2] for coord in coordinates]
+    return [x_coordinates, y_coordinates, z_coordinates]
+
+def combine_coordinates_3D(coordinates):
+    return [[coord[0], coord[1], coord[2]] for coord in zip(coordinates[0], coordinates[1], coordinates[2])]
+
+def xyz_to_vertecies(coords):
+    return [coord + [1.0] for coord in coords]
+
+def generate_points(num_points, start_x, end_x, start_z, end_z):
+    x_values = np.linspace(start_x, end_x, num_points)
+    z_values = np.linspace(start_z, end_z, num_points)
+    points = []
+    for x in x_values:
+        for z in z_values:
+            points.append([x, z])
+    return points
+
+def generate_bezier_data_3D(bezier_nodes, num_points, start_x, end_x):
+    bezier_curve = bezier.Curve.from_nodes(separate_coordinates_3D(bezier_nodes))
+    print("created bezier curve:", bezier_curve)
+
+    x_values = np.linspace(start_x, end_x, num_points)
+    bezier_points = bezier_curve.evaluate_multi(x_values)
+    print("bezier_points", bezier_points)
+
+    xyz_values = combine_coordinates_3D(bezier_points)
+    print("xyz_values:", xyz_values)
+
+    vertexBezier = np.array(vertecies_to_line_vertecies(xyz_to_vertecies(xyz_values)), dtype=np.float32)
+    print("vertexBezier", vertexBezier)
+
+    colorBezier = np.array([[0.5, 0.0, 1.0, 1.0]] * len(vertexBezier), dtype=np.float32)
+    print("colorBezier", colorBezier)
+
+    indexBezier = np.array(range(len(vertexBezier)), np.uint32)
+
+    return vertexBezier, colorBezier, indexBezier
+
+
+#vertexBezier, colorBezier, indexBezier = generate_bezier_data(bezier_control_nodes, 100, -1, 1)
+vertexBezier, colorBezier, indexBezier = generate_bezier_data_3D(bezier_control_nodes_3D, 100, -1, 1)
 
 ## ADD BEZIER ##
 bezier = scene.world.createEntity(Entity(name="bezier"))
