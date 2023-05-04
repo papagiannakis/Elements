@@ -54,20 +54,22 @@ class TestGizmos(unittest.TestCase):
         far = 10.0
         projMat = util.perspective(fov, aspect_ratio, near, far) 
 
-        gizmos = Gizmos(projMat,view)
-        gizmos.update_view(view)
+        gizmos = Gizmos(self.rootEntity,projMat,view)
+        gizmos.set_camera_in_use("entityCam1")
 
         running = True
         # MAIN RENDERING LOOP
         self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_gizmos_Empty_Scene")
 
+        self.scene.world.traverse_visit(self.initUpdate,self.scene.world.root)
+
         while running:
             running = self.scene.render(running)
+            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             gizmos.update_mouse_position()
             gizmos.get_keyboard_Event()
             gizmos.update_gizmos()
             gizmos.update_imgui()
-            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
         self.scene.shutdown()
