@@ -117,13 +117,22 @@ class Gizmos:
             self.selected = 1
 
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and not component.name in  self.gizmos_comps:
-                count = count-1
-                if(count==0):
-                    self.selected_trs = component
-                    self.selected_comp = self.selected_trs.parent.name
-                    #add selected mesh here
-                    break
+            if component is not None:
+                parentname = component.parent.name
+                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse:
+                    count = count-1
+                    if(count==0):
+                        self.selected_trs = component
+                        self.selected_comp = self.selected_trs.parent.name
+                        children = self.selected_trs.getNumberOfChildren()
+
+                        for i in range(children):
+                            child = self.selected_trs.getChild(i)
+                            if child.getClassName()=="RenderMesh":
+                                self.selected_mesh = child
+                                print(child)
+                                break
+                        break
 
     def update_mouse_position(self):
         """
@@ -162,10 +171,11 @@ class Gizmos:
             #print('TAB key pressed')
             self.key_down = True
             self.change_target()
-            self.is_selected = True
-            self.gizmos_x_trans.trs = self.selected_trs.trs
-            self.gizmos_y_trans.trs = self.selected_trs.trs
-            self.gizmos_z_trans.trs = self.selected_trs.trs
+            if self.total>0:
+                self.is_selected = True
+                self.gizmos_x_trans.trs = self.selected_trs.trs
+                self.gizmos_y_trans.trs = self.selected_trs.trs
+                self.gizmos_z_trans.trs = self.selected_trs.trs
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             #print('TAB key released')
             self.key_down = False
@@ -203,6 +213,7 @@ class Gizmos:
 
     def set_camera_in_use(self,camera: str):
         self.cameraInUse = camera
+        self.total = self.total - 1
 
     def update_projection(self, Proj):
         self.projection = Proj
