@@ -444,6 +444,12 @@ def SpawnHome3():
 # Components, Camera, Shader, VertexArray and RenderMesh
 #
 
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+# Addresses a potential issue: 
+# https://stackoverflow.com/questions/53014306/error-15-initializing-libiomp5-dylib-but-found-libiomp5-dylib-already-initial
+
 scene = Scene()
 
 # Initialize Systems used for this script
