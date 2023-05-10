@@ -134,6 +134,8 @@ projMat = util.perspective(fov, aspect_ratio, near, far)
 
 gizmos = Gizmos(rootEntity,projMat,view)
 gizmos.set_camera_in_use("entityCam1")
+gizmos.update_projection(projMat)
+gizmos.update_projection_args(window_width=1024,window_height=768,fov=fov)
 
 # MAIN RENDERING LOOP
 
