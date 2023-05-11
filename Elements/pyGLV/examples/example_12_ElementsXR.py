@@ -81,11 +81,12 @@ shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_
 running = True
 scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: ElementsXR Example", openGLversion = 4)
 
-################### EVENT MANAGER ###################
-
-
-
-renderGLEventActuator = RenderGLStateSystem()
+program = ElementsXR_program()
+program.createInstance("gotcha")
+program.InitializeSystem()
+program.InitializeDevice(initUpdate,scene)
+program.InitializeSession()
+program.create_Swapchains()
 
 
 eye = util.vec(2.5, 2.5, 2.5)
@@ -103,19 +104,10 @@ top_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "top.jpg
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 
-program = ElementsXR_program()
-program.createInstance("gotcha")
-program.InitializeSystem()
-program.InitializeDevice(initUpdate,scene)
-program.InitializeSession()
-program.create_Swapchains()
-
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 
 while running:
     running = program.poll_events()
-    model = skybox.getChild(0).trs
-    shaderSkybox.setUniformVariable(key='model', value=model, mat4=True)
     if program.session_running:
         program.render_frame(renderUpdate,scene)
     else:

@@ -85,17 +85,44 @@ class OpenGLPlugin(GraphicsPlugin):
         self.swapchain_image_buffers: List[xr.SwapchainImageOpenGLKHR] = []  # To keep the swapchain images alive
         self.swapchain_framebuffer: Optional[int] = None
         self.debug_message_proc = None  # To keep the callback alive
+        self.window = None
+        self.color_to_depth_map: Dict[int, int] = {}
+        self.debug_message_proc = None
 
     @property
     def instance_extensions(self) -> List[str]:
         return [xr.KHR_OPENGL_ENABLE_EXTENSION_NAME]
     
+    def focus_window(self):
+        glfw.focus_window(self.window)
+        glfw.make_context_current(self.window)
+
+    def get_depth_texture(self, color_texture) -> int:
+        # If a depth-stencil view has already been created for this back-buffer, use it.
+        if color_texture in self.color_to_depth_map:
+            return self.color_to_depth_map[color_texture]
+        # This back-buffer has no corresponding depth-stencil texture, so create one with matching dimensions.
+        GL.glBindTexture(GL.GL_TEXTURE_2D, color_texture)
+        width = GL.glGetTexLevelParameteriv(GL.GL_TEXTURE_2D, 0, GL.GL_TEXTURE_WIDTH)
+        height = GL.glGetTexLevelParameteriv(GL.GL_TEXTURE_2D, 0, GL.GL_TEXTURE_HEIGHT)
+
+        depth_texture = GL.glGenTextures(1)
+        GL.glBindTexture(GL.GL_TEXTURE_2D, depth_texture)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MAG_FILTER, GL.GL_NEAREST)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_MIN_FILTER, GL.GL_NEAREST)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_S, GL.GL_CLAMP_TO_EDGE)
+        GL.glTexParameteri(GL.GL_TEXTURE_2D, GL.GL_TEXTURE_WRAP_T, GL.GL_CLAMP_TO_EDGE)
+        GL.glTexImage2D(GL.GL_TEXTURE_2D, 0, GL.GL_DEPTH_COMPONENT32, width, height, 0, GL.GL_DEPTH_COMPONENT, GL.GL_FLOAT, None)
+        self.color_to_depth_map[color_texture] = depth_texture
+        return depth_texture
+
     def initialize_device(self, 
                           instance: xr.Instance, 
                           system_id: xr.SystemId,
                           renderer: InitGLShaderSystem,
                           scene :Scene):
         # extension function must be loaded by name
+        self.initialize_resources(renderer,scene)
         pfn_get_open_gl_graphics_requirements_khr = cast(
             xr.get_instance_proc_addr(
                 instance,
@@ -132,14 +159,15 @@ class OpenGLPlugin(GraphicsPlugin):
             self._graphics_binding.h_dc = WGL.wglGetCurrentDC()
             self._graphics_binding.h_glrc = WGL.wglGetCurrentContext()
 
-        #TODO add Linux case here
+        #TODO add other platforms cases here
 
-        GL.glEnable(GL.GL_DEBUG_OUTPUT)
+        self.debug_message_proc = GL.GLDEBUGPROC(self.opengl_debug_message_callback)
+        GL.glDebugMessageCallback(self.debug_message_proc, None)
         self.initialize_resources(renderer,scene)
 
-    def initialize_resources(self,renderer,scene):
+    def initialize_resources(self,renderer: InitGLShaderSystem,scene: Scene):
         self.swapchain_framebuffer = GL.glGenFramebuffers(1)
-        scene.world.traverse_visit(renderer, scene.world.root)
+        scene.world.traverse_visit(renderer, scene.world.root)#this here needs to change
 
     @property
     def swapchain_image_type(self):
@@ -188,12 +216,21 @@ class OpenGLPlugin(GraphicsPlugin):
                     #mirror=False
                     ):
         assert layer_view.sub_image.image_array_index == 0
+        glfw.make_context_current(self.window)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER,self.swapchain_framebuffer)
         swapchain_image = cast(swapchain_image_base_ptr, POINTER(xr.SwapchainImageOpenGLKHR)).contents
         GL.glViewport(layer_view.sub_image.image_rect.offset.x,
                       layer_view.sub_image.image_rect.offset.y,
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
+        color_texture = swapchain_image.image
+        GL.glFrontFace(GL.GL_CW)
+        GL.glCullFace(GL.GL_BACK)
+        GL.glEnable(GL.GL_CULL_FACE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
+        depth_texture = self.get_depth_texture(color_texture)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, color_texture, 0)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth_texture, 0)
         
         #this contains the HMD's views for both eyes
         context = xr.ContextObject(
@@ -214,27 +251,26 @@ class OpenGLPlugin(GraphicsPlugin):
         eye = util.vec(layer_view.pose.position.x,
                            layer_view.pose.position.y,
                            layer_view.pose.position.z
-                           ) #openXR calls this position 
+                           ) #openXR calls this position
 
         target = util.vec(layer_view.pose.orientation.x,
                         layer_view.pose.orientation.y,
                         layer_view.pose.orientation.z) #openXR calls this orientation
 
-        up = util.vec(1.0,
-                    1.0,
-                    1.0)
+        up = util.vec(1.0,1.0,1.0)
             
         view = util.lookat(eye,target,up)
 
-        #Update each component's view
+        #Traverse world
+        scene.world.traverse_visit(renderUpdate, scene.world.root)
+
+        #Update each shader's projection & view
         element: Entity
-        for element in scene.world.root:
+        for element in scene.world.root: #TODO change this loop for faster scene parsing
             if element is not None and element.getClassName()=="ShaderGLDecorator":
                 #Note: All shaders should get their model-view-projection the same way for this loop to work
                 element.setUniformVariable(key='Proj', value=proj, mat4=True)
                 element.setUniformVariable(key='View', value=view, mat4=True)
 
-        #Traverse world
-        scene.world.traverse_visit(renderUpdate, scene.world.root)
-
         scene.render_post()
+        GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
