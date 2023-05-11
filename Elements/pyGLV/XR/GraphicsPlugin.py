@@ -10,6 +10,7 @@ from Elements.pyGLV.GL.Shader import ShaderGLDecorator, InitGLShaderSystem
 from Elements.pyECSS.Component import BasicTransform
 from Elements.pyECSS.Entity import Entity
 import Elements.pyECSS.Component as Component
+from Elements.pyGLV.XR.options import options
 from OpenGL import GL, WGL
 import glfw
 
@@ -75,7 +76,7 @@ class GraphicsPlugin(object):
         pass
 
 class OpenGLPlugin(GraphicsPlugin):
-    def __init__(self) -> None:
+    def __init__(self,options: options) -> None:
         super().__init__()
 
         if platform.system() == "Windows":
@@ -85,6 +86,7 @@ class OpenGLPlugin(GraphicsPlugin):
         self.swapchain_image_buffers: List[xr.SwapchainImageOpenGLKHR] = []  # To keep the swapchain images alive
         self.swapchain_framebuffer: Optional[int] = None
         self.debug_message_proc = None  # To keep the callback alive
+        self.background_clear_color = options.background_clear_color
         self.window = None
         self.color_to_depth_map: Dict[int, int] = {}
         self.debug_message_proc = None
@@ -119,10 +121,8 @@ class OpenGLPlugin(GraphicsPlugin):
     def initialize_device(self, 
                           instance: xr.Instance, 
                           system_id: xr.SystemId,
-                          renderer: InitGLShaderSystem,
-                          scene :Scene):
-        # extension function must be loaded by name
-        self.initialize_resources(renderer,scene)
+                          renderer: InitGLShaderSystem):
+        scene = Scene()
         pfn_get_open_gl_graphics_requirements_khr = cast(
             xr.get_instance_proc_addr(
                 instance,
@@ -159,7 +159,7 @@ class OpenGLPlugin(GraphicsPlugin):
             self._graphics_binding.h_dc = WGL.wglGetCurrentDC()
             self._graphics_binding.h_glrc = WGL.wglGetCurrentContext()
 
-        #TODO add other platforms cases here
+        #Add other platforms cases here
 
         self.debug_message_proc = GL.GLDEBUGPROC(self.opengl_debug_message_callback)
         GL.glDebugMessageCallback(self.debug_message_proc, None)
@@ -167,7 +167,7 @@ class OpenGLPlugin(GraphicsPlugin):
 
     def initialize_resources(self,renderer: InitGLShaderSystem,scene: Scene):
         self.swapchain_framebuffer = GL.glGenFramebuffers(1)
-        scene.world.traverse_visit(renderer, scene.world.root)#this here needs to change
+        scene.world.traverse_visit(renderer, scene.world.root)
 
     @property
     def swapchain_image_type(self):
@@ -212,34 +212,34 @@ class OpenGLPlugin(GraphicsPlugin):
                     swapchain_image_base_ptr: POINTER(xr.SwapchainImageBaseHeader),
                     _swapchain_format: int,
                     scene: Scene,
-                    renderUpdate: System
-                    #mirror=False
+                    renderUpdate: System,
+                    mirror=False
                     ):
+        print("called render_view")
         assert layer_view.sub_image.image_array_index == 0
         glfw.make_context_current(self.window)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER,self.swapchain_framebuffer)
+
         swapchain_image = cast(swapchain_image_base_ptr, POINTER(xr.SwapchainImageOpenGLKHR)).contents
         GL.glViewport(layer_view.sub_image.image_rect.offset.x,
                       layer_view.sub_image.image_rect.offset.y,
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
-        color_texture = swapchain_image.image
-        GL.glFrontFace(GL.GL_CW)
-        GL.glCullFace(GL.GL_BACK)
-        GL.glEnable(GL.GL_CULL_FACE)
-        GL.glEnable(GL.GL_DEPTH_TEST)
-        depth_texture = self.get_depth_texture(color_texture)
-        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, color_texture, 0)
-        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth_texture, 0)
+
+        #GL.glFrontFace(GL.GL_CW)
+        #GL.glCullFace(GL.GL_BACK)
+        #GL.glEnable(GL.GL_CULL_FACE)
+        #GL.glEnable(GL.GL_DEPTH_TEST)
         
-        #this contains the HMD's views for both eyes
-        context = xr.ContextObject(
-            instance_create_info=xr.InstanceCreateInfo(
-            enabled_extension_names=[
-            xr.KHR_OPENGL_ENABLE_EXTENSION_NAME,
-            ],
-            )
-        )
+        #color_texture = swapchain_image.image
+        #depth_texture = self.get_depth_texture(color_texture)
+        #GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, color_texture, 0)
+        #GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth_texture, 0)
+
+        #GL.glClearColor(*self.background_clear_color)
+        #GL.glClearDepth(1.0)
+        #GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
+        
 
         proj = util.ortho(layer_view.fov.angle_left, #fov is used for an Ortho Projection
                           layer_view.fov.angle_right,
@@ -262,15 +262,27 @@ class OpenGLPlugin(GraphicsPlugin):
         view = util.lookat(eye,target,up)
 
         #Traverse world
+        scene.render()
         scene.world.traverse_visit(renderUpdate, scene.world.root)
 
         #Update each shader's projection & view
         element: Entity
-        for element in scene.world.root: #TODO change this loop for faster scene parsing
+        for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
-                #Note: All shaders should get their model-view-projection the same way for this loop to work
+                #Note: All shaders should get their model-view-projection the same way for this loop to work for every shader
                 element.setUniformVariable(key='Proj', value=proj, mat4=True)
                 element.setUniformVariable(key='View', value=view, mat4=True)
 
-        scene.render_post()
+        if mirror:
+            GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)
+            w, h = layer_view.sub_image.image_rect.extent.width, layer_view.sub_image.image_rect.extent.height
+            GL.glBlitFramebuffer(
+                0, 0, w, h, 0, 0,
+                640, 480,
+                GL.GL_COLOR_BUFFER_BIT,
+                GL.GL_NEAREST
+            )
+
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+
+        #scene.render_post()

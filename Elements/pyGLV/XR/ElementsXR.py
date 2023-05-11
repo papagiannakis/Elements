@@ -115,7 +115,7 @@ class ElementsXR_program:
         "An openXR program in Elements"
         self.options = options()
         self.platform_plugin = createPlatformPlugin()
-        self.graphics_plugin = OpenGLPlugin()
+        self.graphics_plugin = OpenGLPlugin(self.options)
         self.debug_callback = xr.PFN_xrDebugUtilsMessengerCallbackEXT(xr_debug_callback)
 
         self.instance = None
@@ -127,7 +127,7 @@ class ElementsXR_program:
         self.config_views = []
         self.swapchains = []
         self.swapchain_image_buffers = []  # to keep objects alive
-        self.swapchain_image_ptr_buffers = {}  # m_swapchainImages
+        self.swapchain_image_ptr_buffers = {}  
         self.views = (xr.View * 2)(xr.View(), xr.View())
         self.color_swapchain_format = -1
 
@@ -146,7 +146,11 @@ class ElementsXR_program:
         ]
 
     def create_Swapchains(self):        
-        # Query and cache view configuration views.
+        
+        assert self.session is not None
+        assert len(self.swapchains) == 0
+        assert len(self.config_views) == 0
+
         self.config_views = xr.enumerate_view_configuration_views(
             instance=self.instance.handle,
             system_id=self.system.id,
@@ -237,7 +241,7 @@ class ElementsXR_program:
 
         self.instance = xr.InstanceObject(
             enabled_extensions=extensions,
-            application_name="XRprogram",
+            application_name=name,
             application_version=xr.Version(0, 0, 1),
             next=next_structure,
         )
@@ -255,10 +259,9 @@ class ElementsXR_program:
         assert self.system.id is not None
 
     def InitializeDevice(self,
-                         renderer : InitGLShaderSystem, 
-                         scene : Scene):
+                         renderer : InitGLShaderSystem):
         "The graphics Plugin takes care of the initialization here"
-        self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer,scene)
+        self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer)
 
     def InitializeSession(self):
         assert self.instance is not None
@@ -335,7 +338,7 @@ class ElementsXR_program:
             exit_loop = True
         return exit_loop
 
-    def render_frame(self,renderer: System, scene: Scene) -> None:
+    def render_frame(self,renderer: System,scene: Scene) -> None:
         """Create and submit a frame."""
         assert self.session is not None
         frame_state = xr.wait_frame(
@@ -415,15 +418,15 @@ class ElementsXR_program:
             view.fov = self.views[i].fov
             view.sub_image.swapchain = view_swapchain.handle
             view.sub_image.image_rect.offset[:] = [0, 0]
-            view.sub_image.image_rect.extent[:] = [view_swapchain.width, view_swapchain.height, ]
+            view.sub_image.image_rect.extent[:] = [view_swapchain.width, view_swapchain.height ]
             swapchain_image_ptr = self.swapchain_image_ptr_buffers[hash(view_swapchain.handle)][swapchain_image_index]
             self.graphics_plugin.Render_View(
                 view,
                 swapchain_image_ptr,
                 self.color_swapchain_format,
                 scene,
-                renderer
-                # mirror=False,
+                renderer,
+                mirror=i==0 #mirror left eye only ?
             )
             xr.release_swapchain_image(
                 swapchain=view_swapchain.handle,

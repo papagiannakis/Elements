@@ -81,10 +81,11 @@ shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_
 running = True
 scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: ElementsXR Example", openGLversion = 4)
 
+
 program = ElementsXR_program()
-program.createInstance("gotcha")
+program.createInstance("Elements: ElementsXR Demo")
 program.InitializeSystem()
-program.InitializeDevice(initUpdate,scene)
+program.InitializeDevice(initUpdate)
 program.InitializeSession()
 program.create_Swapchains()
 

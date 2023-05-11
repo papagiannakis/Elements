@@ -29,6 +29,18 @@ class options:
             "environment_blend_mode": self.get_xr_environment_blend_mode(blend_mode)
         }
 
+    @property
+    def background_clear_color(self) -> tuple:
+        slate_grey = (0.184313729, 0.309803933, 0.309803933, 1.0)
+        if self.parsed["environment_blend_mode"] == xr.EnvironmentBlendMode.OPAQUE:
+            return slate_grey  # SlateGrey
+        elif self.parsed["environment_blend_mode"] == xr.EnvironmentBlendMode.ADDITIVE:
+            return 0, 0, 0, 1  # Black
+        elif self.parsed["environment_blend_mode"] == xr.EnvironmentBlendMode.ALPHA_BLEND:
+            return 0, 0, 0, 0  # TransparentBlack
+        else:
+            return slate_grey
+
     @staticmethod
     def get_xr_environment_blend_mode(environment_blend_mode_string: str) -> xr.EnvironmentBlendMode:
         return {
