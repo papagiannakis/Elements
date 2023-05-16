@@ -31,7 +31,8 @@ Lintensity = 0.8
 Mshininess = 0.4 
 Mcolor = util.vec(0.8, 0.0, 0.8)
 
-
+winWidth = 1200
+winHeight = 800
 scene = Scene()    
 
 # Scenegraph with Entities, Components
@@ -176,7 +177,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1200, windowHeight = 800, windowTitle = "Elements: Let There Be Light", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Let There Be Light", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -202,7 +203,7 @@ up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
 # projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
 # projMat = util.perspective(90.0, 1.33, 0.1, 100)  
-projMat = util.perspective(50.0, 1200/800, 0.01, 100.0)   
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 

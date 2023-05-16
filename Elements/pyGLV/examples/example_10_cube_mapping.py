@@ -13,7 +13,8 @@ import Elements.pyGLV.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
-
+winWidth = 1024
+winHeight = 768
 scene = Scene()    
 
 # Scenegraph with Entities, Components
@@ -112,7 +113,7 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context

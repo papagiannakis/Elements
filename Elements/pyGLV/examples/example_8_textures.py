@@ -15,7 +15,8 @@ from Elements.pyGLV.GL.Textures import Texture
 
 from OpenGL.GL import GL_LINES
 
-
+winWidth = 1024
+winHeight = 768
 scene = Scene()    
 
 # Scenegraph with Entities, Components
@@ -154,7 +155,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: Textures example", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Textures example", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context

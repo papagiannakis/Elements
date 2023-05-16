@@ -436,6 +436,8 @@ def SpawnHome3():
 # Instantiate a simple complete ECSS with Entities,
 # Components, Camera, Shader, VertexArray and RenderMesh
 #
+winWidth = 1024
+winHeight = 1024
 
 scene = Scene()
 
@@ -508,7 +510,7 @@ scene.world.print()
 
 # MAIN RENDERING LOOP
 running = True
-scene.init(imgui=True, windowWidth=1024, windowHeight=1024, windowTitle="pyglGA Cube ECSS Scene",
+scene.init(imgui=True, windowWidth=winWidth, windowHeight=winHeight, windowTitle="pyglGA Cube ECSS Scene",
            customImGUIdecorator=ImGUIecssDecorator)
 
 imGUIecss = scene.gContext
