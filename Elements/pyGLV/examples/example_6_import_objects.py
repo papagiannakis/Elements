@@ -164,7 +164,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
