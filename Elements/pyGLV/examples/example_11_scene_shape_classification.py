@@ -1,3 +1,10 @@
+####################################################################
+#                             IMPORTANT                            # 
+####################################################################
+# Running example 11 requires additional packages to be installed. # 
+# Check requirements_example_11.md for more information.           #
+####################################################################
+
 from __future__ import annotations
 
 from enum import Enum
@@ -438,6 +445,12 @@ def SpawnHome3():
 #
 winWidth = 1024
 winHeight = 1024
+
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+# Addresses a potential issue: 
+# https://stackoverflow.com/questions/53014306/error-15-initializing-libiomp5-dylib-but-found-libiomp5-dylib-already-initial
 
 scene = Scene()
 
