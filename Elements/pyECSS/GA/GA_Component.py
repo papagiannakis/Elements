@@ -62,7 +62,7 @@ class GATransform(BasicTransform):
             TRS = buf
         else: 
             print("missing input for TRS, defaulting to identity")
-            TRS = np.identity()
+            TRS = util.identity()
         # self._trs = TRS
         return TRS
         

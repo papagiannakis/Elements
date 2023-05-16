@@ -230,7 +230,7 @@ class TestScene(unittest.TestCase):
         
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes")
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
@@ -278,7 +278,7 @@ class TestScene(unittest.TestCase):
         # MAIN RENDERING LOOP
         running = True
         
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         while running:
@@ -329,7 +329,7 @@ class TestScene(unittest.TestCase):
         
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
@@ -496,7 +496,7 @@ class TestScene(unittest.TestCase):
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderAxesTerrain")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderAxesTerrain")
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         while running:
