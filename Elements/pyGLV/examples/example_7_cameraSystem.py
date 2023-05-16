@@ -160,6 +160,9 @@ def main(imguiFlag = False):
     # Components, Camera, Shader, VertexArray and RenderMesh
     #########################################################
     
+    winWidth = 1024
+    winHeight = 1024
+    
     scene = Scene()    
 
     # Initialize Systems used for this script
@@ -218,7 +221,7 @@ def main(imguiFlag = False):
     
     # MAIN RENDERING LOOP
     running = True
-    scene.init(imgui=True, windowWidth = 1024, windowHeight = 1024, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
+    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
 
     #imGUIecss = scene.gContext
 

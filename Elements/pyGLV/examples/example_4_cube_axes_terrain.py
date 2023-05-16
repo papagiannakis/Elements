@@ -12,6 +12,8 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
 
+winWidth = 1024
+winHeight = 768
 
 scene = Scene()    
 
@@ -160,7 +162,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: A Working Event Manager", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A Working Event Manager", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
