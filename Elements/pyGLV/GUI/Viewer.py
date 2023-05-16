@@ -864,15 +864,12 @@ class ImGUIecssDecorator(ImGUIDecorator):
         """
         process SDL2 basic events and input
         """
-        #width = self.wrapeeWindow.scene._renderWindow.windowWidth
-        #height = self.wrapeeWindow.scene._gContext().windowWidth
-        #width = self.wrapeeWindow._gWindow.windowWidth
         running = True
         events = sdl2.ext.get_events()
-        width = 1200    #TODO get the window width and height
-        height = 800
+        width = self.wrapeeWindow._windowWidth
+        height = self.wrapeeWindow._windowHeight
         
-
+        #if not imgui.is_window_focused():
         for event in events:
             
             if event.type == sdl2.SDL_MOUSEWHEEL:
