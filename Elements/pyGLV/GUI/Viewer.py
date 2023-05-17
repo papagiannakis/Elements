@@ -504,7 +504,7 @@ class ImGUIDecorator(RenderDecorator):
                     except StopIteration:
                         done_traversing = True
                     else:
-                        if comp.name == "Simple Camera":
+                        if "Camera" in comp.name: # just put the "Camera" string in the Entity that holds the camera
                             self.cam = comp
                             found = True
                         
