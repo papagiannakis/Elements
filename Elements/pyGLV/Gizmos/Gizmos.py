@@ -11,40 +11,64 @@ import OpenGL.GL as gl
 import numpy as np
 from math import tan, pi
 import imgui
-from OpenGL.GLU import gluUnProject
+import enum
+
+class Mode(enum.Enum):
+    TRANSLATE="Translate"
+    ROTATE="Rotate"
+    SCALE="Scale"
+
 
 class Gizmos:
-    GIZMOS_X=np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.5, 0.0, 0.0, 1.0]
-    ], dtype=np.float32)
-
-    GIZMOS_Y=np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.0, 1.5, 0.0, 1.0]
-    ]  ,dtype=np.float32)
-
-    GIZMOS_Z=np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.0, 0.0, 1.5, 1.0]
-    ], dtype=np.float32)
+    
+    VERTEX_GIZMOS = np.array([[-0.1, 0.0, -0.1, 1.0],
+                          [0.1, 0.0, -0.1, 1.0],
+                          [-0.1, 0.0, 0.1, 1.0],
+                          [0.1, 0.0, 0.1, 1.0],
+                          [-0.1, 1.3, -0.1, 1.0],
+                          [0.1, 1.3, -0.1, 1.0],
+                          [-0.1, 1.3, 0.1, 1.0],
+                          [0.1, 1.3, 0.1, 1.0],],dtype=np.float32)
 
     COLOR_X = np.array([
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0]
     ], dtype=np.float32)
 
     COLOR_Y = np.array([
     [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
     [0.0, 1.0, 0.0, 1.0]
     ], dtype=np.float32)
 
     COLOR_Z = np.array([
     [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
     [0.0, 0.0, 1.0, 1.0]
     ], dtype=np.float32)
 
-    GIZMOS_INDEX = np.array((0,1), np.uint32)
+    ARROW_INDEX = np.array((0,1,3, 2,0,3, 
+                            0,4,5, 0,5,1,
+                            2,6,0, 6,4,0,
+                            3,6,2, 3,7,6,
+                            1,5,7, 1,7,3,
+                            7,4,6, 7,5,4), np.int32)
 
     def __init__(self,rootEntity: Entity,Projection=None, View=None):
         sdl.ext.init()
@@ -63,46 +87,49 @@ class Gizmos:
         self.selected_trs = None
         self.selected_mesh = None
         self.selected_comp = "None"
+        self.mode = Mode.TRANSLATE
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
                                 "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
                                 "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh"])
 
         self.cameraInUse = ""
-        self.screen_width = 1.0
-        self.screen_height = 1.0
+        self.screen_width = 1000.0
+        self.screen_height = 1000.0
         self.fov = 1.0
-        self.aspect_ratio = 1.0
-        self.near = 1.0
-        self.far = 1.0
+
+        self.picked = False
+        self.previous_x = 0.0
+        self.previous_y = 0.0
+        self.previous_z = 0.0
 
         self.gizmos_x = self.scene.world.createEntity(Entity(name="Gizmos_X"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_x)
         self.gizmos_x_trans = self.scene.world.addComponent(self.gizmos_x, BasicTransform(name="Gizmos_X_trans", trs=util.identity()))
         self.gizmos_x_mesh = self.scene.world.addComponent(self.gizmos_x, RenderMesh(name="Gizmos_X_mesh"))
-        self.gizmos_x_mesh.vertex_attributes.append(Gizmos.GIZMOS_X) 
+        self.gizmos_x_mesh.vertex_attributes.append(Gizmos.VERTEX_GIZMOS)
         self.gizmos_x_mesh.vertex_attributes.append(Gizmos.COLOR_X)
-        self.gizmos_x_mesh.vertex_index.append(Gizmos.GIZMOS_INDEX)
-        self.gizmos_x_vArray = self.scene.world.addComponent(self.gizmos_x, VertexArray(primitive=gl.GL_LINES))
+        self.gizmos_x_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
+        self.gizmos_x_vArray = self.scene.world.addComponent(self.gizmos_x, VertexArray())
         self.gizmos_x_shader = self.scene.world.addComponent(self.gizmos_x, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         self.gizmos_y = self.scene.world.createEntity(Entity(name="Gizmos_Y"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y)
         self.gizmos_y_trans = self.scene.world.addComponent(self.gizmos_y, BasicTransform(name="Gizmos_Y_trans", trs=util.identity()))
         self.gizmos_y_mesh = self.scene.world.addComponent(self.gizmos_y, RenderMesh(name="Gizmos_Y_mesh"))
-        self.gizmos_y_mesh.vertex_attributes.append(Gizmos.GIZMOS_Y) 
+        self.gizmos_y_mesh.vertex_attributes.append(Gizmos.VERTEX_GIZMOS) 
         self.gizmos_y_mesh.vertex_attributes.append(Gizmos.COLOR_Y)
-        self.gizmos_y_mesh.vertex_index.append(Gizmos.GIZMOS_INDEX)
-        self.gizmos_y_vArray = self.scene.world.addComponent(self.gizmos_y, VertexArray(primitive=gl.GL_LINES))
+        self.gizmos_y_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
+        self.gizmos_y_vArray = self.scene.world.addComponent(self.gizmos_y, VertexArray())
         self.gizmos_y_shader = self.scene.world.addComponent(self.gizmos_y, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         self.gizmos_z = self.scene.world.createEntity(Entity(name="Gizmos_Z"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z)
         self.gizmos_z_trans = self.scene.world.addComponent(self.gizmos_z, BasicTransform(name="Gizmos_Z_trans", trs=util.identity()))
         self.gizmos_z_mesh = self.scene.world.addComponent(self.gizmos_z, RenderMesh(name="Gizmos_Z_mesh"))
-        self.gizmos_z_mesh.vertex_attributes.append(Gizmos.GIZMOS_Z) 
+        self.gizmos_z_mesh.vertex_attributes.append(Gizmos.VERTEX_GIZMOS) 
         self.gizmos_z_mesh.vertex_attributes.append(Gizmos.COLOR_Z)
-        self.gizmos_z_mesh.vertex_index.append(Gizmos.GIZMOS_INDEX)
-        self.gizmos_z_vArray = self.scene.world.addComponent(self.gizmos_z, VertexArray(primitive=gl.GL_LINES))
+        self.gizmos_z_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
+        self.gizmos_z_vArray = self.scene.world.addComponent(self.gizmos_z, VertexArray())
         self.gizmos_z_shader = self.scene.world.addComponent(self.gizmos_z, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         
         self.x_min_bb, self.x_max_bb = self.calculate_bounding_box(self.gizmos_x_mesh)
@@ -180,6 +207,10 @@ class Gizmos:
     def get_keyboard_Event(self):
         """
         When TAB is pressed change selected entity
+        Additionally:
+            T: change to translate mode
+            R: change to rotate mode
+            S: change to scale mode
         Arguments:
             self: that's me
         Returns:
@@ -197,6 +228,13 @@ class Gizmos:
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             #print('TAB key released')
             self.key_down = False
+
+        if self.key_states[sdl.SDL_SCANCODE_T]:
+            self.mode = Mode.TRANSLATE
+        if self.key_states[sdl.SDL_SCANCODE_R]:
+            self.mode = Mode.ROTATE
+        if self.key_states[sdl.SDL_SCANCODE_S]:
+            self.mode = Mode.SCALE
     
     def update_gizmos(self):
         """
@@ -207,9 +245,9 @@ class Gizmos:
             None
         """
         if self.is_selected:
-            model_x = self.gizmos_x_trans.trs
-            model_y = self.gizmos_y_trans.trs
-            model_z = self.gizmos_z_trans.trs
+            model_x = self.gizmos_x_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(1.0,0.0,0.0))
+            model_y = self.gizmos_y_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(0.0,1.0,0.0))
+            model_z = self.gizmos_z_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=-90,axis=(0.0,0.0,1.0))
             mvp_x = self.projection @ self.view @ model_x
             mvp_y = self.projection @ self.view @ model_y
             mvp_z = self.projection @ self.view @ model_z
@@ -221,6 +259,7 @@ class Gizmos:
         imgui.set_next_window_size(200.0,100.0)
         imgui.begin("Selected Entity")
         imgui.text_ansi(self.selected_comp)
+        imgui.text_ansi("Mode: "+self.mode.value)
         imgui.end()
 
     def update_projection(self, Proj):
@@ -244,7 +283,6 @@ class Gizmos:
         self.screen_width = window_width
         self.screen_height = window_height
         self.fov = fov
-        self.aspect_ratio = self.screen_width/self.screen_height
 
     def calculate_bounding_box(self,mesh: RenderMesh):
         """
@@ -283,11 +321,8 @@ class Gizmos:
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
-        #aspect_ratio = self.screen_width/self.screen_height
-        #x = (2 * ( (self.mouse_x.value+0.5)/self.screen_width)-1) * tan(self.fov/2*pi/180) * aspect_ratio
-        #y = (1-2*((self.mouse_y.value+0.5)/self.screen_height)) * tan(self.fov/2*pi/180)
-        x = 2 * (self.mouse_x.value/self.screen_width - 0.5)
-        y = 2 * (self.mouse_y.value/self.screen_height - 0.5)
+        x = 2.0 * (self.mouse_x.value/self.screen_width - 0.5)
+        y = 2.0 * (self.mouse_y.value/self.screen_height - 0.5)
 
         ray_start = util.vec(x,y,1.0,1.0) #z is 1 or -1, I don't know which one is right yet
         ray_end = util.vec(x,y,0.0,1.0)
@@ -310,9 +345,7 @@ class Gizmos:
         #print("Origin: ",ray_start_World)
         #print("Direction: ",ray_dir_world)
 
-        #ray_start_World = util.normalise(ray_start_World) ##########
-
-        #Delete these later if not needed
+        #ray_start_World = util.normalise(ray_start_World)
         ray_start_World = util.vec(ray_start_World[0],
                                    ray_start_World[1],
                                    ray_start_World[2])
@@ -326,31 +359,63 @@ class Gizmos:
         if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                               ray_dir_world,
                                               self.x_min_bb,
-                                              self.x_max_bb,self.gizmos_x_trans.l2world):#was trs
+                                              self.x_max_bb,self.gizmos_x_trans.l2world):
             print("intersected X")
+        
         if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                               ray_dir_world,
                                               self.y_min_bb,
-                                              self.y_max_bb,self.gizmos_y_trans.l2world):#was trs
+                                              self.y_max_bb,self.gizmos_y_trans.trs):
             print("intersected Y")
         if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                               ray_dir_world,
                                               self.z_min_bb,
-                                              self.z_max_bb,self.gizmos_z_trans.l2world):#was trs
+                                              self.z_max_bb,self.gizmos_z_trans.l2world):
             print("intersected Z")
-        
-        """
-        if self.selected_mesh is not None:
-        
-            #let's see if the program can understand if the mouse is hoveting over an element's bounding box
-            min,max = self.calculate_bounding_box(self.selected_mesh)
-            if self.selected_trs is not None and self.selected_mesh is not None and self.testRayBoundingBoxIntesection(ray_start_World,
-                                                                                    ray_dir_world,
-                                                                                    min,
-                                                                                    max,
-                                                                                    self.selected_trs.l2world):#was trs
-                print("selected object intersected")
-        """
+            if self.mouse_state==1:
+                min,max = self.calculate_tmin_tmax(ray_start_World,
+                                              ray_dir_world,
+                                              self.z_min_bb,
+                                              self.z_max_bb,self.gizmos_z_trans.l2world)
+                if self.picked==False:
+                    self.picked=True
+                    self.previous_z = min #min or max
+                else:
+                    diff = min - self.previous_z
+                    self.previous_z = min
+
+                    self.translate_selected(0,0,diff)
+            else:
+                self.picked = False
+
+    def calculate_tmin_tmax(self,ray_origin,ray_direction,minbb,maxbb,model):
+        tmin = 0.0
+        tmax = 100000.0
+
+        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2]) #this too?
+        delta = bb_pos_world - ray_origin
+
+        x_axis = util.vec(model[0][0],model[0][1],model[0][2]) #local 2 world
+        y_axis = util.vec(model[1][0],model[1][1],model[1][2])
+        z_axis = util.vec(model[2][0],model[2][1],model[2][2])
+
+        # Test intersection with the 2 planes perpendicular to the bounding box's X axis
+
+        e = np.dot(x_axis,delta)
+        f = np.dot(ray_direction,x_axis)
+
+        t1 = (e+minbb[0])/f 
+        t2 = (e+maxbb[0])/f 
+
+        if t1 > t2 :
+            t1, t2 = t2, t1
+            
+        if t2 < tmax:
+            tmax = t2
+        if t1 > tmin:
+            tmin = t1
+
+        return tmin,tmax
 
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
         """
@@ -387,9 +452,6 @@ class Gizmos:
             t2 = (e+maxbb[0])/f 
 
             if t1 > t2 :
-                #tmp = t1
-                #t1 = t2
-                #t2 = tmp
                 t1, t2 = t2, t1
             
             if t2 < tmax:
@@ -415,9 +477,6 @@ class Gizmos:
             t2 = (e+maxbb[1])/f 
 
             if t1 > t2 :
-                #tmp = t1
-                #t1 = t2
-                #t2 = tmp
                 t1, t2 = t2, t1
             
             if t2 < tmax:
@@ -442,9 +501,6 @@ class Gizmos:
             t2 = (e+maxbb[2])/f #intersection with right plane
 
             if t1 > t2 :
-                #tmp = t1
-                #t1 = t2
-                #t2 = tmp
                 t1, t2 = t2, t1
             
             if t2 < tmax:
@@ -472,6 +528,9 @@ class Gizmos:
             None
         """
         self.selected_trs.trs = self.selected_trs.trs @ util.translate(x,y,z)
+        self.gizmos_x_trans.trs = self.selected_trs.trs
+        self.gizmos_y_trans.trs = self.selected_trs.trs
+        self.gizmos_z_trans.trs = self.selected_trs.trs
     
     def rotate_selected(self,angle=0.0,axis=(1.0,0.0,0.0)):
         """
@@ -484,7 +543,6 @@ class Gizmos:
             None
         """
         pass
-        #selected_trs = self.scene.world.root.getChild(self.selected).getChild(self.selected_pos).trs
 
     def scale_selected(self,x=1.0,y=1.0,z=1.0):
         """
@@ -497,4 +555,4 @@ class Gizmos:
         Returns:
             None
         """
-        pass
+        self.selected_trs.trs = self.selected_trs.trs @ util.scale(x,y,z)
