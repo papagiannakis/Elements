@@ -126,8 +126,11 @@ eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
+width = 1024.0
+height = 768.0
 fov = 50.0
-aspect_ratio = 1.0
+#aspect_ratio = 1.0
+aspect_ratio = width/height
 near = 0.01
 far = 10.0
 projMat = util.perspective(fov, aspect_ratio, near, far) 
@@ -135,7 +138,8 @@ projMat = util.perspective(fov, aspect_ratio, near, far)
 gizmos = Gizmos(rootEntity,projMat,view)
 gizmos.set_camera_in_use("entityCam1")
 gizmos.update_projection(projMat)
-gizmos.update_projection_args(window_width=1024,window_height=768,fov=fov)
+
+gizmos.update_projection_args(window_width=height,window_height=height,fov=fov)
 
 # MAIN RENDERING LOOP
 
@@ -165,7 +169,7 @@ gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly 
 
 model_cube = trans4.trs
 
-model_terrain = terrain.getChild(0).trs # notice that terrain.getChild(0) == terrain_trans
+model_terrain = terrain.getChild(0).trs 
 
 model_cube2 = trans4_2.trs
 
