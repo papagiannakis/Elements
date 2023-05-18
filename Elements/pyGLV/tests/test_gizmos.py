@@ -77,7 +77,41 @@ class TestGizmos(unittest.TestCase):
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32) 
         
+    def testInitialization(self):
+        fov = 50.0
+        width=1000
+        height=1000
+        aspect_ratio = 1.0
+        near = 0.01
+        far = 10.0
+        projMat = util.perspective(fov, aspect_ratio, near, far)
 
+        eye = util.vec(2.5, 2.5, 2.5)
+        target = util.vec(0,0,0)
+        up = util.vec(0.0, 1.0, 0.0)
+        view = util.lookat(eye, target, up)
+
+        gizmos = Gizmos(self.rootEntity)
+
+        gizmos_entities = ["Gizmos_X","Gizmos_Y","Gizmos_Z",
+                           "Gizmos_X_trans","Gizmos_Y_trans","Gizmos_Z_trans",
+                           "Gizmos_X_mesh","Gizmos_Y_mesh","Gizmos_Z_mesh"]
+
+        for element in self.scene.world.root:
+            if element is not None and element.name in gizmos_entities:
+                gizmos_entities.remove(element.name)
+
+        #make sure that all gizmos components are in the scene
+        self.assertEqual(len(gizmos_entities),0)
+
+        gizmos.update_projection(projMat)
+        gizmos.update_projection_args(width,height,fov)
+        gizmos.update_view(view)
+        self.assertTrue(np.array_equiv(gizmos.projection,projMat))
+        self.assertEqual(gizmos.screen_width,width)
+        self.assertEqual(gizmos.screen_height,height)
+        self.assertEqual(gizmos.fov,fov)
+        self.assertTrue(np.array_equiv(gizmos.view,view))
     
     def testEmpty(self):
         """
@@ -95,7 +129,8 @@ class TestGizmos(unittest.TestCase):
         projMat = util.perspective(fov, aspect_ratio, near, far) 
 
         gizmos = Gizmos(self.rootEntity,projMat,view)
-        gizmos.set_camera_in_use("entityCam1")
+        cameraName = self.entityCam1.name
+        gizmos.set_camera_in_use(cameraName)
         gizmos.update_projection(projMat)
         gizmos.update_projection_args(window_width=1024,window_height=768,fov=fov)
 

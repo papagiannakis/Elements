@@ -109,7 +109,17 @@ class Gizmos:
         self.y_min_bb, self.y_max_bb = self.calculate_bounding_box(self.gizmos_y_mesh)
         self.z_min_bb, self.z_max_bb = self.calculate_bounding_box(self.gizmos_z_mesh)
 
-        self.count_components()        
+        self.count_components()
+
+    def reset_to_None(self):
+        """
+        Resets to initial state
+        """
+        self.is_selected = False
+        self.selected_trs = None
+        self.selected_mesh = None
+        self.selected_comp = "None"
+        #reset uniform variables too
 
     def change_target(self):
         """
@@ -133,13 +143,12 @@ class Gizmos:
                     if(count==0):
                         self.selected_trs = component
                         self.selected_comp = self.selected_trs.parent.name
-                        children = self.selected_trs.getNumberOfChildren()
-
+                        children = component.parent.getNumberOfChildren()
+                        self.selected_mesh = None
                         for i in range(children):
-                            child = self.selected_trs.getChild(i)
-                            if child.getClassName()=="RenderMesh":
+                            child = component.parent.getChild(i)
+                            if child is not None and child.getClassName()=="RenderMesh":
                                 self.selected_mesh = child
-                                print(child)
                                 break
                         break
 
@@ -214,18 +223,20 @@ class Gizmos:
         imgui.text_ansi(self.selected_comp)
         imgui.end()
 
+    def update_projection(self, Proj):
+        if self.selected is not None and not np.array_equiv(self.projection,Proj):
+            self.projection = Proj
+            self.inv_projection = util.inverse(self.projection)
+
     def update_view(self, View):
-        self.view = View
-        self.inv_view = util.inverse(self.view)
+        if self.selected is not None and not np.array_equiv(self.view,View):
+            self.view = View
+            self.inv_view = util.inverse(self.view)
 
     def set_camera_in_use(self,camera: str):
         if self.cameraInUse=="":
             self.total = self.total - 1
         self.cameraInUse = camera
-
-    def update_projection(self, Proj):
-        self.projection = Proj
-        self.inv_projection = util.inverse(self.projection)
     
     def update_projection_args(self,window_width,window_height,fov):
         """
@@ -293,13 +304,13 @@ class Gizmos:
         ray_end_world = self.inv_view @ ray_end_Camera
         ray_end_world = ray_end_world/ray_end_world[3]
 
-        #rayDirection = util.vec(x,y,1) # -1?
-        #rayDirection = util.normalise(rayDirection)
         ray_dir_world = ray_end_world - ray_start_World
         ray_dir_world = util.normalise(ray_dir_world)
 
         #print("Origin: ",ray_start_World)
         #print("Direction: ",ray_dir_world)
+
+        #ray_start_World = util.normalise(ray_start_World) ##########
 
         #Delete these later if not needed
         ray_start_World = util.vec(ray_start_World[0],
@@ -311,31 +322,35 @@ class Gizmos:
 
         #trials to check whether the program understands an intersection
         #to be deleted after the gizmos can be intersected correctly
+        
         if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                               ray_dir_world,
                                               self.x_min_bb,
-                                              self.x_max_bb,self.gizmos_x_trans.trs):
+                                              self.x_max_bb,self.gizmos_x_trans.l2world):#was trs
             print("intersected X")
         if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                               ray_dir_world,
                                               self.y_min_bb,
-                                              self.y_max_bb,self.gizmos_y_trans.trs):
+                                              self.y_max_bb,self.gizmos_y_trans.l2world):#was trs
             print("intersected Y")
         if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                               ray_dir_world,
                                               self.z_min_bb,
-                                              self.z_max_bb,self.gizmos_z_trans.trs):
+                                              self.z_max_bb,self.gizmos_z_trans.l2world):#was trs
             print("intersected Z")
-
+        
+        """
         if self.selected_mesh is not None:
+        
             #let's see if the program can understand if the mouse is hoveting over an element's bounding box
             min,max = self.calculate_bounding_box(self.selected_mesh)
-            if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
+            if self.selected_trs is not None and self.selected_mesh is not None and self.testRayBoundingBoxIntesection(ray_start_World,
                                                                                     ray_dir_world,
                                                                                     min,
                                                                                     max,
-                                                                                    self.selected_trs.trs):
+                                                                                    self.selected_trs.l2world):#was trs
                 print("selected object intersected")
+        """
 
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
         """
@@ -347,14 +362,18 @@ class Gizmos:
             minbb: minimum coordinates of an element's bounding box
             maxbb: maximum coordinates of an element's bounding box
             model: the element's model matrix
+        Returns:
+            True if there is an intersection, False otherwise
+            
+        Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
         tmin = 0.0
         tmax = 100000.0
 
-        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
+        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2]) #this too?
         delta = bb_pos_world - ray_origin
 
-        x_axis = util.vec(model[0][0],model[0][1],model[0][2])
+        x_axis = util.vec(model[0][0],model[0][1],model[0][2]) #local 2 world
         y_axis = util.vec(model[1][0],model[1][1],model[1][2])
         z_axis = util.vec(model[2][0],model[2][1],model[2][2])
 
@@ -363,14 +382,15 @@ class Gizmos:
         e = np.dot(x_axis,delta)
         f = np.dot(ray_direction,x_axis)
 
-        if abs(f)>0.001 :
+        if np.abs(f)>0.001 : 
             t1 = (e+minbb[0])/f 
             t2 = (e+maxbb[0])/f 
 
             if t1 > t2 :
-                tmp = t1
-                t1 = t2
-                t2 = tmp
+                #tmp = t1
+                #t1 = t2
+                #t2 = tmp
+                t1, t2 = t2, t1
             
             if t2 < tmax:
                 tmax = t2
@@ -381,25 +401,24 @@ class Gizmos:
                 return False
             
         else:
-            if -e+minbb[0] > 0.0 or -e+maxbb[0] < 0.0:
+            if minbb[0] > e or maxbb[0] < e:
                 return False
             
         # Test intersection with the 2 planes perpendicular to the bounding box's Y axis
 
-        tmin = 0.0
-        tmax = 100000.0
 
         e = np.dot(y_axis,delta)
         f = np.dot(ray_direction,y_axis)
 
-        if abs(f) > 0.001 :
+        if np.abs(f) > 0.001 :
             t1 = (e+minbb[1])/f 
             t2 = (e+maxbb[1])/f 
 
             if t1 > t2 :
-                tmp = t1
-                t1 = t2
-                t2 = tmp
+                #tmp = t1
+                #t1 = t2
+                #t2 = tmp
+                t1, t2 = t2, t1
             
             if t2 < tmax:
                 tmax = t2
@@ -410,25 +429,23 @@ class Gizmos:
                 return False
             
         else:
-            if -e+minbb[1] > 0.0 or -e+maxbb[1] < 0.0:
+            if minbb[1] > e or maxbb[1] < e:
                 return False
             
         # Test intersection with the 2 planes perpendicular to the bounding box's Z axis
 
-        tmin = 0.0
-        tmax = 100000.0
-
         e = np.dot(z_axis,delta)
         f = np.dot(ray_direction,z_axis)
 
-        if abs(f) > 0.001 :
+        if np.abs(f) > 0.001 :
             t1 = (e+minbb[2])/f #intersection with left plane
             t2 = (e+maxbb[2])/f #intersection with right plane
 
             if t1 > t2 :
-                tmp = t1
-                t1 = t2
-                t2 = tmp
+                #tmp = t1
+                #t1 = t2
+                #t2 = tmp
+                t1, t2 = t2, t1
             
             if t2 < tmax:
                 tmax = t2
@@ -439,11 +456,9 @@ class Gizmos:
                 return False
             
         else:
-            if -e+minbb[2] > 0.0 or -e+maxbb[2] < 0.0:
+            if minbb[2] > e or maxbb[2] < e:
                 return False
         return True
-
-
 
     def translate_selected(self,x=0.0,y=0.0,z=0.0):
         """
