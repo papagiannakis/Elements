@@ -345,6 +345,27 @@ class RenderDecorator(RenderWindow):
         
         self._wrapeeWindow = wrapee
     
+        self._eye = (2.5, 2.5, 2.5)
+        self._target = (0.0, 0.0, 0.0) 
+        self._up = (0.0, 1.0, 0.0)
+
+        # TRS Variables 
+        self.translation = {};
+        self.translation["x"] = 0; self.translation["y"] = 0; self.translation["z"] = 0; 
+
+        self.rotation = {};
+        self.rotation["x"] = 0; self.rotation["y"] = 0; self.rotation["z"] = 0; 
+
+        self.scale = {};
+        self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
+
+        #this is not used anywhere
+        self.color = [255, 50, 50];
+
+        self.lctrl = False
+        
+        self.traverseCamera()
+    
     
     @property
     def wrapeeWindow(self):
@@ -372,124 +393,7 @@ class RenderDecorator(RenderWindow):
         """
         self._wrapeeWindow.shutdown()
         print(f'RenderDecorator: shutdown()')   
-        
-        
-    def event_input_process(self):
-        """
-        extra decorator method to handle input events
-        :param running: [description], defaults to True
-        :type running: bool, optional
-        """
-        return self._wrapeeWindow.event_input_process()
-    
-    
-    def display_post(self):
-        """
-        Post diplay method after all other display calls have been issued
-        """
-        self._wrapeeWindow.display_post()
-    
-    
-    def init_post(self):
-        """
-        Post init method
-        this should be ctypiically alled AFTER all other GL contexts have been created, e.g. ImGUI context
-        """
-        self._wrapeeWindow.init_post()
-        
-    def accept(self, system: Elements.pyECSS.System, event = None):
-        pass
-                    
-class ImGUIDecorator(RenderDecorator):
-    """
-    ImGUI decorator
 
-    :param RenderDecorator: [description]
-    :type RenderDecorator: [type]
-    """
-    def __init__(self, wrapee: RenderWindow, imguiContext = None):
-        super().__init__(wrapee)
-        if imguiContext is None:
-            self._imguiContext = imgui.create_context()
-        else:
-            self._imguiContext = imguiContext
-        self._imguiRenderer = None
-        #setup a simple Event: change to wireframe mode via the GUI
-        self._updateWireframe = None
-        self._updateCamera = None
-        # extra UI elements
-        self._wireframeMode = False
-        self._changed = False 
-        self._checkbox = False 
-        self._colorEditor = wrapee._colorEditor
-        self._eye = (2.5, 2.5, 2.5)
-        self._target = (0.0, 0.0, 0.0) 
-        self._up = (0.0, 1.0, 0.0)
-
-        # TRS Variables 
-        self.translation = {};
-        self.translation["x"] = 0; self.translation["y"] = 0; self.translation["z"] = 0; 
-
-        self.rotation = {};
-        self.rotation["x"] = 0; self.rotation["y"] = 0; self.rotation["z"] = 0; 
-
-        self.scale = {};
-        self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
-
-        #this is not used anywhere
-        self.color = [255, 50, 50];
-
-        self.lctrl = False
-        
-        self.traverseCamera()
-       
-    def init(self):
-        """
-        Calls Decoratee init() and also sets up events
-        """
-        self.wrapeeWindow.init()
-        if self._imguiContext is None:
-            print("Window could not be created! ImGUI Error: ")
-            exit(1)
-        else:
-            # print("Yay! ImGUI context created successfully")
-            pass
-        
-        # GPTODO here is the issue: SDL2Decorator takes an SDLWindow as wrappee wheras
-        # ImGUIDEcorator takes and SDL2Decorator and decorates it!
-        if isinstance(self.wrapeeWindow, SDL2Window):   
-            self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
-            
-        #
-        # Setting up events that this class is publishing (if the EventManager is present in the decorated wrappee)
-        #
-        self._updateWireframe = Elements.pyECSS.Event.Event(name="OnUpdateWireframe", id=201, value=None)
-        if self._wrapeeWindow.eventManager is not None:
-            self._wrapeeWindow.eventManager._events[self._updateWireframe.name] = self._updateWireframe
-            self._wrapeeWindow.eventManager._publishers[self._updateWireframe.name] = self
-        
-        
-        self._updateCamera = Elements.pyECSS.Event.Event(name="OnUpdateCamera", id=300, value=None)
-        if self._wrapeeWindow.eventManager is not None:
-            self._wrapeeWindow.eventManager._events[self._updateCamera.name] = self._updateCamera
-            self._wrapeeWindow.eventManager._publishers[self._updateCamera.name] = self
-        
-        # print(f'{self.getClassName()}: init()')
-        
-        
-    def display(self):
-        """
-        ImGUI decorator display: calls wrapee (RenderWindow::display) as well as extra ImGUI widgets
-        """
-        self.wrapeeWindow.display()
-        gl.glClearColor(*self._colorEditor, 1.0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        #render the ImGUI widgets
-        self.extra()
-        #draw scenegraph tree widget
-        self.scenegraphVisualiser()
-        #print(f'{self.getClassName()}: display()')
-        
     def traverseCamera(self):
         self.cam = None
         found = False
@@ -508,21 +412,36 @@ class ImGUIDecorator(RenderDecorator):
                             self.cam = comp
                             found = True
                         
+    def createViewMatrix(self, eye, lookAt, upVector):
+        self._eye = tuple(eye)
+        self._target = tuple(lookAt)
+        #self._up = tuple(upVector)
+        #directionVector = util.normalise(lookAt - eye) 
+        #rightVector = util.normalise(np.cross(directionVector, upVector))
+        #upVector = util.normalise(np.cross(rightVector, directionVector))
+        self._updateCamera.value = util.lookat(eye, lookAt, upVector)
+    
     def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):  
         if self.cam != None:
             #for examples 7-11 and pyJANVRED implementations
             cameraspeed = 5
-            scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-            combinedMat = scaleMat
-            if rotateX or rotateY: 
-                rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
+            #scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+            #combinedMat = scaleMat
+            if rotateX:# or rotateY: 
+                #rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
                 rotMatY = util.rotate((0, 1, 0), self.rotation["x"] * cameraspeed)
-                rotMatZ = util.rotate((0, 0, 1), self.rotation["z"] * cameraspeed)
-                combinedMat = rotMatX @ rotMatY @ rotMatZ @ combinedMat  
+                #rotMatZ = util.rotate((0, 0, 1), self.rotation["z"] * cameraspeed)
+                #combinedMat = rotMatX @ rotMatY @ rotMatZ @ combinedMat 
+                #combinedMat = rotMatY #@ combinedMat 
+                self.cam.trans1.trs = rotMatY @ self.cam.trans1.trs
+            elif rotateY: 
+                rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
+                #combinedMat = rotMatX #@ combinedMat 
+                self.cam.trans1.trs = self.cam.trans1.trs @ rotMatX
             if moveX or moveY or moveZ:
                 transMat = util.translate(self.translation["x"], self.translation["y"], -self.translation["z"])
-                combinedMat = transMat @ combinedMat
-            self.cam.trans1.trs = self.cam.trans1.trs @ combinedMat
+                #combinedMat = transMat #@ combinedMat
+                self.cam.trans1.trs =  self.cam.trans1.trs @ transMat
         else:
             #for examples 4-5-6-8-9-10 implementations
             cameraspeed = 0.2
@@ -531,38 +450,29 @@ class ImGUIDecorator(RenderDecorator):
             tup = np.array(self._up)
 
             forwardDir = util.normalise(ttarget - teye)
-            rightDir = util.normalise(np.cross(tup, forwardDir))
-
-            eyeUpd = np.array([0.0, 0.0, 0.0])
-            targetUpd = np.array([0.0, 0.0, 0.0])   
-
+            rightDir = util.normalise(np.cross(forwardDir, tup))
+   
             if rotateX:
-                eyeUpd = rightDir * self.rotation["x"] * cameraspeed
+                rotMatY = util.rotate(tup, self.rotation["x"] * cameraspeed*15)
+                transMatY = util.translate(ttarget) @ rotMatY @ util.translate(-ttarget)
+                teye = transMatY @ np.append(teye, [1])
+                teye = teye[:-1] / teye[-1]
             elif rotateY:
-                s,c = util.sincos(1)
-                rotDir = util.normalise(util.vec(s, c, 0.0)) * tup
-                eyeUpd = rotDir * self.rotation["y"] * cameraspeed
-                
-            if moveX:
-                eyeUpd = -cameraspeed * self.translation["x"] * rightDir
-                targetUpd =  eyeUpd
-            if moveY:
-                eyeUpd = -self.translation["y"] * cameraspeed * tup
-                targetUpd = eyeUpd
-            if moveZ: 
-                eyeUpd =  np.sign(self.translation["z"]) * cameraspeed * forwardDir
-
-            teye += eyeUpd
-            ttarget += targetUpd
-            if (rotateX or rotateY):
-                newForwardDir = util.normalise(ttarget - teye)
-                tup = util.normalise(np.cross(newForwardDir, rightDir)) 
-
-            self._eye = tuple(teye)
-            self._target = tuple(ttarget)
-            self._up = tuple(tup)
-
-            self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+                rotMatX = util.rotate(rightDir, -self.rotation["y"] * cameraspeed*15)
+                transMatX = util.translate(ttarget) @ rotMatX @ util.translate(-ttarget)
+                teye = transMatX @ np.append(teye, [1])
+                teye = teye[:-1] / teye[-1]
+            elif moveX or moveY:
+                panX = -cameraspeed * self.translation["x"] * rightDir
+                panY = -self.translation["y"] * cameraspeed * tup
+                teye += panX + panY
+                ttarget += panX + panY
+            elif moveZ:
+                zoom =  np.sign(self.translation["z"]) * cameraspeed * forwardDir
+                teye += zoom
+                ttarget += zoom
+            self.createViewMatrix(teye, ttarget, tup)
+            
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
         
@@ -613,6 +523,7 @@ class ImGUIDecorator(RenderDecorator):
             self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y) 
             self.updateCamera(False, False, True, False, False)
         else:
+            print("wheel", x, " ",y)
             if abs(x) > abs(y):
                 self.rotation["x"] = np.sign(x) #event.wheel.x/height*180
                 self.updateCamera(False, False,False, True, False)
@@ -620,6 +531,15 @@ class ImGUIDecorator(RenderDecorator):
                 self.rotation["y"] = np.sign(y) #event.wheel.y/width*180
                 self.updateCamera(False, False,False, False, True)
 
+
+    # def event_input_process(self):
+    #     """
+    #     extra decorator method to handle input events
+    #     :param running: [description], defaults to True
+    #     :type running: bool, optional
+    #     """
+    #     return self._wrapeeWindow.event_input_process()
+    
     def event_input_process(self):
         """
         process SDL2 basic events and input
@@ -684,7 +604,310 @@ class ImGUIDecorator(RenderDecorator):
             self._imguiRenderer.process_event(event)
         #imgui input
         self._imguiRenderer.process_inputs()
-        return running  
+        return self._wrapeeWindow.event_input_process() & running
+    
+    def display_post(self):
+        """
+        Post diplay method after all other display calls have been issued
+        """
+        self._wrapeeWindow.display_post()
+    
+    
+    def init_post(self):
+        """
+        Post init method
+        this should be ctypiically alled AFTER all other GL contexts have been created, e.g. ImGUI context
+        """
+        self._wrapeeWindow.init_post()
+        
+    def accept(self, system: Elements.pyECSS.System, event = None):
+        pass
+                    
+class ImGUIDecorator(RenderDecorator):
+    """
+    ImGUI decorator
+
+    :param RenderDecorator: [description]
+    :type RenderDecorator: [type]
+    """
+    def __init__(self, wrapee: RenderWindow, imguiContext = None):
+        super().__init__(wrapee)
+        if imguiContext is None:
+            self._imguiContext = imgui.create_context()
+        else:
+            self._imguiContext = imguiContext
+        self._imguiRenderer = None
+        #setup a simple Event: change to wireframe mode via the GUI
+        self._updateWireframe = None
+        self._updateCamera = None
+        # extra UI elements
+        self._wireframeMode = False
+        self._changed = False 
+        self._checkbox = False 
+        self._colorEditor = wrapee._colorEditor
+        # self._eye = (2.5, 2.5, 2.5)
+        # self._target = (0.0, 0.0, 0.0) 
+        # self._up = (0.0, 1.0, 0.0)
+
+        # # TRS Variables 
+        # self.translation = {};
+        # self.translation["x"] = 0; self.translation["y"] = 0; self.translation["z"] = 0; 
+
+        # self.rotation = {};
+        # self.rotation["x"] = 0; self.rotation["y"] = 0; self.rotation["z"] = 0; 
+
+        # self.scale = {};
+        # self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
+
+        # #this is not used anywhere
+        # self.color = [255, 50, 50];
+
+        # self.lctrl = False
+        
+        # self.traverseCamera()
+       
+    def init(self):
+        """
+        Calls Decoratee init() and also sets up events
+        """
+        self.wrapeeWindow.init()
+        if self._imguiContext is None:
+            print("Window could not be created! ImGUI Error: ")
+            exit(1)
+        else:
+            # print("Yay! ImGUI context created successfully")
+            pass
+        
+        # GPTODO here is the issue: SDL2Decorator takes an SDLWindow as wrappee wheras
+        # ImGUIDEcorator takes and SDL2Decorator and decorates it!
+        if isinstance(self.wrapeeWindow, SDL2Window):   
+            self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
+            
+        #
+        # Setting up events that this class is publishing (if the EventManager is present in the decorated wrappee)
+        #
+        self._updateWireframe = Elements.pyECSS.Event.Event(name="OnUpdateWireframe", id=201, value=None)
+        if self._wrapeeWindow.eventManager is not None:
+            self._wrapeeWindow.eventManager._events[self._updateWireframe.name] = self._updateWireframe
+            self._wrapeeWindow.eventManager._publishers[self._updateWireframe.name] = self
+        
+        
+        self._updateCamera = Elements.pyECSS.Event.Event(name="OnUpdateCamera", id=300, value=None)
+        if self._wrapeeWindow.eventManager is not None:
+            self._wrapeeWindow.eventManager._events[self._updateCamera.name] = self._updateCamera
+            self._wrapeeWindow.eventManager._publishers[self._updateCamera.name] = self
+        
+        # print(f'{self.getClassName()}: init()')
+        
+        
+    def display(self):
+        """
+        ImGUI decorator display: calls wrapee (RenderWindow::display) as well as extra ImGUI widgets
+        """
+        self.wrapeeWindow.display()
+        gl.glClearColor(*self._colorEditor, 1.0)
+        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+        #render the ImGUI widgets
+        self.extra()
+        #draw scenegraph tree widget
+        self.scenegraphVisualiser()
+        #print(f'{self.getClassName()}: display()')
+        
+    # def traverseCamera(self):
+    #     self.cam = None
+    #     found = False
+    #     if self.wrapeeWindow.scene is not None:
+    #         rootComp = self.wrapeeWindow.scene.world.root
+    #         if rootComp._children is not None:
+    #             Iterator = iter(rootComp._children)
+    #             done_traversing = False
+    #             while not found and not done_traversing:
+    #                 try:
+    #                     comp = next(Iterator)
+    #                 except StopIteration:
+    #                     done_traversing = True
+    #                 else:
+    #                     if "Camera" in comp.name: # just put the "Camera" string in the Entity that holds the camera
+    #                         self.cam = comp
+    #                         found = True
+                        
+    # def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):  
+    #     if self.cam != None:
+    #         #for examples 7-11 and pyJANVRED implementations
+    #         cameraspeed = 5
+    #         scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+    #         combinedMat = scaleMat
+    #         if rotateX or rotateY: 
+    #             rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
+    #             rotMatY = util.rotate((0, 1, 0), self.rotation["x"] * cameraspeed)
+    #             rotMatZ = util.rotate((0, 0, 1), self.rotation["z"] * cameraspeed)
+    #             combinedMat = rotMatX @ rotMatY @ rotMatZ @ combinedMat  
+    #         if moveX or moveY or moveZ:
+    #             transMat = util.translate(self.translation["x"], self.translation["y"], -self.translation["z"])
+    #             combinedMat = transMat @ combinedMat
+    #         self.cam.trans1.trs = self.cam.trans1.trs @ combinedMat
+    #     else:
+    #         #for examples 4-5-6-8-9-10 implementations
+    #         cameraspeed = 0.2
+    #         teye = np.array(self._eye)
+    #         ttarget = np.array(self._target)
+    #         tup = np.array(self._up)
+
+    #         forwardDir = util.normalise(ttarget - teye)
+    #         rightDir = util.normalise(np.cross(tup, forwardDir))
+
+    #         eyeUpd = np.array([0.0, 0.0, 0.0])
+    #         targetUpd = np.array([0.0, 0.0, 0.0])   
+
+    #         if rotateX:
+    #             eyeUpd = rightDir * self.rotation["x"] * cameraspeed
+    #         elif rotateY:
+    #             s,c = util.sincos(1)
+    #             rotDir = util.normalise(util.vec(s, c, 0.0)) * tup
+    #             eyeUpd = rotDir * self.rotation["y"] * cameraspeed
+                
+    #         if moveX:
+    #             eyeUpd = -cameraspeed * self.translation["x"] * rightDir
+    #             targetUpd =  eyeUpd
+    #         if moveY:
+    #             eyeUpd = -self.translation["y"] * cameraspeed * tup
+    #             targetUpd = eyeUpd
+    #         if moveZ: 
+    #             eyeUpd =  np.sign(self.translation["z"]) * cameraspeed * forwardDir
+
+    #         teye += eyeUpd
+    #         ttarget += targetUpd
+    #         if (rotateX or rotateY):
+    #             newForwardDir = util.normalise(ttarget - teye)
+    #             tup = util.normalise(np.cross(newForwardDir, rightDir)) 
+
+    #         self._eye = tuple(teye)
+    #         self._target = tuple(ttarget)
+    #         self._up = tuple(tup)
+
+    #         self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+    #         if self._wrapeeWindow.eventManager is not None:
+    #             self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+        
+ 
+    # def on_mouse_motion(self, event, x, y, dx, dy):
+    #     """Called when the mouse is moved.
+
+    #         event: sdl2.events.SDL_Event, 
+    #         x: horiz coord relative to window, y: vert coord relative to window,
+    #         dx: relative horizontal motion, dy: relative vertical motion
+    #     """
+    #     pass
+
+    # def on_mouse_press(self, event, x, y, button, dclick):
+    #     """Called when mouse buttons are pressed.
+
+    #         event: sdl2.events.SDL_Event, 
+    #         x: horiz coord relative to window, y: vert coord relative to window,
+    #         dx: relative horizontal motion, dy: relative vertical motion
+    #         button: RIGHT - MIDDLE - LEFT
+    #         dclick: True - False if button was double click
+    #     """
+    #     pass
+
+    # def resetAll(self):
+    #     self.translation["x"] = 0.0
+    #     self.translation["y"] = 0.0
+    #     self.translation["z"] = 0.0
+    #     self.rotation["x"] = 0.0
+    #     self.rotation["y"] = 0.0
+    #     self.rotation["z"] = 0.0
+    #     self.scale["x"]= 1.0
+    #     self.scale["y"]= 1.0
+    #     self.scale["z"]= 1.0
+
+    # def cameraHandling(self, x, y, height, width):
+    #     keystatus = sdl2.SDL_GetKeyboardState(None)
+    #     self.resetAll()
+
+    #     if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
+    #         if abs(x) > abs(y):
+    #             self.translation["x"] = x/width*60 #np.sign(event.wheel.x)
+    #             self.updateCamera(True, False, False, False, False)
+    #         else:
+    #             self.translation["y"] =  y/height*60 #np.sign(event.wheel.y)
+    #             self.updateCamera(False, True, False, False, False)
+    #     elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
+    #         self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y) 
+    #         self.updateCamera(False, False, True, False, False)
+    #     else:
+    #         if abs(x) > abs(y):
+    #             self.rotation["x"] = np.sign(x) #event.wheel.x/height*180
+    #             self.updateCamera(False, False,False, True, False)
+    #         else:
+    #             self.rotation["y"] = np.sign(y) #event.wheel.y/width*180
+    #             self.updateCamera(False, False,False, False, True)
+
+    # def event_input_process(self):
+    #     """
+    #     process SDL2 basic events and input
+    #     """
+    #     running = True
+    #     events = sdl2.ext.get_events()
+    #     width = self.wrapeeWindow._windowWidth
+    #     height = self.wrapeeWindow._windowHeight
+        
+    #     #if not imgui.is_window_focused():
+    #     for event in events:
+            
+    #         if event.type == sdl2.SDL_MOUSEWHEEL:
+    #             x = event.wheel.x
+    #             y = event.wheel.y
+    #             self.cameraHandling(x,y,height,width)
+    #             continue   
+
+    #         if event.type == sdl2.SDL_MOUSEBUTTONUP:
+    #             pass
+
+    #         # on_mouse_press
+    #         buttons = event.motion.state
+    #         if buttons & sdl2.SDL_BUTTON_RMASK:
+    #             x = -event.motion.xrel  
+    #             y = event.motion.yrel 
+    #             self.cameraHandling(x, y, height, width)
+                
+    #             continue               
+
+    #         #keyboard events
+    #         if event.type == sdl2.SDL_KEYDOWN:
+    #             if event.key.keysym.sym == sdl2.SDLK_UP or event.key.keysym.sym == sdl2.SDLK_w :
+    #                 pass
+    #             if event.key.keysym.sym == sdl2.SDLK_DOWN or event.key.keysym.sym == sdl2.SDLK_s :
+    #                 pass
+    #             if event.key.keysym.sym == sdl2.SDLK_LEFT or event.key.keysym.sym == sdl2.SDLK_a :
+    #                 pass
+    #             if event.key.keysym.sym == sdl2.SDLK_RIGHT or event.key.keysym.sym == sdl2.SDLK_d :
+    #                 pass
+    #             if event.key.keysym.sym == sdl2.SDLK_LCTRL:
+    #                 self.lctrl=True
+    #             if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
+    #                 running = False
+
+    #         if event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
+    #             self.lctrl = False
+
+    #         if event.type == sdl2.SDL_QUIT:
+    #             running = False
+
+    #         if  event.type == sdl2.SDL_WINDOWEVENT:
+    #             window = self.wrapeeWindow
+    #             if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
+    #                 print("Window Resized to ", event.window.data1, " X " , event.window.data2)
+    #                 window._windowWidth = event.window.data1
+    #                 window._windowHeight = event.window.data2
+    #                 # new width and height: event.window.data1 and event.window.data2
+    #                 gl.glViewport(0, 0, event.window.data1, event.window.data2)
+            
+    #         #imgui event
+    #         self._imguiRenderer.process_event(event)
+    #     #imgui input
+    #     self._imguiRenderer.process_inputs()
+    #     return running  
         
     def display_post(self):
         # this is important to draw the ImGUI in full mode and not wireframe!
