@@ -523,7 +523,6 @@ class RenderDecorator(RenderWindow):
             self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y) 
             self.updateCamera(False, False, True, False, False)
         else:
-            print("wheel", x, " ",y)
             if abs(x) > abs(y):
                 self.rotation["x"] = np.sign(x) #event.wheel.x/height*180
                 self.updateCamera(False, False,False, True, False)
@@ -551,27 +550,21 @@ class RenderDecorator(RenderWindow):
         
         #if not imgui.is_window_focused():
         for event in events:
-            
             if event.type == sdl2.SDL_MOUSEWHEEL:
                 x = event.wheel.x
                 y = event.wheel.y
                 self.cameraHandling(x,y,height,width)
-                continue   
-
-            if event.type == sdl2.SDL_MOUSEBUTTONUP:
-                pass
 
             # on_mouse_press
-            buttons = event.motion.state
-            if buttons & sdl2.SDL_BUTTON_RMASK:
-                x = -event.motion.xrel  
-                y = event.motion.yrel 
-                self.cameraHandling(x, y, height, width)
-                
-                continue               
+            elif event.type == sdl2.SDL_MOUSEMOTION:
+                buttons = event.motion.state
+                if buttons & sdl2.SDL_BUTTON_RMASK:
+                    x = -event.motion.xrel  
+                    y = event.motion.yrel 
+                    self.cameraHandling(x, y, height, width)               
 
             #keyboard events
-            if event.type == sdl2.SDL_KEYDOWN:
+            elif event.type == sdl2.SDL_KEYDOWN:
                 if event.key.keysym.sym == sdl2.SDLK_UP or event.key.keysym.sym == sdl2.SDLK_w :
                     pass
                 if event.key.keysym.sym == sdl2.SDLK_DOWN or event.key.keysym.sym == sdl2.SDLK_s :
@@ -585,13 +578,13 @@ class RenderDecorator(RenderWindow):
                 if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
 
-            if event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
+            elif event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
                 self.lctrl = False
 
-            if event.type == sdl2.SDL_QUIT:
+            elif event.type == sdl2.SDL_QUIT:
                 running = False
-
-            if  event.type == sdl2.SDL_WINDOWEVENT:
+                
+            elif  event.type == sdl2.SDL_WINDOWEVENT:
                 window = self.wrapeeWindow
                 if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                     print("Window Resized to ", event.window.data1, " X " , event.window.data2)
@@ -604,7 +597,7 @@ class RenderDecorator(RenderWindow):
             self._imguiRenderer.process_event(event)
         #imgui input
         self._imguiRenderer.process_inputs()
-        return self._wrapeeWindow.event_input_process() & running
+        return running #self._wrapeeWindow.event_input_process() & running
     
     def display_post(self):
         """
