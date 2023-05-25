@@ -73,8 +73,6 @@ obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
 
 imported_obj:Model = Wavefront(obj_to_import, calculate_smooth_normals=False)
 
-# mesh_from_obj:Mesh = imported_obj.get_mesh("Wood_Table_Cube.003")
-
 model_entity:ModelEntity = scene.world.createEntity(ModelEntity(imported_obj))
 scene.world.addEntityChild(rootEntity, model_entity)
 model_entity.create_entities_and_components(scene)
