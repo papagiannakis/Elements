@@ -17,8 +17,8 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
 import Elements.pyGLV.utils.normals as norm
-from Elements.pyGLV.utils.objimporter.entities import MeshEntity, ModelEntity
-from Elements.pyGLV.utils.objimporter.mesh import Mesh
+from Elements.pyGLV.utils.objimporter.entities import  ModelEntity
+from Elements.pyGLV.utils.objimporter.model import Model
 from Elements.pyGLV.utils.terrain import generateTerrain
 
 from Elements.pyGLV.utils.objimporter.wavefront import Wavefront
@@ -71,17 +71,13 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 dirname = os.path.dirname(__file__)
 obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
 
-imported_obj = Wavefront(obj_to_import, calculate_smooth_normals=False)
+imported_obj:Model = Wavefront(obj_to_import, calculate_smooth_normals=False)
 
-mesh_from_obj:Mesh = imported_obj.get_mesh(0)
+# mesh_from_obj:Mesh = imported_obj.get_mesh("Wood_Table_Cube.003")
 
-print(len(mesh_from_obj.vertices))
-print(len(mesh_from_obj.normals))
-print(len(mesh_from_obj.uv))
-
-mesh_test:MeshEntity = scene.world.createEntity(MeshEntity(mesh_from_obj))
-scene.world.addEntityChild(rootEntity, mesh_test)
-mesh_test.create_components(scene)
+model_entity:ModelEntity = scene.world.createEntity(ModelEntity(imported_obj))
+scene.world.addEntityChild(rootEntity, model_entity)
+model_entity.create_entities_and_components(scene)
 
 
 # Light Visualization
@@ -194,9 +190,9 @@ gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly 
 model_terrain_axes = util.translate(0.0,0.0,0.0)
 
 # Initialize mesh GL depended components
-mesh_test.initialize_gl(Lposition, Lcolor, Lintensity)
+model_entity.initialize_gl(Lposition, Lcolor, Lintensity)
 
-mesh_test.transform_component.trs = util.scale(1.0, 1.0, 1.0)
+model_entity.transform_component.trs = util.scale(1.0, 1.0, 1.0)
 
 while running:
     running = scene.render(running)
@@ -213,17 +209,18 @@ while running:
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
     # Set Object Real Time Shader Data
-    # --- Set vertex shader data ---
-    mesh_test.shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
-    mesh_test.shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
-    mesh_test.shader_decorator_component.setUniformVariable(key='model', value=mesh_test.transform_component.trs, mat4=True)
-    # Calculate normal matrix
-    normalMatrix = np.transpose(util.inverse(mesh_test.transform_component.trs))
-    mesh_test.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
+    for mesh_entity in model_entity.mesh_entities:
+        # --- Set vertex shader data ---
+        mesh_entity.shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.trs, mat4=True)
+        # Calculate normal matrix
+        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.trs))
+        mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
-    # --- Set fragment shader data ---
-    # Camera position
-    mesh_test.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
+        # --- Set fragment shader data ---
+        # Camera position
+        mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
 
     scene.render_post()
     
