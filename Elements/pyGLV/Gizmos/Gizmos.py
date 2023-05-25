@@ -139,6 +139,10 @@ class Gizmos:
     def reset_to_None(self):
         """
         Resets to initial state
+        Arguments:
+            self: self
+        Returns:
+            None
         """
         self.is_selected = False
         self.selected_trs = None
@@ -150,7 +154,7 @@ class Gizmos:
         """
         Change selected entity
         Arguments:
-            self: that's me
+            self: self
         Returns:
             None
         """
@@ -161,8 +165,11 @@ class Gizmos:
             self.selected = 1
 
         for component in self.scene.world.root:
+
+            #Have to check because there is always some component that has Nonetype
             if component is not None:
                 parentname = component.parent.name
+                #next BasicTransform component that is not one of the gizmos components and is now the camera's in use component
                 if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse:
                     count = count-1
                     if(count==0):
@@ -181,7 +188,7 @@ class Gizmos:
         """
         Update mouse position and state
         Arguments:
-            self: that's me
+            self: self
         Returns:
             None
         """
@@ -194,7 +201,7 @@ class Gizmos:
         """
         Count transform components in the scene
         Arguments:
-            self: that's me
+            self: self
         Returns:
             None
         """
@@ -210,7 +217,7 @@ class Gizmos:
             R: change to rotate mode
             S: change to scale mode
         Arguments:
-            self: that's me
+            self: self
         Returns:
             None
         """
@@ -238,7 +245,7 @@ class Gizmos:
         """
         Update Gizmos uniform variables
         Arguments:
-            self: that's me
+            self: self
         Returns:
             None
         """
@@ -254,6 +261,13 @@ class Gizmos:
             self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
 
     def update_imgui(self):
+        """
+        Update selected Entity and Transformation information on the imgui
+        Arguments:
+            self: self
+        Returns
+            None
+        """
         imgui.set_next_window_size(200.0,100.0)
         imgui.begin("Selected Entity")
         imgui.text_ansi(self.selected_comp)
@@ -261,22 +275,54 @@ class Gizmos:
         imgui.end()
 
     def update_projection(self, Proj):
+        """
+        Update window's projection and calculate its inverse if needed
+        Arguments:
+            self: self
+            Proj: Projection matrix
+        Returns:
+            None
+        """
         if self.selected is not None and not np.array_equiv(self.projection,Proj):
             self.projection = Proj
             self.inv_projection = util.inverse(self.projection)
 
     def update_view(self, View):
+        """
+        Update window's View and calculate its inverse if needed
+        Arguments:
+            self: self
+            View: View matrix
+            Returns:
+                None
+        """
         if self.selected is not None and not np.array_equiv(self.view,View):
             self.view = View
             self.inv_view = util.inverse(self.view)
 
     def set_camera_in_use(self,camera: str):
+        """
+        Set the name of the camera that is currently used
+        Arguments:
+            self: self
+            camera: name of the camera Entity
+        Returns:
+            None
+        """
         if self.cameraInUse=="":
             self.total = self.total - 1
         self.cameraInUse = camera
     
     def update_projection_args(self,window_width,window_height,fov):
         """
+        update saved window width  height and field of view
+        Arguments:
+            self: self
+            window_width: window's current width
+            window_height: window's current height
+            fov: field of view
+        Returns:
+            None
         """
         self.screen_width = window_width
         self.screen_height = window_height
@@ -284,8 +330,13 @@ class Gizmos:
 
     def calculate_bounding_box(self,mesh: RenderMesh):
         """
-        A simple method that calculates a bounding box based on given mesh's vertices
-
+        A simple method that calculates an axis aligned bounding box using a given mesh's vertices
+        Arguments:
+            self: self
+            mesh: A RenderMesh component
+        Returns
+            minbb: minimum bounding box coordinates
+            maxbb: maximum bounding box coordinates
         """
         vertices = mesh.vertex_attributes[0]
         minbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2])
@@ -312,31 +363,38 @@ class Gizmos:
         """
         Raycast from mouse position
         Arguments:
-            self: that's me
+            self: self
         Returns:
             None
 
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
+        #mouse position in normalized device coordinates
         x = 2.0 * (self.mouse_x.value/self.screen_width - 0.5)
         y = 2.0 * (self.mouse_y.value/self.screen_height - 0.5)
 
+        #ray start and ray end in normalized devive coordinates
         ray_start = util.vec(x,y,1.0,1.0) #z is 1 or -1, I don't know which one is right yet
         ray_end = util.vec(x,y,0.0,1.0)
 
+        # normalized device to Camera space
         ray_start_Camera = self.inv_projection @ ray_start
         ray_start_Camera = ray_start_Camera/ray_start_Camera[3]
 
+        # Camera space to world space
         ray_start_World = self.inv_view @ ray_start_Camera
         ray_start_World = ray_start_World/ray_start_World[3]
 
+        #normalized device to Camera space
         ray_end_Camera = self.inv_projection @ ray_end
         ray_end_Camera = ray_end_Camera/ray_end_Camera[3]
 
+        # Camera space to World space
         ray_end_world = self.inv_view @ ray_end_Camera
         ray_end_world = ray_end_world/ray_end_world[3]
 
+        #calculate and normalize the ray's direction
         ray_dir_world = ray_end_world - ray_start_World
         ray_dir_world = util.normalise(ray_dir_world)
 
@@ -387,6 +445,20 @@ class Gizmos:
                 self.picked = False
 
     def calculate_tmin_tmax(self,ray_origin,ray_direction,minbb,maxbb,model):
+        """
+        Calculate a ray's intersection points with the bounding box
+        Used for computing the difference from a starting point
+        Arguments:
+            self: self
+            ray_origin: ray's starting point
+            ray_direction: ray's direction
+            minbb: minimum bounding box coordinates
+            maxbb maximum bounding box coordinates
+            model: local to world  model matrix
+        Returns:
+            tmin: near intersection
+            tmax: far intersection 
+        """
         tmin = 0.0
         tmax = 100000.0
 
@@ -419,7 +491,7 @@ class Gizmos:
         """
         A method that tests if a ray starting from the mouse position is intersecting with a given bounding box
         Arguments:
-            self: that's me
+            self: self
             ray_origin: the location the ray starts from in world space
             ray_direction: the direction of the ray
             minbb: minimum coordinates of an element's bounding box
@@ -518,7 +590,7 @@ class Gizmos:
         """
         Translate Selected Element
         Arguments:
-            self: that's me
+            self: self
             x: x value
             y: y value
             z: z value
@@ -534,7 +606,7 @@ class Gizmos:
         """
         Rotate Selected Element
         Arguments:
-            self: that's me
+            self: self
             angle: Rotation Angle
             axis: axis to rotate
         Returns:
@@ -546,7 +618,7 @@ class Gizmos:
         """
         Scale Selected Element
         Arguments:
-            self: that's me
+            self: self
             x: Scaling on x-axis
             y: Scaling on y-axis
             z: Scaling on z-axis
