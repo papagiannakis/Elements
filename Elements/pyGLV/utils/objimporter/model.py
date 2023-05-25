@@ -28,7 +28,7 @@ class Model:
         if mesh.name != "":
             self.__meshes[mesh.name] = mesh
 
-    def get_mesh(self, id):
+    def get_mesh(self, id)-> Mesh:
         """
         Gets a mesh in the model
 
@@ -69,3 +69,8 @@ class Model:
             mesh.add_to_ecss_scene(scene, node)
 
         return node
+    
+    def __get_mesh_count(self) -> int:
+        return len(self.__meshes) if self.__meshes is not None else 0
+
+    mesh_count = property(__get_mesh_count)

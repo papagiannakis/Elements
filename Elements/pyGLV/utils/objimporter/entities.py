@@ -9,21 +9,41 @@ from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.utils.objimporter.material import Material, StandardMaterial
 from Elements.pyGLV.utils.objimporter.mesh import Mesh
+from Elements.pyGLV.utils.objimporter.model import Model
 
 
 class ModelEntity(Entity):
-    def __init__(self, name=None, type=None, id=None) -> None:
-        super().__init__(name, type, id)
+    def __init__(self, model:Model, name:str=None, type=None, id=None) -> None:
+        """
+        Create an entity representation for a Model object
+        """
+        if name is None:
+            name = model.name
 
-    def init(self):
+        super().__init__(name, type, id)
+        self.model:Model = model
+        self.transform_component:BasicTransform = None
+        self.mesh_entities:list[MeshEntity] = [] 
+
+            
+
+    def create_entities_and_components(self, scene):
         """
-        Initializes GL variables.
-        Must be called in an active OpenGL Context
+        Creates a new Entity for each Mesh and their Components
         """
-        print("Init")
-        exit()
-        pass
-        # return super().init()
+        self.transform_component:BasicTransform = scene.world.addComponent(self, BasicTransform(name="Transform", trs=utilities.identity() ))
+            
+        for m in range(self.model.mesh_count):
+            mesh_entity:MeshEntity = scene.world.createEntity(MeshEntity(self.model.get_mesh(m)))
+            self.mesh_entities.append(mesh_entity)
+            scene.world.addEntityChild(self, mesh_entity)
+            mesh_entity.create_components(scene)
+
+
+    def initialize_gl(self, light_position, light_color, light_intensity):
+        for mesh_entity in self.mesh_entities:
+            mesh_entity.initialize_gl(light_position, light_color, light_intensity)
+
 
 
 class MeshEntity(Entity):
@@ -50,9 +70,12 @@ class MeshEntity(Entity):
         self.vertex_array_component = None
 
     def create_components(self, scene):
+        """
+        Creates all the ECSS components needed to represent this mesh
+        """
         # Generate needed components
-        self.transform_component = scene.world.addComponent(self, BasicTransform(name="Transform", trs=utilities.identity() ))
-        self.render_mesh_component = scene.world.addComponent(self, RenderMesh(name="RenderMesh"))
+        self.transform_component:BasicTransform = scene.world.addComponent(self, BasicTransform(name="Transform", trs=utilities.identity() ))
+        self.render_mesh_component:RenderMesh = scene.world.addComponent(self, RenderMesh(name="RenderMesh"))
         
         self.render_mesh_component.vertex_attributes.append(self.mesh.vertices)
         self.render_mesh_component.vertex_attributes.append(self.mesh.normals)
@@ -69,6 +92,9 @@ class MeshEntity(Entity):
 
 
     def initialize_gl(self, light_position, light_color, light_intensity):
+        """
+        Initializes shader variables, must be called in an active gl context
+        """
         # Set object mesh shader static data
         # Light
         self.shader_decorator_component.setUniformVariable(key='lightPos', value=light_position, float3=True)
