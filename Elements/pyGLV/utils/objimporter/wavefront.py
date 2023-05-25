@@ -3,9 +3,9 @@ from typing import Dict, List, Tuple
 from Elements.pyGLV.utils.objimporter.material import Material, StandardMaterial
 from Elements.pyGLV.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
 from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
-from Elements.pyGLV.utils.objimporter.mesh import Mesh
 from Elements.pyGLV.utils.objimporter.model import Model
 from PIL import Image
+from pathlib import Path
 
 
 class WavefrontMaterialLibrary():
@@ -284,7 +284,7 @@ class Wavefront(Model):
             return current_mesh 
     
     def __get_model_name_from_path(self, path) -> str:
-        return os.path.basename(path)
+        return Path(path).stem
 
     def __parse_from_file(self) -> None:
         try:
