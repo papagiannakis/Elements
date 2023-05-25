@@ -58,7 +58,7 @@ orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","5
 light_node = scene.world.createEntity(Entity(name="LightPos"))
 scene.world.addEntityChild(rootEntity, light_node)
 light_transform = scene.world.addComponent(light_node, BasicTransform(name="Light_TRS", trs=util.scale(1.0, 1.0, 1.0) ))
-light_mesh = scene.world.addComponent(light_node, RenderMesh(name="Light_Mesh"))
+# light_mesh = scene.world.addComponent(light_node, RenderMesh(name="Light_Mesh"))
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -96,9 +96,9 @@ tetrahedron_colors = np.array([
 ])
 tetrahedron_indices = np.array([0, 2, 1, 0, 1, 3, 2, 3, 1, 3, 2, 0])
 
-light_mesh.vertex_attributes.append(tetrahedron_vertices)
-light_mesh.vertex_attributes.append(tetrahedron_colors)
-light_mesh.vertex_index.append(tetrahedron_indices)
+# light_mesh.vertex_attributes.append(tetrahedron_vertices)
+# light_mesh.vertex_attributes.append(tetrahedron_colors)
+# light_mesh.vertex_index.append(tetrahedron_indices)
 light_vArray = scene.world.addComponent(light_node, VertexArray())
 light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
