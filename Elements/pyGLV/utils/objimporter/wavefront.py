@@ -6,6 +6,7 @@ from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectM
 from Elements.pyGLV.utils.objimporter.model import Model
 from PIL import Image
 from pathlib import Path
+import traceback
 
 
 class WavefrontMaterialLibrary():
@@ -301,9 +302,14 @@ class Wavefront(Model):
                     if len(line)<1 or line[0] == "#":
                         continue
 
-                    parse_function = self.__parse_dispatch.get(line.split(' ')[0], self.__parse_unknown)
-                    parse_function(line, line_number)
-
+                    try:
+                        parse_function = self.__parse_dispatch.get(line.split(' ')[0], self.__parse_unknown)
+                        parse_function(line, line_number)
+                    except Exception:
+                        traceback.print_exc()
+                        print("Exception occured while trying to read line %d from %s" % ( line_number, self.__file_path))
+                        exit()
+                    
 
         except FileNotFoundError as err:
             print("Could not load object, file %s not found" % self.__file_path)
@@ -327,7 +333,7 @@ class Wavefront(Model):
 
     def __parse_vertex(self, line, line_number) -> None:
 
-        line = line.split(' ')
+        line = line.split()
 
         vertex = [float(line[1]), float(line[2]), float(line[3])]
 
@@ -340,13 +346,13 @@ class Wavefront(Model):
         self.__vertices.append(vertex)
 
     def __parse_normal(self, line, line_number) -> None:
-        line = line.split(' ')
+        line = line.split()
 
         self.__normals.append([float(line[1]), float(line[2]), float(line[3])])
 
     def __parse_texture_coord(self, line, line_number) -> None:
 
-        line = line.split(' ')
+        line = line.split()
 
         # texture coord = [u, (v), (w)] .v,w are optional and default to 0.0
         texture_coord = [float(line[1])]
@@ -370,7 +376,7 @@ class Wavefront(Model):
     def __parse_face(self, line, line_number) -> None:
         # Faces are in the format: f 6/4/1 3/5/3 7/6/5, with vertex_index/texture_index/normal_index (texture or normal index may be missing)
         
-        tokens = line.split(' ')[1:]
+        tokens = line.split()[1:]
 
         if len(tokens) == 3:
             self.__parse_triangle_face(tokens)
