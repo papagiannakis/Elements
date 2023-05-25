@@ -166,7 +166,7 @@ def generateSmoothNormalsMesh(vertices, indices, color=None):
         normals: Normals for Smooth shading
     """
     if __hasUniqueVertices(vertices)==True:
-    newvertices,newindices,newcolor = generateSimpleVertices(vertices,indices,color)
+        newvertices,newindices,newcolor = generateSimpleVertices(vertices,indices,color)
     return newvertices,newindices,newcolor,generateNormals(newvertices,newindices)
     return vertices, indices, color, generateNormals(vertices,indices)
 
