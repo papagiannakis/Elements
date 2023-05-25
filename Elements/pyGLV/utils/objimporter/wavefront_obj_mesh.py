@@ -30,14 +30,8 @@ class WavefrontObjectMesh(Mesh):
 
         Parameters
         ----------
-        vertices : List
-            The common vertices of the WavefrontObjectMesh, same across all meshes in it
-        normals : List
-            The common normals of the WavefrontObjectMesh, same across all meshes in it
-        texture_coords : str
-            The common texture coordinates of the WavefrontObjectMesh, same across all meshes in it
-        obj_mesh : WavefrontObjectMesh
-            The specific mesh of the WavefrontObjectMesh to source from
+        calculate_smooth_normals : bool
+            Whether to replace imported normals with smooth ones
         """
 
         # init normals and texture_coords with 0
@@ -66,7 +60,12 @@ class WavefrontObjectMesh(Mesh):
             for i in range(3):
                 new_indices.append(len(new_vertices))
 
-                new_vertices.append(self.vertices[face.vertex_indices[i]-1])
+                # Normalize vertex by w component, to only have vector3 for vertices
+                vertex = self.vertices[face.vertex_indices[i]-1]
+                w = vertex[3]
+                vertex = vertex[0:3]
+                vertex[:] = [x/w for x in vertex]
+                new_vertices.append(vertex)
 
                 # Did obj have normal information?
                 if face.has_normals:
@@ -92,7 +91,7 @@ class WavefrontObjectMesh(Mesh):
         if calculate_smooth_normals:
             # Calculate Smooth shaded normals
             # mesh.vertices, mesh.indices, uv, mesh.normals = norm.generateSmoothNormalsMeshNew(mesh.vertices, mesh.indices, color= (uv if mesh.has_uv else None))
-            self.normals = norm.generateSmoothNormalsMeshNew(self.vertices, self.indices, 60.0)
+            self.normals = norm.generateSmoothNormalsMesh(self.vertices, self.indices, 60.0)
         else:
             if has_normals:
                 self.normals = np.array(new_normals)

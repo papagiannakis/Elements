@@ -40,7 +40,7 @@ class StandardMaterial(Material):
     def __init__(   self, 
                     name:str=None,
                     albedo_color=np.array([1.0, 1.0, 1.0]), 
-                    albedo_map:Tuple[bytes, int, int] = None, 
+                    albedo_map:Tuple[bytes, int, int] = None, # The albedo map to be used in a tuple along with the width and height
                     normal_map:Tuple[bytes, int, int] = None, 
                     normal_map_intensity = 1.0, 
                     metallic_map:Tuple[bytes, int, int] = None, 
