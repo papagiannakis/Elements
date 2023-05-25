@@ -2,14 +2,12 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform
 import Elements.pyECSS.utilities as util
-from Elements.pyECSS.Component import BasicTransform, RenderMesh, Component
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import sdl2 as sdl
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from ctypes import c_int, byref
-import OpenGL.GL as gl
 import numpy as np
-from math import tan, pi
 import imgui
 import enum
 
