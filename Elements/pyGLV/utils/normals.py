@@ -29,32 +29,30 @@ def generateUniqueVertices(vertices,indices,color=None):
     
     return newvertices,newindices,newcolor
 
-def generateSimpleVertices(vertices, indices, color=None):
+def generateSimpleVertices(vertices,indices,color=None):
     """
     Generates vertices, indices and color of given unique vertices
     Arguments:
         vertices: Vertex Array
         indices: Index/Triangle Array
-        color: Color Array (optional)
+        color: Color Array
     Returns:
-        newvertices: Generated Non-Unique Vertex Array
-        newindices: Generated Non-Unique Index/Triangle Array
-        newcolor: Generated Non-Unique Color Array (optional)
+        newvertices:Generated Non-Unique Vertex Array
+        newindices:Generated Non-Unique Index/Triangle Array
+        newcolor:Generated NonUnique Color Array
     """
-    newindices = np.empty(0, dtype=np.uint32)
+    newindices = np.empty(0,dtype=np.uint32)
     newvertices = np.empty(0)
-    newcolor = None
+    newcolor = np.empty(0)
 
     verticesSet = {}
     colorSet = {}
-    newindices = np.empty(0, dtype=np.uint32)
+    newindices = np.empty(0,dtype=np.uint32) 
 
     count = 0
     for i in range(len(indices)):
         val = tuple(vertices[indices[i]])
-        clr = None
-        if color is not None:
-            clr = tuple(color[indices[i]])
+        clr = tuple(color[indices[i]])
         flag = False
         valid = -1
         total = __getdictSize(verticesSet)
@@ -66,26 +64,26 @@ def generateSimpleVertices(vertices, indices, color=None):
                     flag = True
                     break
 
-        if flag == False:
+        if flag==False:
             verticesSet[count] = val
             if color is not None:
                 colorSet[count] = clr
             valid = count
             count = count+1
-        newindices = np.append(newindices, valid)
+        newindices = np.append(newindices,valid)
 
     total = __getdictSize(verticesSet)
 
     for key in range(total):
-        newvertices = np.r_[newvertices, list(verticesSet.get(key))]
+        newvertices = np.r_[newvertices,list(verticesSet.get(key))]
         if color is not None:
-            newcolor = np.r_[newcolor, list(colorSet.get(key))] if newcolor is not None else list(colorSet.get(key))
+            newcolor = np.r_[newcolor,list(colorSet.get(key))]
 
-    newvertices = newvertices.reshape((int(len(newvertices)/4), 4))
-    if color is not None and newcolor is not None and len(newcolor)>0:
-        newcolor = newcolor.reshape((int(len(newcolor)/4), len(newcolor[0])))
+    newvertices = newvertices.reshape((int(len(newvertices)/4) ,4))
+    if color is not None:
+        newcolor = newcolor.reshape((int(len(newcolor)/4) ,4))
 
-    return newvertices, newindices, newcolor
+    return newvertices,newindices,newcolor
 
 def __getdictSize(d,c=0):
     """
@@ -167,7 +165,7 @@ def generateSmoothNormalsMesh(vertices, indices, color=None):
     """
     if __hasUniqueVertices(vertices)==True:
         newvertices,newindices,newcolor = generateSimpleVertices(vertices,indices,color)
-    return newvertices,newindices,newcolor,generateNormals(newvertices,newindices)
+        return newvertices,newindices,newcolor,generateNormals(newvertices,newindices)
     return vertices, indices, color, generateNormals(vertices,indices)
 
 def generateFlatNormalsMesh(vertices,indices,color=None):
