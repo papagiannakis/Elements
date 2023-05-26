@@ -6,6 +6,7 @@ import Elements.pyECSS.utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
+from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
@@ -70,12 +71,8 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 # Load Object
 dirname = os.path.dirname(__file__)
 obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
+model_entity = GameObject.Spawn(scene, obj_to_import, "Cube", rootEntity, util.translate(-0.2, 0.4, 0.0))
 
-imported_obj:Model = Wavefront(obj_to_import, calculate_smooth_normals=False)
-
-model_entity:ModelEntity = scene.world.createEntity(ModelEntity(imported_obj))
-scene.world.addEntityChild(rootEntity, model_entity)
-model_entity.create_entities_and_components(scene)
 
 
 # Light Visualization
