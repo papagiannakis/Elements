@@ -7,6 +7,7 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
@@ -16,24 +17,22 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
 import Elements.pyGLV.utils.normals as norm
+from Elements.pyGLV.utils.objimporter.entities import  ModelEntity
+from Elements.pyGLV.utils.objimporter.model import Model
 from Elements.pyGLV.utils.terrain import generateTerrain
 
 from Elements.pyGLV.utils.objimporter.wavefront import Wavefront
 
 
 #Light
-Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
+Lposition = util.vec(-1, 1.5, 1.2) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
-Lambientstr = 0.3 #uniform ambientStr
-LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
 Lcolor = util.vec(1.0,1.0,1.0)
-Lintensity = 0.8
-#Material
-Mshininess = 0.4 
-Mcolor = util.vec(0.8, 0.0, 0.8)
+Lintensity = 40.0
 
 
 scene = Scene()    
+
 
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
@@ -41,13 +40,11 @@ entityCam1 = scene.world.createEntity(Entity(name="Entity1"))
 scene.world.addEntityChild(rootEntity, entityCam1)
 trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="Entity1_TRS", trs=util.translate(0,0,-8)))
 
-eye = util.vec(1, 0.54, 1.0)
-target = util.vec(0.02, 0.14, 0.217)
+eye = util.vec(2.5, 2.5, -2.5)
+target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0) ## WORKING
-# projMat = util.perspective(90.0, 1.33, 0.1, 100) ## WORKING
-projMat = util.perspective(50.0, 1.0, 1.0, 10.0) ## WORKING 
+projMat = util.perspective(50.0, 1.0, 1.0, 10.0)
 
 m = np.linalg.inv(projMat @ view)
 
@@ -55,27 +52,72 @@ m = np.linalg.inv(projMat @ view)
 entityCam2 = scene.world.createEntity(Entity(name="Entity_Camera"))
 scene.world.addEntityChild(entityCam1, entityCam2)
 trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="Camera_TRS", trs=util.identity()))
-# orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
 orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
 
-node4 = scene.world.createEntity(Entity(name="Object"))
-scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.1, 0.1, 0.1) ))
-mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
+
+light_node = scene.world.createEntity(Entity(name="LightPos"))
+scene.world.addEntityChild(rootEntity, light_node)
+light_transform = scene.world.addComponent(light_node, BasicTransform(name="Light_TRS", trs=util.scale(1.0, 1.0, 1.0) ))
+# light_mesh = scene.world.addComponent(light_node, RenderMesh(name="Light_Mesh"))
+
+# Systems
+transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
+camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
+renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
+initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 
-# a simple triangle
-vertexData = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.5, 1.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0]
+# Load Object
+dirname = os.path.dirname(__file__)
+obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
+
+imported_obj:Model = Wavefront(obj_to_import, calculate_smooth_normals=False)
+
+model_entity:ModelEntity = scene.world.createEntity(ModelEntity(imported_obj))
+scene.world.addEntityChild(rootEntity, model_entity)
+model_entity.create_entities_and_components(scene)
+
+
+# Light Visualization
+# a simple tetrahedron
+tetrahedron_vertices = np.array([
+    [  1.0,  1.0,  1.0, 1.0 ], 
+    [ -1.0, -1.0,  1.0, 1.0 ], 
+    [ -1.0,  1.0, -1.0, 1.0 ], 
+    [  1.0, -1.0, -1.0, 1.0 ]
 ],dtype=np.float32) 
-colorVertexData = np.array([
-    [1.0, 0.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
+tetrahedron_colors = np.array([
+    [  1.0,  0.0,  0.0, 1.0 ],
+    [  0.0,  1.0,  0.0, 1.0 ],  
+    [  0.0,  0.0,  1.0, 1.0 ], 
+    [  1.0,  1.0,  1.0, 1.0 ]
+])
+tetrahedron_indices = np.array([0, 2, 1, 0, 1, 3, 2, 3, 1, 3, 2, 0])
 
+# light_mesh.vertex_attributes.append(tetrahedron_vertices)
+# light_mesh.vertex_attributes.append(tetrahedron_colors)
+# light_mesh.vertex_index.append(tetrahedron_indices)
+light_vArray = scene.world.addComponent(light_node, VertexArray())
+light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+
+
+
+# Generate terrain
+vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
+# Add terrain
+terrain = scene.world.createEntity(Entity(name="terrain"))
+scene.world.addEntityChild(rootEntity, terrain)
+terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
+terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
+terrain_mesh.vertex_attributes.append(vertexTerrain) 
+terrain_mesh.vertex_attributes.append(colorTerrain)
+terrain_mesh.vertex_index.append(indexTerrain)
+terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+
+## ADD AXES ##
 #Colored Axes
 vertexAxes = np.array([
     [0.0, 0.0, 0.0, 1.0],
@@ -99,70 +141,20 @@ colorAxes = np.array([
 index = np.array((0,1,2), np.uint32) #simple triangle
 indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B lines
 
-
-# Systems
-transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
-renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
-initUpdate = scene.world.createSystem(InitGLShaderSystem())
-
-
-
-## object load 
-dirname = os.path.dirname(__file__)
-# obj_to_import = os.path.join(dirname, 'models','cow.obj')
-# obj_to_import = os.path.join(dirname, 'models','sphere.obj')
-obj_to_import = os.path.join(dirname, 'models','teapot.obj')
-
-imported_obj = Wavefront(obj_to_import, calculate_smooth_normals=True)
-
-mesh_from_obj = imported_obj.mesh_list[0]
-
-colors = np.array([[0.8, 0.8, 0.8, 1.0]] * len(mesh_from_obj.vertices)) # Generate color, because object does not have UVs
-
-# vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
-
-mesh4.vertex_attributes.append(mesh_from_obj.vertices)
-mesh4.vertex_attributes.append(colors)
-mesh4.vertex_attributes.append(mesh_from_obj.normals)
-mesh4.vertex_index.append(mesh_from_obj.indices)
-vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-
-
-# Generate terrain
-
-vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
-# Add terrain
-terrain = scene.world.createEntity(Entity(name="terrain"))
-scene.world.addEntityChild(rootEntity, terrain)
-terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
-terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
-terrain_mesh.vertex_attributes.append(vertexTerrain) 
-terrain_mesh.vertex_attributes.append(colorTerrain)
-terrain_mesh.vertex_index.append(indexTerrain)
-terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-## ADD AXES ##
 axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
-axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.0001, 0.0))) #util.identity()
+axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=  util.translate(0.0, 0.00001, 0.0))) #util.identity()
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 axes_mesh.vertex_attributes.append(vertexAxes) 
 axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES)) # note the primitive change
 
-# shaderDec_axes = scene.world.addComponent(axes, Shader())
-# OR
 axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-# axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+
 
 
 # MAIN RENDERING LOOP
-
 running = True
 scene.init(imgui=True, windowWidth = 1200, windowHeight = 800, windowTitle = "Elements: Import wavefront .obj example", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator)
 
@@ -183,55 +175,52 @@ eManager._subscribers['OnUpdateWireframe'] = gWindow
 eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
 eManager._subscribers['OnUpdateCamera'] = gWindow 
 eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-# MANOS END
-# Add RenderWindow to the EventManager publishers
-# eManager._publishers[updateBackground.name] = gGUI
 
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0) ## WORKING
-# projMat = util.perspective(90.0, 1.33, 0.1, 100) ## WORKING
 projMat = util.perspective(50.0, 1200/800, 0.01, 100.0) ## WORKING 
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
 model_terrain_axes = util.translate(0.0,0.0,0.0)
-model_cube = trans4.trs
-# util.scale(0.1) @ util.translate(0.0,0.5,0.0)
 
+# Initialize mesh GL depended components
+model_entity.initialize_gl(Lposition, Lcolor, Lintensity)
 
+model_entity.transform_component.trs = util.scale(1.0, 1.0, 1.0)
 
 while running:
     running = scene.render(running)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
+
     view =  gWindow._myCamera # updates view via the imgui
     # mvp_cube = projMat @ view @ model_cube
-    mvp_cube = projMat @ view @ trans4.trs
+    light_shader_decorator.setUniformVariable(key="modelViewProj", value= projMat @ view @ (util.translate(Lposition[0], Lposition[1], Lposition[2]) @ util.scale(0.05, 0.05, 0.05)), mat4=True)
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
-    shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
-    shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
-    shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
-    shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-    shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
-    shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
-    shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+    # Set Object Real Time Shader Data
+    for mesh_entity in model_entity.mesh_entities:
+        # --- Set vertex shader data ---
+        mesh_entity.shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.trs, mat4=True)
+        # Calculate normal matrix
+        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.trs))
+        mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
+        # --- Set fragment shader data ---
+        # Camera position
+        mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
 
     scene.render_post()
     
 scene.shutdown()
-
-
 
