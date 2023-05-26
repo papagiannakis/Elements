@@ -212,8 +212,8 @@ model_cube = util.translate(0.0,0.5,0.0)
 rotate_y = 0.0
 rotation_speed = 1.0
 
-texture = os.path.join(os.path.dirname(__file__), "textures/dark_wood_texture.jpg")
-
+texturePath = os.path.join(os.path.dirname(__file__), "textures/dark_wood_texture.jpg")
+texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:

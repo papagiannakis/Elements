@@ -15,6 +15,7 @@ Based on the Composite and Iterator design patterns:
 
 from __future__         import annotations
 from abc                import ABC, abstractmethod
+import sys
 from typing             import List
 import os  
 
@@ -34,6 +35,7 @@ class Shader(Component):
     
     # ---------------------------------------------------
     #  basic pass-through Vertex-Fragment Shader examples
+    #  other custom shaders can be imported from files
     # ---------------------------------------------------
     COLOR_VERT = """#version 410
         layout (location=0) in vec4 vPosition;
@@ -417,7 +419,7 @@ class Shader(Component):
     """
 
 
-    def __init__(self, name=None, type=None, id=None, vertex_source=None, fragment_source=None):
+    def __init__(self, name=None, type=None, id=None, vertex_source=None, fragment_source=None, vertex_import_file=None, fragment_import_file=None ):
         super().__init__(name, type, id)
         
         self._parent = self
@@ -435,15 +437,35 @@ class Shader(Component):
         self._textureDict = {}
         self._texture3DDict ={}
         
-        if not vertex_source:
-            self._vertex_source = Shader.COLOR_VERT
+        # Prioritize import from file, and then from shader name
+        if vertex_import_file is not None:
+            try:
+                f = open(vertex_import_file, 'r')
+            except OSError:
+                print ("Could not open/read vertex shader file:", vertex_import_file)
+                sys.exit()
+            with f:
+                self._vertex_source = f.read()
         else:
-            self._vertex_source = vertex_source
-            
-        if not fragment_source:
-            self._fragment_source = Shader.COLOR_FRAG
+            if not vertex_source:
+                self._vertex_source = Shader.COLOR_VERT
+            else:
+                self._vertex_source = vertex_source
+        
+        if fragment_import_file is not None:
+            try:
+                f = open(fragment_import_file, 'r')
+            except OSError:
+                print ("Could not open/read fragment shader file:", fragment_import_file)
+                sys.exit()
+            with f:
+                self._fragment_source = f.read()
         else:
-            self._fragment_source = fragment_source
+            if not fragment_source:
+                self._fragment_source = Shader.COLOR_FRAG
+            else:
+                self._fragment_source = fragment_source
+        
         #self.init(vertex_source, fragment_source) #init Shader under a valid GL context
     
     @property
@@ -552,7 +574,7 @@ class Shader(Component):
             for key,value in self._textureDict.items():
                 if self._texture is None:
                     loc = gl.glGetUniformLocation(self._glid,key)
-                    gl.glUniform1i(loc,0)
+                    gl.glUniform1i(loc, value._texure_channel)
                     value.bind()
         if self._texture3DDict is not None:
             for key,value in self._texture3DDict.items():
@@ -648,7 +670,7 @@ class ShaderGLDecorator(ComponentDecorator):
         if float4:
             self.component.float4fDict[key]=value
         if texture:
-            self.component.textureDict[key]=Texture(value)
+            self.component.textureDict[key]= value
             #self.component.textureDict[key]=Texture(value)
         if texture3D:
             self.component.texture3DDict[key]=Texture3D(value)
