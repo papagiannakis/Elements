@@ -2,11 +2,13 @@ import os
 from Elements.pyECSS.System import System
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 import numpy as np
+
 from typing import Tuple
 
 
 from Elements.pyGLV.GL.Textures import Texture
-from Elements import definitions
+
+base_dir = os.path.dirname(__file__)
 
 class Material:
     def __init__(self, name=None):
