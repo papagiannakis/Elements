@@ -69,14 +69,15 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 # Load Object
 dirname = os.path.dirname(__file__)
-obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
+obj_to_import = os.path.join(dirname, 'models', 'cube', 'cube.obj')
 
 imported_obj:Model = Wavefront(obj_to_import, calculate_smooth_normals=False)
 
+
 model_entity:ModelEntity = scene.world.createEntity(ModelEntity(imported_obj))
 scene.world.addEntityChild(rootEntity, model_entity)
-model_entity.create_entities_and_components(scene)
 
+model_entity.create_entities_and_components(scene)
 
 # Light Visualization
 # a simple tetrahedron
@@ -197,6 +198,7 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
+    scene.world.traverse_visit(transUpdate, scene.world.root)
 
     view =  gWindow._myCamera # updates view via the imgui
     # mvp_cube = projMat @ view @ model_cube
@@ -211,9 +213,9 @@ while running:
         # --- Set vertex shader data ---
         mesh_entity.shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
         mesh_entity.shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
-        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.trs, mat4=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.l2world, mat4=True)
         # Calculate normal matrix
-        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.trs))
+        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.l2world))
         mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
         # --- Set fragment shader data ---
@@ -223,4 +225,3 @@ while running:
     scene.render_post()
     
 scene.shutdown()
-
