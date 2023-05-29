@@ -96,6 +96,8 @@ class Gizmos:
         self.fov = 1.0
 
         self.picked = False
+        self.LMB_pressed = True
+        self.selected_gizmo = ''
         self.previous_x = 0.0
         self.previous_y = 0.0
         self.previous_z = 0.0
@@ -186,16 +188,22 @@ class Gizmos:
 
     def update_mouse_position(self):
         """
-        Update mouse position and state
+        Update mouse position, mouse state and Raycast
         Arguments:
             self: self
         Returns:
             None
         """
         self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
-        self.raycast()
-        #print("Mouse Position: (",self.mouse_x.value,",",self.mouse_y.value,")")
-        #print("Left Mouse Button state: ",self.mouse_state)
+        #Raycast only when LMB is pressed
+        #if Last time LMB was pressed raycast didn't intersect, then do not raycast until LMB is released
+        if self.mouse_state==1 and self.LMB_pressed:
+            self.raycast()
+        else:
+            self.picked = False
+            self.LMB_pressed = True
+            self.selected_gizmo=''
+        
 
     def count_components(self):
         """
@@ -394,12 +402,12 @@ class Gizmos:
         ray_end_world = self.inv_view @ ray_end_Camera
         ray_end_world = ray_end_world/ray_end_world[3]
 
+        print("ray_start_Camera: ",ray_start_Camera," -> ","ray_end_Camera: ",ray_end_Camera)
+        print("ray_start_world: ",ray_start_World," -> ","ray_end_world: ",ray_end_world)
+
         #calculate and normalize the ray's direction
         ray_dir_world = ray_end_world - ray_start_World
         ray_dir_world = util.normalise(ray_dir_world)
-
-        #print("Origin: ",ray_start_World)
-        #print("Direction: ",ray_dir_world)
 
         #ray_start_World = util.normalise(ray_start_World)
         ray_start_World = util.vec(ray_start_World[0],
@@ -408,43 +416,55 @@ class Gizmos:
         ray_dir_world = util.vec(ray_dir_world[0],
                                  ray_dir_world[1],
                                  ray_dir_world[2])
+        
+        model_x = self.gizmos_x_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(1.0,0.0,0.0))
+        model_y = self.gizmos_y_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(0.0,1.0,0.0))
+        model_z = self.gizmos_z_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=-90,axis=(0.0,0.0,1.0))
+        
+        if self.selected_trs is not None:
 
-        #trials to check whether the program understands an intersection
-        #to be deleted after the gizmos can be intersected correctly
-        
-        if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
-                                              ray_dir_world,
-                                              self.x_min_bb,
-                                              self.x_max_bb,self.gizmos_x_trans.l2world):
-            print("intersected X")
-        
-        if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
-                                              ray_dir_world,
-                                              self.y_min_bb,
-                                              self.y_max_bb,self.gizmos_y_trans.trs):
-            print("intersected Y")
-        if self.selected_trs is not None and self.testRayBoundingBoxIntesection(ray_start_World,
-                                              ray_dir_world,
-                                              self.z_min_bb,
-                                              self.z_max_bb,self.gizmos_z_trans.l2world):
-            print("intersected Z")
-            if self.mouse_state==1:
+            if self.selected_gizmo=='X' or (self.selected_gizmo=='' and self.testRayBoundingBoxIntesection(ray_start_World,
+                                                ray_dir_world,
+                                                self.x_min_bb,
+                                                self.x_max_bb,model_x)): # was self.gizmos_x_trans.l2world
+                self.selected_gizmo='X'# this variable ensures that if one gizmo is currently used the others are not accounted for
+                print("intersected X Gizmo")
+            
+            elif self.selected_gizmo=='Y' or (self.selected_gizmo==''  and self.testRayBoundingBoxIntesection(ray_start_World,
+                                                ray_dir_world,
+                                                self.y_min_bb,
+                                                self.y_max_bb,model_y)): # was self.gizmos_y_trans.l2world
+                self.selected_gizmo='Y'
+                print("intersected Y Gizmo")
+            elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and self.testRayBoundingBoxIntesection(ray_start_World,
+                                                ray_dir_world,
+                                                self.z_min_bb,
+                                                self.z_max_bb,model_z)): # was self.gizmos_z_trans.l2world
+                self.selected_gizmo='Z'
+                print("intersected Z Gizmo")
+                model = model_z
+                bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
+                z_axis = util.vec(model[2][0],model[2][1],model[2][2]) 
                 min,max = self.calculate_tmin_tmax(ray_start_World,
-                                              ray_dir_world,
-                                              self.z_min_bb,
-                                              self.z_max_bb,self.gizmos_z_trans.l2world)
+                                                ray_dir_world,
+                                                self.z_min_bb,
+                                                self.z_max_bb,z_axis,bb_pos_world)
                 if self.picked==False:
                     self.picked=True
-                    self.previous_z = min #min or max
+                    self.previous_z = max #min or max
                 else:
-                    diff = min - self.previous_z
-                    self.previous_z = min
+                    #diff is how much should the Entity be translated
+                    #diff = min - self.previous_z #min or max
+                    diff = self.previous_z - max #min or max
+                    self.previous_z = max #min or max
 
+                    #TODO: use correct Transformation
                     self.translate_selected(0,0,diff)
+                    self.update_gizmos()
             else:
-                self.picked = False
+                self.LMB_pressed = False
 
-    def calculate_tmin_tmax(self,ray_origin,ray_direction,minbb,maxbb,model):
+    def calculate_tmin_tmax(self,ray_origin,ray_direction,minbb,maxbb,axis,bb_position):
         """
         Calculate a ray's intersection points with the bounding box
         Used for computing the difference from a starting point
@@ -454,7 +474,8 @@ class Gizmos:
             ray_direction: ray's direction
             minbb: minimum bounding box coordinates
             maxbb maximum bounding box coordinates
-            model: local to world  model matrix
+            axis: local to world  model matrix
+            bb_position: bounding box position
         Returns:
             tmin: near intersection
             tmax: far intersection 
@@ -462,17 +483,15 @@ class Gizmos:
         tmin = 0.0
         tmax = 100000.0
 
-        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2]) #this too?
-        delta = bb_pos_world - ray_origin
+        #bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2]) #this too?
+        delta = bb_position - ray_origin
 
-        x_axis = util.vec(model[0][0],model[0][1],model[0][2]) #local 2 world
-        y_axis = util.vec(model[1][0],model[1][1],model[1][2])
-        z_axis = util.vec(model[2][0],model[2][1],model[2][2])
+        #x_axis = util.vec(model[0][0],model[0][1],model[0][2]) #local 2 world
+        #y_axis = util.vec(model[1][0],model[1][1],model[1][2])
+        #z_axis = util.vec(model[2][0],model[2][1],model[2][2])
 
-        # Test intersection with the 2 planes perpendicular to the bounding box's X axis
-
-        e = np.dot(x_axis,delta)
-        f = np.dot(ray_direction,x_axis)
+        e = np.dot(axis,delta)
+        f = np.dot(ray_direction,axis)
 
         t1 = (e+minbb[0])/f 
         t2 = (e+maxbb[0])/f 
@@ -505,7 +524,7 @@ class Gizmos:
         tmin = 0.0
         tmax = 100000.0
 
-        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2]) #this too?
+        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
         delta = bb_pos_world - ray_origin
 
         x_axis = util.vec(model[0][0],model[0][1],model[0][2]) #local 2 world
