@@ -1,3 +1,10 @@
+####################################################################
+#                             IMPORTANT                            # 
+####################################################################
+# Running example 11 requires additional packages to be installed. # 
+# Check requirements_example_11.md for more information.           #
+####################################################################
+
 from __future__ import annotations
 
 from enum import Enum
@@ -436,6 +443,14 @@ def SpawnHome3():
 # Instantiate a simple complete ECSS with Entities,
 # Components, Camera, Shader, VertexArray and RenderMesh
 #
+winWidth = 1024
+winHeight = 1024
+
+import os
+
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+# Addresses a potential issue: 
+# https://stackoverflow.com/questions/53014306/error-15-initializing-libiomp5-dylib-but-found-libiomp5-dylib-already-initial
 
 scene = Scene()
 
@@ -508,7 +523,7 @@ scene.world.print()
 
 # MAIN RENDERING LOOP
 running = True
-scene.init(imgui=True, windowWidth=1024, windowHeight=1024, windowTitle="pyglGA Cube ECSS Scene",
+scene.init(imgui=True, windowWidth=winWidth, windowHeight=winHeight, windowTitle="pyglGA Cube ECSS Scene",
            customImGUIdecorator=ImGUIecssDecorator)
 
 imGUIecss = scene.gContext
@@ -668,22 +683,23 @@ while running:
     # 3.1 shader uniform variable allocation per frame
     for object in applyUniformTransformList:
         if (isinstance(object, GameObjectEntity)):
-            object.shaderDec.setUniformVariable(key='modelViewProj', value=projMat @ view @ object.trans.l2world,
-                                                mat4=True);
-            object.shaderDec.setUniformVariable(key='model', value=object.trans.l2world, mat4=True);
+            #object.shaderDec.setUniformVariable(key='modelViewProj', value=projMat @ view @ object.trans.l2world,mat4=True)
+            object.shaderDec.setUniformVariable(key='modelViewProj', value=object.trans.l2cam,mat4=True)
+            #object.shaderDec.setUniformVariable(key='model', value=object.trans.l2world, mat4=True)
+            object.shaderDec.setUniformVariable(key='model', value=object.trans.l2cam, mat4=True)
 
-            object.shaderDec.setUniformVariable(key='ambientColor', value=ambientLight.color, float3=True);
-            object.shaderDec.setUniformVariable(key='ambientStr', value=ambientLight.intensity, float1=True);
-            object.shaderDec.setUniformVariable(key='shininess', value=0.5, float1=True);
-            object.shaderDec.setUniformVariable(key='matColor', value=object.color, float3=True);
+            object.shaderDec.setUniformVariable(key='ambientColor', value=ambientLight.color, float3=True)
+            object.shaderDec.setUniformVariable(key='ambientStr', value=ambientLight.intensity, float1=True)
+            object.shaderDec.setUniformVariable(key='shininess', value=0.5, float1=True)
+            object.shaderDec.setUniformVariable(key='matColor', value=object.color, float3=True)
 
-            object.shaderDec.setUniformVariable(key='viewPos', value=viewPos, float3=True);
-            object.shaderDec.setUniformVariable(key='lightPos', value=lightPos, float3=True);
-            object.shaderDec.setUniformVariable(key='lightColor', value=np.array(pointLight.color), float3=True);
-            object.shaderDec.setUniformVariable(key='lightIntensity', value=pointLight.intensity, float1=True);
+            object.shaderDec.setUniformVariable(key='viewPos', value=viewPos, float3=True)
+            object.shaderDec.setUniformVariable(key='lightPos', value=lightPos, float3=True)
+            object.shaderDec.setUniformVariable(key='lightColor', value=np.array(pointLight.color), float3=True)
+            object.shaderDec.setUniformVariable(key='lightIntensity', value=pointLight.intensity, float1=True)
 
     # 4. call SDLWindow/ImGUI display() and ImGUI event input process
-    running = scene.render(running)
+    running = scene.render()
     # 5. call the GL State render System
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     # 6. ImGUI post-display calls and SDLWindow swap

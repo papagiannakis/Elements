@@ -230,14 +230,14 @@ class TestScene(unittest.TestCase):
         
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes")
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -278,11 +278,11 @@ class TestScene(unittest.TestCase):
         # MAIN RENDERING LOOP
         running = True
         
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -329,14 +329,14 @@ class TestScene(unittest.TestCase):
         
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -413,7 +413,7 @@ class TestScene(unittest.TestCase):
         # self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view = gWindow._myCamera 
             mvpMat =  projMat @ view @ model
@@ -496,11 +496,11 @@ class TestScene(unittest.TestCase):
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderAxesTerrain")
+        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderAxesTerrain")
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -617,7 +617,7 @@ class TestScene(unittest.TestCase):
         mvpMat = projMat @ view @ model
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view = gWindow._myCamera
             mvpMat = projMat @ view @ model
@@ -709,7 +709,7 @@ class TestScene(unittest.TestCase):
         running = True
         
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera # updates view via the imgui
             mvp_cube = projMat @ view @ model_cube
@@ -836,7 +836,7 @@ class TestScene(unittest.TestCase):
         model_cube = util.scale(0.3) @ util.translate(0.0,0.5,0.0)
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera # updates view via the imgui
             mvp_cube = projMat @ view @ model_cube

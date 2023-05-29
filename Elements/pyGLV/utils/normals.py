@@ -189,3 +189,39 @@ def generateFlatNormalsMesh(vertices,indices,color=None):
         return newvertices,newindices,newcolor,generateNormals(newvertices,newindices)
 
     return vertices,indices,color,generateNormals(vertices,indices)
+
+
+def Convert(vertices, colors, indices, produceNormals=True):
+    """
+    Function used for flat shading
+    """
+    iVertices = []
+    iColors = []
+    iNormals = []
+    iIndices = []
+    for i in range(0, len(indices), 3):
+        iVertices.append(vertices[indices[i]])
+        iVertices.append(vertices[indices[i + 1]])
+        iVertices.append(vertices[indices[i + 2]])
+        iColors.append(colors[indices[i]])
+        iColors.append(colors[indices[i + 1]])
+        iColors.append(colors[indices[i + 2]])
+        
+
+        iIndices.append(i)
+        iIndices.append(i + 1)
+        iIndices.append(i + 2)
+
+    if produceNormals:
+        for i in range(0, len(indices), 3):
+            iNormals.append(util.calculateNormals(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]))
+            iNormals.append(util.calculateNormals(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]))
+            iNormals.append(util.calculateNormals(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]))
+
+    iVertices = np.array( iVertices, dtype=np.float32 )
+    iColors   = np.array( iColors,   dtype=np.float32 )
+    iIndices  = np.array( iIndices,  dtype=np.uint32  )
+
+    iNormals  = np.array( iNormals,  dtype=np.float32 )
+
+    return iVertices, iColors, iIndices, iNormals

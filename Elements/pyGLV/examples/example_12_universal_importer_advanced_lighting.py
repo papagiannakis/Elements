@@ -193,7 +193,7 @@ model_entity.initialize_gl(Lposition, Lcolor, Lintensity)
 model_entity.transform_component.trs = util.scale(1.0, 1.0, 1.0)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
