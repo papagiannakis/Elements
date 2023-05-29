@@ -3,10 +3,10 @@ import os
 
 import Elements.pyECSS.utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform,  RenderMesh
-from Elements.pyECSS.System import  TransformSystem
+from Elements.pyECSS.Component import BasicTransform,  Camera, RenderMesh
+from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -15,7 +15,8 @@ from Elements.pyGLV.GL.Textures import Texture
 
 from OpenGL.GL import GL_LINES
 
-
+winWidth = 1024
+winHeight = 768
 scene = Scene()    
 
 # Scenegraph with Entities, Components
@@ -24,10 +25,18 @@ entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
 scene.world.addEntityChild(rootEntity, entityCam1)
 trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.identity()))
 
+eye = util.vec(1, 0.54, 1.0)
+target = util.vec(0.02, 0.14, 0.217)
+up = util.vec(0.0, 1.0, 0.0)
+view = util.lookat(eye, target, up)
+projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
+m = np.linalg.inv(projMat @ view)
+
 entityCam2 = scene.world.createEntity(Entity(name="entityCam2"))
 scene.world.addEntityChild(entityCam1, entityCam2)
 trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="trans2", trs=util.identity()))
 # orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
+orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
 
 node4 = scene.world.createEntity(Entity(name="node4"))
 scene.world.addEntityChild(rootEntity, node4)
@@ -97,7 +106,7 @@ vertices, indices, _ = norm.generateUniqueVertices(vertexCube,indexCube)
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-# camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
+camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
@@ -146,7 +155,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: Textures example", openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Textures example", customImGUIdecorator = ImGUIecssDecorator, openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -192,10 +201,14 @@ texture = os.path.join(os.path.dirname(__file__), "textures/uoc_logo.png")
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
+    scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
+    scene.world.traverse_visit(camUpdate, scene.world.root)
+    
     view =  gWindow._myCamera # updates view via the imgui
     mvp_terrain_axes = projMat @ view @ model_terrain_axes
+    
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
     shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)

@@ -148,7 +148,7 @@ class TestScene(unittest.TestCase):
         self.shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.view =  gWindow._myCamera 
             self.shaderDec4.setUniformVariable(key='model', value=self.model_cube, mat4=True)

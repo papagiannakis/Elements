@@ -30,7 +30,8 @@ Lintensity = 0.8
 #Material
 Mshininess = 0.4 
 Mcolor = util.vec(0.8, 0.0, 0.8)
-
+winWidth = 1200
+winHeight = 800
 
 scene = Scene()    
 
@@ -163,7 +164,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1200, windowHeight = 800, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -190,7 +191,7 @@ up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
 # projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
 # projMat = util.perspective(90.0, 1.33, 0.1, 100)  
-projMat = util.perspective(50.0, 1200/800, 0.01, 100.0)   
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
@@ -200,19 +201,19 @@ model_cube = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
 
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
-    # mvp_cube = projMat @ view @ model_cube
-    mvp_cube = projMat @ view @ trans4.trs
+    #mvp_cube = projMat @ view @ model_cube
+    mvp_object = projMat @ view @ trans4.trs
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
+    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_object, mat4=True)
     shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
     shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
     shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)

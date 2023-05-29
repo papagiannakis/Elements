@@ -15,6 +15,6 @@ running = True
 
 while running:
     gWindow.display()
-    running = gWindow.event_input_process(running)
+    running = gWindow.event_input_process()
     gWindow.display_post()
 gWindow.shutdown()

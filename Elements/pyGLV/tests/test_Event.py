@@ -305,7 +305,7 @@ class TestEvent(unittest.TestCase):
         # print (gWindow._myCamera)
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             mvpMat = gWindow._myCamera
             self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
