@@ -7,8 +7,8 @@ class Model:
     
     """
     name: str # The name of this Model
-    __meshes : dict[str, Mesh] = {} # The named meshes of the imported object in a dict with their names as keys, each containing its vertices/normals/uvs
-    __mesh_list : list[Mesh] = [] # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
+    __meshes : "dict[str, Mesh]" = {} # The named meshes of the imported object in a dict with their names as keys, each containing its vertices/normals/uvs
+    __mesh_list : "list[Mesh]" = [] # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
 
     def __init__(self, name:str):
         self.name = name
