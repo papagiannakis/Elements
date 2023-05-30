@@ -70,7 +70,7 @@ If you have any questions or would like to learn more about our project, please 
 If you are using the Elements project, please cite:
 
 ```
-@inproceedings {10.2312:eged.20231015,
+@inproceedings {Elements2023,
 booktitle = {Eurographics 2023 - Education Papers},
 editor = {Magana, Alejandra and Zara, Jiri},
 title = {{Project Elements: A Computational Entity-component-system in a Scene-graph Pythonic Framework, for a Neural, Geometric Computer Graphics Curriculum}},
