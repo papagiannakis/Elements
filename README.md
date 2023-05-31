@@ -70,12 +70,15 @@ If you have any questions or would like to learn more about our project, please 
 If you are using the Elements project, please cite:
 
 ```
-@misc{projectElements,
-  title = {Project Elements: A computational entity-component-system in a scene-graph pythonic framework, for a neural, geometric computer graphics curriculum},
-  author = {Papagiannakis, George and Kamarianakis, Manos and Protopsaltis, Antonis and Angelis, Dimitris and Zikas, Paul},
-  doi = {10.48550/ARXIV.2302.07691},
-  url = {https://arxiv.org/abs/2302.07691},
-  publisher = {arXiv},
-  year = {2023}
+@inproceedings {Elements2023,
+booktitle = {Eurographics 2023 - Education Papers},
+editor = {Magana, Alejandra and Zara, Jiri},
+title = {{Project Elements: A Computational Entity-component-system in a Scene-graph Pythonic Framework, for a Neural, Geometric Computer Graphics Curriculum}},
+author = {Papagiannakis, George and Kamarianakis, Manos and Protopsaltis, Antonis and Angelis, Dimitris and Zikas, Paul},
+year = {2023},
+publisher = {The Eurographics Association},
+ISSN = {1017-4656},
+ISBN = {978-3-03868-210-3},
+DOI = {10.2312/eged.20231015}
 }
 ```
