@@ -25,7 +25,7 @@ class GameObject:
 
         imported_obj:Model = Wavefront(_objectPath, calculate_smooth_normals=False)
 
-        model_entity:ModelEntity = _scene.world.createEntity(ModelEntity(imported_obj))
+        model_entity:ModelEntity = _scene.world.createEntity(ModelEntity(imported_obj,_objectName))
         _scene.world.addEntityChild(_parent, model_entity)
         model_entity.create_entities_and_components(_scene)
 

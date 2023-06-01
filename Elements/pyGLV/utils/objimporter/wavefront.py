@@ -10,7 +10,7 @@ import traceback
 
 
 class WavefrontMaterialLibrary():
-    materials:List[Material]
+    materials:List[Material] = []
 
     def __init__(self, name, file_path, encoding = 'utf-8'):
         self.name = name
@@ -480,8 +480,14 @@ class Wavefront(Model):
         #       Submeshes are not supported as of now but can be simulated by different meshes
 
         if current_mesh.material is None:
-            current_mesh.material = self.__materials.get(material_name, Material("Default"))
+            
+            # Check if we have found the material we need in our Material librarires, else create new standard material
+            if material_name not in self.__materials:
+                mat = StandardMaterial(material_name)
+                self.__materials[material_name] = mat
 
+            current_mesh.material = self.__materials[material_name]
+            
         else:
             # Create submesh
             new_mesh = WavefrontObjectMesh(name = ("%s_0" %(current_mesh.name)) if current_mesh.name !="" else "")
@@ -494,7 +500,12 @@ class Wavefront(Model):
             if new_mesh.name != "":
                 self.__obj_meshes[new_mesh.name] = new_mesh
 
-            new_mesh.material = self.__materials.get(material_name, Material("Default"))
+            # Check if we have found the material we need in our Material librarires, else create new standard material
+            if material_name not in self.__materials:
+                mat = StandardMaterial(material_name)
+                self.__materials[material_name] = mat
+
+            new_mesh.material = self.__materials[material_name]
             
     # ------- Conversion to standard mesh --------
     def __convert_obj_meshes_to_meshes(self) -> None:
