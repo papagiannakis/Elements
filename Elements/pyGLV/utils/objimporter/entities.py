@@ -13,7 +13,7 @@ from Elements.pyGLV.utils.objimporter.model import Model
 
 
 class ModelEntity(Entity):
-    def __init__(self, model:Model, name:str=None, type=None, id=None) -> None:
+    def __init__(self, model:Model, name:str=None, _trs=None) -> None:
         """
         Create an entity representation for a Model object
         """
@@ -22,17 +22,16 @@ class ModelEntity(Entity):
 
         super().__init__(name, type, id)
         self.model:Model = model
-        self.transform_component:BasicTransform = None
+        self.transform_component:BasicTransform = BasicTransform(name="Transform", trs = _trs)
         self.mesh_entities:list[MeshEntity] = [] 
-
             
 
     def create_entities_and_components(self, scene):
         """
         Creates a new Entity for each Mesh and their Components
         """
-        self.transform_component:BasicTransform = scene.world.addComponent(self, BasicTransform(name="Transform", trs=utilities.identity() ))
-
+        self.transform_component:BasicTransform = scene.world.addComponent(self, self.transform_component)
+            
         for m in range(self.model.mesh_count):
             mesh_entity:MeshEntity = scene.world.createEntity(MeshEntity(self.model.get_mesh(m)))
             self.mesh_entities.append(mesh_entity)
@@ -102,7 +101,5 @@ class MeshEntity(Entity):
         self.shader_decorator_component.setUniformVariable(key='lightIntensity', value=light_intensity, float1=True)
 
 
-        if self.mesh.material is None:
-            self.mesh.material = StandardMaterial("Default")
-            print("initialize_gl: Mesh %s has no material. Will attach a Default Material for Rendering" % (self.mesh.name))
+        # self.mesh.material = StandardMaterial("new")
         self.mesh.material.update_shader_properties(self.shader_decorator_component)
