@@ -1,9 +1,6 @@
 from numpy import identity
 from Elements.pyECSS import Entity
-from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
-from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.utils.normals import generateSmoothNormalsMesh
 from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.utils.objimporter.entities import ModelEntity
