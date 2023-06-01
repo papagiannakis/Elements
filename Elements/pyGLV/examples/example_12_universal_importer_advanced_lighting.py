@@ -70,9 +70,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 # Load Object
 dirname = os.path.dirname(__file__)
+
 obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
 model_entity = GameObject.Spawn(scene, obj_to_import, "Cube", rootEntity, util.translate(-0.2, 0.4, 0.0))
-
 
 
 # Light Visualization
@@ -194,6 +194,7 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
+    scene.world.traverse_visit(transUpdate, scene.world.root)
 
     view =  gWindow._myCamera # updates view via the imgui
     # mvp_cube = projMat @ view @ model_cube
@@ -208,9 +209,9 @@ while running:
         # --- Set vertex shader data ---
         mesh_entity.shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
         mesh_entity.shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
-        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.trs, mat4=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.l2world, mat4=True)
         # Calculate normal matrix
-        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.trs))
+        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.l2world))
         mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
         # --- Set fragment shader data ---
@@ -220,4 +221,3 @@ while running:
     scene.render_post()
     
 scene.shutdown()
-
