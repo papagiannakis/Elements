@@ -33,7 +33,7 @@ class GameObject:
 
     def Find(searchName: str) -> Entity:
         returnEntity = None
-        scene = Scene.Scene()
+        scene = Scene()
         scene.world.entities_components
 
 
