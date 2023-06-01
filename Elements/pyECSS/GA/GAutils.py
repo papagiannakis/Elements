@@ -184,7 +184,30 @@ def matrix_from_t_and_q(t,q):
    quat = Quaternion(q[0],q[1],q[2],q[3])
    M[:3,:3] = quat.to_rotation_matrix() 
    M[:3,3] = t
+   M[3,3] = 1
    return M
+
+
+def PGA_vec_to_TRS_matrix(PGA_vec: np.ndarray):
+   """
+   Takes a PGA vector and returns the corresponding TRS matrix
+   """
+   layout_PGA, _ = cl.Cl(3, 0, 1, firstIdx=0)
+   m = cl.MultiVector(layout = layout_PGA, value=PGA_vec)
+   t,q = extract_t_q_from_TR(m,algebra='PGA')
+   return matrix_from_t_and_q(t,q)
+
+def CGA_vec_to_TRS_matrix(CGA_vec: np.ndarray):
+   """
+   Takes a PGA vector and returns the corresponding TRS matrix
+   """
+   layout_orig, _ = cl.Cl(3)
+   layout_CGA, _, _ = cl.conformalize(layout_orig)
+   m = cl.MultiVector(layout = layout_CGA, value=CGA_vec)
+   t,q = extract_t_q_from_TR(m, algebra='CGA')
+   return matrix_from_t_and_q(t,q)
+
+
 
 if __name__ == "__main__":
 
