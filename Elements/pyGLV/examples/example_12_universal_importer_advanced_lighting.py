@@ -1,28 +1,19 @@
 
 import os
 import numpy as np
-
 import Elements.pyECSS.utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
-
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
-
-import Elements.pyGLV.utils.normals as norm
-from Elements.pyGLV.utils.objimporter.entities import  ModelEntity
-from Elements.pyGLV.utils.objimporter.model import Model
 from Elements.pyGLV.utils.terrain import generateTerrain
 
-from Elements.pyGLV.utils.objimporter.wavefront import Wavefront
 
 
 #Light

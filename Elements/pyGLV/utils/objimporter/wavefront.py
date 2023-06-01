@@ -262,6 +262,7 @@ class Wavefront(Model):
         self.__parse_dispatch = {
             "mtllib" : self.__parse_mtllib,
             "o" : self.__parse_object,
+            "g" : self.__parse_object,
             "v" : self.__parse_vertex,
             "vt": self.__parse_texture_coord,
             "vn" : self.__parse_normal,
