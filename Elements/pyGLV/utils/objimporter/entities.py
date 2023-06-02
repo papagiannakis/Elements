@@ -32,8 +32,6 @@ class ModelEntity(Entity):
         """
         self.transform_component:BasicTransform = scene.world.addComponent(self, self.transform_component)
         for m in range(self.model.mesh_count):
-            if self.model.get_mesh(m).name == 'default':
-                continue
             mesh_entity:MeshEntity = scene.world.createEntity(MeshEntity(self.model.get_mesh(m)))
             self.mesh_entities.append(mesh_entity)
             scene.world.addEntityChild(self, mesh_entity)
@@ -101,6 +99,6 @@ class MeshEntity(Entity):
         self.shader_decorator_component.setUniformVariable(key='lightColor', value=light_color, float3=True)
         self.shader_decorator_component.setUniformVariable(key='lightIntensity', value=light_intensity, float1=True)
 
-
-        # self.mesh.material = StandardMaterial("new")
+        if self.mesh.material is None:
+            self.mesh.material = StandardMaterial("new")
         self.mesh.material.update_shader_properties(self.shader_decorator_component)
