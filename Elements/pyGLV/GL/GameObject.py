@@ -4,45 +4,51 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.utils.normals import generateSmoothNormalsMesh
 from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.utils.objimporter.entities import ModelEntity
+from Elements.pyGLV.utils.objimporter.mesh import Mesh
 from Elements.pyGLV.utils.objimporter.model import Model
 from Elements.pyGLV.utils.objimporter.wavefront import Wavefront
+from PIL import Image
+from Elements.pyGLV.utils.objimporter.material import StandardMaterial
+
 
 class GameObject:
-  
     objectPath = ""
 
     def __init__(self, name, age):
         self.name = name
         self.age = age
-        
-        
-    def Spawn(_scene, _objectPath, _objectName,  _parent, _trs=None):
+
+    def Spawn(_scene, _objectPath, _objectName, _parent, trs=None, texture_path=None):
+    def Spawn(_scene, _objectPath, _objectName,  _parent, trs=None, texture=None):
         if _trs is None:
             _trs = identity()
 
 
-        imported_obj:Model = Wavefront(_objectPath, calculate_smooth_normals=False)
+        imported_obj: Model = Wavefront(_objectPath, calculate_smooth_normals=False)
+        if texture_path is not None:
+            mesh_from_obj: Mesh = imported_obj.get_mesh(0)
+            img = Image.open(texture_path)
+            img_bytes = img.tobytes("raw", "RGBA", 0, -1)
+            m = StandardMaterial(albedo_map=(img_bytes, img.width, img.height))
+            mesh_from_obj.material = m
 
         model_entity:ModelEntity = _scene.world.createEntity(ModelEntity(imported_obj,_objectName,_trs))
 
         _scene.world.addEntityChild(_parent, model_entity)
         model_entity.create_entities_and_components(_scene)
-
+        model_entity.transform_component.trs = trs
         return model_entity
-
 
     def Find(searchName: str) -> Entity:
         returnEntity = None
         scene = Scene()
         scene.world.entities_components
 
-
         for entity in scene.world.entities:
-            if(entity.name == searchName):
+            if (entity.name == searchName):
                 returnEntity = entity
 
-        if(returnEntity is None):
-            print("Entity ",str(searchName)," not found!")
+        if (returnEntity is None):
+            print("Entity ", str(searchName), " not found!")
 
         return returnEntity
-
