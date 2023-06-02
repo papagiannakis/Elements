@@ -1,0 +1,90 @@
+newmtl Box002SG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.59 0.59 0.59
+Tf 1.00 1.00 1.00
+map_Kd table_with_implants_01_Material__2_AlbedoTransparency.png
+bump  -bm 0.3 table_with_implants_01_Material__2_Normal.png
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 0.00
+newmtl Cylinder001SG
+illum 4
+Kd 0.00 0.10 0.84
+Ka 0.00 0.10 0.84
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.44 0.44 0.44
+Ns 10.13
+newmtl Cylinder001SG1
+illum 4
+Kd 0.00 0.41 0.71
+Ka 0.00 0.41 0.71
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 0.00
+newmtl Cylinder001SG2
+illum 4
+Kd 0.43 0.43 0.43
+Ka 0.43 0.43 0.43
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.57 0.57 0.57
+Ns 4.96
+newmtl Cylinder001SG3
+illum 4
+Kd 1.00 0.85 0.00
+Ka 1.00 0.85 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.44 0.44 0.44
+Ns 10.13
+newmtl Group49794SG
+illum 4
+Kd 0.15 0.52 0.46
+Ka 0.15 0.52 0.46
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 0.00
+newmtl Stetoscope:Cylinder003SG
+illum 4
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+newmtl TrapezomantiloSG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.59 0.59 0.59
+Tf 1.00 1.00 1.00
+map_Kd table_with_implants_01_Material__3_AlbedoTransparency.png
+bump  -bm 0.3 table_with_implants_01_Material__3_Normal.png
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 0.00
+newmtl anesthesia_main_bodySG
+illum 4
+Kd 0.59 0.59 0.59
+Ka 0.59 0.59 0.59
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 0.00
+newmtl scalpel_NEW_handleSG
+illum 4
+Kd 0.59 0.59 0.59
+Ka 0.59 0.59 0.59
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.71 0.71 0.71
+Ns 14.00
+newmtl tabletool_Zbrush_LOWSG
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.55 0.55 0.55
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+Ns 6.00
