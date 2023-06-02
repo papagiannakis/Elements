@@ -2,7 +2,7 @@ import json
 
 import openai
 
-openai.api_key = "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"
+openai.api_key = "ENTER YOUR KEY HERE"
 
 
 def replaceOps(s):

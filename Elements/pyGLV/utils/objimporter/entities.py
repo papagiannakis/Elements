@@ -31,7 +31,9 @@ class ModelEntity(Entity):
         Creates a new Entity for each Mesh and their Components
         """
         self.transform_component:BasicTransform = scene.world.addComponent(self, self.transform_component)
-        for m in range(self.model.mesh_count+1):
+        for m in range(self.model.mesh_count):
+            if self.model.get_mesh(m).name == 'default':
+                continue
             mesh_entity:MeshEntity = scene.world.createEntity(MeshEntity(self.model.get_mesh(m)))
             self.mesh_entities.append(mesh_entity)
             scene.world.addEntityChild(self, mesh_entity)
