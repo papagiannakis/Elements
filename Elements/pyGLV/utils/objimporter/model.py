@@ -1,3 +1,4 @@
+from __future__ import annotations
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.utils.objimporter.mesh import Mesh
 
@@ -7,8 +8,8 @@ class Model:
     
     """
     name: str # The name of this Model
-    __meshes : list # The named meshes of the imported object in a dict with their names as keys, each containing its vertices/normals/uvs
-    __mesh_list : list # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
+    __meshes : dict[str, Mesh] = {} # The named meshes of the imported object in a dict with their names as keys, each containing its vertices/normals/uvs
+    __mesh_list : list[Mesh] = [] # All the meshes of the imported object in a list, each containing its vertices/normals/uvs
 
     def __init__(self, name:str):
         self.name = name
@@ -71,6 +72,6 @@ class Model:
         return node
     
     def __get_mesh_count(self) -> int:
-        return len(self.__meshes) if self.__meshes is not None else 0
+        return len(self.__mesh_list) if self.__mesh_list is not None else 0
 
     mesh_count = property(__get_mesh_count)
