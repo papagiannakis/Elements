@@ -10,9 +10,11 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
-from OpenGL.GL import GL_LINES
+from OpenGL.GL import GL_LINES, GL_POINTS
 
-import bezier
+import imgui
+
+from bezier_curve import generate_bezier_data, xyz_to_vertecies
 
 scene = Scene()
 
@@ -37,6 +39,9 @@ axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
+
+all_shader = []
+
 
 # Colored Axes
 vertexAxes = np.array([
@@ -81,7 +86,7 @@ terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+all_shader.append(terrain_shader)
 
 ## ADD AXES ##
 axes = scene.world.createEntity(Entity(name="axes"))
@@ -95,121 +100,100 @@ axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES))  #
 
 axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+all_shader.append(axes_shader)
 
 
-#### BEZIER 2D ####
+input_bezier_control_nodes = [[0.0, 0.0, 0.0], [1.0, 1.0, 1.0]]
+FuncValues = [0,1,2,3]
+def Bezier_GUI():
+    global FuncValues
+    # global f_x_y
+    # global f_x
+    #
+    # global superfuncchild2D
+    # global superfuncchild3D
+    funcDetail = 100
+    # global platforms
 
+    global input_bezier_control_nodes
+    imgui.begin("Print Bezier Curve")
 
-bezier_control_nodes = [[0, 0], [1, 2], [0, 3]]
+    imgui.text("Control nodes X, Y, Z")
+    for i, control_node in enumerate(input_bezier_control_nodes):
+        changed, input_bezier_control_nodes[i] = imgui.input_float3(f"Control Node {i+1}", *control_node)
 
-# def separate_coordinates(coordinates):
-#     x_coordinates = [coord[0] for coord in coordinates]
-#     y_coordinates = [coord[1] for coord in coordinates]
-#     return [x_coordinates, y_coordinates]
-#
-# def combine_coordinates(coordinates):
-#     return [[coord[0], coord[1]] for coord in zip(coordinates[0], coordinates[1])]
-#
-# def xy_to_vertecies(coords):
-#     return [coord + [0.0, 1.0] for coord in coords]
+    button_remove_node_pressed = imgui.button("Remove Node")
+    imgui.same_line()
+    button_add_node_pressed = imgui.button("Add Node")
+    if (button_remove_node_pressed):
+        input_bezier_control_nodes.pop()
+    if (button_add_node_pressed):
+        input_bezier_control_nodes.append([0.0, 0.0, 0.0])
 
-def vertecies_to_line_vertecies(coordinates):
-    vertecies = []
-    vertecies.append(coordinates[0])
-    for coord in coordinates[1:-1]:
-        vertecies.extend([coord, coord])
-    vertecies.append(coordinates[-1])
-    return vertecies
-
-def generate_bezier_data(bezier_nodes, numberPoints, start_x, end_x):
-    bezier_curve = bezier.Curve.from_nodes(separate_coordinates(bezier_nodes))
-    print("created bezier curve:", bezier_curve)
-
-    x_values = np.linspace(start_x, end_x, numberPoints)
-    xy_values = combine_coordinates(bezier_curve.evaluate_multi(x_values))
-    print("xy_values:", xy_values)
-
-    vertexBezier = np.array(vertecies_to_line_vertecies(xy_to_vertecies(xy_values)), dtype=np.float32)
-    print("vertexBezier", vertexBezier)
-
-    colorBezier = np.array([[1.0, 0.0, 1.0, 1.0]] * len(vertexBezier), dtype=np.float32)
-    print("colorBezier", colorBezier)
-
-    indexBezier = np.array(range(len(vertexBezier)), np.uint32)
-
-    return vertexBezier, colorBezier, indexBezier
+    button_bezier_pressed = imgui.button("Print Bezier")
 
 
 
-#### BEZIER 3D ####
+    imgui.text("Give a to b values for X and c to d for Y")
+    changed, FuncValues = imgui.input_float4('', *FuncValues)
+    # imgui.same_line()
+    imgui.text("a: %.1f, b: %.1f, c: %.1f, d: %.1f" % (FuncValues[0], FuncValues[1], FuncValues[2], FuncValues[3]))
+    changed, funcDetail = imgui.input_int('Detailed', funcDetail)
+    if imgui.is_item_hovered():
+        imgui.set_tooltip("Make sure the detail is between 4 to 100")
 
 
-bezier_control_nodes_3D = [[0, 0, 0], [1, 2, 1], [0, 3, 2]]
 
-def separate_coordinates_3D(coordinates):
-    x_coordinates = [coord[0] for coord in coordinates]
-    y_coordinates = [coord[1] for coord in coordinates]
-    z_coordinates = [coord[2] for coord in coordinates]
-    return [x_coordinates, y_coordinates, z_coordinates]
+    if (button_bezier_pressed):
+        input_bezier_control_nodes = np.array(input_bezier_control_nodes)
+        vertexBezier, colorBezier, indexBezier = generate_bezier_data(input_bezier_control_nodes, 100, 0, 1)
 
-def combine_coordinates_3D(coordinates):
-    return [[coord[0], coord[1], coord[2]] for coord in zip(coordinates[0], coordinates[1], coordinates[2])]
+        ## ADD BEZIER ##
+        bezier = scene.world.createEntity(Entity(name="bezier"))
+        scene.world.addEntityChild(rootEntity, bezier)
+        bezier_trans = scene.world.addComponent(bezier, BasicTransform(name="bezier_trans", trs=util.identity()))
+        bezier_mesh = scene.world.addComponent(bezier, RenderMesh(name="bezier_mesh"))
+        bezier_mesh.vertex_attributes.append(vertexBezier)
+        bezier_mesh.vertex_attributes.append(colorBezier)
+        bezier_mesh.vertex_index.append(indexBezier)
+        bezier_vArray = scene.world.addComponent(bezier, VertexArray(primitive=GL_LINES))  # note the primitive change
 
-def xyz_to_vertecies(coords):
-    return [coord + [1.0] for coord in coords]
+        bezier_shader = scene.world.addComponent(bezier, ShaderGLDecorator(
+            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        all_shader.append(bezier_shader)
 
-def generate_points(num_points, start_x, end_x, start_z, end_z):
-    x_values = np.linspace(start_x, end_x, num_points)
-    z_values = np.linspace(start_z, end_z, num_points)
-    points = []
-    for x in x_values:
-        for z in z_values:
-            points.append([x, z])
-    return points
+        ## VISUALIZE BEZIER CONTROL NODES ##
 
-def generate_bezier_data_3D(bezier_nodes, num_points, start_x, end_x):
-    bezier_curve = bezier.Curve.from_nodes(separate_coordinates_3D(bezier_nodes))
-    print("created bezier curve:", bezier_curve)
+        vertexControlNodes = xyz_to_vertecies(input_bezier_control_nodes)
+        colorControlNodes = np.array([[0.5, 0.5, 1.0, 1.0]] * len(vertexControlNodes), dtype=np.float32)
+        indexControlNodes = np.array(range(len(vertexControlNodes)), np.uint32)
 
-    x_values = np.linspace(start_x, end_x, num_points)
-    bezier_points = bezier_curve.evaluate_multi(x_values)
-    print("bezier_points", bezier_points)
+        control_nodes = scene.world.createEntity(Entity(name="control_nodes"))
+        scene.world.addEntityChild(rootEntity, control_nodes)
+        control_nodes_trans = scene.world.addComponent(control_nodes,
+                                                       BasicTransform(name="control_nodes_trans", trs=util.identity()))
+        control_nodes_mesh = scene.world.addComponent(control_nodes, RenderMesh(name="control_nodes_mesh"))
+        control_nodes_mesh.vertex_attributes.append(vertexControlNodes)
+        control_nodes_mesh.vertex_attributes.append(colorControlNodes)
+        control_nodes_mesh.vertex_index.append(indexControlNodes)
+        control_nodes_vArray = scene.world.addComponent(control_nodes, VertexArray(primitive=GL_POINTS))
 
-    xyz_values = combine_coordinates_3D(bezier_points)
-    print("xyz_values:", xyz_values)
+        # TODO
+        # GL POINT SIZE ASK DOMINIK!
 
-    vertexBezier = np.array(vertecies_to_line_vertecies(xyz_to_vertecies(xyz_values)), dtype=np.float32)
-    print("vertexBezier", vertexBezier)
+        control_nodes_shader = scene.world.addComponent(control_nodes, ShaderGLDecorator(
+            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        all_shader.append(control_nodes_shader)
 
-    colorBezier = np.array([[0.5, 0.0, 1.0, 1.0]] * len(vertexBezier), dtype=np.float32)
-    print("colorBezier", colorBezier)
+        scene.world.traverse_visit(initUpdate, scene.world.root)
 
-    indexBezier = np.array(range(len(vertexBezier)), np.uint32)
-
-    return vertexBezier, colorBezier, indexBezier
-
-
-#vertexBezier, colorBezier, indexBezier = generate_bezier_data(bezier_control_nodes, 100, -1, 1)
-vertexBezier, colorBezier, indexBezier = generate_bezier_data_3D(bezier_control_nodes_3D, 100, -1, 1)
-
-## ADD BEZIER ##
-bezier = scene.world.createEntity(Entity(name="bezier"))
-scene.world.addEntityChild(rootEntity, bezier)
-bezier_trans = scene.world.addComponent(bezier, BasicTransform(name="bezier_trans", trs=util.identity()))
-bezier_mesh = scene.world.addComponent(bezier, RenderMesh(name="bezier_mesh"))
-bezier_mesh.vertex_attributes.append(vertexBezier)
-bezier_mesh.vertex_attributes.append(colorBezier)
-bezier_mesh.vertex_index.append(indexBezier)
-bezier_vArray = scene.world.addComponent(bezier, VertexArray(primitive=GL_LINES))  # note the primitive change
-
-bezier_shader = scene.world.addComponent(bezier, ShaderGLDecorator(
-    Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    imgui.end()
 
 
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth=1024, windowHeight=768, windowTitle="Elements: A Working Event Manager",
+scene.init(imgui=True, windowWidth=1024, windowHeight=768, windowTitle="Elements: Bezier Curve Rendering",
            openGLversion=4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
@@ -256,11 +240,14 @@ while running:
     running = scene.render(running)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view = gWindow._myCamera  # updates view via the imgui
-    mvp_cube = projMat @ view @ model_cube
+
     mvp_terrain_axes = projMat @ view @ model_terrain_axes
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-    bezier_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+
+    Bezier_GUI()
+
+    for shader in all_shader:
+        shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+
     scene.render_post()
 
 scene.shutdown()
