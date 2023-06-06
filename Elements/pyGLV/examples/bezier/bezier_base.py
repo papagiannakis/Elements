@@ -53,15 +53,13 @@ class BezierCurve:
 
         if button_bezier_pressed:
             input_bezier_control_nodes = [list(tuple) for tuple in input_bezier_control_nodes]
-            smallest_x, largest_x = get_x_boundaries(input_bezier_control_nodes)
-            print("smallest_x", smallest_x, "largest_x", largest_x)
-            self.render_curve(input_bezier_control_nodes, input_render_detail, smallest_x, largest_x)
+            self.render_curve(input_bezier_control_nodes, input_render_detail)
 
         imgui.end()
 
-    def render_curve(self, bezier_control_nodes, render_detail, start_x, end_x):
+    def render_curve(self, bezier_control_nodes, render_detail):
 
-        bezier_vertices, bezier_colors, bezier_indices = generate_bezier_data(bezier_control_nodes, render_detail, start_x, end_x)
+        bezier_vertices, bezier_colors, bezier_indices = generate_bezier_data(bezier_control_nodes, render_detail)
 
         ## ADD / UPDATE BEZIER ##
 
@@ -105,19 +103,15 @@ class BezierCurve:
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
 
 
-def generate_bezier_data(bezier_nodes, num_points, start_x, end_x):
-    bezier_curve = bezier.Curve.from_nodes(separate_coordinates(bezier_nodes))
+def generate_bezier_data(bezier_control_nodes, num_points):
+    bezier_curve = bezier.Curve.from_nodes(separate_coordinates(bezier_control_nodes))
     print("created bezier curve:", bezier_curve)
 
-    x_values = np.linspace(start_x-1, end_x+1, num_points)
-
+    x_values = np.linspace(0, 1, num_points)
     bezier_points = bezier_curve.evaluate_multi(x_values)
-
     bezier_points_xyz = combine_coordinates(bezier_points)
-    bezier_points_xyz = [coord for coord in bezier_points_xyz if start_x <= coord[0] <= end_x]
 
     bezier_vertices = np.array(vertices_to_line_vertices(xyz_to_vertices(bezier_points_xyz)), dtype=np.float32)
-    print("vertexBezier", bezier_vertices)
 
     bezier_colors = np.array([[0.5, 0.0, 1.0, 1.0]] * len(bezier_vertices), dtype=np.float32)
 
@@ -152,10 +146,3 @@ def xyz_to_vertices(coords):
 def remove_entity_children(entity: Entity):
     while entity.getChild(1) is not None:
         entity.remove(entity.getChild(1))
-
-
-def get_x_boundaries(bezier_control_nodes):
-    x_values = [node[0] for node in bezier_control_nodes]
-    smallest_x = min(x_values)
-    largest_x = max(x_values)
-    return smallest_x, largest_x
