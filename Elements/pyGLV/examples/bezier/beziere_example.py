@@ -11,9 +11,9 @@ from Elements.pyGLV.utils.terrain import generateTerrain
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
-from OpenGL.GL import GL_LINES, GL_POINTS
+from OpenGL.GL import GL_LINES
 
-from bezier_curve import Bezier_Curve
+from Elements.pyGLV.examples.bezier.bezier_base import BezierCurve
 
 scene = Scene()
 
@@ -94,16 +94,16 @@ axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 axes_mesh.vertex_attributes.append(vertexAxes)
 axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
-axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES))  # note the primitive change
+axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES))
 
 axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 all_shaders.append(axes_shader)
 
-global global_bezier_entity
-global_bezier_entity = scene.world.createEntity(Entity(name="bezier"))
+bezier_entity = scene.world.createEntity(Entity(name="bezier"))
+scene.world.addEntityChild(rootEntity, bezier_entity)
 
-bezier_curve = Bezier_Curve(global_bezier_entity, scene, rootEntity, all_shaders, initUpdate)
+bezier_curve = BezierCurve(bezier_entity, scene, rootEntity, all_shaders, initUpdate)
 
 
 # MAIN RENDERING LOOP
