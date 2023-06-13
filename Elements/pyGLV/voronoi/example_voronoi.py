@@ -17,7 +17,7 @@ from OpenGL.GL import GL_POINTS
 
 import OpenGL.GL as gl
 
-import voronoi
+import Elements.pyGLV.voronoi.voronoi as voronoi
 
 import random
 #gl.glPointSize(1.)
@@ -74,7 +74,8 @@ colorAxes = np.array([
 indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B lines
 
 # Create Voronoi Diagram. Mesh and Points.
-mesh_vertices, mesh_indices, mesh_color, point_list, point_indices, point_colors = voronoi_diagram()
+samplepoints = voronoi.random_points_in_square(10,1.0)
+mesh_vertices, mesh_indices, mesh_color, point_list, point_indices, point_colors = voronoi.voronoi_diagram(samplepoints)
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -112,9 +113,9 @@ axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-axes_mesh.vertex_attributes.append(voronoi) 
-axes_mesh.vertex_attributes.append(colors)
-axes_mesh.vertex_index.append(indices)
+#axes_mesh.vertex_attributes.append(voronoi) 
+##axes_mesh.vertex_attributes.append(colors)
+#axes_mesh.vertex_index.append(indices)
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES)) # note the primitive change
 
 ## ADD POINTS ##
