@@ -251,3 +251,75 @@ class IndexedConverter():
 
         return iVertices, iColors, iIndices, iNormals;
 
+
+class Light(Entity):
+    def __init__(self, name=None, type=None, id=None) -> None:
+        super().__init__(name, type, id);
+        # Add variables for light
+        self.color = [1, 1, 1];
+        self.intensity = 1;
+    
+    def drawSelfGui(self, imgui):
+        changed, value = imgui.slider_float("Intensity", self.intensity, 0, 10, "%.1f", 1);
+        self.intensity = value;
+
+        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2]);
+        self.color = [value[0], value[1], value[2]];
+        None;
+
+class PointLight(Light):
+    def __init__(self, name=None, type=None, id=None) -> None:
+        super().__init__(name, type, id);
+
+        # Create basic components of a primitive object
+        self.trans          = BasicTransform(name="trans", trs=util.identity());
+        scene = Scene();
+        scene.world.createEntity(self);
+        scene.world.addComponent(self, self.trans);
+
+    
+        vertices = [
+            [-0.5, -0.5, 0.5, 1.0],
+            [-0.5, 0.5, 0.5, 1.0],
+            [0.5, 0.5, 0.5, 1.0],
+            [0.5, -0.5, 0.5, 1.0], 
+            [-0.5, -0.5, -0.5, 1.0], 
+            [-0.5, 0.5, -0.5, 1.0], 
+            [0.5, 0.5, -0.5, 1.0], 
+            [0.5, -0.5, -0.5, 1.0]
+        ]
+    
+        colors =  [self.color] * len(vertices)
+        colors = np.array(colors)
+
+        self.mesh           = RenderMesh(name="mesh");
+        self.shaderDec  = ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+        self.vArray         = VertexArray();
+
+        scene.world.addComponent(self, self.mesh);
+        scene.world.addComponent(self, self.shaderDec);
+        scene.world.addComponent(self, self.vArray);
+    
+    
+        #index arrays for above vertex Arrays
+        indices = np.array(
+            (
+                1,0,3, 1,3,2, 
+                2,3,7, 2,7,6,
+                3,0,4, 3,4,7,
+                6,5,1, 6,1,2,
+                4,5,6, 4,6,7,
+                5,4,0, 5,0,1
+            ),
+            dtype=np.uint32
+        ) #rhombus out of two triangles
+
+        vertices, colors, indices, normals = BasicShapes.IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
+        self.mesh.vertex_attributes.append(vertices);
+        self.mesh.vertex_attributes.append(colors);
+        if normals is not None:
+            self.mesh.vertex_attributes.append(normals);
+        self.mesh.vertex_index.append(indices);
+
+    def drawSelfGui(self, imgui):
+        super().drawSelfGui(imgui);
