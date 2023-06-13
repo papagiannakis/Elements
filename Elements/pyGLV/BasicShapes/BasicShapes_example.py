@@ -20,77 +20,6 @@ from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 
 from Elements.pyGLV.BasicShapes import BasicShapes
 
-class Light(Entity):
-    def __init__(self, name=None, type=None, id=None) -> None:
-        super().__init__(name, type, id);
-        # Add variables for light
-        self.color = [1, 1, 1];
-        self.intensity = 1;
-    
-    def drawSelfGui(self, imgui):
-        changed, value = imgui.slider_float("Intensity", self.intensity, 0, 10, "%.1f", 1);
-        self.intensity = value;
-
-        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2]);
-        self.color = [value[0], value[1], value[2]];
-        None;
-
-class PointLight(Light):
-    def __init__(self, name=None, type=None, id=None) -> None:
-        super().__init__(name, type, id);
-
-        # Create basic components of a primitive object
-        self.trans          = BasicTransform(name="trans", trs=util.identity());
-        scene = Scene();
-        scene.world.createEntity(self);
-        scene.world.addComponent(self, self.trans);
-
-    
-        vertices = [
-            [-0.5, -0.5, 0.5, 1.0],
-            [-0.5, 0.5, 0.5, 1.0],
-            [0.5, 0.5, 0.5, 1.0],
-            [0.5, -0.5, 0.5, 1.0], 
-            [-0.5, -0.5, -0.5, 1.0], 
-            [-0.5, 0.5, -0.5, 1.0], 
-            [0.5, 0.5, -0.5, 1.0], 
-            [0.5, -0.5, -0.5, 1.0]
-        ]
-    
-        colors =  [self.color] * len(vertices)
-        colors = np.array(colors)
-
-        self.mesh           = RenderMesh(name="mesh");
-        self.shaderDec  = ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
-        self.vArray         = VertexArray();
-
-        scene.world.addComponent(self, self.mesh);
-        scene.world.addComponent(self, self.shaderDec);
-        scene.world.addComponent(self, self.vArray);
-    
-    
-        #index arrays for above vertex Arrays
-        indices = np.array(
-            (
-                1,0,3, 1,3,2, 
-                2,3,7, 2,7,6,
-                3,0,4, 3,4,7,
-                6,5,1, 6,1,2,
-                4,5,6, 4,6,7,
-                5,4,0, 5,0,1
-            ),
-            dtype=np.uint32
-        ) #rhombus out of two triangles
-
-        vertices, colors, indices, normals = BasicShapes.IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
-        self.mesh.vertex_attributes.append(vertices);
-        self.mesh.vertex_attributes.append(colors);
-        if normals is not None:
-            self.mesh.vertex_attributes.append(normals);
-        self.mesh.vertex_index.append(indices);
-
-    def drawSelfGui(self, imgui):
-        super().drawSelfGui(imgui);
 
 def main(imguiFlag = False):
     ##########################################################
@@ -120,27 +49,27 @@ def main(imguiFlag = False):
     mainCamera.trans1.trs = util.rotate((1, 0, 0), -45); 
 
     # Spawn Light
-    ambientLight = Light("Ambient Light");
+    ambientLight = BasicShapes.Light("Ambient Light");
     ambientLight.intensity = 0.1;
     scene.world.addEntityChild(rootEntity, ambientLight);
-    pointLight = PointLight();
+    pointLight = BasicShapes.PointLight();
     pointLight.trans.trs = util.translate(0.8, 1, 1)@util.scale(0.2)
     scene.world.addEntityChild(rootEntity, pointLight);
 
     # Spawn Two Homes on top of each other
-    home1 = scene.world.createEntity(Entity("Home"));
-    scene.world.addEntityChild(scene.world.root, home1);
+    home = scene.world.createEntity(Entity("Home"));
+    scene.world.addEntityChild(scene.world.root, home);
     trans = BasicTransform(name="trans", trs=util.identity());    
-    scene.world.addComponent(home1, trans);
+    scene.world.addComponent(home, trans);
 
     cylinder = BasicShapes.CylinderSpawn()
-    scene.world.addEntityChild(home1, cylinder);
+    scene.world.addEntityChild(home, cylinder);
     torus = BasicShapes.TorusSpawn()
-    scene.world.addEntityChild(home1, torus);
+    scene.world.addEntityChild(home, torus);
     #cube = BasicShapes.CubeSpawn()
-    #scene.world.addEntityChild(home1, cube);
+    #scene.world.addEntityChild(home, cube);
     #sphere = BasicShapes.SphereSpawn()
-    #scene.world.addEntityChild(home1, sphere);
+    #scene.world.addEntityChild(home, sphere);
 
     torus.trans.trs = util.translate(-0.5, 0, 0)@util.scale(0.5)
     cylinder.trans.trs = util.translate(0, 0.5, 0)@util.scale(0.5)
@@ -214,19 +143,19 @@ def main(imguiFlag = False):
         lightPos = pointLight.trans.l2world[:3, 3].tolist();
         pointLight.shaderDec.setUniformVariable(key='modelViewProj', value=pointLight.trans.l2cam, mat4=True)
         for i in [1,2]:
-            home1.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(i).trans.l2cam, mat4=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='model',value=home1.getChild(i).trans.l2world,mat4=True)
+            home.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=home.getChild(i).trans.l2cam, mat4=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='model',value=home.getChild(i).trans.l2world,mat4=True)
 
-            home1.getChild(i).shaderDec.setUniformVariable(key='ambientColor', value=ambientLight.color, float3=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='ambientStr', value=ambientLight.intensity, float1=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='viewPos', value=viewPos, float3=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='lightPos', value=lightPos, float3=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='lightColor', value=np.array(pointLight.color), float3=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='lightIntensity', value=pointLight.intensity, float1=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='ambientColor', value=ambientLight.color, float3=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='ambientStr', value=ambientLight.intensity, float1=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='viewPos', value=viewPos, float3=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='lightPos', value=lightPos, float3=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='lightColor', value=np.array(pointLight.color), float3=True);
+            home.getChild(i).shaderDec.setUniformVariable(key='lightIntensity', value=pointLight.intensity, float1=True);
 
             
-            home1.getChild(i).shaderDec.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-            home1.getChild(i).shaderDec.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+            home.getChild(i).shaderDec.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+            home.getChild(i).shaderDec.setUniformVariable(key='matColor',value=Mcolor,float3=True)
             
                 
         
