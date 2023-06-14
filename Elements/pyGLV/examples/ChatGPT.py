@@ -75,14 +75,12 @@ class GPTBot:
     def apicall(self, prompt):
 
         messages = [{"role": "system", "content": self.system_prompt}]
-        # for message in self.chathistory[-10:]:
-        #     messages.append(message)
         inputprompt = prompt
         inputprompt += ". The current scene is " + str(
             self.scenegraph) + "."
         messages.append({"role": "user", "content": inputprompt})
         self.chathistory.append(messages[len(messages) - 1])
-        print("History:", self.chathistory)
+        # print("History:", self.chathistory)
         # print("Messages")
         # print(messages)
 
@@ -97,9 +95,7 @@ class GPTBot:
                 )
                 for choice in response['choices']:
                     print("Reply")
-
                     print(choice["message"]["content"])
-                    # print("Custom reply")
                     rep = choice["message"]["content"]
                     self.chathistory.append({"role": "assistant", "content": rep})
                     firstocc = rep.find("{")
@@ -107,31 +103,12 @@ class GPTBot:
                     rep = rep[firstocc:lastocc + 1]
                     rep = rep.replace("'", '"')
                     rep = replaceOps(rep)
-
-                    # print(rep)
                     print("Scenegraph")
-
-                    # scenegraph = ast.literal_eval(re.search('({.+})', choice["message"]["content"]).group(0))
                     scenegraph = json.loads(rep)
                     print(scenegraph)
                     correctanswer = False
 
                     self.scenegraph = scenegraph
-                    # meshes = []
-                    # for object in scenegraph:
-                    #     chair_mesh = o3d.io.read_triangle_mesh("chair/models/model_normalized.obj")
-                    #     table_mesh = o3d.io.read_triangle_mesh("table/models/model_normalized.obj")
-                    #     chair_mesh.compute_vertex_normals()
-                    #     table_mesh.compute_vertex_normals()
-                    #     if "table" in object:
-                    #         table_mesh.translate(
-                    #             (scenegraph[object]['x'], scenegraph[object]['y'], -scenegraph[object]['z']))
-                    #         meshes.append(table_mesh)
-                    #     elif "chair" in object:
-                    #         chair_mesh.translate(
-                    #             (scenegraph[object]['x'], scenegraph[object]['y'], -scenegraph[object]['z']))
-                    #         meshes.append(chair_mesh)
-                    # o3d.visualization.draw_geometries(meshes)
 
             except:
                 # del self.chathistory[-1]

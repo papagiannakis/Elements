@@ -18,18 +18,11 @@ class GameObject:
         self.name = name
         self.age = age
 
-    def Spawn(_scene, _objectPath, _objectName, _parent, _trs=None, texture_path=None):
+    def Spawn(_scene, _objectPath, _objectName, _parent, _trs=None):
         if _trs is None:
             _trs = identity()
 
         imported_obj: Model = Wavefront(_objectPath, calculate_smooth_normals=False)
-        if texture_path is not None:
-            mesh_from_obj: Mesh = imported_obj.get_mesh(1)
-            img = Image.open(texture_path)
-            img_bytes = img.tobytes("raw", "RGBA", 0, -1)
-            m = StandardMaterial(albedo_map=(img_bytes, img.width, img.height))
-            mesh_from_obj.material = m
-
         model_entity: ModelEntity = _scene.world.createEntity(ModelEntity(imported_obj, _objectName, _trs))
 
         _scene.world.addEntityChild(_parent, model_entity)

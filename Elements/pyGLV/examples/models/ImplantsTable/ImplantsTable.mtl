@@ -1,8 +1,8 @@
-newmtl blinn1SG
+newmtl blinn2SG
 illum 4
 Kd 0.00 0.00 0.00
 Ka 0.00 0.00 0.00
 Tf 1.00 1.00 1.00
-map_Kd Anaisthesia_UVS_02_Material__26_Albedo.png
+map_Kd table_with_implants_01_Material__3_Albedo.png
 Ni 1.00
 Ks 0.50 0.50 0.50

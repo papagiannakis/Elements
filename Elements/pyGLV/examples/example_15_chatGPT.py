@@ -1,20 +1,24 @@
 from __future__ import annotations
+
 import imgui
-import numpy as np
 from scipy.spatial.transform import Rotation
 
-import Elements.pyECSS.utilities as util
 from ChatGPT import GPTBot
 from Elements.pyGLV.GL.GameObject import GameObject
-from SizeCalculation import calc_size
-from Elements.pyECSS.Component import BasicTransform, RenderMesh
-from Elements.pyECSS.Entity import Entity
-from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
-from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
+from SizeCalculation import calc_size
 
 
+##########################################################
+#                   EXAMPLE USAGE                        #
+##########################################################
+# This example provides functionality to use ChatGPT to  #
+# in order to make real-time changes to the objects in   #
+# the scene.                                             #
+# By typing your prompt in the imgui user interface,     #
+# you can configure the scene,                           #
+# i.e "Move the cauterizer exactly on top of the table"  #
+##########################################################
 
 widgets_basic_str0 = "Hey you, type something here!"
 latest = widgets_basic_str0
@@ -74,8 +78,6 @@ def main(imguiFlag=False):
     target = util.vec(0.02, 0.14, 0.217)
     up = util.vec(0.0, 1.0, 0.0)
     view = util.lookat(eye, target, up)
-    # projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)
-    # projMat = util.perspective(90.0, 1.33, 0.1, 100)
     projMat = util.perspective(50.0, 1.0, 1.0, 10.0)
 
     m = np.linalg.inv(projMat @ view)
@@ -93,19 +95,16 @@ def main(imguiFlag=False):
     shaders = []
     # --------ToolsTable--------
     obj_to_import = os.path.join(dirname, "models/ToolsTable", "ToolsTable.obj")
-    tex_to_import = os.path.join(dirname, "models/ToolsTable", "Cloth-TOOLtable_LOW_Material__126_AlbedoTransparency"
-                                                               ".png")
     shadertoolstable = GameObject.Spawn(scene, obj_to_import, "ToolsTable", rootEntity,
                                         util.rotate((0.0, 1.0, 0.0), 0),
-                                        tex_to_import)
+                                        )
     width, height, depth = calc_size(obj_to_import)
     bot.scenegraph["tools_table"] = {'width': width, 'height': height, 'depth': depth, "position": [0, 0, 0],
                                      "rotation": [0, 0, 0]}
     shaders.append(shadertoolstable)
     # -------Cauterizer-------------
     obj_to_import = os.path.join(dirname, "models/Scalpel", "Scalpel.obj")
-    tex_to_import = os.path.join(dirname, "models/Scalpel", "scalpel NEW 01B_LOW_Material _128_AlbedoTransparency.png")
-    shaderscalp = GameObject.Spawn(scene, obj_to_import, "Scalpel", rootEntity, util.translate(0, 0, 0.0), tex_to_import)
+    shaderscalp = GameObject.Spawn(scene, obj_to_import, "Scalpel", rootEntity, util.translate(0, 0, 0.0))
     width, height, depth = calc_size(obj_to_import)
     bot.scenegraph["scalpel"] = {'width': width, 'height': height, 'depth': depth, "position": [0, 0, 0],
                                     "rotation": [0, 0, 0]}
@@ -126,43 +125,6 @@ def main(imguiFlag=False):
     terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
         Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
     # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-    ## ADD AXES ##
-    axes = scene.world.createEntity(Entity(name="axes"))
-    scene.world.addEntityChild(rootEntity, axes)
-    axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans",
-                                                               trs=util.translate(0.0, 0.001, 0.0)))  # util.identity()
-    # Colored Axes
-    vertexAxes = np.array([
-        [0.0, 0.0, 0.0, 1.0],
-        [1.5, 0.0, 0.0, 1.0],
-        [0.0, 0.0, 0.0, 1.0],
-        [0.0, 1.5, 0.0, 1.0],
-        [0.0, 0.0, 0.0, 1.0],
-        [0.0, 0.0, 1.5, 1.0]
-    ], dtype=np.float32)
-    colorAxes = np.array([
-        [1.0, 0.0, 0.0, 1.0],
-        [1.0, 0.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [0.0, 0.0, 1.0, 1.0],
-        [0.0, 0.0, 1.0, 1.0]
-    ], dtype=np.float32)
-
-    # index arrays for above vertex Arrays
-    indexAxes = np.array((0, 1, 2, 3, 4, 5), np.uint32)  # 3 simple colored Axes as R,G,B lines
-    axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-    axes_mesh.vertex_attributes.append(vertexAxes)
-    axes_mesh.vertex_attributes.append(colorAxes)
-    axes_mesh.vertex_index.append(indexAxes)
-    scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES))  # note the primitive change
-
-    # shaderDec_axes = scene.world.addComponent(axes, Shader())
-    # OR
-    axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
-        Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-
     running = True
     scene.init(imgui=True, windowWidth=1200, windowHeight=800, windowTitle="Elements: Tea anyone?", openGLversion=4,
                customImGUIdecorator=ImGUIecssDecorator)
@@ -212,9 +174,6 @@ def main(imguiFlag=False):
 
         view = gWindow._myCamera  # updates view via the imgui
         mvp_terrain = projMat @ view @ terrain_trans.trs
-        mvp_axes = projMat @ view @ axes_trans.trs
-
-        axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
         terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
         for shader in shaders:
             model_cube = shader.transform_component.trs
