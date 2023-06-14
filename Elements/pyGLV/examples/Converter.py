@@ -53,6 +53,8 @@ def ECStoGNN(scene):
             if isinstance(comp, BasicTransform):
                 compslisttrans.append(comp)
             else:
+                if comp.vertex_attributes[0].shape[0] == 0:
+                    continue
                 compslistmesh.append(comp)
 
     # Create the features list of each entity, which is a length 3 vector that holds a counter of the number of children of this
@@ -71,6 +73,8 @@ def ECStoGNN(scene):
                     edges1enttrans.append(compslisttrans.index(ch))
                     feats[1] += 1
                 elif isinstance(ch, RenderMesh):
+                    if ch.vertex_attributes[0].shape[0] == 0:
+                        continue
                     edges0entmesh.append(entslist.index(g))
                     edges1entmesh.append(compslistmesh.index(ch))
                     feats[2] += 1
@@ -88,6 +92,8 @@ def ECStoGNN(scene):
             feats = g.trs.flatten()
             compfeaturestrans.append(feats)
         elif isinstance(g, RenderMesh):
+            if g.vertex_attributes[0].shape[0] == 0:
+                continue
             choice = np.random.choice(len(np.asarray(g.vertex_attributes[0])), 2500, replace=True)
             pcdvert = np.asarray(g.vertex_attributes[0])[choice, :3].transpose()
             noise = np.random.normal(0, .1, pcdvert.shape)
@@ -250,6 +256,8 @@ def ECStoGNNNoNoise(scene):
             if isinstance(comp, BasicTransform):
                 compslisttrans.append(comp)
             else:
+                if comp.vertex_attributes[0].shape[0] == 0:
+                    continue
                 compslistmesh.append(comp)
 
     entfeatures = []
@@ -266,6 +274,8 @@ def ECStoGNNNoNoise(scene):
                     edges1enttrans.append(compslisttrans.index(ch))
                     feats[1] += 1
                 elif isinstance(ch, RenderMesh):
+                    if ch.vertex_attributes[0].shape[0] == 0:
+                        continue
                     edges0entmesh.append(entslist.index(g))
                     edges1entmesh.append(compslistmesh.index(ch))
                     feats[2] += 1
@@ -294,6 +304,8 @@ def ECStoGNNNoNoise(scene):
             feats = g.trs.flatten()
             compfeaturestrans.append(feats)
         elif isinstance(g, RenderMesh):
+            if g.vertex_attributes[0].shape[0] == 0:
+                continue
             choice = np.random.choice(len(np.asarray(g.vertex_attributes[0])), 2500, replace=True)
             pcdvert = np.asarray(g.vertex_attributes[0])[choice, :3].transpose()
             # noise = np.random.normal(0, .1, pcdvert.shape)

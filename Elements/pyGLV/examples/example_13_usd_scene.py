@@ -1,12 +1,20 @@
-import os
-import numpy as np
-from pxr import Sdf
+#########################################################
+#                         Example Usage                 #
+#########################################################
+# Example13 provides functionality to save and load     #
+# an ECSS scene from a USD file                         #
+#                                                       #
+# In the scene IMGUI user interface, enter the filepath #
+# to the file that you want to save or load and click   #
+# click the corresponding button to save or load the    #
+# USD scene.                                            #
+#########################################################
 
+import numpy as np
 import Elements.pyECSS.utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
-from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
@@ -14,7 +22,6 @@ import imgui
 import Elements.pyGLV.GL.UsdImporter as SceneLoader
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
@@ -22,7 +29,7 @@ from Elements.pyGLV.utils.terrain import generateTerrain
 
 models = []
 newShaders = []
-USD_input_filepath = "PathToScene.usd"
+USD_input_filepath = "scenes/ExampleScene.usd"
 
 
 def SceneGUI(scene, initUpdate):
@@ -73,23 +80,12 @@ orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam", "Camera", 
 light_node = scene.world.createEntity(Entity(name="LightPos"))
 scene.world.addEntityChild(rootEntity, light_node)
 light_transform = scene.world.addComponent(light_node, BasicTransform(name="Light_TRS", trs=util.scale(1.0, 1.0, 1.0)))
-# light_mesh = scene.world.addComponent(light_node, RenderMesh(name="Light_Mesh"))
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
 camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
-
-# Load Object
-dirname = os.path.dirname(__file__)
-obj_to_import = os.path.join(dirname, 'models', 'cube/cube.obj')
-obj_to_import1 = os.path.join(dirname, 'models', 'cube/cube1.obj')
-obj_to_import2 = os.path.join(dirname, 'models', 'cube/cube2.obj')
-
-#models.append(GameObject.Spawn(scene, obj_to_import, "Cube", rootEntity, util.translate(10, 10, 10)))
-#models.append(GameObject.Spawn(scene, obj_to_import1, "Cube2", rootEntity, util.translate(10, 10, 10)))
-#models.append(GameObject.Spawn(scene, obj_to_import2, "Cube3", rootEntity, util.translate(10, 10, 10)))
 
 
 # Light Visualization
@@ -108,9 +104,6 @@ tetrahedron_colors = np.array([
 ])
 tetrahedron_indices = np.array([0, 2, 1, 0, 1, 3, 2, 3, 1, 3, 2, 0])
 
-# light_mesh.vertex_attributes.append(tetrahedron_vertices)
-# light_mesh.vertex_attributes.append(tetrahedron_colors)
-# light_mesh.vertex_index.append(tetrahedron_indices)
 light_vArray = scene.world.addComponent(light_node, VertexArray())
 light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
@@ -128,7 +121,6 @@ terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 ## ADD AXES ##
 # Colored Axes
@@ -198,9 +190,7 @@ gWindow._myCamera = view  # otherwise, an imgui slider must be moved to properly
 
 model_terrain_axes = util.translate(0.0, 0.0, 0.0)
 
-#for model_entity in models:
-#    model_entity.initialize_gl(Lposition, Lcolor, Lintensity)
-
+White_Map = (b'\xff\xff\xff\xff', 1, 1)
 while running:
     running = scene.render(running)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
@@ -216,7 +206,6 @@ while running:
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
-
     # Set Object Real Time Shader Data
     for shader in newShaders:
         model_cube = shader.parent.getChildByType(BasicTransform.getClassName()).trs
@@ -229,9 +218,13 @@ while running:
         normalMatrix = np.transpose(util.inverse(model_cube))
         shader.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
+        shader.setUniformVariable(key='albedoColor', value=np.array([255,0,0,0]), float3=True)
+        texture = Texture(img_data=White_Map, texture_channel=0)
+
         shader.setUniformVariable(key='lightPos', value=Lposition, float3=True)
         shader.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
         shader.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
+
         # Camera position
         shader.setUniformVariable(key='camPos', value=eye, float3=True)
     scene.render_post()

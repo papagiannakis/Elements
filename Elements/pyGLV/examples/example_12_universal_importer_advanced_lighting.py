@@ -62,7 +62,7 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 # Load Object
 dirname = os.path.dirname(__file__)
 
-obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
+obj_to_import = os.path.join(dirname, 'models','LivingRoom/Lamp/Lamp.obj')
 model_entity = GameObject.Spawn(scene, obj_to_import, "Cube", rootEntity, util.translate(-0.2, 0.4, 0.0))
 
 
