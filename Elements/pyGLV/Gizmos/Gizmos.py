@@ -5,6 +5,7 @@ import Elements.pyECSS.utilities as util
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import sdl2 as sdl
+from OpenGL.GL import GL_LINES
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from ctypes import c_int, byref
 import numpy as np
@@ -88,7 +89,8 @@ class Gizmos:
         self.mode = Mode.TRANSLATE
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
                                 "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
-                                "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh"])
+                                "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh",
+                                "Z_bb","Z_bb_mesh","Z_bb_trans"])
 
         self.cameraInUse = ""
         self.screen_width = 1000.0
@@ -102,9 +104,13 @@ class Gizmos:
         self.previous_y = 0.0
         self.previous_z = 0.0
 
+        self.model_x = util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(1.0,0.0,0.0)) @ util.translate(-0.1,0.0,0.0)
+        self.model_y = util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(0.0,1.0,0.0)) @ util.translate(0.1,0.1,-0.1)
+        self.model_z = util.scale(0.7,0.7,0.7) @ util.rotate(angle=-90,axis=(0.0,0.0,1.0)) @ util.translate(0.0,0.0,-0.1)
+
         self.gizmos_x = self.scene.world.createEntity(Entity(name="Gizmos_X"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_x)
-        self.gizmos_x_trans = self.scene.world.addComponent(self.gizmos_x, BasicTransform(name="Gizmos_X_trans", trs=util.identity()))
+        self.gizmos_x_trans = self.scene.world.addComponent(self.gizmos_x, BasicTransform(name="Gizmos_X_trans", trs=self.model_x))
         self.gizmos_x_mesh = self.scene.world.addComponent(self.gizmos_x, RenderMesh(name="Gizmos_X_mesh"))
         self.gizmos_x_mesh.vertex_attributes.append(Gizmos.VERTEX_GIZMOS)
         self.gizmos_x_mesh.vertex_attributes.append(Gizmos.COLOR_X)
@@ -114,7 +120,7 @@ class Gizmos:
 
         self.gizmos_y = self.scene.world.createEntity(Entity(name="Gizmos_Y"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y)
-        self.gizmos_y_trans = self.scene.world.addComponent(self.gizmos_y, BasicTransform(name="Gizmos_Y_trans", trs=util.identity()))
+        self.gizmos_y_trans = self.scene.world.addComponent(self.gizmos_y, BasicTransform(name="Gizmos_Y_trans", trs=self.model_y))
         self.gizmos_y_mesh = self.scene.world.addComponent(self.gizmos_y, RenderMesh(name="Gizmos_Y_mesh"))
         self.gizmos_y_mesh.vertex_attributes.append(Gizmos.VERTEX_GIZMOS) 
         self.gizmos_y_mesh.vertex_attributes.append(Gizmos.COLOR_Y)
@@ -124,7 +130,7 @@ class Gizmos:
 
         self.gizmos_z = self.scene.world.createEntity(Entity(name="Gizmos_Z"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z)
-        self.gizmos_z_trans = self.scene.world.addComponent(self.gizmos_z, BasicTransform(name="Gizmos_Z_trans", trs=util.identity()))
+        self.gizmos_z_trans = self.scene.world.addComponent(self.gizmos_z, BasicTransform(name="Gizmos_Z_trans", trs=self.model_z))
         self.gizmos_z_mesh = self.scene.world.addComponent(self.gizmos_z, RenderMesh(name="Gizmos_Z_mesh"))
         self.gizmos_z_mesh.vertex_attributes.append(Gizmos.VERTEX_GIZMOS) 
         self.gizmos_z_mesh.vertex_attributes.append(Gizmos.COLOR_Z)
@@ -150,7 +156,7 @@ class Gizmos:
         self.selected_trs = None
         self.selected_mesh = None
         self.selected_comp = "None"
-        #reset uniform variables too
+        #TODO: reset uniform variables too
 
     def change_target(self):
         """
@@ -197,14 +203,13 @@ class Gizmos:
         self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
         #Raycast only when LMB is pressed
         #if Last time LMB was pressed raycast didn't intersect, then do not raycast until LMB is released
-        if self.mouse_state==1 and self.LMB_pressed:
+        if self.mouse_state==1 and self.LMB_pressed and self.selected_trs is not None:
             self.raycast()
         else:
             self.picked = False
             self.LMB_pressed = True
             self.selected_gizmo=''
         
-
     def count_components(self):
         """
         Count transform components in the scene
@@ -235,9 +240,9 @@ class Gizmos:
             self.change_target()
             if self.total>0:
                 self.is_selected = True
-                self.gizmos_x_trans.trs = self.selected_trs.trs
-                self.gizmos_y_trans.trs = self.selected_trs.trs
-                self.gizmos_z_trans.trs = self.selected_trs.trs
+                #self.gizmos_x_trans.trs = self.selected_trs.trs
+                #self.gizmos_y_trans.trs = self.selected_trs.trs
+                #self.gizmos_z_trans.trs = self.selected_trs.trs
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             #print('TAB key released')
             self.key_down = False
@@ -258,9 +263,10 @@ class Gizmos:
             None
         """
         if self.is_selected:
-            model_x = self.gizmos_x_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(1.0,0.0,0.0))
-            model_y = self.gizmos_y_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(0.0,1.0,0.0))
-            model_z = self.gizmos_z_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=-90,axis=(0.0,0.0,1.0))
+            model_x = self.selected_trs.trs @ self.model_x
+            model_y = self.selected_trs.trs @ self.model_y
+            model_z = self.selected_trs.trs @ self.model_z
+            
             mvp_x = self.projection @ self.view @ model_x
             mvp_y = self.projection @ self.view @ model_y
             mvp_z = self.projection @ self.view @ model_z
@@ -347,8 +353,13 @@ class Gizmos:
             maxbb: maximum bounding box coordinates
         """
         vertices = mesh.vertex_attributes[0]
-        minbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2])
-        maxbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2])
+
+        #hmm, is this needed?
+        for i in  range(len(vertices)):
+            vertices[i] = vertices[i]/vertices[i][3]
+
+        minbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
+        maxbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
         for i in range(1,len(vertices)):
             #min coordinates
             if vertices[i][0]<minbb[0]:
@@ -402,14 +413,12 @@ class Gizmos:
         ray_end_world = self.inv_view @ ray_end_Camera
         ray_end_world = ray_end_world/ray_end_world[3]
 
-        print("ray_start_Camera: ",ray_start_Camera," -> ","ray_end_Camera: ",ray_end_Camera)
-        print("ray_start_world: ",ray_start_World," -> ","ray_end_world: ",ray_end_world)
-
         #calculate and normalize the ray's direction
         ray_dir_world = ray_end_world - ray_start_World
         ray_dir_world = util.normalise(ray_dir_world)
 
         #ray_start_World = util.normalise(ray_start_World)
+        
         ray_start_World = util.vec(ray_start_World[0],
                                    ray_start_World[1],
                                    ray_start_World[2])
@@ -417,10 +426,17 @@ class Gizmos:
                                  ray_dir_world[1],
                                  ray_dir_world[2])
         
-        model_x = self.gizmos_x_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(1.0,0.0,0.0))
-        model_y = self.gizmos_y_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=90,axis=(0.0,1.0,0.0))
-        model_z = self.gizmos_z_trans.trs @ util.scale(0.7,0.7,0.7) @ util.rotate(angle=-90,axis=(0.0,0.0,1.0))
-        
+        model_x = self.selected_trs.trs @ self.model_x
+        model_y = self.selected_trs.trs @ self.model_y
+        model_z = self.selected_trs.trs @ self.model_z
+
+        z_min_bb = self.z_min_bb @ model_z
+        z_max_bb = self.z_max_bb @ model_z
+        z_min_bb = z_min_bb/z_min_bb[3]
+        z_max_bb = z_max_bb/z_max_bb[3]
+        print(z_min_bb)
+        print(z_max_bb)
+
         if self.selected_trs is not None:
 
             if self.selected_gizmo=='X' or (self.selected_gizmo=='' and self.testRayBoundingBoxIntesection(ray_start_World,
@@ -435,31 +451,34 @@ class Gizmos:
                                                 self.y_min_bb,
                                                 self.y_max_bb,model_y)): # was self.gizmos_y_trans.l2world
                 self.selected_gizmo='Y'
-                print("intersected Y Gizmo")
+
             elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and self.testRayBoundingBoxIntesection(ray_start_World,
                                                 ray_dir_world,
-                                                self.z_min_bb,
-                                                self.z_max_bb,model_z)): # was self.gizmos_z_trans.l2world
+                                                z_min_bb, #self.z_min_bb,
+                                                z_max_bb, #self.z_max_bb,
+                                                model_z)): # was self.gizmos_z_trans.l2world
                 self.selected_gizmo='Z'
                 print("intersected Z Gizmo")
                 model = model_z
+
                 bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
-                z_axis = util.vec(model[2][0],model[2][1],model[2][2]) 
+                z_axis = util.vec(model[2][0],model[2][1],model[2][2])
                 min,max = self.calculate_tmin_tmax(ray_start_World,
                                                 ray_dir_world,
-                                                self.z_min_bb,
-                                                self.z_max_bb,z_axis,bb_pos_world)
+                                                z_min_bb, #self.z_min_bb
+                                                z_max_bb, #self.z_max_bb
+                                                z_axis,bb_pos_world)
                 if self.picked==False:
                     self.picked=True
                     self.previous_z = max #min or max
                 else:
-                    #diff is how much should the Entity be translated
+
                     #diff = min - self.previous_z #min or max
                     diff = self.previous_z - max #min or max
                     self.previous_z = max #min or max
 
                     #TODO: use correct Transformation
-                    self.translate_selected(0,0,diff)
+                    self.translate_selected(z=diff)
                     self.update_gizmos()
             else:
                 self.LMB_pressed = False
@@ -557,6 +576,8 @@ class Gizmos:
             
         # Test intersection with the 2 planes perpendicular to the bounding box's Y axis
 
+        tmin = 0.0
+        tmax = 100000.0
 
         e = np.dot(y_axis,delta)
         f = np.dot(ray_direction,y_axis)
@@ -581,6 +602,7 @@ class Gizmos:
                 return False
             
         # Test intersection with the 2 planes perpendicular to the bounding box's Z axis
+
 
         e = np.dot(z_axis,delta)
         f = np.dot(ray_direction,z_axis)
@@ -617,9 +639,9 @@ class Gizmos:
             None
         """
         self.selected_trs.trs = self.selected_trs.trs @ util.translate(x,y,z)
-        self.gizmos_x_trans.trs = self.selected_trs.trs
-        self.gizmos_y_trans.trs = self.selected_trs.trs
-        self.gizmos_z_trans.trs = self.selected_trs.trs
+        self.gizmos_x_trans.trs = self.selected_trs.trs @ self.model_x
+        self.gizmos_y_trans.trs = self.selected_trs.trs @ self.model_y
+        self.gizmos_z_trans.trs = self.selected_trs.trs @ self.model_z
     
     def rotate_selected(self,angle=0.0,axis=(1.0,0.0,0.0)):
         """

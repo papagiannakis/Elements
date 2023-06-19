@@ -139,7 +139,7 @@ gizmos = Gizmos(rootEntity,projMat,view)
 gizmos.set_camera_in_use("entityCam1")
 gizmos.update_projection(projMat)
 gizmos.update_view(view)
-gizmos.update_projection_args(window_width=height,window_height=height,fov=fov)
+gizmos.update_projection_args(window_width=width,window_height=height,fov=fov)
 
 # MAIN RENDERING LOOP
 
