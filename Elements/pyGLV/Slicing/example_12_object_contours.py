@@ -19,81 +19,8 @@ import Elements.pyGLV.utils.normals as norm
 from Elements.pyGLV.utils.terrain import generateTerrain
 from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
 
-def frange(start, stop, step):
-    i = 0.0
-    while start + i * step < stop:
-        yield start + i * step
-        i += 1.0
-
-def get_highest_coords(vectors):
-    highest_coords = [float('-inf')] * 3
-    for vector in vectors:
-        for i in range(3):
-            if vector[i] > highest_coords[i]:
-                highest_coords[i] = vector[i]
-    highest_coords.append(1)
-    return highest_coords
-
-def get_lowest_coords(vectors):
-    num_coords = len(vectors[0])
-    lowest_coords = [float('inf')] * num_coords
-    for vector in vectors:
-        for i in range(num_coords):
-            if vector[i] < lowest_coords[i]:
-                lowest_coords[i] = vector[i]
-    lowest_coords.append(1)
-    return lowest_coords
-
-def translate_z(vectors, z):
-    translated_vectors = []
-    for vector in vectors:
-        translated_vector = [vector[0], vector[1], vector[2]+z, vector[3]]
-        translated_vectors.append(translated_vector)
-    return translated_vectors
-
-def point_scalar_mult(p1,s):
-    return [p1[0]*s,p1[1]*s,p1[2]*s,1.]
-
-def point_add(p1,p2):
-    return [p1[0]+p2[0],p1[1]+p2[1],p1[2]+p2[2],1.]
-
-def get_intersection_point(p1,p2,plane):
-    p1_dist = abs(p1[1]-plane)
-    p2_dist = abs(plane-p2[1])
-    total = p1_dist +p2_dist
-    point = point_add((point_scalar_mult(p1,(p2_dist/total))),(point_scalar_mult(p2,(p1_dist/total))))
-    return point
-
-def on_different_sides(p1,p2,plane):
-    if(0 > ((p1[1] - plane) * (p2[1] - plane))):
-        return True
-    else:
-        return False
-    
-def intersect(vertices,indices,plane):
-    contour = []
-    for i in range(0, len(indices)-2, 3):
-        triangle_indices = [indices[i],indices[i+1],indices[i+2]]
-        triangle = [vertices[triangle_indices[0]],vertices[triangle_indices[1]],vertices[triangle_indices[2]]]
-        line = []
-        if(on_different_sides(triangle[0],triangle[1],plane)):
-            line.append(get_intersection_point(triangle[0],triangle[1],plane))
-        if(on_different_sides(triangle[1],triangle[2],plane)):
-            line.append(get_intersection_point(triangle[1],triangle[2],plane))
-        if(on_different_sides(triangle[2],triangle[0],plane)):
-            line.append(get_intersection_point(triangle[2],triangle[0],plane))
-        if(len(line) == 2):
-            contour.extend(line)
-    return contour
-    
-
-def create_contours(vertices,indices,step=.1):
-    contours = []
-    lower = get_lowest_coords(vertices)
-    upper = get_highest_coords(vertices)
-    for x in frange(lower[1], upper[1], step):
-        contours.extend(intersect(vertices,indices,x))
-    return contours
+#Task code
+from Elements.pyGLV.Slicing import Slicing
 
 
 
@@ -195,12 +122,14 @@ obj_to_import = os.path.join(dirname, "models", "cow.obj")
 ### Load and translate mesh.
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
-upper = get_highest_coords(vert)
-lower = get_lowest_coords(vert)
+
+# Find boundingbox and translate half of the z-dimension to make room for the contours
+upper = Slicing.get_highest_coords(vert)
+lower = Slicing.get_lowest_coords(vert)
 z_diff = upper[2]-lower[2]
 vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
-slice_vertices = translate_z(vertices,-(z_diff/2))
-vertices = translate_z(vertices, z_diff/2)
+slice_vertices = Slicing.translate_z(vertices,-(z_diff/2))
+vertices = Slicing.translate_z(vertices, z_diff/2)
 
 
 mesh4.vertex_attributes.append(vertices)
@@ -211,7 +140,7 @@ vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
 ###
-contours_vertices = create_contours(slice_vertices,indices,.025)
+contours_vertices = Slicing.create_contours(slice_vertices,indices,.025)
 contours_color = np.array([(1.,1.,1.,1.)] * len(contours_vertices))
 contours_indices = np.array(range(len(contours_vertices)))
 
@@ -282,7 +211,7 @@ eManager._subscribers['OnUpdateCamera'] = gWindow
 eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 
-eye = util.vec(2.5, 2.5, 2.5)
+eye = util.vec(10, 10, 10)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
