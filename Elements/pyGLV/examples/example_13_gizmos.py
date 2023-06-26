@@ -25,24 +25,13 @@ node4 = scene.world.createEntity(Entity(name="node4"))
 scene.world.addEntityChild(rootEntity, node4)
 trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0.0,0.5,-1.5))) #util.identity()
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
+trans4.l2world = trans4.trs
 
 node4_2 = scene.world.createEntity(Entity(name="node4_2"))
 scene.world.addEntityChild(rootEntity, node4_2)
 trans4_2 = scene.world.addComponent(node4_2, BasicTransform(name="trans4_2", trs=util.translate(0.0,0.5,0.0))) #util.identity()
 mesh4_2 = scene.world.addComponent(node4_2, RenderMesh(name="mesh4_2"))
-
-
-# a simple triangle
-vertexData = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.5, 1.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0]
-],dtype=np.float32) 
-colorVertexData = np.array([
-    [1.0, 0.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
+trans4_2.l2world = trans4_2.trs
 
 #Simple Cube
 vertexCube = np.array([
@@ -77,7 +66,6 @@ colorCube2 = np.array([
 ], dtype=np.float32)
 
 #index arrays for above vertex Arrays
-index = np.array((0,1,2), np.uint32) #simple triangle
 indexCube = np.array((1,0,3, 1,3,2, 
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
@@ -167,11 +155,13 @@ eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
 
-model_cube = trans4.trs
+trans4.l2world = trans4.l2world
+terrain.getChild(0).l2world = terrain.getChild(0).l2world
+trans4_2.l2world = trans4_2.l2world
 
-model_terrain = terrain.getChild(0).trs 
-
-model_cube2 = trans4_2.trs
+model_cube = trans4.l2world
+model_terrain = terrain.getChild(0).l2world
+model_cube2 = trans4_2.l2world
 
 while running:
     running = scene.render(running)
@@ -183,9 +173,9 @@ while running:
     gizmos.update_gizmos()
     gizmos.update_imgui()
 
-    model_cube = trans4.trs
-    model_terrain = terrain.getChild(0).trs     
-    model_cube2 = trans4_2.trs
+    model_cube = trans4.l2world
+    model_terrain = terrain.getChild(0).l2world 
+    model_cube2 = trans4_2.l2world
     
     mvp_cube = projMat @ view @ model_cube
     mvp_cube2 = projMat @ view @ model_cube2
