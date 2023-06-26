@@ -270,26 +270,20 @@ class Gizmos:
             None
         """
         if self.key_states[sdl.SDL_SCANCODE_TAB] and not self.key_down:
-            #print('TAB key pressed')
             self.key_down = True
             self.change_target()
             if self.total>0:
                 self.is_selected = True
                 
-                self.gizmos_x_trans.l2world = self.selected_trs.trs
-                self.gizmos_y_trans.l2world = self.selected_trs.trs
-                self.gizmos_z_trans.l2world = self.selected_trs.trs
-                
-                #self.gizmos_x_trans.l2world = self.selected_trs.l2world @ self.model_x
-                #self.gizmos_y_trans.l2world = self.selected_trs.l2world @ self.model_y
-                #self.gizmos_z_trans.l2world = self.selected_trs.l2world @ self.model_z
 
-                #self.gizmos_x_trans.trs = self.selected_trs.trs @ self.model_x
-                #self.gizmos_y_trans.trs = self.selected_trs.trs @ self.model_y
-                #self.gizmos_z_trans.trs = self.selected_trs.trs @ self.model_z
+                self.gizmos_x_trans.l2world = self.selected_trs.l2world
+                self.gizmos_y_trans.l2world = self.selected_trs.l2world
+                self.gizmos_z_trans.l2world = self.selected_trs.l2world
+                #self.gizmos_x_trans.l2world = self.selected_trs.trs
+                #self.gizmos_y_trans.l2world = self.selected_trs.trs
+                #self.gizmos_z_trans.l2world = self.selected_trs.trs
 
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
-            #print('TAB key released')
             self.key_down = False
 
         if self.key_states[sdl.SDL_SCANCODE_T]:
@@ -346,11 +340,9 @@ class Gizmos:
         Returns:
             None
         """
-        self.projection = Proj
-        self.inv_projection = util.inverse(self.projection)
-        #if self.selected is not None and not np.array_equiv(self.projection,Proj):
-        #    self.projection = Proj
-        #    self.inv_projection = util.inverse(self.projection)
+        if self.selected is not None and not np.array_equiv(self.projection,Proj):
+            self.projection = Proj
+            self.inv_projection = util.inverse(self.projection)
 
     def update_view(self, View):
         """
@@ -361,11 +353,9 @@ class Gizmos:
             Returns:
                 None
         """
-        self.view = View
-        self.inv_view = util.inverse(self.view)
-        #if self.selected is not None and not np.array_equiv(self.view,View):
-        #    self.view = View
-        #    self.inv_view = util.inverse(self.view)
+        if self.selected is not None and not np.array_equiv(self.view,View):
+            self.view = View
+            self.inv_view = util.inverse(self.view)
 
     def set_camera_in_use(self,camera: str):
         """
@@ -465,6 +455,52 @@ class Gizmos:
                 maxbb[2] = vertices[i][2]
         return minbb, maxbb
 
+    def calculate_bounding_boxV3(self,minbb,maxbb,Model):
+        """
+        A simple method that calculates an axis aligned bounding box using a given mesh's vertices
+        Arguments:
+            self: self
+            ver: the vertices of a mesh
+            Model: Model Matrix of a component
+        Returns
+            minbb: minimum bounding box coordinates
+            maxbb: maximum bounding box coordinates
+        """
+        vertices = np.array([[minbb[0],minbb[1],minbb[2],1.0],
+                             [minbb[0],minbb[1],maxbb[2],1.0],
+                             [maxbb[0],minbb[1],minbb[2],1.0],
+                             [maxbb[0],minbb[1],maxbb[2],1.0],
+                             [minbb[0],maxbb[1],minbb[2],1.0],
+                             [maxbb[0],maxbb[1],minbb[2],1.0],
+                             [minbb[0],maxbb[1],maxbb[2],1.0],
+                             [maxbb[0],maxbb[1],maxbb[2],1.0]],dtype=np.float32)
+        
+        vertices = vertices @ Model
+        
+        
+        for i in range(len(vertices)):
+            vertices[i] = vertices[i]/vertices[i][3]
+
+        minbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
+        maxbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
+        for i in range(1,len(vertices)):
+            #min coordinates
+            if vertices[i][0]<minbb[0]:
+                minbb[0] = vertices[i][0]
+            if vertices[i][1]<minbb[1]:
+                minbb[1] = vertices[i][1]
+            if vertices[i][2]<minbb[2]:
+                minbb[2] = vertices[i][2]
+                
+            #max coordinates
+            if vertices[i][0] > maxbb[0]:
+                maxbb[0] = vertices[i][0]
+            if vertices[i][1] > maxbb[1]:
+                maxbb[1] = vertices[i][1]
+            if vertices[i][2] > maxbb[2]:
+                maxbb[2] = vertices[i][2]
+        return minbb, maxbb
+
     def raycast(self):
         """
         Raycast from mouse position
@@ -484,9 +520,8 @@ class Gizmos:
         #x = 2.0 * (self.mouse_x.value/self.screen_width - 0.5)
         #y = 2.0 * (self.mouse_y.value/self.screen_height - 0.5)
         
-
         #ray start and ray end in normalized devive coordinates
-        ray_start = util.vec(x,y,-1.0,1.0) #z is 1 or -1, I don't know which one is right yet
+        ray_start = util.vec(x,y,-1.0,1.0)
         ray_end = util.vec(x,y,0.0,1.0)
 
         # normalized device to Camera space
@@ -505,7 +540,6 @@ class Gizmos:
         ray_end_world = ray_end_world/ray_end_world[3]
 
         #calculate and normalize the ray's direction
-        #ray_dir_world = ray_end_world - ray_start_World
         ray_dir_world = util.vec(ray_end_world[0] - ray_start_World[0],
                                  ray_end_world[1] - ray_start_World[1],
                                  ray_end_world[2] - ray_start_World[2])
@@ -545,24 +579,26 @@ class Gizmos:
                 model = model_z
                 bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
                 z_axis = util.vec(model[2][0],model[2][1],model[2][2])
-                min,max = self.calculate_tmin_tmax(ray_start_World,
-                                                ray_dir_world,
+                min,max = self.calculate_tmin_tmax(ray_origin,
+                                                ray_direction,
                                                 self.z_min_bb, #self.z_min_bb
                                                 self.z_max_bb, #self.z_max_bb
                                                 z_axis,bb_pos_world)
+                
                 if self.picked==False:
                     self.picked=True
-                    self.previous_z = max #min or max
+                    self.previous_z = min #min or max
                 else:
 
-                    #diff = min - self.previous_z #min or max
-                    diff = self.previous_z - max #min or max
-                    self.previous_z = max #min or max
+                    diff = min - self.previous_z #min or max
+                    #diff =  max - self.previous_z #min or max
+                    self.previous_z = min #min or max
 
                     #TODO: use correct Transformation
                     self.translate_selected(z=diff)
                     self.update_gizmos()
-                    """
+                """
+                    
             else:
                 self.LMB_pressed = False
 
@@ -585,12 +621,7 @@ class Gizmos:
         tmin = 0.0
         tmax = 100000.0
 
-        #bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2]) #this too?
         delta = bb_position - ray_origin
-
-        #x_axis = util.vec(model[0][0],model[0][1],model[0][2]) #local 2 world
-        #y_axis = util.vec(model[1][0],model[1][1],model[1][2])
-        #z_axis = util.vec(model[2][0],model[2][1],model[2][2])
 
         e = np.dot(axis,delta)
         f = np.dot(ray_direction,axis)
@@ -626,27 +657,38 @@ class Gizmos:
         tmin = 0.0
         tmax = 100000.0
 
-        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
-        delta = bb_pos_world - ray_origin
+        ################
+        #bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2])
+        #delta = bb_pos_world - ray_origin
 
-        x_axis = util.vec(model[0][0],model[0][1],model[0][2])
-        y_axis = util.vec(model[1][0],model[1][1],model[1][2])
-        z_axis = util.vec(model[2][0],model[2][1],model[2][2])
+        #x_axis = util.vec(model[0][0],model[0][1],model[0][2])
+        #y_axis = util.vec(model[1][0],model[1][1],model[1][2])
+        #z_axis = util.vec(model[2][0],model[2][1],model[2][2])
+        ############################
+
+        ray_origin2 = util.vec(ray_origin[0],ray_origin[1],ray_origin[2],0.0)
+        ray_direction2 = util.vec(ray_direction[0],ray_direction[1],ray_direction[2],0.0)
+
+        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2],model[3][3])
+        delta = bb_pos_world - ray_origin2
+
+        x_axis = util.vec(model[0][0],model[0][1],model[0][2],model[0][3])
+        y_axis = util.vec(model[1][0],model[1][1],model[1][2],model[1][3])
+        z_axis = util.vec(model[2][0],model[2][1],model[2][2],model[2][3])
 
         # Test intersection with the 2 planes perpendicular to the bounding box's X axis
 
+        #e = np.dot(x_axis,delta)
+        #f = np.dot(ray_direction,x_axis)
         e = np.dot(x_axis,delta)
-        f = np.dot(ray_direction,x_axis)
+        f = np.dot(ray_direction2,x_axis)
 
         if np.abs(f)>0.001 : 
             t1 = (e+minbb[0])/f
             t2 = (e+maxbb[0])/f
 
             if t1 > t2 :
-                #t1, t2 = t2, t1
-                tmp = t1
-                t1 = t2
-                t2 = tmp
+                t1, t2 = t2, t1
             
             if t2 < tmax:
                 tmax = t2
@@ -662,18 +704,17 @@ class Gizmos:
             
         # Test intersection with the 2 planes perpendicular to the bounding box's Y axis
 
+        #e = np.dot(y_axis,delta)
+        #f = np.dot(ray_direction,y_axis)
         e = np.dot(y_axis,delta)
-        f = np.dot(ray_direction,y_axis)
+        f = np.dot(ray_direction2,y_axis)
 
         if np.abs(f) > 0.001 :
             t1 = (e+minbb[1])/f
             t2 = (e+maxbb[1])/f 
 
             if t1 > t2 :
-                #t1, t2 = t2, t1
-                tmp = t1
-                t1 = t2
-                t2 = tmp
+                t1, t2 = t2, t1
             
             if t2 < tmax:
                 tmax = t2
@@ -689,18 +730,17 @@ class Gizmos:
             
         # Test intersection with the 2 planes perpendicular to the bounding box's Z axis
 
+        #e = np.dot(z_axis,delta)
+        #f = np.dot(ray_direction,z_axis)
         e = np.dot(z_axis,delta)
-        f = np.dot(ray_direction,z_axis)
+        f = np.dot(ray_direction2,z_axis)
 
         if np.abs(f) > 0.001 :
             t1 = (e+minbb[2])/f
             t2 = (e+maxbb[2])/f
 
             if t1 > t2 :
-                #t1, t2 = t2, t1
-                tmp = t1
-                t1 = t2
-                t2 = tmp
+                t1, t2 = t2, t1
             
             if t2 < tmax:
                 tmax = t2
