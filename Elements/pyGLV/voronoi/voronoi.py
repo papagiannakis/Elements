@@ -55,7 +55,6 @@ def voronoi_diagram(points, colors=None):
         color[1] = color[1]/256.
         color[2] = color[2]/256.
         color[3] = 1.
-        print(color)
         for i in range(1,len(region)-1):
             tri = (region[0], region[(i)], region[(i+1)])
             mesh_vertices.append(vertices[tri[0]])
@@ -74,4 +73,4 @@ def voronoi_diagram(points, colors=None):
     point_colors = np.array([(0.,0.,0.,1.)] * len(point_list))
     point_indices = np.array(range(len(point_list)))
 
-    return mesh_indices, mesh_vertices, mesh_color, point_indices, point_list, point_colors
+    return mesh_vertices, mesh_indices, mesh_color, point_list, point_indices, point_colors
