@@ -113,9 +113,9 @@ dirname = os.path.dirname(__file__)
 models_dirname = os.path.join(dirname, "..", "files", "models")
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-# obj_to_import = os.path.join(models_dirname, "teapot.obj")
+obj_to_import = os.path.join(models_dirname, "teapot.obj")
 # obj_to_import = os.path.join(models_dirname, "cow.obj")
-obj_to_import = os.path.join(models_dirname, "teddy.obj")
+# obj_to_import = os.path.join(models_dirname, "teddy.obj")
 
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
