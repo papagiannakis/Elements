@@ -7,9 +7,9 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from Elements.pyGLV.utils.objimporter.material import Material, StandardMaterial
-from Elements.pyGLV.utils.objimporter.mesh import Mesh
-from Elements.pyGLV.utils.objimporter.model import Model
+from Elements.utils.objimporter.material import Material, StandardMaterial
+from Elements.utils.objimporter.mesh import Mesh
+from Elements.utils.objimporter.model import Model
 
 
 class ModelEntity(Entity):

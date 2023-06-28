@@ -1,6 +1,6 @@
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import RenderMesh
 from Elements.pyGLV.GL.Scene import Scene

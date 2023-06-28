@@ -12,7 +12,7 @@ from enum import Enum
 import OpenGL.GL as gl
 import numpy as np
 import torch
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Event import Event
@@ -24,7 +24,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
 from torch_geometric.datasets import GeometricShapes
 from torch_geometric.loader import DataLoader
 
-from Elements.pyGLV.utils import ShapeClassifierInterface
+from Elements.utils import ShapeClassifierInterface
 
 
 class IndexedConverter():

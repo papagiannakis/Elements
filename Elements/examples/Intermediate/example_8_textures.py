@@ -1,7 +1,7 @@
 import numpy as np
 import os
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform,  Camera, RenderMesh
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
@@ -10,7 +10,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-import Elements.pyGLV.utils.normals as norm
+import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 
 from OpenGL.GL import GL_LINES
@@ -122,7 +122,7 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 
 
 # Generate terrain
-from Elements.pyGLV.utils.terrain import generateTerrain
+from Elements.utils.terrain import generateTerrain
 vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
 # Add terrain
 terrain = scene.world.createEntity(Entity(name="terrain"))

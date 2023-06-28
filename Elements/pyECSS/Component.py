@@ -24,7 +24,7 @@ from collections.abc    import Iterable, Iterator
 
 import Elements.pyECSS.System
 import uuid  
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 import numpy as np
 
 

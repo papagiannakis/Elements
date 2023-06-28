@@ -2,7 +2,7 @@
 import os
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
@@ -15,9 +15,9 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
-import Elements.pyGLV.utils.normals as norm
-from Elements.pyGLV.utils.terrain import generateTerrain
-from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
+import Elements.utils.normals as norm
+from Elements.utils.terrain import generateTerrain
+from Elements.utils.obj_to_mesh import obj_to_mesh
 
 
 #Light
@@ -110,11 +110,12 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 ## object load 
 dirname = os.path.dirname(__file__)
+models_dirname = os.path.join(dirname, "..", "files", "models")
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-# obj_to_import = os.path.join(dirname, "models", "teapot.obj")
-obj_to_import = os.path.join(dirname, "models", "cow.obj")
-# obj_to_import = os.path.join(dirname, "models", "teddy.obj")
+# obj_to_import = os.path.join(models_dirname, "teapot.obj")
+# obj_to_import = os.path.join(models_dirname, "cow.obj")
+obj_to_import = os.path.join(models_dirname, "teddy.obj")
 
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)

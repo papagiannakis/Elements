@@ -1,14 +1,14 @@
 from numpy import identity
 from Elements.pyECSS import Entity
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.utils.normals import generateSmoothNormalsMesh
-from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
-from Elements.pyGLV.utils.objimporter.entities import ModelEntity
-from Elements.pyGLV.utils.objimporter.mesh import Mesh
-from Elements.pyGLV.utils.objimporter.model import Model
-from Elements.pyGLV.utils.objimporter.wavefront import Wavefront
+from Elements.utils.normals import generateSmoothNormalsMesh
+from Elements.utils.obj_to_mesh import obj_to_mesh
+from Elements.utils.objimporter.entities import ModelEntity
+from Elements.utils.objimporter.mesh import Mesh
+from Elements.utils.objimporter.model import Model
+from Elements.utils.objimporter.wavefront import Wavefront
 from PIL import Image
-from Elements.pyGLV.utils.objimporter.material import StandardMaterial
+from Elements.utils.objimporter.material import StandardMaterial
 
 
 class GameObject:

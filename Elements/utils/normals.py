@@ -1,5 +1,5 @@
 import numpy as np
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 
 def generateUniqueVertices(vertices,indices,color=None):
     """

@@ -1,7 +1,7 @@
 import os
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
@@ -14,10 +14,10 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
-import Elements.pyGLV.utils.normals as norm
+import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.pyGLV.utils.terrain import generateTerrain
-from Elements.pyGLV.utils.obj_to_mesh import obj_to_mesh
+from Elements.utils.terrain import generateTerrain
+from Elements.utils.obj_to_mesh import obj_to_mesh
 
 
 #Light

@@ -5,7 +5,7 @@ import torch_geometric
 
 sys.path.append("../../../")
 import numpy as np
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.Entity import Entity
@@ -15,7 +15,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh, Camera
 from Elements.pyECSS.System import TransformSystem, CameraSystem
@@ -88,7 +88,7 @@ def CreateRoomScene(visualize=False):
    
 
     # Generate terrain
-    from Elements.pyGLV.utils.terrain import generateTerrain
+    from Elements.utils.terrain import generateTerrain
 
     vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
     # Add terrain
@@ -241,7 +241,7 @@ def CreateORScene(visualize=False):
 
 
     # Generate terrain
-    from Elements.pyGLV.utils.terrain import generateTerrain
+    from Elements.utils.terrain import generateTerrain
 
     vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
     # Add terrain
@@ -344,7 +344,7 @@ def CreatePaperScene(visualize=False):
     import imgui
     from Elements.pyGLV.GUI.Viewer import ImGUIecssDecorator
     from Elements.pyGLV.GL.UsdImporter import LoadScene, SaveScene
-    from Elements.pyGLV.utils.terrain import generateTerrain
+    from Elements.utils.terrain import generateTerrain
     from Elements.pyGLV.GL.ActionSystems import InsertAction, InsertCollider, RemoveAction, RemoveComponent
     import OpenGL.GL as gl
 
@@ -751,7 +751,7 @@ def CreateSceneFromGNNOutput(recon, adj, labels, visualize=False):
             i += 1
 
     # Generate terrain
-    from Elements.pyGLV.utils.terrain import generateTerrain
+    from Elements.utils.terrain import generateTerrain
 
     vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
     # Add terrain
@@ -1098,7 +1098,7 @@ def CreateSceneFromGNNOutputNoTRS(recon, adj, labels, visualize=False):
             i += 1
 
     # Generate terrain
-    from Elements.pyGLV.utils.terrain import generateTerrain
+    from Elements.utils.terrain import generateTerrain
 
     vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
     # Add terrain

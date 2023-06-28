@@ -17,7 +17,7 @@ from random import uniform;
 import numpy as np
 
 import OpenGL.GL as gl;
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform,  RenderMesh
@@ -28,7 +28,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
-from Elements.pyGLV.utils.terrain import generateTerrain
+from Elements.utils.terrain import generateTerrain
 from OpenGL.GL import GL_LINES
 
 
