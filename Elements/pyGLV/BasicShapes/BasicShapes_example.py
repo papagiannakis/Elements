@@ -62,6 +62,8 @@ def main(imguiFlag = False):
     trans = BasicTransform(name="trans", trs=util.identity());    
     scene.world.addComponent(home, trans);
 
+    ### Spawn a few basic shapes
+
     cylinder = BasicShapes.CylinderSpawn()
     scene.world.addEntityChild(home, cylinder);
     torus = BasicShapes.TorusSpawn()
@@ -71,8 +73,8 @@ def main(imguiFlag = False):
     #sphere = BasicShapes.SphereSpawn()
     #scene.world.addEntityChild(home, sphere);
 
-    torus.trans.trs = util.translate(-0.5, 0, 0)@util.scale(0.5)
-    cylinder.trans.trs = util.translate(0, 0.5, 0)@util.scale(0.5)
+    torus.trans.trs = util.translate(-1, 0, 0)@util.scale(0.5)
+    cylinder.trans.trs = util.translate(0, 1, 0)@util.scale(0.5)
     #cube.trans.trs = util.translate(0.5, 0, 0)@util.scale(0.5)
     #sphere.trans.trs = util.translate(0, -0.5, 0)@util.scale(0.5)
 
