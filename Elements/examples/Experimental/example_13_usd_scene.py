@@ -26,10 +26,13 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
 from Elements.utils.terrain import generateTerrain
+import os
 
 models = []
 newShaders = []
-USD_input_filepath = "scenes/ExampleScene.usd"
+
+dirname = os.path.dirname(__file__)
+USD_input_filepath = os.path.join(dirname, "..", "files", 'scenes','ExampleScene.usd')
 
 
 def SceneGUI(scene, initUpdate):
@@ -192,7 +195,7 @@ model_terrain_axes = util.translate(0.0, 0.0, 0.0)
 
 White_Map = (b'\xff\xff\xff\xff', 1, 1)
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

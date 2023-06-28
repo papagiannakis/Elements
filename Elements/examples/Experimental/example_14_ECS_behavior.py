@@ -61,7 +61,7 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 # Load Object
 dirname = os.path.dirname(__file__)
 
-obj_to_import = os.path.join(dirname, 'models','cube/cube.obj')
+obj_to_import = os.path.join(dirname, "..", "files", 'models','cube/cube.obj')
 model_entity = GameObject.Spawn(scene, obj_to_import, "RemoveCube", rootEntity, util.scale(0.2))
 modelsList.append(model_entity)
 
@@ -166,7 +166,7 @@ removeAction = RemoveAction("removeAction", "RemoveAction", "004", RemoveActionP
 
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

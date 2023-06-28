@@ -116,8 +116,8 @@ def LoadScene(scene, path):
             game_object_mesh.vertex_index.append(indices)
             scene.world.addComponent(parent_entity, VertexArray())
             shader_dec = scene.world.addComponent(parent_entity, ShaderGLDecorator(
-                    Shader(vertex_import_file=os.path.join(os.path.dirname(__file__), "../utils/objimporter/default_resources/shaders/Standard.vert"),
-                           fragment_import_file=os.path.join(os.path.dirname(__file__),"../utils/objimporter/default_resources/shaders/Standard.frag"))))
+                    Shader(vertex_import_file=os.path.join(os.path.dirname(__file__), "../../utils/objimporter/default_resources/shaders/Standard.vert"),
+                           fragment_import_file=os.path.join(os.path.dirname(__file__),"../../utils/objimporter/default_resources/shaders/Standard.frag"))))
             InitShaderDec(shader_dec)
             shaderDecs.append(shader_dec)
 

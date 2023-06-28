@@ -62,8 +62,8 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 # Load Object
 dirname = os.path.dirname(__file__)
 
-obj_to_import = os.path.join(dirname, 'models','LivingRoom/Lamp/Lamp.obj')
-model_entity = GameObject.Spawn(scene, obj_to_import, "Cube", rootEntity, util.translate(-0.2, 0.4, 0.0))
+obj_to_import = os.path.join(dirname, "..", "files", 'models','LivingRoom/Lamp/Lamp.obj')
+model_entity = GameObject.Spawn(scene, obj_to_import, "Lamp", rootEntity, util.translate(-0.2, 0.4, 0.0))
 
 
 # Light Visualization
@@ -181,7 +181,7 @@ model_entity.initialize_gl(Lposition, Lcolor, Lintensity)
 model_entity.transform_component.trs = util.scale(1.0, 1.0, 1.0)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
