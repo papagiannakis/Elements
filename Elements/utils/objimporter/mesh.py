@@ -1,6 +1,6 @@
 import os
 import numpy as np
-from Elements.pyECSS import utilities
+import Elements.pyECSS.math_utilities as utilities
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import System
 import Elements.pyECSS.math_utilities as util

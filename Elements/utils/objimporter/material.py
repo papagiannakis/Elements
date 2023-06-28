@@ -6,7 +6,6 @@ from typing import Tuple
 
 
 from Elements.pyGLV.GL.Textures import Texture
-from Elements import definitions
 
 class Material:
     def __init__(self, name=None):
