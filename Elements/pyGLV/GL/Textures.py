@@ -39,7 +39,7 @@ class Texture:
         img = None
         if filepath is not None:
             img = Image.open(filepath)
-            img_bytes = img.tobytes("raw", "RGBA", 0, -1)
+            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
 
         self._texture = gl.glGenTextures(1)
         
