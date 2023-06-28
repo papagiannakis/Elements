@@ -5,7 +5,7 @@ import torch
 
 from Elements.features.GA.quaternion import Quaternion
 from Elements.features.GA.GAutils import matrix_to_motor, matrix_to_angle_axis_translation
-from atlas.model import MODEL_LIST
+from Elements.examples.files.atlas.model import MODEL_LIST
 from Elements.pyECSS.Component import RenderMesh, BasicTransform
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GL.Scene import Scene

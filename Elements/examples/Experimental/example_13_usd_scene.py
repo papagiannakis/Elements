@@ -26,13 +26,13 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
 from Elements.utils.terrain import generateTerrain
+from Elements.definitions import SCENES_DIR
 import os
 
 models = []
 newShaders = []
 
-dirname = os.path.dirname(__file__)
-USD_input_filepath = os.path.join(dirname, "..", "files", 'scenes','ExampleScene.usd')
+USD_input_filepath = os.path.join(SCENES_DIR,'ExampleScene.usd')
 
 
 def SceneGUI(scene, initUpdate):

@@ -1,9 +1,7 @@
 import os
 import numpy as np
-import Elements.pyECSS.math_utilities as utilities
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import System
-import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL import Shader

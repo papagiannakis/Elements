@@ -3,7 +3,7 @@ from numbers import Number
 import numpy as np
 import numpy.testing as npt
 
-from Elements.pyECSS.GA.quaternion import Quaternion
+from Elements.features.GA.quaternion import Quaternion
 
 
 class DualQuaternion(object):

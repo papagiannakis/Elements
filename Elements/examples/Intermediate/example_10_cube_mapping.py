@@ -13,6 +13,8 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
+from Elements.definitions import TEXTURE_DIR
+
 winWidth = 1024
 winHeight = 768
 scene = Scene()    
@@ -141,10 +143,9 @@ view = util.lookat(eye, target, up)
 projMat = util.perspective(50.0, 1.0, 0.01, 100.0)   
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-texture_locations = os.path.join(os.path.dirname(__file__), "..", "files", "textures")
 
-# skybox_texture_locations = os.path.join(os.path.dirname(__file__), "..", "files", "textures", "Skyboxes", "Cloudy")
-skybox_texture_locations = os.path.join(os.path.dirname(__file__), "..", "files", "textures", "Skyboxes", "Sea")
+# skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Cloudy")
+skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
 front_img = os.path.join(skybox_texture_locations, "front.jpg")
 right_img = os.path.join(skybox_texture_locations,"right.jpg")
 left_img = os.path.join(skybox_texture_locations,"left.jpg")
@@ -153,7 +154,7 @@ bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
 top_img = os.path.join(skybox_texture_locations,"top.jpg")
 
 
-mat_img = os.path.join(texture_locations, "dark_wood_texture.jpg")
+mat_img = os.path.join(TEXTURE_DIR, "dark_wood_texture.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 face_data_2 = get_single_texture_faces(mat_img)

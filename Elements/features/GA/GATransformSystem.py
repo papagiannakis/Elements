@@ -1,5 +1,5 @@
 import Elements.pyECSS
-from Elements.pyECSS.GA.GA_Component import GATransform
+from Elements.features.GA.GA_Component import GATransform
 from Elements.pyECSS.System import System
 
 class GATransformSystem(System):
