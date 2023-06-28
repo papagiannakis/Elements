@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import bezier_base
+import Elements.pyGLV.bezier.bezier_base as bezier_base
 
 
 class TestEntity(unittest.TestCase):

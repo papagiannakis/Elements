@@ -31,7 +31,7 @@ class PlaneFitting:
 
         imgui.begin("Fit Plane")
 
-        imgui.text("Control nodes X, Y, Z")
+        imgui.text("Fitting nodes X, Y, Z")
         for i, control_node in enumerate(input_fitting_nodes):
             changed, input_fitting_nodes[i] = imgui.input_float3(f"Node {i + 1}", *control_node)
 
@@ -53,13 +53,14 @@ class PlaneFitting:
 
     def fit_plane(self, fitting_nodes):
 
+        #remove old plane before rendering new one
+        remove_entity_children(self.planefitting_entity)
+
         plane = Plane.best_fit(Points(fitting_nodes))
 
         planefitting_vertices, planefitting_colors, planefitting_indices = generate_planefitting_data(plane, fitting_nodes)
 
         # ADD / UPDATE planefitting ##
-
-        remove_entity_children(self.planefitting_entity)
 
         planefitting_trans = self.scene.world.addComponent(self.planefitting_entity,
                                                      BasicTransform(name="planefitting_trans", trs=util.identity()))
@@ -75,21 +76,24 @@ class PlaneFitting:
         self.all_shaders.append(planefitting_shader)
 
 
-        ## VISUALIZE planefitting FITTING NODES ##
+        ## VISUALIZE planefitting FITTING NODES AND PROJECTION LINES ##
+
+        projection_lines_entity = self.scene.world.createEntity(Entity(name="projection_lines"))
+        self.scene.world.addEntityChild(self.planefitting_entity, projection_lines_entity)
 
         projection_lines_vertices, projection_lines_colors, projection_lines_indices = generate_projection_lines(plane, fitting_nodes)
 
-        projection_lines_trans = self.scene.world.addComponent(self.planefitting_entity,
+        projection_lines_trans = self.scene.world.addComponent(projection_lines_entity,
                                                      BasicTransform(name="projection_lines_trans", trs=util.identity()))
-        projection_lines_mesh = self.scene.world.addComponent(self.planefitting_entity, RenderMesh(name="projection_lines_mesh"))
+        projection_lines_mesh = self.scene.world.addComponent(projection_lines_entity, RenderMesh(name="projection_lines_mesh"))
         projection_lines_mesh.vertex_attributes.append(projection_lines_vertices)
         projection_lines_mesh.vertex_attributes.append(projection_lines_colors)
         projection_lines_mesh.vertex_index.append(projection_lines_indices)
-        projection_lines_vArray = self.scene.world.addComponent(projection_lines_mesh,
+        projection_lines_vArray = self.scene.world.addComponent(projection_lines_entity,
                                                       VertexArray(primitive=GL_LINES)) 
 
-        projection_lines_shader = self.scene.world.addComponent(self.planefitting_entity, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        projection_lines_shader = self.scene.world.addComponent(projection_lines_entity, ShaderGLDecorator(
+            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))) 
         self.all_shaders.append(projection_lines_shader)
 
 
@@ -132,8 +136,6 @@ def generate_projection_lines(plane,fitting_nodes):
 
 def generate_planefitting_data(plane,fitting_nodes):
 
-    plane.normal
-
     min_x, max_x, min_y, max_y, min_z, max_z = find_boundaries(fitting_nodes)
 
     diameter = max(max_x-min_x, max_y-min_y, max_z-min_z)
@@ -153,11 +155,10 @@ def generate_planefitting_data(plane,fitting_nodes):
 
     point = plane.point
 
-    d_2 = diameter
-    bottom_left = point - d_2 * plane_x - d_2 * plane_y
-    top_left    = point - d_2 * plane_x + d_2 * plane_y
-    bottom_right = point + d_2 * plane_x - d_2 * plane_y
-    top_right = point + d_2 * plane_x + d_2 * plane_y
+    bottom_left = point - diameter * plane_x - diameter * plane_y
+    top_left    = point - diameter * plane_x + diameter * plane_y
+    bottom_right = point + diameter * plane_x - diameter * plane_y
+    top_right = point + diameter * plane_x + diameter * plane_y
     
     planefitting_vertices =  [bottom_left,top_left,bottom_right,top_right]
     planefitting_indices = [0,1,3,0,3,2]
