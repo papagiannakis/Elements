@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
 
-from Elements.pyGLV.examples.plane_fitting.planefitting_base import PlaneFitting
+from Elements.pyGLV.plane_fitting.planefitting_base import PlaneFitting
 
 scene = Scene()
 
@@ -100,16 +100,16 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 all_shaders.append(axes_shader)
 
-bezier_entity = scene.world.createEntity(Entity(name="bezier"))
-scene.world.addEntityChild(rootEntity, bezier_entity)
+planefitting_entity = scene.world.createEntity(Entity(name="planefitting"))
+scene.world.addEntityChild(rootEntity, planefitting_entity)
 
-plane_fitting = PlaneFitting(bezier_entity, scene, rootEntity, all_shaders, initUpdate)
+plane_fitting = PlaneFitting(planefitting_entity, scene, rootEntity, all_shaders, initUpdate)
 
 
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth=1024, windowHeight=768, windowTitle="Elements: Bezier Curve Rendering",
+scene.init(imgui=True, windowWidth=1024, windowHeight=768, windowTitle="Elements: Planefitting",
            openGLversion=4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
