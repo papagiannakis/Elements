@@ -13,6 +13,8 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 
+from Elements.utils.terrain import generateTerrain
+
 from OpenGL.GL import GL_LINES
 
 winWidth = 1024
@@ -122,7 +124,7 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 
 
 # Generate terrain
-from Elements.utils.terrain import generateTerrain
+
 vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
 # Add terrain
 terrain = scene.world.createEntity(Entity(name="terrain"))
@@ -196,7 +198,7 @@ model_terrain_axes = terrain.getChild(0).trs # notice that terrain.getChild(0) =
 # OR 
 # model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
 
-texturePath = os.path.join(os.path.dirname(__file__), "textures/uoc_logo.png")
+texturePath = os.path.join(os.path.dirname(__file__), "..", "files", "textures", "uoc_logo.png")
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 

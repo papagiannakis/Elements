@@ -3,8 +3,8 @@ import pickle
 import numpy as np
 import torch
 
-from Elements.pyECSS.GA.quaternion import Quaternion
-from Elements.pyGLV.examples.GAUtils import matrix_to_motor, matrix_to_angle_axis_translation
+from Elements.features.GA.quaternion import Quaternion
+from Elements.features.GA.GAUtils import matrix_to_motor, matrix_to_angle_axis_translation
 from atlas.model import MODEL_LIST
 from Elements.pyECSS.Component import RenderMesh, BasicTransform
 from Elements.pyECSS.Entity import Entity
