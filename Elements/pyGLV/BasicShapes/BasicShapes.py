@@ -314,7 +314,7 @@ class PointLight(Light):
             dtype=np.uint32
         ) #rhombus out of two triangles
 
-        vertices, colors, indices, normals = BasicShapes.IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
+        vertices, colors, indices, normals = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
         self.mesh.vertex_attributes.append(vertices);
         self.mesh.vertex_attributes.append(colors);
         if normals is not None:
