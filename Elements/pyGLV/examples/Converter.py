@@ -3,13 +3,15 @@ import pickle
 import numpy as np
 import torch
 
+from Elements.pyECSS.GA.quaternion import Quaternion
+from Elements.pyGLV.examples.GAUtils import matrix_to_motor, matrix_to_angle_axis_translation
 from atlas.model import MODEL_LIST
 from Elements.pyECSS.Component import RenderMesh, BasicTransform
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import ShaderGLDecorator, Shader
 from Elements.pyGLV.GL.VertexArray import VertexArray
-
+import CreateScenes
 file = open("atlas/opt.pickle", 'rb')
 opt = pickle.load(file)
 file.close()
@@ -318,6 +320,615 @@ def ECStoGNNNoNoise(scene):
 
     from torch_geometric.data import HeteroData
 
+    data = HeteroData()
+
+    data['entity'].x = torch.FloatTensor(np.asarray(entfeatures))
+    data['trs'].x = torch.FloatTensor(np.asarray(compfeaturestrans))
+    data['mesh'].x = torch.FloatTensor(np.asarray(compfeaturesmesh))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data['entity', 'entparent', 'entity'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0enttrans, edges1enttrans])
+    data['entity', 'trsparent', 'trs'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0entmesh, edges1entmesh])
+    data['entity', 'meshparent', 'mesh'].edge_index = edgesent
+    # data.y = y[len(y) - 1]
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+def ECStoGNNSimple(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    entslist = []
+    entsfeats = []
+    y = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        exists = False
+        index = -1
+        for i in range(len(CreateScenes.objs)):
+            if CreateScenes.objs[i] in ent.name.lower():
+                exists = True
+                index = i
+                break
+        if exists:
+            entslist.append(ent)
+            y.append(index)
+    for i in range(len(entslist)):
+        if entslist[i].name.lower() in "root":
+            entsfeats.append(np.zeros(16, ))
+        for ch in entslist[i]._children:
+            if isinstance(ch, BasicTransform):
+                entsfeats.append(ch.trs.flatten())
+            elif isinstance(ch, Entity) and ch in entslist:
+                edges0ent.append(i)
+                edges1ent.append(entslist.index(ch))
+
+    from torch_geometric.data import Data
+    # Create the pytorch GNN hetero graph
+    data = Data()
+
+    data.x = torch.FloatTensor(np.asarray(entsfeats))
+    data.y = torch.LongTensor(np.asarray(y))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data.edge_index = edgesent
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNSimpleCGA(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    entslist = []
+    entsfeats = []
+    y = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        exists = False
+        index = -1
+        for i in range(len(CreateScenes.objs)):
+            if CreateScenes.objs[i] in ent.name.lower():
+                exists = True
+                index = i
+                break
+        if exists:
+            entslist.append(ent)
+            y.append(index)
+    for i in range(len(entslist)):
+        if entslist[i].name.lower() in "root":
+            entsfeats.append(np.zeros(32, ))
+        for ch in entslist[i]._children:
+            if isinstance(ch, BasicTransform):
+                entsfeats.append(matrix_to_motor(ch.trs, method='CGA').value)
+            elif isinstance(ch, Entity) and ch in entslist:
+                edges0ent.append(i)
+                edges1ent.append(entslist.index(ch))
+
+    from torch_geometric.data import Data
+    # Create the pytorch GNN hetero graph
+    data = Data()
+
+    data.x = torch.FloatTensor(np.asarray(entsfeats))
+    data.y = torch.LongTensor(np.asarray(y))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data.edge_index = edgesent
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNSimplePGA(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    entslist = []
+    entsfeats = []
+    y = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        exists = False
+        index = -1
+        for i in range(len(CreateScenes.objs)):
+            if CreateScenes.objs[i] in ent.name.lower():
+                exists = True
+                index = i
+                break
+        if exists:
+            entslist.append(ent)
+            y.append(index)
+    for i in range(len(entslist)):
+        if entslist[i].name.lower() in "root":
+            entsfeats.append(np.zeros(16, ))
+        for ch in entslist[i]._children:
+            if isinstance(ch, BasicTransform):
+                entsfeats.append(matrix_to_motor(ch.trs, method='PGA').value)
+            elif isinstance(ch, Entity) and ch in entslist:
+                edges0ent.append(i)
+                edges1ent.append(entslist.index(ch))
+
+    from torch_geometric.data import Data
+    # Create the pytorch GNN hetero graph
+    data = Data()
+
+    data.x = torch.FloatTensor(np.asarray(entsfeats))
+    data.y = torch.LongTensor(np.asarray(y))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data.edge_index = edgesent
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNSimpleTransAngleAxis(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    entslist = []
+    entsfeats = []
+    y = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        exists = False
+        index = -1
+        for i in range(len(CreateScenes.objs)):
+            if CreateScenes.objs[i] in ent.name.lower():
+                exists = True
+                index = i
+                break
+        if exists:
+            entslist.append(ent)
+            y.append(index)
+    for i in range(len(entslist)):
+        if entslist[i].name.lower() in "root":
+            entsfeats.append(np.zeros(7, ))
+        for ch in entslist[i]._children:
+            if isinstance(ch, BasicTransform):
+                tempfeats = np.zeros(7, )
+                extracted_theta, extracted_axis, extracted_translation_vector = matrix_to_angle_axis_translation(
+                    ch.trs)  # notice theta is in rad
+                tempfeats[0] = extracted_translation_vector[0]
+                tempfeats[1] = extracted_translation_vector[1]
+                tempfeats[2] = extracted_translation_vector[2]
+                tempfeats[3] = extracted_theta
+                tempfeats[4] = extracted_axis[0]
+                tempfeats[5] = extracted_axis[1]
+                tempfeats[6] = extracted_axis[2]
+                entsfeats.append(tempfeats)
+            elif isinstance(ch, Entity) and ch in entslist:
+                edges0ent.append(i)
+                edges1ent.append(entslist.index(ch))
+
+    from torch_geometric.data import Data
+    # Create the pytorch GNN hetero graph
+    data = Data()
+
+    data.x = torch.FloatTensor(np.asarray(entsfeats))
+    data.y = torch.LongTensor(np.asarray(y))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data.edge_index = edgesent
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNSimpleTransQuat(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    entslist = []
+    entsfeats = []
+    y = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        exists = False
+        index = -1
+        for i in range(len(CreateScenes.objs)):
+            if CreateScenes.objs[i] in ent.name.lower():
+                exists = True
+                index = i
+                break
+        if exists:
+            entslist.append(ent)
+            y.append(index)
+    for i in range(len(entslist)):
+        if entslist[i].name.lower() in "root":
+            entsfeats.append(np.zeros(7, ))
+        for ch in entslist[i]._children:
+            if isinstance(ch, BasicTransform):
+                tempfeats = np.zeros(7, )
+                extracted_theta, extracted_axis, extracted_translation_vector = matrix_to_angle_axis_translation(
+                    ch.trs)  # notice theta is in rad
+                q = Quaternion.from_angle_axis(angle=extracted_theta, axis=extracted_axis)
+                tempfeats[0] = extracted_translation_vector[0]
+                tempfeats[1] = extracted_translation_vector[1]
+                tempfeats[2] = extracted_translation_vector[2]
+                tempfeats[3] = q.q[0]
+                tempfeats[4] = q.q[1]
+                tempfeats[5] = q.q[2]
+                tempfeats[6] = q.q[3]
+                entsfeats.append(tempfeats)
+            elif isinstance(ch, Entity) and ch in entslist:
+                edges0ent.append(i)
+                edges1ent.append(entslist.index(ch))
+
+    from torch_geometric.data import Data
+    # Create the pytorch GNN hetero graph
+    data = Data()
+
+    data.x = torch.FloatTensor(np.asarray(entsfeats))
+    data.y = torch.LongTensor(np.asarray(y))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data.edge_index = edgesent
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNCGA(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    edges0enttrans = []
+    edges1enttrans = []
+    edges0entmesh = []
+    edges1entmesh = []
+    entslist = []
+    compslistmesh = []
+    compslisttrans = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        if "Cam" in ent.name or "Entity1" in ent.name:
+            continue
+        graph.append(ent)
+        entslist.append(ent)
+    # Find and append all TRS and Mesh components to the graph list and also the TRS component and Mesh Component list
+    for comp in scene.world.components:
+        # if "Cam" in comp.parent.name or "Entity1" in comp.parent.name:
+        #     continue
+        if isinstance(comp, BasicTransform) or isinstance(comp, RenderMesh):
+            graph.append(comp)
+            if isinstance(comp, BasicTransform):
+                compslisttrans.append(comp)
+            else:
+                compslistmesh.append(comp)
+
+    # Create the features list of each entity, which is a length 3 vector that holds a counter of the number of children of this
+    # entity based on type (entity, trs, mesh). Also create the edges lists between the entities and their children
+    entfeatures = []
+    for g in graph:
+        feats = np.zeros((3,))
+        if isinstance(g, Entity):
+            for ch in g._children:
+                if isinstance(ch, Entity) and not ("Cam" in ch.name or "Entity1" in ch.name):
+                    edges0ent.append(entslist.index(g))
+                    edges1ent.append(entslist.index(ch))
+                    feats[0] += 1
+                elif isinstance(ch, BasicTransform):
+                    edges0enttrans.append(entslist.index(g))
+                    edges1enttrans.append(compslisttrans.index(ch))
+                    feats[1] += 1
+                elif isinstance(ch, RenderMesh):
+                    edges0entmesh.append(entslist.index(g))
+                    edges1entmesh.append(compslistmesh.index(ch))
+                    feats[2] += 1
+            entfeatures.append(feats)
+
+    compfeaturestrans = []
+    compfeaturesmesh = []
+
+    # Create features of each component. For TRS add noise to it and flatten it into a vector. For Mesh, sample 2500 vertices
+    # add a small noise and pass it as input to atlasnet's encoder. The output is a 1024 length feature vector which is the
+    # feature of our Mesh nodes
+    for g in graph:
+        if isinstance(g, BasicTransform):
+            g.trs = g.trs + np.random.uniform(0, 0.2, (4, 4))
+            # feats = g.trs.flatten()
+            compfeaturestrans.append(matrix_to_motor(g.trs, method='CGA').value)
+        elif isinstance(g, RenderMesh):
+            choice = np.random.choice(len(np.asarray(g.vertex_attributes[0])), 2500, replace=True)
+            pcdvert = np.asarray(g.vertex_attributes[0])[choice, :3].transpose()
+            noise = np.random.normal(0, .1, pcdvert.shape)
+            pcdvert += noise
+            pcdvert = np.reshape(pcdvert, (1, pcdvert.shape[0], pcdvert.shape[1]))
+            feats = network.encoder(torch.tensor(pcdvert).float().cuda())
+            feats = np.array(feats.detach().cpu())
+            feats = feats.reshape((feats.shape[1],))
+            compfeaturesmesh.append(feats)
+
+    from torch_geometric.data import HeteroData
+    # Create the pytorch GNN hetero graph
+    data = HeteroData()
+
+    data['entity'].x = torch.FloatTensor(np.asarray(entfeatures))
+    data['trs'].x = torch.FloatTensor(np.asarray(compfeaturestrans))
+    data['mesh'].x = torch.FloatTensor(np.asarray(compfeaturesmesh))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data['entity', 'entparent', 'entity'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0enttrans, edges1enttrans])
+    data['entity', 'trsparent', 'trs'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0entmesh, edges1entmesh])
+    data['entity', 'meshparent', 'mesh'].edge_index = edgesent
+    # data.y = y[len(y) - 1]
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNPGA(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    edges0enttrans = []
+    edges1enttrans = []
+    edges0entmesh = []
+    edges1entmesh = []
+    entslist = []
+    compslistmesh = []
+    compslisttrans = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        if "Cam" in ent.name or "Entity1" in ent.name:
+            continue
+        graph.append(ent)
+        entslist.append(ent)
+    # Find and append all TRS and Mesh components to the graph list and also the TRS component and Mesh Component list
+    for comp in scene.world.components:
+        # if "Cam" in comp.parent.name or "Entity1" in comp.parent.name:
+        #     continue
+        if isinstance(comp, BasicTransform) or isinstance(comp, RenderMesh):
+            graph.append(comp)
+            if isinstance(comp, BasicTransform):
+                compslisttrans.append(comp)
+            else:
+                compslistmesh.append(comp)
+
+    # Create the features list of each entity, which is a length 3 vector that holds a counter of the number of children of this
+    # entity based on type (entity, trs, mesh). Also create the edges lists between the entities and their children
+    entfeatures = []
+    for g in graph:
+        feats = np.zeros((3,))
+        if isinstance(g, Entity):
+            for ch in g._children:
+                if isinstance(ch, Entity) and not ("Cam" in ch.name or "Entity1" in ch.name):
+                    edges0ent.append(entslist.index(g))
+                    edges1ent.append(entslist.index(ch))
+                    feats[0] += 1
+                elif isinstance(ch, BasicTransform):
+                    edges0enttrans.append(entslist.index(g))
+                    edges1enttrans.append(compslisttrans.index(ch))
+                    feats[1] += 1
+                elif isinstance(ch, RenderMesh):
+                    edges0entmesh.append(entslist.index(g))
+                    edges1entmesh.append(compslistmesh.index(ch))
+                    feats[2] += 1
+            entfeatures.append(feats)
+
+    compfeaturestrans = []
+    compfeaturesmesh = []
+
+    # Create features of each component. For TRS add noise to it and flatten it into a vector. For Mesh, sample 2500 vertices
+    # add a small noise and pass it as input to atlasnet's encoder. The output is a 1024 length feature vector which is the
+    # feature of our Mesh nodes
+    for g in graph:
+        if isinstance(g, BasicTransform):
+            g.trs = g.trs + np.random.uniform(0, 0.2, (4, 4))
+            # feats = g.trs.flatten()
+            compfeaturestrans.append(matrix_to_motor(g.trs, method='PGA').value)
+        elif isinstance(g, RenderMesh):
+            choice = np.random.choice(len(np.asarray(g.vertex_attributes[0])), 2500, replace=True)
+            pcdvert = np.asarray(g.vertex_attributes[0])[choice, :3].transpose()
+            noise = np.random.normal(0, .1, pcdvert.shape)
+            pcdvert += noise
+            pcdvert = np.reshape(pcdvert, (1, pcdvert.shape[0], pcdvert.shape[1]))
+            feats = network.encoder(torch.tensor(pcdvert).float().cuda())
+            feats = np.array(feats.detach().cpu())
+            feats = feats.reshape((feats.shape[1],))
+            compfeaturesmesh.append(feats)
+
+    from torch_geometric.data import HeteroData
+    # Create the pytorch GNN hetero graph
+    data = HeteroData()
+
+    data['entity'].x = torch.FloatTensor(np.asarray(entfeatures))
+    data['trs'].x = torch.FloatTensor(np.asarray(compfeaturestrans))
+    data['mesh'].x = torch.FloatTensor(np.asarray(compfeaturesmesh))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data['entity', 'entparent', 'entity'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0enttrans, edges1enttrans])
+    data['entity', 'trsparent', 'trs'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0entmesh, edges1entmesh])
+    data['entity', 'meshparent', 'mesh'].edge_index = edgesent
+    # data.y = y[len(y) - 1]
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNTransAngle(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    edges0enttrans = []
+    edges1enttrans = []
+    edges0entmesh = []
+    edges1entmesh = []
+    entslist = []
+    compslistmesh = []
+    compslisttrans = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        if "Cam" in ent.name or "Entity1" in ent.name:
+            continue
+        graph.append(ent)
+        entslist.append(ent)
+    # Find and append all TRS and Mesh components to the graph list and also the TRS component and Mesh Component list
+    for comp in scene.world.components:
+        # if "Cam" in comp.parent.name or "Entity1" in comp.parent.name:
+        #     continue
+        if isinstance(comp, BasicTransform) or isinstance(comp, RenderMesh):
+            graph.append(comp)
+            if isinstance(comp, BasicTransform):
+                compslisttrans.append(comp)
+            else:
+                compslistmesh.append(comp)
+
+    # Create the features list of each entity, which is a length 3 vector that holds a counter of the number of children of this
+    # entity based on type (entity, trs, mesh). Also create the edges lists between the entities and their children
+    entfeatures = []
+    for g in graph:
+        feats = np.zeros((3,))
+        if isinstance(g, Entity):
+            for ch in g._children:
+                if isinstance(ch, Entity) and not ("Cam" in ch.name or "Entity1" in ch.name):
+                    edges0ent.append(entslist.index(g))
+                    edges1ent.append(entslist.index(ch))
+                    feats[0] += 1
+                elif isinstance(ch, BasicTransform):
+                    edges0enttrans.append(entslist.index(g))
+                    edges1enttrans.append(compslisttrans.index(ch))
+                    feats[1] += 1
+                elif isinstance(ch, RenderMesh):
+                    edges0entmesh.append(entslist.index(g))
+                    edges1entmesh.append(compslistmesh.index(ch))
+                    feats[2] += 1
+            entfeatures.append(feats)
+
+    compfeaturestrans = []
+    compfeaturesmesh = []
+
+    # Create features of each component. For TRS add noise to it and flatten it into a vector. For Mesh, sample 2500 vertices
+    # add a small noise and pass it as input to atlasnet's encoder. The output is a 1024 length feature vector which is the
+    # feature of our Mesh nodes
+    for g in graph:
+        if isinstance(g, BasicTransform):
+            g.trs = g.trs + np.random.uniform(0, 0.2, (4, 4))
+            tempfeats = np.zeros(7, )
+            extracted_theta, extracted_axis, extracted_translation_vector = matrix_to_angle_axis_translation(
+                g.trs)  # notice theta is in rad
+            tempfeats[0] = extracted_translation_vector[0]
+            tempfeats[1] = extracted_translation_vector[1]
+            tempfeats[2] = extracted_translation_vector[2]
+            tempfeats[3] = extracted_theta
+            tempfeats[4] = extracted_axis[0]
+            tempfeats[5] = extracted_axis[1]
+            tempfeats[6] = extracted_axis[2]
+            compfeaturestrans.append(tempfeats)
+        elif isinstance(g, RenderMesh):
+            choice = np.random.choice(len(np.asarray(g.vertex_attributes[0])), 2500, replace=True)
+            pcdvert = np.asarray(g.vertex_attributes[0])[choice, :3].transpose()
+            noise = np.random.normal(0, .1, pcdvert.shape)
+            pcdvert += noise
+            pcdvert = np.reshape(pcdvert, (1, pcdvert.shape[0], pcdvert.shape[1]))
+            feats = network.encoder(torch.tensor(pcdvert).float().cuda())
+            feats = np.array(feats.detach().cpu())
+            feats = feats.reshape((feats.shape[1],))
+            compfeaturesmesh.append(feats)
+
+    from torch_geometric.data import HeteroData
+    # Create the pytorch GNN hetero graph
+    data = HeteroData()
+
+    data['entity'].x = torch.FloatTensor(np.asarray(entfeatures))
+    data['trs'].x = torch.FloatTensor(np.asarray(compfeaturestrans))
+    data['mesh'].x = torch.FloatTensor(np.asarray(compfeaturesmesh))
+    edgesent = torch.LongTensor([edges0ent, edges1ent])
+    data['entity', 'entparent', 'entity'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0enttrans, edges1enttrans])
+    data['entity', 'trsparent', 'trs'].edge_index = edgesent
+    edgesent = torch.LongTensor([edges0entmesh, edges1entmesh])
+    data['entity', 'meshparent', 'mesh'].edge_index = edgesent
+    # data.y = y[len(y) - 1]
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    data = data.to(device)
+    return data
+
+
+def ECStoGNNTransQuat(scene):
+    graph = []
+    edges0ent = []
+    edges1ent = []
+    edges0enttrans = []
+    edges1enttrans = []
+    edges0entmesh = []
+    edges1entmesh = []
+    entslist = []
+    compslistmesh = []
+    compslisttrans = []
+    # Find and append all entities to the graph list and also the entity list
+    for ent in scene.world.entities:
+        if "Cam" in ent.name or "Entity1" in ent.name:
+            continue
+        graph.append(ent)
+        entslist.append(ent)
+    # Find and append all TRS and Mesh components to the graph list and also the TRS component and Mesh Component list
+    for comp in scene.world.components:
+        # if "Cam" in comp.parent.name or "Entity1" in comp.parent.name:
+        #     continue
+        if isinstance(comp, BasicTransform) or isinstance(comp, RenderMesh):
+            graph.append(comp)
+            if isinstance(comp, BasicTransform):
+                compslisttrans.append(comp)
+            else:
+                compslistmesh.append(comp)
+
+    # Create the features list of each entity, which is a length 3 vector that holds a counter of the number of children of this
+    # entity based on type (entity, trs, mesh). Also create the edges lists between the entities and their children
+    entfeatures = []
+    for g in graph:
+        feats = np.zeros((3,))
+        if isinstance(g, Entity):
+            for ch in g._children:
+                if isinstance(ch, Entity) and not ("Cam" in ch.name or "Entity1" in ch.name):
+                    edges0ent.append(entslist.index(g))
+                    edges1ent.append(entslist.index(ch))
+                    feats[0] += 1
+                elif isinstance(ch, BasicTransform):
+                    edges0enttrans.append(entslist.index(g))
+                    edges1enttrans.append(compslisttrans.index(ch))
+                    feats[1] += 1
+                elif isinstance(ch, RenderMesh):
+                    edges0entmesh.append(entslist.index(g))
+                    edges1entmesh.append(compslistmesh.index(ch))
+                    feats[2] += 1
+            entfeatures.append(feats)
+
+    compfeaturestrans = []
+    compfeaturesmesh = []
+
+    # Create features of each component. For TRS add noise to it and flatten it into a vector. For Mesh, sample 2500 vertices
+    # add a small noise and pass it as input to atlasnet's encoder. The output is a 1024 length feature vector which is the
+    # feature of our Mesh nodes
+    for g in graph:
+        if isinstance(g, BasicTransform):
+            g.trs = g.trs + np.random.uniform(0, 0.2, (4, 4))
+            tempfeats = np.zeros(7, )
+            extracted_theta, extracted_axis, extracted_translation_vector = matrix_to_angle_axis_translation(
+                g.trs)  # notice theta is in rad
+            q = Quaternion.from_angle_axis(angle=extracted_theta, axis=extracted_axis)
+            tempfeats[0] = extracted_translation_vector[0]
+            tempfeats[1] = extracted_translation_vector[1]
+            tempfeats[2] = extracted_translation_vector[2]
+            tempfeats[3] = q.q[0]
+            tempfeats[4] = q.q[1]
+            tempfeats[5] = q.q[2]
+            tempfeats[6] = q.q[3]
+            compfeaturestrans.append(tempfeats)
+        elif isinstance(g, RenderMesh):
+            choice = np.random.choice(len(np.asarray(g.vertex_attributes[0])), 2500, replace=True)
+            pcdvert = np.asarray(g.vertex_attributes[0])[choice, :3].transpose()
+            noise = np.random.normal(0, .1, pcdvert.shape)
+            pcdvert += noise
+            pcdvert = np.reshape(pcdvert, (1, pcdvert.shape[0], pcdvert.shape[1]))
+            feats = network.encoder(torch.tensor(pcdvert).float().cuda())
+            feats = np.array(feats.detach().cpu())
+            feats = feats.reshape((feats.shape[1],))
+            compfeaturesmesh.append(feats)
+
+    from torch_geometric.data import HeteroData
+    # Create the pytorch GNN hetero graph
     data = HeteroData()
 
     data['entity'].x = torch.FloatTensor(np.asarray(entfeatures))
