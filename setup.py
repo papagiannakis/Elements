@@ -40,6 +40,7 @@ setup(
         'pysdl2',
         'pysdl2-dll',
         'ipykernel',
+        'trimesh',
         'usd-core'
     ],
     
