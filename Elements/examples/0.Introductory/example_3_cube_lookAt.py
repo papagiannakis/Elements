@@ -9,6 +9,8 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 
+winWidth = 1024
+winHeight = 768
 
 scene = Scene()    
 
@@ -99,14 +101,14 @@ scene.world.print()
 
 running = True
 # MAIN RENDERING LOOP
-scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "A Cube Scene via ECSS")
+scene.init(imgui=False, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "A Cube Scene via ECSS")
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
 while running:
-    running = scene.render(running)
+    running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     

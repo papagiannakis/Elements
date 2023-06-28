@@ -16,6 +16,6 @@ gGUI.init() #calls ImGUIDecorator::init()-->SDL2Window::init()
 running = True
 while running:
   gGUI.display()
-  running = gGUI.event_input_process(running)
+  running = gGUI.event_input_process()
   gGUI.display_post()
 gGUI.shutdown()
