@@ -10,11 +10,13 @@ def random_points_in_square(n, side_length):
         points.append((x, y))
     return points
 
+
 def add_third_coordinate(points):
     return [(x, y, 0, 1) for x, y in points]
 
 
-#method definition that returns indices, vertices, and colors for a voronoi diagram.
+### Voronoi Diagram
+# Creates a Voronoi Diagram with n random points.
 def voronoi_diagram(points, colors=None):
     ### Generate Random Points
     point_list = random_points_in_square(points,1)
