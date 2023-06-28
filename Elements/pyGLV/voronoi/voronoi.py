@@ -17,17 +17,22 @@ def add_third_coordinate(points):
 #method definition that returns indices, vertices, and colors for a voronoi diagram.
 def voronoi_diagram(points, colors=None):
     ### Generate Random Points
-    point_list = random_points_in_square(100,1)
+    point_list = random_points_in_square(points,1)
 
+    # This is a hack to make sure that the voronoi diagram is bounded.
     point_list.append([.5,5])
     point_list.append([.5,-5])
     point_list.append([5,.5])
     point_list.append([-5,.5])
 
+    ### Voronoi Diagram
     vor = Voronoi(point_list)
     vertices = add_third_coordinate(vor.vertices)
     voronoi = []
 
+    ### Go through each region and add the edges to the list.
+    # Each region is a list of indices of vertices that make up the region.
+    # These vertices are split into triangles.
     for region in vor.regions:
         for i in range(len(region)):
             pair = (region[i], region[(i+1) % len(region)])
@@ -39,12 +44,13 @@ def voronoi_diagram(points, colors=None):
     voronoi = np.array(voronoi)
     indices = np.array(range(len(voronoi)))
 
-    ### Mesh for colored faces. Pick relevant regions.
+    ### Mesh for colored faces. Pick relevant regions. Those are the regions that are not unbounded.
+    # All regions that are unbounded have a -1 in them and have no outer edge.
     relevant_regions =[]
     for region in vor.regions:
         if not (-1 in region) and len(region) != 0:
             relevant_regions.append(region)
-#use same vertices.
+    #use same vertices.
     mesh_vertices = []
     mesh_indices = []
     mesh_color = []
@@ -67,7 +73,7 @@ def voronoi_diagram(points, colors=None):
     mesh_indices = np.array(range(len(mesh_vertices)))
 
 # For point rendering
-    point_list = np.array(add_third_coordinate(point_list))
+    point_list = np.array(add_third_coordinate(point_list[:-4]))
     for i in range(len(point_list)):
         point_list[i][2] = 0.01
     point_colors = np.array([(0.,0.,0.,1.)] * len(point_list))
