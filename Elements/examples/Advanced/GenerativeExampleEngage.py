@@ -10,9 +10,9 @@ from torch_geometric.nn import GCNConv
 from torch_geometric.nn.norm import GraphNorm
 from torch_geometric.utils import negative_sampling
 
-from CreateScenes import objs, CreateSceneFromGNNOutput
+from Elements.utils.CreateScenes import objs, CreateSceneFromGNNOutput
 from Elements.pyGLV.GL.Scene import Scene
-import Converter
+import Elements.utils.Converter as Converter
 import random
 import numpy as np
 import UsdImporter as SceneLoader

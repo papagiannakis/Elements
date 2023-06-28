@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 from Elements.utils.terrain import generateTerrain
-
+from Elements.definitions import MODEL_DIR
 
 
 #Light
@@ -60,9 +60,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 
 # Load Object
-dirname = os.path.dirname(__file__)
 
-obj_to_import = os.path.join(dirname, "..", "files", 'models','LivingRoom/Lamp/Lamp.obj')
+
+obj_to_import = os.path.join(MODEL_DIR,'LivingRoom/Lamp/Lamp.obj')
 model_entity = GameObject.Spawn(scene, obj_to_import, "Lamp", rootEntity, util.translate(-0.2, 0.4, 0.0))
 
 

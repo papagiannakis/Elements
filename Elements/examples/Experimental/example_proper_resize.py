@@ -19,6 +19,7 @@ import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
+from Elements.definitions import MODEL_DIR
 
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
@@ -108,12 +109,10 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 
 ## object load 
-dirname = os.path.dirname(__file__)
-
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-# obj_to_import = os.path.join(dirname, "models", "teapot.obj")
-obj_to_import = os.path.join(dirname, "..", "files", "models", "cow.obj")
-# obj_to_import = os.path.join(dirname, "models", "teddy.obj")
+# obj_to_import = os.path.join(MODEL_DIR, "teapot.obj")
+obj_to_import = os.path.join(MODEL_DIR, "cow.obj")
+# obj_to_import = os.path.join(MODEL_DIR, "teddy.obj")
 
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)

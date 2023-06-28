@@ -15,6 +15,7 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 from Elements.utils.objimporter.entities import ModelEntity
 from Elements.utils.terrain import generateTerrain
+from Elements.definitions import MODEL_DIR
 
 
 #Light
@@ -59,9 +60,8 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 
 # Load Object
-dirname = os.path.dirname(__file__)
 
-obj_to_import = os.path.join(dirname, "..", "files", 'models','cube/cube.obj')
+obj_to_import = os.path.join(MODEL_DIR,'cube/cube.obj')
 model_entity = GameObject.Spawn(scene, obj_to_import, "RemoveCube", rootEntity, util.scale(0.2))
 modelsList.append(model_entity)
 

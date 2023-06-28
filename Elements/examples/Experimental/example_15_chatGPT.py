@@ -3,10 +3,11 @@ from __future__ import annotations
 import imgui
 from scipy.spatial.transform import Rotation
 
-from ChatGPT import GPTBot
+from Elements.utils.ChatGPT import GPTBot
 from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
-from SizeCalculation import calc_size
+from Elements.utils.SizeCalculation import calc_size
+from Elements.definitions import MODEL_DIR
 
 
 ##########################################################
@@ -64,8 +65,7 @@ def main(imguiFlag=False):
 
     from Elements.utils.terrain import generateTerrain
 
-    ## object load
-    dirname = os.path.dirname(__file__)
+
 
     scene = Scene()
 
@@ -94,7 +94,7 @@ def main(imguiFlag=False):
     initUpdate = scene.world.createSystem(InitGLShaderSystem())
     shaders = []
     # --------ToolsTable--------
-    obj_to_import = os.path.join(dirname, "models/ToolsTable", "ToolsTable.obj")
+    obj_to_import = os.path.join(MODEL_DIR, "ToolsTable", "ToolsTable.obj")
     shadertoolstable = GameObject.Spawn(scene, obj_to_import, "ToolsTable", rootEntity,
                                         util.rotate((0.0, 1.0, 0.0), 0),
                                         )
@@ -103,7 +103,7 @@ def main(imguiFlag=False):
                                      "rotation": [0, 0, 0]}
     shaders.append(shadertoolstable)
     # -------Cauterizer-------------
-    obj_to_import = os.path.join(dirname, "models/Scalpel", "Scalpel.obj")
+    obj_to_import = os.path.join(MODEL_DIR, "Scalpel", "Scalpel.obj")
     shaderscalp = GameObject.Spawn(scene, obj_to_import, "Scalpel", rootEntity, util.translate(0, 0, 0.0))
     width, height, depth = calc_size(obj_to_import)
     bot.scenegraph["scalpel"] = {'width': width, 'height': height, 'depth': depth, "position": [0, 0, 0],

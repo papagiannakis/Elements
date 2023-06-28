@@ -3,7 +3,7 @@ import sys
 
 import torch_geometric
 
-sys.path.append("../../../")
+# sys.path.append("../../../")
 import numpy as np
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GL.GameObject import GameObject
@@ -15,7 +15,6 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 import numpy as np
 
-import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh, Camera
 from Elements.pyECSS.System import TransformSystem, CameraSystem

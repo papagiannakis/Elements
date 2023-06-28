@@ -1,5 +1,4 @@
 import math
-import Elements.pyECSS.math_utilities as utilities
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Component
 from Elements.pyECSS.System import System
