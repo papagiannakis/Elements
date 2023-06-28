@@ -28,6 +28,8 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
+from Elements.pyGLV.utils.terrain import generateTerrain
+from OpenGL.GL import GL_LINES
 
 
 class IndexedConverter():
@@ -157,7 +159,10 @@ def main(imguiFlag = False):
     # Instantiate a simple complete ECSS with Entities, 
     # Components, Camera, Shader, VertexArray and RenderMesh
     #########################################################
-
+    
+    winWidth = 1024
+    winHeight = 1024
+    
     scene = Scene()    
 
     # Initialize Systems used for this script
@@ -170,30 +175,55 @@ def main(imguiFlag = False):
     rootEntity = scene.world.createEntity(Entity(name="Root"))
 
     # Spawn Camera
-    mainCamera = SimpleCamera("Simple Camera");
+    mainCamera = SimpleCamera("Simple Camera")
     # Camera Settings
     mainCamera.trans2.trs = util.translate(0, 0, 8) # VIEW
     mainCamera.trans1.trs = util.rotate((1, 0, 0), -45); 
 
+    #-----------------------------------------
     # Spawn Two Homes on top of each other
-    home1 = scene.world.createEntity(Entity("Home"));
-    scene.world.addEntityChild(scene.world.root, home1);
+    home1 = scene.world.createEntity(Entity("Home"))
+    scene.world.addEntityChild(rootEntity, home1)
+
     trans = BasicTransform(name="trans", trs=util.identity());    
-    scene.world.addComponent(home1, trans);
+    scene.world.addComponent(home1, trans)
+    
     cube_bot: GameObjectEntity = CubeSpawn("BOT CUBE")
-    scene.world.addEntityChild(home1, cube_bot);
+    scene.world.addEntityChild(home1, cube_bot)
+    
     cube_top: GameObjectEntity = CubeSpawn()
-    scene.world.addEntityChild(home1, cube_top);
-    home1.getChild(0).trs = util.translate(0, 0, 0);
-    cube_top.trans.trs = util.translate(0, 1, 0);
+    scene.world.addEntityChild(home1, cube_top)
+    
+    home1.getChild(0).trs = util.translate(0, 0, 0)
+    cube_top.trans.trs = util.translate(0, 1, 0)
     cube_top.name = "TOP CUBE"
     
     
+    # ---------------------------
+    # Generate terrain
+
+    vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
+    # Add terrain
+    terrain = scene.world.createEntity(Entity(name="terrain"))
+    scene.world.addEntityChild(rootEntity, terrain)
+    terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
+
+    terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
+    terrain_mesh.vertex_attributes.append(vertexTerrain)
+    terrain_mesh.vertex_attributes.append(colorTerrain)
+    terrain_mesh.vertex_index.append(indexTerrain)
+
+    terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
+        Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    
+    scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+    
     # MAIN RENDERING LOOP
     running = True
-    scene.init(imgui=True, windowWidth = 1024, windowHeight = 1024, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
+    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
 
-    imGUIecss = scene.gContext
+    #imGUIecss = scene.gContext
 
 
     # ---------------------------------------------------------
@@ -208,7 +238,7 @@ def main(imguiFlag = False):
     # gl.glDepthMask(gl.GL_FALSE);  
     gl.glEnable(gl.GL_DEPTH_TEST);
     gl.glDepthFunc(gl.GL_LESS);
-    scene.world.traverse_visit(initUpdate, scene.world.root)
+    scene.world.traverse_visit(initUpdate, rootEntity)
     
 
     ############################################
@@ -246,16 +276,20 @@ def main(imguiFlag = False):
 
     
     while running:
-
+        #running = scene._gContext.event_input_process()
+        #if not running :
+           # continue
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
         home1.getChild(1).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(1).trans.l2cam, mat4=True);
         home1.getChild(2).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(2).trans.l2cam, mat4=True);
-                
         home1.getChild(1).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
+
+        terrain_shader.setUniformVariable(key='modelViewProj', value=terrain_trans.l2cam, mat4=True);  
+        
         # call SDLWindow/ImGUI display() and ImGUI event input process
-        running = scene.render(running)
+        running = scene.render()
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         # ImGUI post-display calls and SDLWindow swap 
