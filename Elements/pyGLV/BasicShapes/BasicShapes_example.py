@@ -68,15 +68,15 @@ def main(imguiFlag = False):
     scene.world.addEntityChild(home, cylinder);
     torus = BasicShapes.TorusSpawn()
     scene.world.addEntityChild(home, torus);
-    #cube = BasicShapes.CubeSpawn()
-    #scene.world.addEntityChild(home, cube);
-    #sphere = BasicShapes.SphereSpawn()
-    #scene.world.addEntityChild(home, sphere);
+    cube = BasicShapes.CubeSpawn()
+    scene.world.addEntityChild(home, cube);
+    sphere = BasicShapes.SphereSpawn()
+    scene.world.addEntityChild(home, sphere);
 
-    torus.trans.trs = util.translate(-1, 0, 0)@util.scale(0.5)
-    cylinder.trans.trs = util.translate(0, 1, 0)@util.scale(0.5)
-    #cube.trans.trs = util.translate(0.5, 0, 0)@util.scale(0.5)
-    #sphere.trans.trs = util.translate(0, -0.5, 0)@util.scale(0.5)
+    torus.trans.trs = util.translate(0, 0, 0)@util.scale(0.5)
+    cylinder.trans.trs = util.translate(0, 1.5, 0)@util.scale(0.5)
+    cube.trans.trs = util.translate(0, 3, 0)@util.scale(0.5)
+    sphere.trans.trs = util.translate(0, -1.5, 0)@util.scale(0.5)
 
     
     
@@ -144,7 +144,7 @@ def main(imguiFlag = False):
         viewPos = mainCamera.trans2.l2world[:3, 3].tolist();
         lightPos = pointLight.trans.l2world[:3, 3].tolist();
         pointLight.shaderDec.setUniformVariable(key='modelViewProj', value=pointLight.trans.l2cam, mat4=True)
-        for i in [1,2]:
+        for i in [1,2,3,4]:
             home.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=home.getChild(i).trans.l2cam, mat4=True);
             home.getChild(i).shaderDec.setUniformVariable(key='model',value=home.getChild(i).trans.l2world,mat4=True)
 
