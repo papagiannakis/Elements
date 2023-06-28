@@ -1,6 +1,6 @@
 from __future__ import annotations
 from Elements.pyECSS.Entity import Entity
-from Elements.pyGLV.utils.objimporter.mesh import Mesh
+from Elements.utils.objimporter.mesh import Mesh
 
 class Model:
     """

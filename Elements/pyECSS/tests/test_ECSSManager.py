@@ -9,7 +9,7 @@ glGA SDK v2021.0.5 ECSS (Entity Component System in a Scenegraph)
 import unittest
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity, EntityDfsIterator
 from Elements.pyECSS.Component import BasicTransform, Camera
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem

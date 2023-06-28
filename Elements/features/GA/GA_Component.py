@@ -5,7 +5,7 @@ from Elements.pyECSS.GA.dual_quaternion import DualQuaternion
 from Elements.pyECSS.GA.quaternion import Quaternion
 from clifford.g3c import *  # import GA for 3D space
 from Elements.pyECSS.GA.GAutils import t_q_to_TR, extract_t_q_from_TR
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 
 class GATransform(BasicTransform):
     """A BasicTransform Decorator that wraps the component (BasicTransform) 

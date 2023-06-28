@@ -1,9 +1,9 @@
 import codecs, os
 from typing import Dict, List, Tuple
-from Elements.pyGLV.utils.objimporter.material import Material, StandardMaterial
-from Elements.pyGLV.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
-from Elements.pyGLV.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
-from Elements.pyGLV.utils.objimporter.model import Model
+from Elements.utils.objimporter.material import Material, StandardMaterial
+from Elements.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
+from Elements.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
+from Elements.utils.objimporter.model import Model
 from PIL import Image
 from pathlib import Path
 import traceback

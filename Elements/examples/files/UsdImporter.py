@@ -6,7 +6,7 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GL.Shader import ShaderGLDecorator, Shader
 from Elements.pyGLV.GL.VertexArray import VertexArray
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from OpenGL.GL import GL_LINES
 
 shaderDecs = []

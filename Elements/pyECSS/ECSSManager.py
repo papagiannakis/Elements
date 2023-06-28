@@ -19,7 +19,7 @@ import time
 from Elements.pyECSS.Entity import Entity
 import Elements.pyECSS.Component
 import Elements.pyECSS.System
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 import Elements.pyECSS.Event 
 
 class ECSSManager():

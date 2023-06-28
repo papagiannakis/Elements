@@ -15,7 +15,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 
 
 

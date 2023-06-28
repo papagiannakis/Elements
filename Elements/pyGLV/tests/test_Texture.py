@@ -16,7 +16,7 @@ import unittest
 
 import numpy as np
 import os
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
@@ -25,7 +25,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-import Elements.pyGLV.utils.normals as norm
+import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 
 from OpenGL.GL import GL_LINES

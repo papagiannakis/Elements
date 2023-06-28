@@ -14,7 +14,7 @@ from abc import ABC, abstractmethod
 from typing import List
 
 import Elements.pyECSS.Component
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 import uuid  
 
 class System(ABC):

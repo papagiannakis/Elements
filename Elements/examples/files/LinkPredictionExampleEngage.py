@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from torch_geometric.data import Data
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from torch_geometric.nn import GAE, VGAE, GCNConv
 
 from GAUtils import matrix_to_motor, matrix_to_angle_axis_translation

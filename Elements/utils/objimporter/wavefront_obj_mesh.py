@@ -1,8 +1,8 @@
-from Elements.pyGLV.utils.objimporter.mesh import Mesh
-import Elements.pyGLV.utils.normals as norm
+from Elements.utils.objimporter.mesh import Mesh
+import Elements.utils.normals as norm
 import numpy as np
 
-from Elements.pyGLV.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
+from Elements.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
 
 class WavefrontObjectMesh(Mesh):
     """

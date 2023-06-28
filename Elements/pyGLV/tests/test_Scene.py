@@ -16,7 +16,7 @@ import unittest
 import numpy as np
 # from sympy import true
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
@@ -461,7 +461,7 @@ class TestScene(unittest.TestCase):
         self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
-        from Elements.pyGLV.utils.terrain import generateTerrain
+        from Elements.utils.terrain import generateTerrain
         self.vertexTerrain, self.indexTerrain, self.colorTerrain = generateTerrain(size=2,N=5,uniform_color = [0.2,0.2,0.2,1.0])
 
         
@@ -536,7 +536,7 @@ class TestScene(unittest.TestCase):
         self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         # self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
-        from Elements.pyGLV.utils.terrain import generateTerrain
+        from Elements.utils.terrain import generateTerrain
         self.vertexTerrain, self.indexTerrain, self.colorTerrain= generateTerrain(size=2,N=20)
         
         
@@ -745,7 +745,7 @@ class TestScene(unittest.TestCase):
         
 
         # Generate terrain
-        from Elements.pyGLV.utils.terrain import generateTerrain
+        from Elements.utils.terrain import generateTerrain
         self.vertexTerrain, self.indexTerrain, self.colorTerrain= generateTerrain(size=4,N=20)
         # Add terrain
         self.terrain = self.scene.world.createEntity(Entity(name="terrain"))
