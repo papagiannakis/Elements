@@ -154,15 +154,6 @@ eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
-
-#trans4.l2world = trans4.l2world
-#terrain.getChild(0).l2world = terrain.getChild(0).l2world
-#trans4_2.l2world = trans4_2.l2world
-
-#model_cube = trans4.l2world
-#model_terrain = terrain.getChild(0).l2world
-#model_cube2 = trans4_2.l2world
-
 model_cube = trans4.trs
 model_terrain = terrain.getChild(0).trs
 model_cube2 = trans4_2.trs
@@ -171,6 +162,10 @@ while running:
     running = scene.render(running)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
+    height = scene.renderWindow._windowHeight
+    width = scene.renderWindow._windowWidth
+    
+    gizmos.update_screen_dimensions(window_width=width,window_height=height)
     gizmos.update_view(view)
     gizmos.update_mouse_position()
     gizmos.get_keyboard_Event()
