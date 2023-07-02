@@ -78,13 +78,13 @@ colorCube2 = np.array([
     [1.0, 1.0, 0.0, 1.0]
 ], dtype=np.float32)
 
-#index arrays for above vertex Arrays
+#index array for above vertex Arrays
 indexCube = np.array((1,0,3, 1,3,2, 
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
                   6,5,1, 6,1,2,
                   4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
+                  5,4,0, 5,0,1), np.uint32)
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -147,7 +147,6 @@ view = util.lookat(eye, target, up)
 width = 1024.0
 height = 768.0
 fov = 50.0
-#aspect_ratio = 1.0
 aspect_ratio = width/height
 near = 0.01
 far = 10.0
@@ -176,19 +175,12 @@ gGUI = scene.gContext
 
 renderGLEventActuator = RenderGLStateSystem()
 
-
 eManager._subscribers['OnUpdateWireframe'] = gWindow
 eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
 eManager._subscribers['OnUpdateCamera'] = gWindow 
 eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-
-#model_cube_pink_1 = trans4_pink_1.trs
-#model_cube_pink_2 = trans4_pink_2.trs
-#model_cube_pink_3 = trans4_pink_3.trs
-#model_terrain = terrain.getChild(0).trs
-#model_cube2 = trans4_yellow_1.trs
 
 while running:
     running = scene.render(running)
@@ -199,9 +191,8 @@ while running:
     
     gizmos.update_screen_dimensions(window_width=width,window_height=height)
     gizmos.update_view(view)
-    gizmos.update_mouse_position()
+    gizmos.update_ray_init_position()
     gizmos.get_keyboard_Event()
-    gizmos.update_gizmos()
     gizmos.update_imgui()
 
     model_cube_pink_1 = trans4_pink_1.trs
