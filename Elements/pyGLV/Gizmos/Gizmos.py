@@ -156,15 +156,16 @@ class Gizmos:
         self.key_down = False
         self.projection = Projection
         self.view = View
-        if(Projection is not None):
+        if Projection is not None:
             self.inv_projection = util.inverse(Projection)
-        if(View is not None):
+        if View is not None:
             self.inv_view = util.inverse(View)
         self.is_selected = False
         self.selected_trs = None
         self.selected_mesh = None
         self.selected_comp = "None"
         self.mode = Mode.TRANSLATE
+        #a set of node names that are ignored from change_target
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
                                 "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
                                 "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh",
@@ -179,7 +180,7 @@ class Gizmos:
         self.screen_width = 1024.0
         self.screen_height = 768.0
         self.picked = False
-        self.LMB_pressed = True
+        #self.LMB_pressed = True
         self.selected_gizmo = ''
         self.previous_x = 0.0
         self.previous_y = 0.0
@@ -277,16 +278,14 @@ class Gizmos:
         self.gizmos_z_S_cube_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
         self.gizmos_z_S_cube_vArray = self.scene.world.addComponent(self.gizmos_z_S_cube, VertexArray())
         self.gizmos_z_S_cube_shader = self.scene.world.addComponent(self.gizmos_z_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-
-
         ##############
 
-        #Translation bounding boxes
+        #Translation gizmos bounding boxes
         self.x_min_bb, self.x_max_bb = self.calculate_bounding_box(self.gizmos_x_mesh.vertex_attributes[0])
         self.y_min_bb, self.y_max_bb = self.calculate_bounding_box(self.gizmos_y_mesh.vertex_attributes[0])
         self.z_min_bb, self.z_max_bb = self.calculate_bounding_box(self.gizmos_z_mesh.vertex_attributes[0])
 
-        #scaling bounding boxes
+        #scaling gizmos bounding boxes
         self.xs_min_bb, self.xs_max_bb = self.calculate_bounding_box(self.gizmos_x_S_cube_mesh.vertex_attributes[0])
         self.ys_min_bb, self.ys_max_bb = self.calculate_bounding_box(self.gizmos_y_S_cube_mesh.vertex_attributes[0])
         self.zs_min_bb, self.zs_max_bb = self.calculate_bounding_box(self.gizmos_z_S_cube_mesh.vertex_attributes[0])
@@ -295,12 +294,12 @@ class Gizmos:
 
     def remove_scaling(self,model):
         """
-        Removes and returns a model matrix with scaling(1.0,1.0,1.0)
+        Creates and returns a copy of a given model matrix with (1.0,1.0,1.0) scaling
         Arguments:
             self: self
             model: a matrix
         Returns:
-            The matrix with scaling(1.0,1.0,1.0)
+            The model matrix with (1.0,1.0,1.0) scaling
         """
         M = np.array(model,copy=True)
         for i in range(len(M)-1):
@@ -355,7 +354,7 @@ class Gizmos:
                                 break
                         break
 
-    def update_mouse_position(self):
+    def update_ray_init_position(self):
         """
         Update mouse position, mouse state and Raycast
         Arguments:
@@ -365,11 +364,11 @@ class Gizmos:
         """
         self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
         #Raycast only when LMB is pressed
-        if self.mouse_state==1 and self.key_states[sdl.SDL_SCANCODE_LALT] and self.LMB_pressed and self.selected_trs is not None:
-            self.raycast()
+        if self.mouse_state==1 and self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trs is not None:
+            self.raycast()            # and self.LMB_pressed
         else:
             self.picked = False
-            self.LMB_pressed = True
+            #self.LMB_pressed = True
             self.selected_gizmo=''
         
     def count_components(self):
@@ -417,18 +416,22 @@ class Gizmos:
                 self.gizmos_x_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ x_t
                 self.gizmos_y_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ y_t
                 self.gizmos_z_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ z_t
+                self.__update_gizmos()
 
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             self.key_down = False
 
         if self.key_states[sdl.SDL_SCANCODE_T]:
             self.mode = Mode.TRANSLATE
+            self.__update_gizmos()
         if self.key_states[sdl.SDL_SCANCODE_R]:
             self.mode = Mode.ROTATE
+            self.__update_gizmos()
         if self.key_states[sdl.SDL_SCANCODE_S]:
             self.mode = Mode.SCALE
+            self.__update_gizmos()
     
-    def update_gizmos(self):
+    def __update_gizmos(self):
         """
         Update Gizmos uniform variables
         Arguments:
@@ -513,6 +516,7 @@ class Gizmos:
         if self.selected is not None and not np.array_equiv(self.projection,Proj):
             self.projection = Proj
             self.inv_projection = util.inverse(self.projection)
+            self.__update_gizmos()
 
     def update_view(self, View):
         """
@@ -526,6 +530,7 @@ class Gizmos:
         if self.selected is not None and not np.array_equiv(self.view,View):
             self.view = View
             self.inv_view = util.inverse(self.view)
+            self.__update_gizmos()
 
     def set_camera_in_use(self,camera: str):
         """
@@ -590,13 +595,13 @@ class Gizmos:
                 maxbb[2] = vertices[i][2]
         return minbb, maxbb
 
-    def raycast(self):
+    def calculate_ray(self):
         """
-        Raycast from mouse position
+        Calculate and Return a Ray that starts frommouse position
         Arguments:
             self: self
         Returns:
-            None
+            a ray's starting position and direction
 
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
@@ -632,6 +637,21 @@ class Gizmos:
         
         ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2],0.0)
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
+
+        return ray_origin, ray_direction
+
+    def raycast(self):
+        """
+        Raycast from mouse position
+        Arguments:
+            self: self
+        Returns:
+            None
+
+        Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
+        """
+
+        ray_origin, ray_direction = self.calculate_ray()
 
         x_intersects, x_in_point = False, util.vec(0.0)
         y_intersects, y_in_point = False, util.vec(0.0)
@@ -682,21 +702,19 @@ class Gizmos:
                                                 self.zs_max_bb,
                                                 model_z)
 
-        if self.selected_trs is not None:
+        if self.selected_gizmo=='X' or (self.selected_gizmo=='' and x_intersects):
+            self.selected_gizmo = 'X'
+            self.__transform_selected_entity(x_in_point)
+        elif self.selected_gizmo=='Y' or (self.selected_gizmo==''  and y_intersects):
+            self.selected_gizmo = 'Y'
+            self.__transform_selected_entity(y_in_point)
+        elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and z_intersects):
+            self.selected_gizmo = 'Z'
+            self.__transform_selected_entity(z_in_point)
+        #else:
+        #    self.LMB_pressed = False
 
-            if self.selected_gizmo=='X' or (self.selected_gizmo=='' and x_intersects):
-                self.selected_gizmo = 'X'
-                self.transform_selected_entity(x_in_point)
-            elif self.selected_gizmo=='Y' or (self.selected_gizmo==''  and y_intersects):
-                self.selected_gizmo = 'Y'
-                self.transform_selected_entity(y_in_point)
-            elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and z_intersects):
-                self.selected_gizmo = 'Z'
-                self.transform_selected_entity(z_in_point)
-            else:
-                self.LMB_pressed = False
-
-    def transform_selected_entity(self,inter_point):
+    def __transform_selected_entity(self,inter_point):
         """
         When a gizmo is selected Transform selected Entity based on the selected mode and selected axis
         Arguments:
@@ -757,7 +775,7 @@ class Gizmos:
                     diff = np.abs(inter_point[2]/self.previous_z)
                     self.previous_z = inter_point[2]
                     self.scale_selected(z=diff)
-        self.update_gizmos()
+        self.__update_gizmos()
 
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
         """
@@ -911,7 +929,7 @@ class Gizmos:
             None
         """
         self.selected_trs.trs = self.selected_trs.trs @ util.rotate(angle=_angle,axis=_axis)
-        self.gizmos_x_trans.trs = self.selected_trs.trs
+        self.gizmos_x_trans.trs = self.selected_trs.trs #remove scaling too
         self.gizmos_y_trans.trs = self.selected_trs.trs
         self.gizmos_z_trans.trs = self.selected_trs.trs
 
