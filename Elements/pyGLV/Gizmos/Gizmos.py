@@ -365,8 +365,6 @@ class Gizmos:
         """
         self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
         #Raycast only when LMB is pressed
-        #if Last time LMB was pressed raycast didn't intersect, then do not raycast until LMB is released
-
         if self.mouse_state==1 and self.key_states[sdl.SDL_SCANCODE_LALT] and self.LMB_pressed and self.selected_trs is not None:
             self.raycast()
         else:
@@ -404,9 +402,9 @@ class Gizmos:
             if self.total>0:
                 self.is_selected = True
                 
-                self.gizmos_x_trans.trs = self.selected_trs.trs
-                self.gizmos_y_trans.trs = self.selected_trs.trs
-                self.gizmos_z_trans.trs = self.selected_trs.trs
+                self.gizmos_x_trans.trs = self.remove_scaling(self.selected_trs.trs)
+                self.gizmos_y_trans.trs = self.remove_scaling(self.selected_trs.trs)
+                self.gizmos_z_trans.trs = self.remove_scaling(self.selected_trs.trs)
 
                 self.gizmos_x_S_line_trans.trs = self.selected_trs.trs
                 self.gizmos_y_S_line_trans.trs = self.selected_trs.trs
@@ -416,9 +414,9 @@ class Gizmos:
                 y_t = util.translate(y=self.selected_trs.trs[1][1]-1.0)
                 z_t = util.translate(z=self.selected_trs.trs[2][2]-1.0)
 
-                self.gizmos_x_S_cube_trans.trs = self.selected_trs.trs @ x_t
-                self.gizmos_y_S_cube_trans.trs = self.selected_trs.trs @ y_t
-                self.gizmos_z_S_cube_trans.trs = self.selected_trs.trs @ z_t
+                self.gizmos_x_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ x_t
+                self.gizmos_y_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ y_t
+                self.gizmos_z_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ z_t
 
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             self.key_down = False
@@ -665,7 +663,6 @@ class Gizmos:
             model_x = self.gizmos_x_S_cube_trans.trs
             model_y = self.gizmos_y_S_cube_trans.trs
             model_z = self.gizmos_z_S_cube_trans.trs
-            print(model_x)
 
             x_intersects, x_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
@@ -739,7 +736,9 @@ class Gizmos:
                     self.picked = True
                     self.previous_x = inter_point[0]
                 else:
-                    diff = np.abs(inter_point[0]/self.previous_x)
+                    diff = np.abs(inter_point[0]/self.previous_x) # 10*sigmoid (0, +inf)
+                    if diff<=0.0:
+                        diff = 1.0
                     self.previous_x = inter_point[0]
                     self.scale_selected(x=diff)
             elif self.selected_gizmo=='Y':
@@ -885,17 +884,21 @@ class Gizmos:
             None
         """
         self.selected_trs.trs = self.selected_trs.trs @ util.translate(x,y,z)
-        self.gizmos_x_trans.trs = self.selected_trs.trs
-        self.gizmos_y_trans.trs = self.selected_trs.trs
-        self.gizmos_z_trans.trs = self.selected_trs.trs
+        self.gizmos_x_trans.trs = self.remove_scaling(self.selected_trs.trs)
+        self.gizmos_y_trans.trs = self.remove_scaling(self.selected_trs.trs)
+        self.gizmos_z_trans.trs = self.remove_scaling(self.selected_trs.trs)
 
         self.gizmos_x_S_line_trans.trs = self.selected_trs.trs
         self.gizmos_y_S_line_trans.trs = self.selected_trs.trs
         self.gizmos_z_S_line_trans.trs = self.selected_trs.trs
 
-        self.gizmos_x_S_cube_trans.trs = self.selected_trs.trs
-        self.gizmos_y_S_cube_trans.trs = self.selected_trs.trs
-        self.gizmos_z_S_cube_trans.trs = self.selected_trs.trs
+        x_t = util.translate(x=self.selected_trs.trs[0][0]-1.0)
+        y_t = util.translate(y=self.selected_trs.trs[1][1]-1.0)
+        z_t = util.translate(z=self.selected_trs.trs[2][2]-1.0)
+
+        self.gizmos_x_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ x_t
+        self.gizmos_y_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ y_t
+        self.gizmos_z_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ z_t
     
     def rotate_selected(self,_angle=0.0,_axis=(1.0,0.0,0.0)):
         """
@@ -924,6 +927,10 @@ class Gizmos:
             None
         """
         self.selected_trs.trs = self.selected_trs.trs @ util.scale(x,y,z)
+        self.gizmos_x_trans.trs = self.remove_scaling(self.selected_trs.trs)
+        self.gizmos_y_trans.trs = self.remove_scaling(self.selected_trs.trs)
+        self.gizmos_z_trans.trs = self.remove_scaling(self.selected_trs.trs)
+
         self.gizmos_x_S_line_trans.trs = self.selected_trs.trs
         self.gizmos_y_S_line_trans.trs = self.selected_trs.trs
         self.gizmos_z_S_line_trans.trs = self.selected_trs.trs
@@ -932,6 +939,6 @@ class Gizmos:
         y_t = util.translate(y=self.selected_trs.trs[1][1]-1.0)
         z_t = util.translate(z=self.selected_trs.trs[2][2]-1.0)
 
-        self.gizmos_x_S_cube_trans.trs = self.selected_trs.trs @ x_t
-        self.gizmos_y_S_cube_trans.trs = self.selected_trs.trs @ y_t
-        self.gizmos_z_S_cube_trans.trs = self.selected_trs.trs @ z_t
+        self.gizmos_x_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ x_t
+        self.gizmos_y_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ y_t
+        self.gizmos_z_S_cube_trans.trs = self.remove_scaling(self.selected_trs.trs) @ z_t
