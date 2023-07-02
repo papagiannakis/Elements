@@ -21,17 +21,30 @@ entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
 scene.world.addEntityChild(rootEntity, entityCam1)
 trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.translate(2.5, 2.5, 2.5)))
 
-node4 = scene.world.createEntity(Entity(name="node4"))
-scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0.0,0.5,-1.5))) #util.identity()
-mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
-#trans4.l2world = trans4.trs
+node4_pink_1 = scene.world.createEntity(Entity(name="node4_pink_1"))
+scene.world.addEntityChild(rootEntity, node4_pink_1)
+trans4_pink_1 = scene.world.addComponent(node4_pink_1, BasicTransform(name="trans4_pink_1", trs=util.translate(-1.5,0.5,-1.5))) #util.identity()
+mesh4_pink_1 = scene.world.addComponent(node4_pink_1, RenderMesh(name="mesh4_pink_1"))
 
-node4_2 = scene.world.createEntity(Entity(name="node4_2"))
-scene.world.addEntityChild(rootEntity, node4_2)
-trans4_2 = scene.world.addComponent(node4_2, BasicTransform(name="trans4_2", trs=util.translate(0.0,0.5,0.0))) #util.identity()
-mesh4_2 = scene.world.addComponent(node4_2, RenderMesh(name="mesh4_2"))
-#trans4_2.l2world = trans4_2.trs
+node4_pink_2 = scene.world.createEntity(Entity(name="node4_pink_2"))
+scene.world.addEntityChild(node4_pink_1, node4_pink_2)
+trans4_pink_2 = scene.world.addComponent(node4_pink_2, BasicTransform(name="trans4_pink_2", trs=util.translate(0.0,0.5,-1.5))) #util.identity()
+mesh4_pink_2 = scene.world.addComponent(node4_pink_2, RenderMesh(name="mesh4_pink_2"))
+
+node4_pink_3 = scene.world.createEntity(Entity(name="node4_pink_3"))
+scene.world.addEntityChild(node4_pink_2, node4_pink_3)
+trans4_pink_3 = scene.world.addComponent(node4_pink_3, BasicTransform(name="trans4_pink_3", trs=util.translate(1.5,0.5,-1.5))) #util.identity()
+mesh4_pink_3 = scene.world.addComponent(node4_pink_3, RenderMesh(name="mesh4_pink_3"))
+
+node4_yellow_1 = scene.world.createEntity(Entity(name="node4_2_yellow_1"))
+scene.world.addEntityChild(rootEntity, node4_yellow_1)
+trans4_yellow_1 = scene.world.addComponent(node4_yellow_1, BasicTransform(name="trans4_yellow_1", trs=util.translate(-2.0,0.5,0.0))) #util.identity()
+mesh4_yellow_1 = scene.world.addComponent(node4_yellow_1, RenderMesh(name="mesh4_yellow_1"))
+
+node4_yellow_2 = scene.world.createEntity(Entity(name="node4_2_yellow_2"))
+scene.world.addEntityChild(node4_yellow_1, node4_yellow_2)
+trans4_yellow_2 = scene.world.addComponent(node4_yellow_2, BasicTransform(name="trans4_yellow_2", trs=util.translate(0.0,0.5,0.0))) #util.identity()
+mesh4_yellow_2 = scene.world.addComponent(node4_yellow_2, RenderMesh(name="mesh4_yellow_2"))
 
 #Simple Cube
 vertexCube = np.array([
@@ -73,8 +86,6 @@ indexCube = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
 
-
-
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
 # camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
@@ -84,17 +95,36 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 ## ADD CUBE ##
 # attach a simple cube in a RenderMesh so that VertexArray can pick it up
-mesh4.vertex_attributes.append(vertexCube)
-mesh4.vertex_attributes.append(colorCube)
-mesh4.vertex_index.append(indexCube)
-vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+mesh4_pink_1.vertex_attributes.append(vertexCube)
+mesh4_pink_1.vertex_attributes.append(colorCube)
+mesh4_pink_1.vertex_index.append(indexCube)
+vArray4_pink_1 = scene.world.addComponent(node4_pink_1, VertexArray())
+shaderDec4_pink_1 = scene.world.addComponent(node4_pink_1, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
-mesh4_2.vertex_attributes.append(vertexCube)
-mesh4_2.vertex_attributes.append(colorCube2)
-mesh4_2.vertex_index.append(indexCube)
-vArray4_2 = scene.world.addComponent(node4_2, VertexArray())
-shaderDec4_2 = scene.world.addComponent(node4_2, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+mesh4_pink_2.vertex_attributes.append(vertexCube)
+mesh4_pink_2.vertex_attributes.append(colorCube)
+mesh4_pink_2.vertex_index.append(indexCube)
+vArray4_pink_2 = scene.world.addComponent(node4_pink_2, VertexArray())
+shaderDec4_pink_2 = scene.world.addComponent(node4_pink_2, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+mesh4_pink_3.vertex_attributes.append(vertexCube)
+mesh4_pink_3.vertex_attributes.append(colorCube)
+mesh4_pink_3.vertex_index.append(indexCube)
+vArray4_pink_3 = scene.world.addComponent(node4_pink_3, VertexArray())
+shaderDec4_pink_3 = scene.world.addComponent(node4_pink_3, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+mesh4_yellow_1.vertex_attributes.append(vertexCube)
+mesh4_yellow_1.vertex_attributes.append(colorCube2)
+mesh4_yellow_1.vertex_index.append(indexCube)
+vArray4_yellow_1 = scene.world.addComponent(node4_yellow_1, VertexArray())
+shaderDec4_yellow_1 = scene.world.addComponent(node4_yellow_1, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+mesh4_yellow_2.vertex_attributes.append(vertexCube)
+mesh4_yellow_2.vertex_attributes.append(colorCube2)
+mesh4_yellow_2.vertex_index.append(indexCube)
+vArray4_yellow_2 = scene.world.addComponent(node4_yellow_2, VertexArray())
+shaderDec4_yellow_2 = scene.world.addComponent(node4_yellow_2, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
 
 # Generate terrain
 from Elements.pyGLV.utils.terrain import generateTerrain
@@ -154,9 +184,11 @@ eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
-model_cube = trans4.trs
-model_terrain = terrain.getChild(0).trs
-model_cube2 = trans4_2.trs
+#model_cube_pink_1 = trans4_pink_1.trs
+#model_cube_pink_2 = trans4_pink_2.trs
+#model_cube_pink_3 = trans4_pink_3.trs
+#model_terrain = terrain.getChild(0).trs
+#model_cube2 = trans4_yellow_1.trs
 
 while running:
     running = scene.render(running)
@@ -172,17 +204,26 @@ while running:
     gizmos.update_gizmos()
     gizmos.update_imgui()
 
-    model_cube = trans4.trs
+    model_cube_pink_1 = trans4_pink_1.trs
+    model_cube_pink_2 = trans4_pink_2.trs
+    model_cube_pink_3 = trans4_pink_3.trs
     model_terrain = terrain.getChild(0).trs
-    model_cube2 = trans4_2.trs
+    model_cube_yellow_1 = trans4_yellow_1.trs
+    model_cube_yellow_2 = trans4_yellow_2.trs
     
-    mvp_cube = projMat @ view @ model_cube
-    mvp_cube2 = projMat @ view @ model_cube2
+    mvp_cube_pink_1 = projMat @ view @ model_cube_pink_1
+    mvp_cube_pink_2 = projMat @ view @ model_cube_pink_2
+    mvp_cube_pink_3 = projMat @ view @ model_cube_pink_3
+    mvp_cube_yellow_1 = projMat @ view @ model_cube_yellow_1
+    mvp_cube_yellow_2 = projMat @ view @ model_cube_yellow_2
     mvp_terrain = projMat @ view @ model_terrain
 
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-    shaderDec4_2.setUniformVariable(key='modelViewProj', value=mvp_cube2, mat4=True)
+    shaderDec4_pink_1.setUniformVariable(key='modelViewProj', value=mvp_cube_pink_1, mat4=True)
+    shaderDec4_pink_2.setUniformVariable(key='modelViewProj', value=mvp_cube_pink_2, mat4=True)
+    shaderDec4_pink_3.setUniformVariable(key='modelViewProj', value=mvp_cube_pink_3, mat4=True)
+    shaderDec4_yellow_1.setUniformVariable(key='modelViewProj', value=mvp_cube_yellow_1, mat4=True)
+    shaderDec4_yellow_2.setUniformVariable(key='modelViewProj', value=mvp_cube_yellow_2, mat4=True)
     scene.render_post()
     
 scene.shutdown()
