@@ -240,33 +240,6 @@ class GameObjectEntity(Entity):
             self.mesh.vertex_attributes.append(normals)
 
 
-def TriangleSpawn(trianglename="Triangle", p1=[0, 0, 0, 1], p2=[0.4, 0.4, 0, 1], p3=[0.8, 0.0, 0, 1], r=0.55, g=0.55,
-                  b=0.55):
-    triangle = GameObjectEntity(trianglename, primitiveID=gl.GL_TRIANGLES)
-    vertices = [
-        p1, p2, p3
-    ]
-    colors = [
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0]
-    ]
-
-    indices = np.array(
-        (
-            1, 0, 2
-        ),
-        dtype=np.uint32
-    )
-    vertices, colors, indices, normals = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True)
-    triangle.SetVertexAttributes(vertices, colors, indices, normals)
-
-    print("normals", normals)
-    print("vertices", vertices)
-
-    return triangle
-
-
 def LineSpawn(linename="Line", p1=[0, 0, 0, 1], p2=[0.4, 0.4, 0, 1], r=0.7, g=0.7, b=0.7):
     line = GameObjectEntity(linename, primitiveID=gl.GL_LINES)
     vertices = [
@@ -284,7 +257,6 @@ def LineSpawn(linename="Line", p1=[0, 0, 0, 1], p2=[0.4, 0.4, 0, 1], r=0.7, g=0.
         dtype=np.uint32
     )
 
-    # vertices, colors, indices, none = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True)
     line.SetVertexAttributes(vertices, colors, indices, None)
 
     return line
@@ -362,9 +334,9 @@ SpotPointsColor = 0., 1., 1., 1
 PointSize = 5
 LightPositionValues= 0.4,8.,0.5
 
-all_shader = []
+triangle_shader_wrapper = []
 
-def bountries(xmin=-1, xmax =1, ymin=-1,ymax=1,zmin=-1,zmax=1):
+def boundries(xmin=-1, xmax =1, ymin=-1,ymax=1,zmin=-1,zmax=1):
 
 
     global spotPointschild
@@ -446,7 +418,7 @@ def Func_GUI():
             DynamicVariable = "SuperFunction" + str(superfuncchild2D)
             point1 = x[l], y[l], 0, 1
             point2 = x[l - 1], y[l - 1], 0, 1
-            vars()[DynamicVariable]: GameObjectEntity = LineSpawn(DynamicVariable, point2, point1, 1, 1, 0)
+            vars()[DynamicVariable]: GameObjectEntity = LineSpawn(DynamicVariable, point2, point1, r=1, g=1, b=1)
             scene.world.addEntityChild(SuperFunction2D, vars()[DynamicVariable])
 
         scene.world.traverse_visit(initUpdate, scene.world.root)
@@ -510,7 +482,6 @@ def Func_GUI():
                 triangles_vertices.append(point3)
 
 
-        print("triangle_verticies", triangles_vertices)
         triangles_indices = range(len(triangles_vertices))
         triangles_colors = np.array([[1.0, 1.0, 1.0, 1.0]] * len(triangles_vertices), dtype=np.float32)
 
@@ -537,8 +508,6 @@ def Func_GUI():
             new_normal = new_normal / np.linalg.norm(new_normal)
             triangles_normals.append(new_normal)
 
-        print("triangle_normals", triangles_normals)
-
 
         triangles_trans = scene.world.addComponent(SuperFunction3D,
                                                      BasicTransform(name="triangles_trans", trs=util.identity()))
@@ -552,10 +521,10 @@ def Func_GUI():
 
         triangles_shader = scene.world.addComponent(SuperFunction3D, ShaderGLDecorator(
             Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-        all_shader.append(triangles_shader)
+        triangle_shader_wrapper.append(triangles_shader)
 
         scene.world.traverse_visit(initUpdate, scene.world.root)
-        bountries(FuncValues[0], FuncValues[1], minimumy, maximumy, FuncValues[2], FuncValues[3])
+        boundries(FuncValues[0], FuncValues[1], minimumy, maximumy, FuncValues[2], FuncValues[3])
     imgui.end()
 
 def removeEntityChilds(entity: Entity):
@@ -670,7 +639,13 @@ def main(imguiFlag=False):
 
     global superfuncchild3D
 
-    def function_plotting_display_nodes(shader):
+    def function_plotting_display_nodes(function_entity, child_count, mvp_point):
+        for i in range(1, child_count+1):
+            curr_child = function_entity.getChild(i)
+            curr_child.shaderDec.setUniformVariable(key='modelViewProj', value=mvp_point @ curr_child.trans.l2cam, mat4=True)
+            shader_set_uniform_variable(curr_child.shaderDec, curr_child.trans.l2cam)
+
+    def shader_set_uniform_variable(shader, projMatrix):
         Lambientcolor = util.vec(1.0, 1.0, 5.0)  # uniform ambient color
         Lambientstr = 0.1  # uniform ambientStr
         LviewPos = util.vec(2.5, 2.8, 5.0)  # uniform viewpos
@@ -679,9 +654,8 @@ def main(imguiFlag=False):
         # Material
         Mshininess = 0.0
         Mcolor = util.vec(0.7, 0.35, 0.0)
-
-        shader.setUniformVariable(key='modelViewProj', value=mvp_point @ shader.trans.l2cam, mat4=True)
-        shader.setUniformVariable(key='model', value=shader.trans.l2cam, mat4=True)
+        
+        shader.setUniformVariable(key='model', value=projMatrix, mat4=True)
         shader.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
         shader.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
         shader.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
@@ -691,14 +665,6 @@ def main(imguiFlag=False):
         shader.setUniformVariable(key='shininess', value=Mshininess, float1=True)
         shader.setUniformVariable(key='matColor', value=Mcolor, float3=True)
 
-
-    # Displays all nodes created
-    def Display():
-        # print SuperFunction
-        #function_plotting_display_nodes(SuperFunction2D, superfuncchild2D)
-        #function_plotting_display_nodes(SuperFunction3D, superfuncchild3D)
-
-        scene.render_post()
 
     while running:
         Lposition = util.vec(LightPositionValues)  # uniform lightpos
@@ -710,30 +676,13 @@ def main(imguiFlag=False):
         mvp_terrain_axes = projMat @ view @ model_terrain_axes
         Func_GUI()
         axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-        
 
-        Lambientcolor = util.vec(1.0, 1.0, 5.0)  # uniform ambient color
-        Lambientstr = 0.1  # uniform ambientStr
-        LviewPos = util.vec(2.5, 2.8, 5.0)  # uniform viewpos
-        Lcolor = util.vec(1.0, 1.0, 1.0)
-        Lintensity = 0.5
-        # Material
-        Mshininess = 0.0
-        Mcolor = util.vec(0.7, 0.35, 0.0)
-
-        for shader in all_shader:
+        function_plotting_display_nodes(SuperFunction2D, superfuncchild2D, mvp_point)
+        for shader in triangle_shader_wrapper:
             shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-            shader.setUniformVariable(key='model', value=mvp_terrain_axes, mat4=True)
-            shader.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
-            shader.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
-            shader.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
-            shader.setUniformVariable(key='lightPos', value=Lposition, float3=True)
-            shader.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
-            shader.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
-            shader.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-            shader.setUniformVariable(key='matColor', value=Mcolor, float3=True)
+            shader_set_uniform_variable(shader, mvp_terrain_axes)
 
-        Display()
+        scene.render_post()
 
     scene.shutdown()
 
