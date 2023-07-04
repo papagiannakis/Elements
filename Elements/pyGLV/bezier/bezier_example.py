@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
 
-from Elements.pyGLV.examples.bezier.bezier_base import BezierCurve
+from Elements.pyGLV.bezier.bezier_base import BezierCurve
 
 scene = Scene()
 
