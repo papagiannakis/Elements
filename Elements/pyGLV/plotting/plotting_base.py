@@ -10,7 +10,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from OpenGL.GL import GL_LINES
+from OpenGL.GL import GL_LINES, GL_POINTS
 
 import OpenGL.GL as gl
 import imgui
@@ -18,7 +18,7 @@ import imgui
 plot_boundaries = 1, -1, 1, -1 #max X, min X, max Y, min Y
 f_x = 'x**2+x*4'
 f_x_y = 'x**2+y**2'
-func_detail = 100
+func_detail = 10
 
 class FunctionPlotting:
     def __init__(self, function2d_entity, function3d_entity, scene, root_entity, shader_2d, shader_3d,  init_update) -> None:
@@ -89,107 +89,46 @@ class FunctionPlotting:
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
 
     def render_3d_plot(self, plot_boundaries, func_detail, f_x_y):
-        removeEntityChilds(SuperFunction3D)
-        superfuncchild3D = 0
+        
+        plotting3d_vertices, plotting3d_colors, plotting3d_indices, plotting3d_normals = generate_plot3d_data(plot_boundaries, func_detail, f_x_y)
 
-        x = np.linspace(FuncValues[0], FuncValues[1], func_detail)
-        z = np.linspace(FuncValues[2], FuncValues[3], func_detail)
-        yValues = []
-        for xiterate in x:
-            for ziterate in z:
-                yValues.append(eval_f_x_y(xiterate, ziterate))
+        ## ADD / UPDATE PLOT 3D ##
 
-        maximumy = np.max(yValues)  # NEEDED to print the color based on y axis
-        minimumy = np.min(yValues)  # NEEDED to print the color based on y axis
-        if (maximumy == 0):
-            maximumy = 1
+        remove_entity_children(self.function3d_entity)
 
-        triangles_vertices = []
+        plotting3d_trans = self.scene.world.addComponent(self.function3d_entity,
+                                                     BasicTransform(name="plotting3d_trans", trs=util.identity()))
+        plotting3d_mesh = self.scene.world.addComponent(self.function3d_entity, RenderMesh(name="plotting3d_mesh"))
+        plotting3d_mesh.vertex_attributes.append(plotting3d_vertices)
+        plotting3d_mesh.vertex_attributes.append(plotting3d_colors)
+        plotting3d_mesh.vertex_attributes.append(plotting3d_normals)
+        plotting3d_mesh.vertex_index.append(plotting3d_indices)
+        plotting3d_vArray = self.scene.world.addComponent(self.function3d_entity,
+                                                      VertexArray())
 
-        q = 0
-        r = 0.34
-        g = 0.15
-        b = 0.
-        while (q < len(z) - 1):
-            q += 1
-            l = 0
-            while (l < len(x) - 1):
-                currY = eval_f_x_y(x[l], z[q])
-                r = 0.34 + ((currY - minimumy) / (maximumy + abs(minimumy))) * 0.6
-                g = 0.15 + ((currY - minimumy) / (maximumy + abs(minimumy))) * 0.6
-                b = ((currY - minimumy) / (maximumy + abs(minimumy))) * 0.6
-
-                l += 1
-                # first triangle
-                superfuncchild3D += 1
-                DynamicVariable = "Function" + str(superfuncchild3D)
-                point1 = x[l - 1], eval_f_x_y(x[l - 1], z[q - 1]), z[q - 1], 1
-                point2 = x[l], eval_f_x_y(x[l], z[q - 1]), z[q - 1], 1
-                point3 = x[l], eval_f_x_y(x[l], z[q]), z[q], 1
-                # vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, r, g,
-                #                                                           b)
-                # scene.world.addEntityChild(SuperFunction3D, vars()[DynamicVariable])
-                triangles_vertices.append(point1)
-                triangles_vertices.append(point2)
-                triangles_vertices.append(point3)
-
-
-                # second triangle
-                superfuncchild3D += 1
-                DynamicVariable = "Function" + str(superfuncchild3D)
-                point1 = x[l - 1], eval_f_x_y(x[l - 1], z[q - 1]), z[q - 1], 1
-                point2 = x[l], eval_f_x_y(x[l], z[q]), z[q], 1
-                point3 = x[l - 1], eval_f_x_y(x[l - 1], z[q]), z[q], 1
-                # vars()[DynamicVariable]: GameObjectEntity = TriangleSpawn(DynamicVariable, point1, point2, point3, r, g,
-                #                                                           b)
-                # scene.world.addEntityChild(SuperFunction3D, vars()[DynamicVariable])
-                triangles_vertices.append(point1)
-                triangles_vertices.append(point2)
-                triangles_vertices.append(point3)
-
-
-        triangles_indices = range(len(triangles_vertices))
-        triangles_colors = np.array([[1.0, 1.0, 1.0, 1.0]] * len(triangles_vertices), dtype=np.float32)
-
-        triangles_normals = []
-        #create array of normals with size of vertices
-        sumNormals = np.array([(0.,0.,0.)] * len(triangles_vertices))
-        sumCounter = np.array([(0)] * len(triangles_vertices))
-        for i in range(0, len(triangles_indices), 3):
-            #calculate normal for each triangle
-            normal = np.cross(np.subtract(triangles_vertices[triangles_indices[i+1]], triangles_vertices[triangles_indices[i]])[:-1], np.subtract(triangles_vertices[triangles_indices[i+2]], triangles_vertices[triangles_indices[i]])[:-1])
-            #normalize normal
-            normal = normal / np.linalg.norm(normal)
-            #add normal to each vertex of the triangle
-            sumNormals[triangles_indices[i]] += normal
-            sumNormals[triangles_indices[i + 1]] += normal
-            sumNormals[triangles_indices[i + 2]] += normal
-            #increase counter for each vertex of the triangle
-            sumCounter[triangles_indices[i]] += 1
-            sumCounter[triangles_indices[i + 1]] += 1
-            sumCounter[triangles_indices[i + 2]] += 1
-        #iterrate through all triangles and set normals to average normal
-        for i in range(len(sumNormals)):
-            new_normal = sumNormals[i]/sumCounter[i]
-            new_normal = new_normal / np.linalg.norm(new_normal)
-            triangles_normals.append(new_normal)
-
-
-        triangles_trans = scene.world.addComponent(SuperFunction3D,
-                                                    BasicTransform(name="triangles_trans", trs=util.identity()))
-        triangles_mesh = scene.world.addComponent(SuperFunction3D, RenderMesh(name="triangles_mesh"))
-        triangles_mesh.vertex_attributes.append(triangles_vertices)
-        triangles_mesh.vertex_attributes.append(triangles_colors)
-        triangles_mesh.vertex_attributes.append(triangles_normals)
-        triangles_mesh.vertex_index.append(triangles_indices)
-        triangles_vArray = scene.world.addComponent(SuperFunction3D,
-                                                    VertexArray()) 
-
-        triangles_shader = scene.world.addComponent(SuperFunction3D, ShaderGLDecorator(
+        plotting3d_shader = self.scene.world.addComponent(self.function3d_entity, ShaderGLDecorator(
             Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-        triangle_shader_wrapper.append(triangles_shader)
+        self.shader_3d.append(plotting3d_shader)
 
-        scene.world.traverse_visit(initUpdate, scene.world.root)
+        self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
+    
+
+
+        # triangles_trans = scene.world.addComponent(SuperFunction3D,
+        #                                             BasicTransform(name="triangles_trans", trs=util.identity()))
+        # triangles_mesh = scene.world.addComponent(SuperFunction3D, RenderMesh(name="triangles_mesh"))
+        # triangles_mesh.vertex_attributes.append(triangles_vertices)
+        # triangles_mesh.vertex_attributes.append(triangles_colors)
+        # triangles_mesh.vertex_attributes.append(triangles_normals)
+        # triangles_mesh.vertex_index.append(triangles_indices)
+        # triangles_vArray = scene.world.addComponent(SuperFunction3D,
+        #                                             VertexArray()) 
+
+        # triangles_shader = scene.world.addComponent(SuperFunction3D, ShaderGLDecorator(
+        #     Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        # triangle_shader_wrapper.append(triangles_shader)
+
+        # scene.world.traverse_visit(initUpdate, scene.world.root)
 
 def generate_plot2d_data(plot_boundaries, func_detail, f_x):
     x = np.linspace(plot_boundaries[0], plot_boundaries[1], func_detail)
@@ -206,8 +145,63 @@ def generate_plot2d_data(plot_boundaries, func_detail, f_x):
     plotting_indices = np.array(range(len(plotting_vertices)), np.uint32)
 
     print("plotting_vertices", plotting_vertices)
+    print("plotting_vertices shape", plotting_vertices.shape)
 
     return plotting_vertices, plotting_colors, plotting_indices
+
+def generate_plot3d_data(plot_boundaries, func_detail, f_x_y):
+    x = np.linspace(plot_boundaries[0], plot_boundaries[1], func_detail)
+    z = np.linspace(plot_boundaries[2], plot_boundaries[3], func_detail)
+
+    triangles_vertices = np.empty((0, 4), np.float32)
+
+    q = 0
+    while (q < len(z) - 1):
+        q += 1
+        l = 0
+        while (l < len(x) - 1):
+            l += 1
+            # first triangle
+            point1 = x[l - 1], eval_f_x_y(f_x_y, x[l - 1], z[q - 1]), z[q - 1], 1
+            point2 = x[l], eval_f_x_y(f_x_y, x[l], z[q - 1]), z[q - 1], 1
+            point3 = x[l], eval_f_x_y(f_x_y, x[l], z[q]), z[q], 1
+
+            triangles_vertices = np.append(triangles_vertices, [point1, point2, point3], axis=0)
+
+            # second triangle
+            point1 = x[l - 1], eval_f_x_y(f_x_y, x[l - 1], z[q - 1]), z[q - 1], 1
+            point2 = x[l], eval_f_x_y(f_x_y, x[l], z[q]), z[q], 1
+            point3 = x[l - 1], eval_f_x_y(f_x_y, x[l - 1], z[q]), z[q], 1
+
+            triangles_vertices = np.append(triangles_vertices, [point1, point2, point3], axis=0)
+
+    triangles_colors = np.array([[0.0, 1.0, 1.0, 1.0]] * len(triangles_vertices), dtype=np.float32)
+    triangles_indices = np.array(range(len(triangles_vertices)), np.uint32)
+
+    triangles_normals = []
+    #create array of normals with size of vertices
+    sumNormals = np.array([(0.,0.,0.)] * len(triangles_vertices))
+    sumCounter = np.array([(0)] * len(triangles_vertices))
+    for i in range(0, len(triangles_indices), 3):
+        #calculate normal for each triangle
+        normal = np.cross(np.subtract(triangles_vertices[triangles_indices[i+1]], triangles_vertices[triangles_indices[i]])[:-1], np.subtract(triangles_vertices[triangles_indices[i+2]], triangles_vertices[triangles_indices[i]])[:-1])
+        #normalize normal
+        normal = normal / np.linalg.norm(normal)
+        #add normal to each vertex of the triangle
+        sumNormals[triangles_indices[i]] += normal
+        sumNormals[triangles_indices[i + 1]] += normal
+        sumNormals[triangles_indices[i + 2]] += normal
+        #increase counter for each vertex of the triangle
+        sumCounter[triangles_indices[i]] += 1
+        sumCounter[triangles_indices[i + 1]] += 1
+        sumCounter[triangles_indices[i + 2]] += 1
+    #iterrate through all triangles and set normals to average normal
+    for i in range(len(sumNormals)):
+        new_normal = sumNormals[i]/sumCounter[i]
+        new_normal = new_normal / np.linalg.norm(new_normal)
+        triangles_normals.append(new_normal)
+
+    return triangles_vertices, triangles_colors, triangles_indices, triangles_normals
 
 def remove_entity_children(entity: Entity):
     while entity.getChild(1) is not None:

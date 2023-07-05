@@ -42,7 +42,6 @@ axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 shader_2d = []
 shader_3d = []
 
-
 # Colored Axes
 vertexAxes = np.array([
     [0.0, 0.0, 0.0, 1.0],
@@ -153,6 +152,28 @@ while running:
 
     for shader in shader_2d:
         shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+
+    for shader in shader_3d:
+        Lposition = util.vec(0.6,-8.,0.7)
+        Lambientcolor = util.vec(1.0, 1.0, 5.0)  # uniform ambient color
+        Lambientstr = 0.1  # uniform ambientStr
+        LviewPos = util.vec(2.5, 2.8, 5.0)  # uniform viewpos
+        Lcolor = util.vec(1.0, 1.0, 1.0)
+        Lintensity = 0.5
+        # Material
+        Mshininess = 0.0
+        Mcolor = util.vec(0.7, 0.35, 0.0)
+        
+        shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+        shader.setUniformVariable(key='model', value=mvp_terrain_axes, mat4=True)
+        shader.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
+        shader.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
+        shader.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
+        shader.setUniformVariable(key='lightPos', value=Lposition, float3=True)
+        shader.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
+        shader.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
+        shader.setUniformVariable(key='shininess', value=Mshininess, float1=True)
+        shader.setUniformVariable(key='matColor', value=Mcolor, float3=True)
 
     scene.render_post()
 
