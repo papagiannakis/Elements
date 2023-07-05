@@ -10,7 +10,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from OpenGL.GL import GL_LINES, GL_POINTS
+from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
 import imgui
@@ -18,7 +18,7 @@ import imgui
 plot_boundaries = 1, -1, 1, -1 #max X, min X, max Y, min Y
 f_x = 'x**2+x*4'
 f_x_y = 'x**2+y**2'
-func_detail = 10
+func_detail = 30
 
 class FunctionPlotting:
     def __init__(self, function2d_entity, function3d_entity, scene, root_entity, shader_2d, shader_3d,  init_update) -> None:
@@ -111,24 +111,6 @@ class FunctionPlotting:
         self.shader_3d.append(plotting3d_shader)
 
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
-    
-
-
-        # triangles_trans = scene.world.addComponent(SuperFunction3D,
-        #                                             BasicTransform(name="triangles_trans", trs=util.identity()))
-        # triangles_mesh = scene.world.addComponent(SuperFunction3D, RenderMesh(name="triangles_mesh"))
-        # triangles_mesh.vertex_attributes.append(triangles_vertices)
-        # triangles_mesh.vertex_attributes.append(triangles_colors)
-        # triangles_mesh.vertex_attributes.append(triangles_normals)
-        # triangles_mesh.vertex_index.append(triangles_indices)
-        # triangles_vArray = scene.world.addComponent(SuperFunction3D,
-        #                                             VertexArray()) 
-
-        # triangles_shader = scene.world.addComponent(SuperFunction3D, ShaderGLDecorator(
-        #     Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-        # triangle_shader_wrapper.append(triangles_shader)
-
-        # scene.world.traverse_visit(initUpdate, scene.world.root)
 
 def generate_plot2d_data(plot_boundaries, func_detail, f_x):
     x = np.linspace(plot_boundaries[0], plot_boundaries[1], func_detail)
@@ -143,9 +125,6 @@ def generate_plot2d_data(plot_boundaries, func_detail, f_x):
     plotting_colors = np.array([[0.5, 0.0, 1.0, 1.0]] * len(plotting_vertices), dtype=np.float32)
 
     plotting_indices = np.array(range(len(plotting_vertices)), np.uint32)
-
-    print("plotting_vertices", plotting_vertices)
-    print("plotting_vertices shape", plotting_vertices.shape)
 
     return plotting_vertices, plotting_colors, plotting_indices
 
