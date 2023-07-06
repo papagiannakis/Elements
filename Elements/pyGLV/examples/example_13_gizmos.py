@@ -192,7 +192,7 @@ while running:
     gizmos.update_screen_dimensions(window_width=width,window_height=height)
     gizmos.update_view(view)
     gizmos.update_ray_init_position()
-    gizmos.get_keyboard_Event()
+    gizmos.get_Event()
     gizmos.update_imgui()
 
     model_cube_pink_1 = trans4_pink_1.trs
