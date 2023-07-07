@@ -113,7 +113,6 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 dirname = os.path.dirname(__file__)
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-# obj_to_import = os.path.join(dirname, "models", "teapot.obj")
 obj_to_import = os.path.join(MODEL_DIR, "astroBoy_walk.dae")
 
 ## ADD FIRST SKINNED MESH ##
