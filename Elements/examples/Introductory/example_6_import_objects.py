@@ -11,6 +11,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
+from Elements.definitions import MODEL_DIR
 
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
@@ -109,11 +110,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 
 ## object load 
-dirname = os.path.dirname(__file__)
-models_dirname = os.path.join(dirname, "..", "files", "models")
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-obj_to_import = os.path.join(models_dirname, "teapot.obj")
+obj_to_import = os.path.join(MODEL_DIR, "teapot.obj")
 # obj_to_import = os.path.join(models_dirname, "cow.obj")
 # obj_to_import = os.path.join(models_dirname, "teddy.obj")
 
