@@ -5,7 +5,7 @@ import unittest
 import numpy as np
 # from sympy import true
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
@@ -15,7 +15,7 @@ from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator, RenderGLStateS
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from Elements.pyGLV.Gizmos.Gizmos import Gizmos
+from Elements.features.Gizmos.Gizmos import Gizmos
 
 from OpenGL.GL import GL_LINES
 
