@@ -89,7 +89,7 @@ class GATransformSystem(System):
 if __name__=="__main__":
     import numpy as np
     from Elements.pyECSS.GA.GA_Component import GATransform
-    from Elements.pyECSS.GA.quaternion import Quaternion
+    from Elements.features.GA.quaternion import Quaternion
     # a = GATransform(trs=util.scale(1,2,3))
     a = GATransform(q = Quaternion(0,1,0,1))
     q = Quaternion(0,1,0,1)

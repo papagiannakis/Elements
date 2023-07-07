@@ -4,8 +4,8 @@ import clifford as cl
 
 import numpy as np
 
-import Elements.pyECSS.utilities as util
-from Elements.pyECSS.GA.quaternion import Quaternion
+import Elements.pyECSS.math_utilities as util
+from Elements.features.GA.quaternion import Quaternion
 
 ###### CGA START ######
 
