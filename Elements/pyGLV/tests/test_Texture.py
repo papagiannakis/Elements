@@ -142,8 +142,8 @@ class TestScene(unittest.TestCase):
 
 
         self.model_cube = self.trans4.trs
-
-        texturePath = os.path.join(os.path.dirname(__file__),'..' ,"examples/textures/uoc_logo.png")
+        from Elements.definitions import TEXTURE_DIR
+        texturePath = os.path.join( TEXTURE_DIR , "uoc_logo.png")
         texture = Texture(texturePath)
         self.shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 

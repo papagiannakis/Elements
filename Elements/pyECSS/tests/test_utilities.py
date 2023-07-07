@@ -13,7 +13,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
 
-from Elements.pyECSS.utilities import *
+from Elements.pyECSS.math_utilities import *
 
 class TestUtilities(unittest.TestCase):
     """ main class to test CG utilities and convenience functions """
