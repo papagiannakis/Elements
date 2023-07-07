@@ -93,9 +93,15 @@ class TestGizmos(unittest.TestCase):
 
         gizmos = Gizmos(self.rootEntity)
 
-        gizmos_entities = ["Gizmos_X","Gizmos_Y","Gizmos_Z",
-                           "Gizmos_X_trans","Gizmos_Y_trans","Gizmos_Z_trans",
-                           "Gizmos_X_mesh","Gizmos_Y_mesh","Gizmos_Z_mesh"]
+        gizmos_entities = ["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
+                                "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
+                                "Gizmos_Z","Gizmos_Z_trans","Gizmos_Z_mesh",
+                                "Gizmos_x_S_line","Gizmos_x_S_line_trans","Gizmos_x_S_line_mesh",
+                                "Gizmos_y_S_line","Gizmos_y_S_line_trans","Gizmos_y_S_line_mesh",
+                                "Gizmos_z_S_line","Gizmos_z_S_line_trans","Gizmos_z_S_line_mesh",
+                                "Gizmos_x_S_cube","Gizmos_x_S_cube_trans","Gizmos_x_S_cube_mesh",
+                                "Gizmos_y_S_cube","Gizmos_y_S_cube_trans","Gizmos_y_S_cube_mesh",
+                                "Gizmos_z_S_cube","Gizmos_z_S_cube_trans","Gizmos_z_S_cube_mesh"]
 
         for element in self.scene.world.root:
             if element is not None and element.name in gizmos_entities:
@@ -105,12 +111,11 @@ class TestGizmos(unittest.TestCase):
         self.assertEqual(len(gizmos_entities),0)
 
         gizmos.update_projection(projMat)
-        gizmos.update_projection_args(width,height,fov)
+        gizmos.update_screen_dimensions(window_width=width,window_height=height)
         gizmos.update_view(view)
         self.assertTrue(np.array_equiv(gizmos.projection,projMat))
         self.assertEqual(gizmos.screen_width,width)
         self.assertEqual(gizmos.screen_height,height)
-        self.assertEqual(gizmos.fov,fov)
         self.assertTrue(np.array_equiv(gizmos.view,view))
     
     def testEmpty(self):
@@ -132,7 +137,7 @@ class TestGizmos(unittest.TestCase):
         cameraName = self.entityCam1.name
         gizmos.set_camera_in_use(cameraName)
         gizmos.update_projection(projMat)
-        gizmos.update_projection_args(window_width=1024,window_height=768,fov=fov)
+        gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
         # MAIN RENDERING LOOP
@@ -143,10 +148,9 @@ class TestGizmos(unittest.TestCase):
         while running:
             running = self.scene.render(running)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            gizmos.update_mouse_position()
+            gizmos.update_ray_init_position()
             gizmos.update_view(view)
-            gizmos.get_keyboard_Event()
-            gizmos.update_gizmos()
+            gizmos.get_Event()
             gizmos.update_imgui()
             self.scene.render_post()
             
@@ -181,7 +185,7 @@ class TestGizmos(unittest.TestCase):
         gizmos = Gizmos(self.rootEntity,projMat,view)
         gizmos.set_camera_in_use("entityCam1")
         gizmos.update_projection(projMat)
-        gizmos.update_projection_args(window_width=1024,window_height=768,fov=fov)
+        gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
         self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_gizmos_Single_Element")
@@ -206,11 +210,15 @@ class TestGizmos(unittest.TestCase):
             running = self.scene.render(running)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera
-            gizmos.update_mouse_position()
+            height = self.scene.renderWindow._windowHeight
+            width = self.scene.renderWindow._windowWidth
+            
+            gizmos.update_screen_dimensions(window_width=width,window_height=height)
             gizmos.update_view(view)
-            gizmos.get_keyboard_Event()
-            gizmos.update_gizmos()
+            gizmos.update_ray_init_position()
+            gizmos.get_Event()
             gizmos.update_imgui()
+
             model_cube = trans4.trs
             mvp_cube = projMat @ view @ model_cube
 
@@ -262,7 +270,7 @@ class TestGizmos(unittest.TestCase):
         gizmos = Gizmos(self.rootEntity,projMat,view)
         gizmos.set_camera_in_use("entityCam1")
         gizmos.update_projection(projMat)
-        gizmos.update_projection_args(window_width=1024,window_height=768,fov=fov)
+        gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
         self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_gizmos_Multiple_Elements")
@@ -287,10 +295,13 @@ class TestGizmos(unittest.TestCase):
             running = self.scene.render(running)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera
-            gizmos.update_mouse_position()
+            height = self.scene.renderWindow._windowHeight
+            width = self.scene.renderWindow._windowWidth
+            
+            gizmos.update_screen_dimensions(window_width=width,window_height=height)
             gizmos.update_view(view)
-            gizmos.get_keyboard_Event()
-            gizmos.update_gizmos()
+            gizmos.update_ray_init_position()
+            gizmos.get_Event()
             gizmos.update_imgui()
             model_cube = trans4.trs
             model_cube2 = trans4_2.trs
