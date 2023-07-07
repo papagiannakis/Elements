@@ -29,45 +29,9 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 from Elements.utils.terrain import generateTerrain
+from Elements.utils.normals import Convert
 from OpenGL.GL import GL_LINES
 
-
-class IndexedConverter():
-    
-    # Assumes triangulated buffers. Produces indexed results that support
-    # normals as well.
-    def Convert(self, vertices, colors, indices, produceNormals=True):
-
-        iVertices = [];
-        iColors = [];
-        iNormals = [];
-        iIndices = [];
-        for i in range(0, len(indices), 3):
-            iVertices.append(vertices[indices[i]]);
-            iVertices.append(vertices[indices[i + 1]]);
-            iVertices.append(vertices[indices[i + 2]]);
-            iColors.append(colors[indices[i]]);
-            iColors.append(colors[indices[i + 1]]);
-            iColors.append(colors[indices[i + 2]]);
-            
-
-            iIndices.append(i);
-            iIndices.append(i + 1);
-            iIndices.append(i + 2);
-
-        if produceNormals:
-            for i in range(0, len(indices), 3):
-                iNormals.append(util.calculateNormals(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]));
-                iNormals.append(util.calculateNormals(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]));
-                iNormals.append(util.calculateNormals(vertices[indices[i]], vertices[indices[i + 1]], vertices[indices[i + 2]]));
-
-        iVertices = np.array( iVertices, dtype=np.float32 )
-        iColors   = np.array( iColors,   dtype=np.float32 )
-        iIndices  = np.array( iIndices,  dtype=np.uint32  )
-
-        iNormals  = np.array( iNormals,  dtype=np.float32 )
-
-        return iVertices, iColors, iIndices, iNormals;
 
 class GameObjectEntity(Entity):
     def __init__(self, name=None, type=None, id=None) -> None:
@@ -148,10 +112,12 @@ def CubeSpawn(cubename = "Cube"):
         dtype=np.uint32
     ) #rhombus out of two triangles
 
-    vertices, colors, indices, normals = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
+    vertices, colors, indices, normals = Convert(vertices, colors, indices, produceNormals=True);
     cube.SetVertexAttributes(vertices, colors, indices, normals);
     
     return cube;
+
+
 
 
 def main(imguiFlag = False):
