@@ -1,7 +1,7 @@
-﻿Elements.pyECSS.utilities
-=========================
+﻿Elements.pyECSS.math\_utilities
+===============================
 
-.. automodule:: Elements.pyECSS.utilities
+.. automodule:: Elements.pyECSS.math_utilities
   
    
    
