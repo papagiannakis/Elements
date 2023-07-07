@@ -41,7 +41,8 @@ setup(
         'pysdl2-dll',
         'ipykernel',
         'trimesh',
-        'usd-core'
+        'usd-core',
+        'jupyter',
     ],
     
 
