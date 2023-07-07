@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import Elements.pyGLV.BasicShapes.BasicShapes as BasicShapes
+import Elements.features.BasicShapes.BasicShapes as BasicShapes
 
 
 class TestEntity(unittest.TestCase):
