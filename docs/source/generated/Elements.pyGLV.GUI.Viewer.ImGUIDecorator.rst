@@ -15,6 +15,8 @@ Elements.pyGLV.GUI.Viewer.ImGUIDecorator
    
       ~ImGUIDecorator.__init__
       ~ImGUIDecorator.accept
+      ~ImGUIDecorator.cameraHandling
+      ~ImGUIDecorator.createViewMatrix
       ~ImGUIDecorator.display
       ~ImGUIDecorator.display_post
       ~ImGUIDecorator.event_input_process
@@ -22,8 +24,13 @@ Elements.pyGLV.GUI.Viewer.ImGUIDecorator
       ~ImGUIDecorator.getClassName
       ~ImGUIDecorator.init
       ~ImGUIDecorator.init_post
+      ~ImGUIDecorator.on_mouse_motion
+      ~ImGUIDecorator.on_mouse_press
+      ~ImGUIDecorator.resetAll
       ~ImGUIDecorator.scenegraphVisualiser
       ~ImGUIDecorator.shutdown
+      ~ImGUIDecorator.traverseCamera
+      ~ImGUIDecorator.updateCamera
    
    
 
