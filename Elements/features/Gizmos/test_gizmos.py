@@ -146,7 +146,7 @@ class TestGizmos(unittest.TestCase):
         self.scene.world.traverse_visit(self.initUpdate,self.scene.world.root)
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             gizmos.update_ray_init_position()
             gizmos.update_view(view)
@@ -207,7 +207,7 @@ class TestGizmos(unittest.TestCase):
         gWindow._myCamera = view
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera
             height = self.scene.renderWindow._windowHeight
@@ -292,7 +292,7 @@ class TestGizmos(unittest.TestCase):
         gWindow._myCamera = view
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera
             height = self.scene.renderWindow._windowHeight
