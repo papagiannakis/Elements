@@ -18,6 +18,41 @@ class Mode(enum.Enum):
     ROTATE="Rotate"
     SCALE="Scale"
 
+def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
+    """
+    Generates and returns data for a circle
+    Arguments:
+        axis: where the circle is on
+        points: number of total points corresponding to the circle
+        color: color of the circle
+    Returns:
+        The vertex, index and color arrays of a circle
+    
+    """
+    _angle = 360.0/points
+
+    ver = np.empty([points,4],dtype=np.float32)
+    ind = np.empty(points,dtype=np.int32)
+    col = np.full((points,4),color,dtype=np.float32)
+
+    p = util.vec(1.0,0.0,0.0,1.0) # x-axis
+    if axis=='Z':
+        p = util.vec(0.0,0.0,1.0,1.0) # z-axis
+
+    for i in range(points):
+        p2 = p @ util.rotate(axis=(0.0,0.0,1.0),angle=i*_angle)
+        if axis=='Y':
+            p2 = p @ util.rotate(axis=(0.0,1.0,0.0),angle=i*_angle)
+        if axis=='Z':
+            p2 = p @ util.rotate(axis=(1.0,0.0,0.0),angle=i*_angle)
+
+        ver[i] = p2
+        ind = np.append(ind,i)
+        if i==points-1:
+            ind[i] = 0
+        else:
+            ind[i] = i+1
+    return ver, ind, col
 
 class Gizmos:
 
@@ -125,7 +160,7 @@ class Gizmos:
                           [1.2, -0.1, -0.1, 1.0],
                           [1.2, 0.1, -0.1, 1.0],
                           [1.2, -0.1, 0.1, 1.0],
-                          [1.2, 0.1, 0.1, 1.0],],dtype=np.float32)
+                          [1.2, 0.1, 0.1, 1.0]],dtype=np.float32)
     
     YS_GIZMOS = np.array([[0.1, 1.0, -0.1, 1.0],
                           [-0.1, 1.0, -0.1, 1.0],
@@ -134,7 +169,7 @@ class Gizmos:
                           [-0.1, 1.2, -0.1, 1.0],
                           [0.1, 1.2, -0.1, 1.0],
                           [-0.1, 1.2, 0.1, 1.0],
-                          [0.1, 1.2, 0.1, 1.0],],dtype=np.float32)
+                          [0.1, 1.2, 0.1, 1.0]],dtype=np.float32)
     
     ZS_GIZMOS = np.array([[-0.1, 0.1, 1.0, 1.0],
                           [-0.1, -0.1, 1.0, 1.0],
@@ -143,7 +178,11 @@ class Gizmos:
                           [-0.1, -0.1, 1.2, 1.0],
                           [-0.1, 0.1, 1.2, 1.0],
                           [0.1, -0.1, 1.2, 1.0],
-                          [0.1, 0.1, 1.2, 1.0],],dtype=np.float32)
+                          [0.1, 0.1, 1.2, 1.0]],dtype=np.float32)
+    
+    RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0])
+    RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',points=50,color=[0.0,1.0,0.0,1.0])
+    RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',points=50,color=[0.0,0.0,1.0,1.0])
 
 
     def __init__(self,rootEntity: Entity,Projection=None, View=None):
@@ -175,7 +214,10 @@ class Gizmos:
                                 "Gizmos_z_S_line","Gizmos_z_S_line_trans","Gizmos_z_S_line_mesh",
                                 "Gizmos_x_S_cube","Gizmos_x_S_cube_trans","Gizmos_x_S_cube_mesh",
                                 "Gizmos_y_S_cube","Gizmos_y_S_cube_trans","Gizmos_y_S_cube_mesh",
-                                "Gizmos_z_S_cube","Gizmos_z_S_cube_trans","Gizmos_z_S_cube_mesh"])
+                                "Gizmos_z_S_cube","Gizmos_z_S_cube_trans","Gizmos_z_S_cube_mesh",
+                                "Gizmos_x_R","Gizmos_x_R_trans","Gizmos_x_R_mesh",
+                                "Gizmos_y_R","Gizmos_y_R_trans","Gizmos_y_R_mesh",
+                                "Gizmos_z_R","Gizmos_z_R_trans","Gizmos_z_R_mesh"])
 
         self.cameraInUse = ""
         self.screen_width = 1024.0
@@ -280,6 +322,37 @@ class Gizmos:
         self.gizmos_z_S_cube_vArray = self.scene.world.addComponent(self.gizmos_z_S_cube, VertexArray())
         self.gizmos_z_S_cube_shader = self.scene.world.addComponent(self.gizmos_z_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         ##############
+
+        ############## Rotation Gizmos components
+        self.gizmos_x_R = self.scene.world.createEntity(Entity(name="Gizmos_x_R"))
+        self.scene.world.addEntityChild(rootEntity, self.gizmos_x_R)
+        self.gizmos_x_R_trans = self.scene.world.addComponent(self.gizmos_x_R, BasicTransform(name="Gizmos_x_R_trans", trs=util.identity()))
+        self.gizmos_x_R_mesh = self.scene.world.addComponent(self.gizmos_x_R, RenderMesh(name="Gizmos_x_R_mesh"))
+        self.gizmos_x_R_mesh.vertex_attributes.append(Gizmos.RX_GIZMOS)
+        self.gizmos_x_R_mesh.vertex_attributes.append(Gizmos.rcolor_x)
+        self.gizmos_x_R_mesh.vertex_index.append(Gizmos.rindex_x)
+        self.gizmos_x_R_vArray = self.scene.world.addComponent(self.gizmos_x_R, VertexArray(primitive=GL_LINES))
+        self.gizmos_x_R_shader = self.scene.world.addComponent(self.gizmos_x_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+        self.gizmos_y_R = self.scene.world.createEntity(Entity(name="Gizmos_y_R"))
+        self.scene.world.addEntityChild(rootEntity, self.gizmos_y_R)
+        self.gizmos_y_R_trans = self.scene.world.addComponent(self.gizmos_y_R, BasicTransform(name="Gizmos_y_R_trans", trs=util.identity()))
+        self.gizmos_y_R_mesh = self.scene.world.addComponent(self.gizmos_y_R, RenderMesh(name="Gizmos_y_R_mesh"))
+        self.gizmos_y_R_mesh.vertex_attributes.append(Gizmos.RY_GIZMOS)
+        self.gizmos_y_R_mesh.vertex_attributes.append(Gizmos.rcolor_y)
+        self.gizmos_y_R_mesh.vertex_index.append(Gizmos.rindex_y)
+        self.gizmos_y_R_vArray = self.scene.world.addComponent(self.gizmos_y_R, VertexArray(primitive=GL_LINES))
+        self.gizmos_y_R_shader = self.scene.world.addComponent(self.gizmos_y_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+        self.gizmos_z_R = self.scene.world.createEntity(Entity(name="Gizmos_z_R"))
+        self.scene.world.addEntityChild(rootEntity, self.gizmos_z_R)
+        self.gizmos_z_R_trans = self.scene.world.addComponent(self.gizmos_z_R, BasicTransform(name="Gizmos_z_R_trans", trs=util.identity()))
+        self.gizmos_z_R_mesh = self.scene.world.addComponent(self.gizmos_z_R, RenderMesh(name="Gizmos_z_R_mesh"))
+        self.gizmos_z_R_mesh.vertex_attributes.append(Gizmos.RZ_GIZMOS)
+        self.gizmos_z_R_mesh.vertex_attributes.append(Gizmos.rcolor_z)
+        self.gizmos_z_R_mesh.vertex_index.append(Gizmos.rindex_z)
+        self.gizmos_z_R_vArray = self.scene.world.addComponent(self.gizmos_z_R, VertexArray(primitive=GL_LINES))
+        self.gizmos_z_R_shader = self.scene.world.addComponent(self.gizmos_z_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         #Translation gizmos bounding boxes
         self.x_min_bb, self.x_max_bb = self.calculate_bounding_box(self.gizmos_x_mesh.vertex_attributes[0])
@@ -416,6 +489,11 @@ class Gizmos:
                 self.gizmos_x_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ x_t
                 self.gizmos_y_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ y_t
                 self.gizmos_z_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ z_t
+
+                self.gizmos_x_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+                self.gizmos_y_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+                self.gizmos_z_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+
                 self.__update_gizmos()
 
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
@@ -440,6 +518,8 @@ class Gizmos:
             None
         """
         if self.is_selected:
+            vp = self.projection @ self.view
+
             #### Translate components
             model_x = self.gizmos_x_trans.trs
             model_y = self.gizmos_y_trans.trs
@@ -448,9 +528,9 @@ class Gizmos:
             mvp_y = 0.0
             mvp_z = 0.0
             if self.mode==Mode.TRANSLATE:
-                mvp_x = self.projection @ self.view @ model_x
-                mvp_y = self.projection @ self.view @ model_y
-                mvp_z = self.projection @ self.view @ model_z
+                mvp_x = vp @ model_x
+                mvp_y = vp @ model_y
+                mvp_z = vp @ model_z
 
             self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
             self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
@@ -472,13 +552,13 @@ class Gizmos:
             mvp_ys_cube = 0.0
             mvp_zs_cube = 0.0
             if self.mode==Mode.SCALE:
-                mvp_xs_line = self.projection @ self.view @ model_XS_line
-                mvp_ys_line = self.projection @ self.view @ model_YS_line
-                mvp_zs_line = self.projection @ self.view @ model_ZS_line
+                mvp_xs_line = vp @ model_XS_line
+                mvp_ys_line = vp @ model_YS_line
+                mvp_zs_line = vp @ model_ZS_line
 
-                mvp_xs_cube = self.projection @ self.view @ model_XS_cube
-                mvp_ys_cube = self.projection @ self.view @ model_YS_cube
-                mvp_zs_cube = self.projection @ self.view @ model_ZS_cube
+                mvp_xs_cube = vp @ model_XS_cube
+                mvp_ys_cube = vp @ model_YS_cube
+                mvp_zs_cube = vp @ model_ZS_cube
 
             #Scale lines
             self.gizmos_x_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_line, mat4=True)
@@ -489,6 +569,22 @@ class Gizmos:
             self.gizmos_x_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_cube, mat4=True)
             self.gizmos_y_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_cube, mat4=True)
             self.gizmos_z_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_cube, mat4=True)
+
+            model_rx = self.gizmos_x_R_trans.trs
+            model_ry = self.gizmos_y_R_trans.trs
+            model_rz = self.gizmos_z_R_trans.trs
+
+            mvp_rx = 0.0
+            mvp_ry = 0.0
+            mvp_rz = 0.0
+            if self.mode==Mode.ROTATE:
+                mvp_rx = vp @ model_rx
+                mvp_ry = vp @ model_ry
+                mvp_rz = vp @ model_rz
+
+            self.gizmos_x_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rx, mat4=True)
+            self.gizmos_y_R_shader.setUniformVariable(key='modelViewProj', value=mvp_ry, mat4=True)
+            self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
 
     def update_imgui(self):
         """
@@ -728,8 +824,6 @@ class Gizmos:
                     self.previous_x = inter_point[0]
                 else:
                     diff = inter_point[0] - self.previous_x
-                    print("Previous X: ",self.previous_x)
-                    print("Intersection Point: ",inter_point[0])
                     self.previous_x = inter_point[0]
                     self.__translate_selected(x=diff)
             elif self.selected_gizmo=='Y':
@@ -882,6 +976,19 @@ class Gizmos:
 
         return True, self.intersection_point(tmin,ray_origin,ray_direction)
     
+    def testRayCircleIntersection(self,ray_origin,mesh):
+        """
+        Tests if a Ray intersects with a Rotation Gizmo
+        Arguments:
+            self: self
+            ray_origin: Ray Starting Point
+            ray_direction: Ray's Direction
+            mesh: the mesh of a Rotation Gizmo
+        Returns:
+            True if there is an intersection, False otherwise. Additionally returns the Intersection point
+        """
+        pass
+    
     def intersection_point(self,distance,ray_origin,ray_direction):
         """
         Calculates an intersection point given the following Arguments
@@ -926,6 +1033,12 @@ class Gizmos:
         self.gizmos_x_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ x_t
         self.gizmos_y_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ y_t
         self.gizmos_z_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ z_t
+
+        self.gizmos_x_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+        self.gizmos_y_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+        self.gizmos_z_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+
+        
     
     def __rotate_selected(self,_angle=0.0,_axis=(1.0,0.0,0.0)):
         """
@@ -969,3 +1082,7 @@ class Gizmos:
         self.gizmos_x_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ x_t
         self.gizmos_y_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ y_t
         self.gizmos_z_S_cube_trans.trs = self.__remove_scaling(self.selected_trans.trs) @ z_t
+
+        self.gizmos_x_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+        self.gizmos_y_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
+        self.gizmos_z_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
