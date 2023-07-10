@@ -39,6 +39,7 @@ scene.world.addEntityChild(rootEntity, axes)
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 
+# initialize wrapper for 2d and 3d shaders
 shader_2d = []
 shader_3d = []
 
@@ -100,11 +101,14 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 shader_2d.append(axes_shader)
 
+
+# entities for 2d and 3d function plotting
 function2d_entity = scene.world.createEntity(Entity(name="function2d_entity"))
 scene.world.addEntityChild(rootEntity, function2d_entity)
 function3d_entity = scene.world.createEntity(Entity(name="function3d_entity"))
 scene.world.addEntityChild(rootEntity, function3d_entity)
 
+# initialize function plotting object
 function_plotting = FunctionPlotting(function2d_entity, function3d_entity, scene, rootEntity, shader_2d, shader_3d, initUpdate)
 
 
@@ -148,11 +152,14 @@ while running:
 
     mvp_terrain_axes = projMat @ view @ model_terrain_axes
 
+    # trigger actual function plotting and gui
     function_plotting.render_gui_and_plots()
 
+    # set uniform variables for all calssical shaders
     for shader in shader_2d:
         shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
 
+    # set uniform variables for all phong shaders
     for shader in shader_3d:
         Lposition = util.vec(1,3,2)
         Lambientcolor = util.vec(1.0, 1.0, 5.0)  # uniform ambient color

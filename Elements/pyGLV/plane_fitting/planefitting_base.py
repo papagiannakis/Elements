@@ -19,6 +19,15 @@ input_fitting_nodes = [[0, 0, 0], [1, 0, 0.5], [-1, 0.5, 1], [0.5, 0.5, 0.5], [-
 
 class PlaneFitting:
     def __init__(self, planefitting_entity, scene, root_entity, all_shaders, init_update) -> None:
+        """Wrapper class for providing gui, rendering and logic for fitting a plane in 3D space
+
+        Args:
+            planefitting_entity (pyECSS.Entity): Entity to embed the planefitting into the Scene
+            scene (pyGLV.GL.Scene): Reference to the scene object
+            root_entity (pyECSS.Entity): Reference to the root entity
+            all_shaders (List): Wrapper for all shaders
+            init_update (Function): Reference to init_update function
+        """
 
         self.planefitting_entity = planefitting_entity
         self.scene = scene
@@ -27,6 +36,8 @@ class PlaneFitting:
         self.initUpdate = init_update
 
     def render_gui_and_plane(self):
+        """Function to display gui and trigger the fitting of the plane
+        """
         global input_fitting_nodes
 
         imgui.begin("Fit Plane")
@@ -52,6 +63,11 @@ class PlaneFitting:
         imgui.end()
 
     def fit_plane(self, fitting_nodes):
+        """Function for computing the plane according to fitting nodes and render plane into the scene
+
+        Args:
+            fitting_nodes (List): fitting nodes for the plane from user input
+        """
 
         #remove old plane before rendering new one
         remove_entity_children(self.planefitting_entity)
@@ -121,6 +137,15 @@ class PlaneFitting:
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
 
 def generate_projection_lines(plane,fitting_nodes):
+    """Generate vertices, colors and indices for the projection lines from the fitting nodes to the plane
+
+    Args:
+        plane (skspatial.objects.Plane): Scikit Plane
+        fitting_nodes (List): List of nodes to generate projection lines for
+
+    Returns:
+        List: Vertices (list), colors (list) and indices (list) for the projection lines
+    """
     lines_vertices = []
     for node in fitting_nodes:
         lines_vertices.append(node)
@@ -135,6 +160,15 @@ def generate_projection_lines(plane,fitting_nodes):
 
 
 def generate_planefitting_data(plane,fitting_nodes):
+    """Generate vertices, colors and indices for the plane
+
+    Args:
+        plane (skspatial.objects.Plane): Scikit Plane
+        fitting_nodes (List): List of fitting nodes
+
+    Returns:
+        List: Vertices (list), colors (list) and indices (list) for the fitted plane
+    """
 
     min_x, max_x, min_y, max_y, min_z, max_z = find_boundaries(fitting_nodes)
 
@@ -169,6 +203,14 @@ def generate_planefitting_data(plane,fitting_nodes):
 
 
 def find_boundaries(coordinates):
+    """Find min and max x, y and z values from a list of coordinates
+
+    Args:
+        coordinates (List): List of coordinates in format [[x,y,z],[x,y,z],...]
+
+    Returns:
+        List: min x, max x, min y, max y, min z, max z
+    """
     # Initialize min and max values with the first element
     min_x = max_x = coordinates[0][0]
     min_y = max_y = coordinates[0][1]
@@ -187,9 +229,22 @@ def find_boundaries(coordinates):
 
 
 def xyz_to_vertices(coords):
+    """Takes a list of ccords and converts it into vertices
+
+    Args:
+        coords (List): Coordinates in the format [[x,y,z],[x,y,z],...]
+
+    Returns:
+        _type_: Vertices in the format [[x,y,z,1.0],[x,y,z,1.0],...]
+    """
     return [coord + [1.0] for coord in coords]
 
 
 def remove_entity_children(entity: Entity):
+    """Remove all children of one entity.
+
+    Args:
+        entity (Entity): The entity to remove all children from.
+    """
     while entity.getChild(1) is not None:
         entity.remove(entity.getChild(1))
