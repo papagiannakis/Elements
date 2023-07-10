@@ -14,12 +14,21 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES, GL_POINTS, glPointSize
 
 
-input_bezier_control_nodes = [[0.5, 0.0, 0.0], [1.0, 5.0, 1.0]]
+input_bezier_control_nodes = [[0.0, 0.0, 0.0],[0.5, 0.2, 0.8],[-0.4, 1, -0.7]]
 input_render_detail = 100
 
 
 class BezierCurve:
     def __init__(self, bezier_entity, scene, root_entity, all_shaders, init_update) -> None:
+        """Wrapper class for providing gui, rendering and logic for rendering a bezier curve in 3D space
+
+        Args:
+            bezier_entity (pyECSS.Entity): Entity to embed bezier curve into the scene
+            scene (pyGLV.GL.Scene): Reference to the scene object
+            root_entity (pyECSS.Entity): Reference to the root entity
+            all_shaders (List): Wrapper for all shaders
+            init_update (Function): Reference to init_update function
+        """
 
         self.bezier_entity = bezier_entity
         self.scene = scene
@@ -28,6 +37,8 @@ class BezierCurve:
         self.initUpdate = init_update
 
     def render_gui_and_curve(self):
+        """Function to display gui and trigger the rendering of the bezier curve.
+        """
         global input_render_detail
         global input_bezier_control_nodes
 
@@ -58,6 +69,12 @@ class BezierCurve:
         imgui.end()
 
     def render_curve(self, bezier_control_nodes, render_detail):
+        """Function for triggering computing bezier curve data and render curve into the scene
+
+        Args:
+            bezier_control_nodes (List): control nodes for the bezier curve from user input
+            render_detail (Integer): Number of points to render on the bezier curve from user input
+        """
 
         bezier_vertices, bezier_colors, bezier_indices = generate_bezier_data(bezier_control_nodes, render_detail)
 
@@ -104,6 +121,16 @@ class BezierCurve:
 
 
 def generate_bezier_data(bezier_control_nodes, num_points):
+    """Compute bezier curve and generate vertices, colors and indices accordingly.
+
+    Args:
+        bezier_control_nodes (List): control nodes for the bezier curve from user input
+        render_detail (Integer): Number of points to render on the bezier curve from user input
+
+    Returns:
+        List: Vertices (list), colors (list) and indices (list) for the bezier curve
+    """
+    
     bezier_curve = bezier.Curve.from_nodes(separate_coordinates(bezier_control_nodes))
     print("created bezier curve:", bezier_curve)
 
@@ -121,6 +148,14 @@ def generate_bezier_data(bezier_control_nodes, num_points):
 
 
 def vertices_to_line_vertices(coordinates):
+    """Takes a list of vertices and converts in into a list of vertices so that a continous line is rendered in with GL_LINES
+
+    Args:
+        coordinates (List): List of coordinates to convert
+
+    Returns:
+        List: List of vertices for GL_LINES rendering mode
+    """
     vertices = [coordinates[0]]
     for coord in coordinates[1:-1]:
         vertices.extend([coord, coord])
@@ -129,6 +164,14 @@ def vertices_to_line_vertices(coordinates):
 
 
 def separate_coordinates(coordinates):
+    """Takes a list of coordinates and converts it into a different format
+
+    Args:
+        coordinates (List): Coordinates in the format [[x,y,z],[x,y,z],...]
+
+    Returns:
+        List: Coordinates in the format [[x,x,x],[y,y,y],[z,z,z]]
+    """
     x_coordinates = [coord[0] for coord in coordinates]
     y_coordinates = [coord[1] for coord in coordinates]
     z_coordinates = [coord[2] for coord in coordinates]
@@ -136,13 +179,34 @@ def separate_coordinates(coordinates):
 
 
 def combine_coordinates(coordinates):
+    """Takes a list of coordinates and converts it into a different format
+
+    Args:
+        coordinates (List): Coordinates in the format [[x,x,...],[y,y,...],[z,z,...]] 
+
+    Returns:
+        List: Coordinates in the format [[x,y,z],[x,y,z],...]
+    """
     return [[coord[0], coord[1], coord[2]] for coord in zip(coordinates[0], coordinates[1], coordinates[2])]
 
 
 def xyz_to_vertices(coords):
+    """Takes a list of ccords and converts it into vertices
+
+    Args:
+        coords (List): Coordinates in the format [[x,y,z],[x,y,z],...]
+
+    Returns:
+        _type_: Vertices in the format [[x,y,z,1.0],[x,y,z,1.0],...]
+    """
     return [coord + [1.0] for coord in coords]
 
 
 def remove_entity_children(entity: Entity):
+    """Remove all children of one entity.
+
+    Args:
+        entity (Entity): The entity to remove all children from.
+    """
     while entity.getChild(1) is not None:
         entity.remove(entity.getChild(1))

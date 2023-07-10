@@ -22,6 +22,17 @@ func_detail = 30
 
 class FunctionPlotting:
     def __init__(self, function2d_entity, function3d_entity, scene, root_entity, shader_2d, shader_3d,  init_update) -> None:
+        """Wrapper class for providing gui, rendering and logic for plotting 2D and 3D functions
+
+        Args:
+            function2d_entity (pyECSS.Entity): Entity to embed 2D plot into the scene
+            function3d_entity (pyECSS.Entity): Entity to embed 3D plot into the scene
+            scene (pyGLV.GL.Scene): Reference to the scene object
+            root_entity (pyECSS.Entity): Reference to the root entity
+            shader_2d (List): Wrapper for all classic shaders
+            shader_3d (List): Wrapper for all phong shaders
+            init_update (Function): Reference to init_update function
+        """
 
         self.function2d_entity = function2d_entity
         self.function3d_entity = function3d_entity
@@ -32,6 +43,8 @@ class FunctionPlotting:
         self.initUpdate = init_update
 
     def render_gui_and_plots(self):
+        """Function to display gui and trigger the plotting and rendering of the 2D and 3D function.
+        """
         global plot_boundaries
         global f_x_y
         global f_x
@@ -67,6 +80,13 @@ class FunctionPlotting:
         imgui.end()
 
     def render_2d_plot(self, plot_boundaries, func_detail, f_x):
+        """Function for triggering computing 2D plot data and render the plot into the scene
+
+        Args:
+            plot_boundaries (List): max X, min X, max Y, min Y boundaries for the function plotting from user input
+            func_detail (Integer): Number of points to plot on the function from user input
+            f_x (String): F(x) function as string representation from user input
+        """
         plotting2d_vertices, plotting2d_colors, plotting2d_indices = generate_plot2d_data(plot_boundaries, func_detail, f_x)
 
         ## ADD / UPDATE PLOT 2D ##
@@ -89,6 +109,13 @@ class FunctionPlotting:
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
 
     def render_3d_plot(self, plot_boundaries, func_detail, f_x_y):
+        """Function for triggering computing 3D plot data and render the plot into the scene
+
+        Args:
+            plot_boundaries (List): max X, min X, max Y, min Y boundaries for the function plotting from user input
+            func_detail (Integer): Number of points to plot on the function from user input
+            f_x_y (String): F(x, y) function as string representation from user input
+        """
         
         plotting3d_vertices, plotting3d_colors, plotting3d_indices, plotting3d_normals = generate_plot3d_data(plot_boundaries, func_detail, f_x_y)
 
@@ -113,6 +140,16 @@ class FunctionPlotting:
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
 
 def generate_plot2d_data(plot_boundaries, func_detail, f_x):
+    """Compute x, y value pairs for the given function and generate vertices, colors and indices accordingly.
+
+    Args:
+        plot_boundaries (List): max X, min X, max Y, min Y boundaries for the function plotting from user input
+        func_detail (Integer): Number of points to plot on the function from user input
+        f_x (String): F(x) function as string representation from gui input from user input
+
+    Returns:
+        List: Vertices (list), colors (list) and indices (list) for the plotted function.
+    """
     x = np.linspace(plot_boundaries[0], plot_boundaries[1], func_detail)
     y = eval_f_x(f_x, x)
     
@@ -129,6 +166,16 @@ def generate_plot2d_data(plot_boundaries, func_detail, f_x):
     return plotting_vertices, plotting_colors, plotting_indices
 
 def generate_plot3d_data(plot_boundaries, func_detail, f_x_y):
+    """Compute x, y, z values for the given function and generate vertices, colors, indices and normals accordingly.
+
+    Args:
+        plot_boundaries (List): max X, min X, max Y, min Y boundaries for the function plotting from user input
+        func_detail (Integer): Number of points to plot on the function from user input
+        f_x_y (String): F(x, y) function as string representation from user input
+
+    Returns:
+        List: Vertices (list), colors (list), indices (list) and normals (list) for the plotted function.
+    """
     x = np.linspace(plot_boundaries[0], plot_boundaries[1], func_detail)
     z = np.linspace(plot_boundaries[2], plot_boundaries[3], func_detail)
 
@@ -182,11 +229,37 @@ def generate_plot3d_data(plot_boundaries, func_detail, f_x_y):
 
     return triangles_vertices, triangles_colors, triangles_indices, triangles_normals
 
+
+def summ(x, y):
+
+    result = x + y
+
+    return result
+
+
+
+randosummenergebnis = summ(3, 5)
+
 def remove_entity_children(entity: Entity):
+    """Remove all children of one entity.
+
+    Args:
+        entity (Entity): The entity to remove all children from.
+    """
     while entity.getChild(1) is not None:
         entity.remove(entity.getChild(1))
 
 def eval_f_x_y(function, x,y):
+    """Helper function to compute result for a function in string representation for given x, y values.
+
+    Args:
+        function (String): Function in string representation
+        x (Float): x value
+        y (Float): y value
+
+    Returns:
+        Float: Result of the function for given x and y
+    """
     d= {}
     d['x'] = x
     d['y'] = y
@@ -194,6 +267,15 @@ def eval_f_x_y(function, x,y):
     return z
 
 def eval_f_x(function, x):
+    """Helper function to compute result for a function in string representation for given x values.
+
+    Args:
+        function (String): Function in string representation
+        x (Float): x value
+
+    Returns:
+        Float: Result of the function for given x
+    """
     d= {}
     d['x'] = x
     y = eval(function,d)

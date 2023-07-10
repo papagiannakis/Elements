@@ -39,6 +39,7 @@ scene.world.addEntityChild(rootEntity, axes)
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 
+# initialize wrapper for all shaders
 all_shaders = []
 
 
@@ -100,9 +101,11 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 all_shaders.append(axes_shader)
 
+# entity for bezier curve rendering
 bezier_entity = scene.world.createEntity(Entity(name="bezier"))
 scene.world.addEntityChild(rootEntity, bezier_entity)
 
+# initialize bezier curve object
 bezier_curve = BezierCurve(bezier_entity, scene, rootEntity, all_shaders, initUpdate)
 
 
@@ -146,8 +149,10 @@ while running:
 
     mvp_terrain_axes = projMat @ view @ model_terrain_axes
 
+    # trigger actual bezier curve rendering and gui
     bezier_curve.render_gui_and_curve()
 
+    # set uniform variables for all shaders
     for shader in all_shaders:
         shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
 
