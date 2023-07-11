@@ -493,7 +493,7 @@ def CreatePaperScene(visualize=False):
     Lintensity = 40.0
     if visualize:
         while running:
-            running = scene.render(running)
+            running = scene.render()
             scene.world.traverse_visit(renderUpdate, scene.world.root)
             scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
             scene.world.traverse_visit(camUpdate, scene.world.root)
