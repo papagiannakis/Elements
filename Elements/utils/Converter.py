@@ -5,14 +5,17 @@ import torch
 
 from Elements.features.GA.quaternion import Quaternion
 from Elements.features.GA.GAutils import matrix_to_motor, matrix_to_angle_axis_translation
-from Elements.examples.files.atlas.model import MODEL_LIST
+from Elements.files.atlas.model import MODEL_LIST
 from Elements.pyECSS.Component import RenderMesh, BasicTransform
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import ShaderGLDecorator, Shader
 from Elements.pyGLV.GL.VertexArray import VertexArray
-import Elements.utils.CreateScenes as CreateScenes
-file = open("atlas/opt.pickle", 'rb')
+import Elements.utils.CreateScenes as CreateScenes 
+from Elements.definitions import ATLAS_DIR
+from os import path
+
+file = open(path.join(ATLAS_DIR, 'opt.pickle'), 'rb')
 opt = pickle.load(file)
 file.close()
 # list of all the methods
