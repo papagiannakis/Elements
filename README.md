@@ -18,7 +18,7 @@ Elements introduces for the first time the power of the Entity-Component-System 
 
 Following a modern educational approach, all related packages are in the Python programming language.
 
-To dive in the details of the project check [its detailed developer documentation](https://elementsproject.readthedocs.io/en/latest/index.html) and [the research paper behind this project](https://arxiv.org/abs/2302.07691).
+To dive in the details of the project check [its detailed developer documentation](https://elementsproject.readthedocs.io/en/latest/index.html) and the research paper behind this project: [arXiv LINK](https://arxiv.org/abs/2302.07691), [Eurographics LINK](https://diglib.eg.org/handle/10.2312/eged20231015).
 
 ## Packages Involved in Elements
 
@@ -81,7 +81,7 @@ Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying
   
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
-for a list of potential projects and a contribution guide.
+for a list of potential projects and a contribution guide. A list of contributors can be found [here](https://github.com/papagiannakis/Elements/wiki/Contributors).
 
 ## Contact Us
 
