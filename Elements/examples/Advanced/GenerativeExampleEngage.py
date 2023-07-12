@@ -1,6 +1,6 @@
 import os
 
-print(os.getcwd())
+# print(os.getcwd())
 import sys
 
 # sys.path.append("../../../")
@@ -15,7 +15,7 @@ from Elements.pyGLV.GL.Scene import Scene
 import Elements.utils.Converter as Converter
 import random
 import numpy as np
-import Elements.features.usd.UsdImporter as SceneLoader
+import Elements.features.usd.UsdImporterENGAGE as SceneLoader
 from Elements.pyECSS.Entity import Entity
 
 
