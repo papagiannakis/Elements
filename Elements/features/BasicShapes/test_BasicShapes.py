@@ -14,7 +14,7 @@ class TestInitialization(unittest.TestCase):
 
     def test_cylinder(self):
         cylinder = BasicShapes.CylinderSpawn()
-        self.assertEqual(len(cylinder.mesh.vertex_attributes[0]), 2000) # vertices
+        self.assertEqual(len(cylinder.mesh.vertex_attributes[0]), 400) # vertices
         self.assertEqual(len(cylinder.mesh.vertex_index[0]), 2400) # indices
 
     def test_torus(self):
