@@ -50,7 +50,6 @@ Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying
     * [SkinnedMesh](./Elements/features/SkinnedMesh): Visualize skinned meshes by applying the animation equation
     * [Slicing](./Elements/features/Slicing): Visualize sliced version of a 3D object
     * [Voronoi2D](./Elements/features/Voronoi2D): Visualize the Voronoi diagram of 2D points
-    * [atlas](./Elements/features/atlas): Enables the use of AtlasNet within Elemens
     * [bezier](./Elements/features/bezier): Visualize a 3D bezier curve
     * [plane_fitting](./Elements/features/plane_fitting): Visualize the plane that best fits on a set of points
     * [plotting](./Elements/features/plotting): Plot a 2D or 3D function
@@ -78,6 +77,7 @@ Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying
       * [DL](./Elements/pyEEL/notebooks/DL): Deep Learning related notebooks
       * [CG](./Elements/pyEEL/notebooks/CG): Computer Graphics (CG) related notebooks
       * [GATE](./Elements/pyEEL/notebooks/GATE): Geometric Algebra Transformation Engine related notebooks
+  * [utils](./Elements/utils): Utility files and functions for Elements
   
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
