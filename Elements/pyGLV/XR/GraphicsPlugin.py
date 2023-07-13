@@ -6,8 +6,9 @@ import Elements.pyECSS.utilities as util
 from ctypes import Structure, POINTER, cast, byref
 from Elements.pyGLV.GL.Scene import Scene
 import Elements.pyECSS.System as System
-from Elements.pyGLV.GL.Shader import ShaderGLDecorator, InitGLShaderSystem
-from Elements.pyECSS.Component import BasicTransform
+from Elements.pyGLV.GL.Shader import ShaderGLDecorator, InitGLShaderSystem, RenderGLShaderSystem
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyECSS.Entity import Entity
 import Elements.pyECSS.Component as Component
 from Elements.pyGLV.XR.options import options
@@ -167,7 +168,20 @@ class OpenGLPlugin(GraphicsPlugin):
 
     def initialize_resources(self,renderer: InitGLShaderSystem,scene: Scene):
         self.swapchain_framebuffer = GL.glGenFramebuffers(1)
-        scene.world.traverse_visit(renderer, scene.world.root)
+        #scene.world.traverse_visit(renderer, scene.world.root)
+        for component in scene.world.root:
+            if component is not None:
+                if component.getClassName()=="VertexArray":
+                    renderer.apply2VertexArray(component)
+                elif component.getClassName()=="RenderMesh":
+                    renderer.apply2RenderMesh(component)
+                elif component.getClassName()=="Shader":
+                    renderer.apply2Shader(component)
+                elif component.getClassName()=="ShaderGLDecorator":
+                    renderer.apply2ShaderGLDecorator(component)
+
+
+
 
     @property
     def swapchain_image_type(self):
@@ -212,10 +226,9 @@ class OpenGLPlugin(GraphicsPlugin):
                     swapchain_image_base_ptr: POINTER(xr.SwapchainImageBaseHeader),
                     _swapchain_format: int,
                     scene: Scene,
-                    renderUpdate: System,
+                    renderUpdate: RenderGLShaderSystem,
                     mirror=False
                     ):
-        print("called render_view")
         assert layer_view.sub_image.image_array_index == 0
         glfw.make_context_current(self.window)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER,self.swapchain_framebuffer)
@@ -226,50 +239,56 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
 
-        #GL.glFrontFace(GL.GL_CW)
-        #GL.glCullFace(GL.GL_BACK)
-        #GL.glEnable(GL.GL_CULL_FACE)
-        #GL.glEnable(GL.GL_DEPTH_TEST)
+        GL.glFrontFace(GL.GL_CW)
+        GL.glCullFace(GL.GL_BACK)
+        GL.glEnable(GL.GL_CULL_FACE)
+        GL.glEnable(GL.GL_DEPTH_TEST)
         
-        #color_texture = swapchain_image.image
-        #depth_texture = self.get_depth_texture(color_texture)
-        #GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, color_texture, 0)
-        #GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth_texture, 0)
+        color_texture = swapchain_image.image
+        depth_texture = self.get_depth_texture(color_texture)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_COLOR_ATTACHMENT0, GL.GL_TEXTURE_2D, color_texture, 0)
+        GL.glFramebufferTexture2D(GL.GL_FRAMEBUFFER, GL.GL_DEPTH_ATTACHMENT, GL.GL_TEXTURE_2D, depth_texture, 0)
 
-        #GL.glClearColor(*self.background_clear_color)
-        #GL.glClearDepth(1.0)
-        #GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
+        GL.glClearColor(*self.background_clear_color)
+        GL.glClearDepth(1.0)
+        GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
         
-
-        proj = util.ortho(layer_view.fov.angle_left, #fov is used for an Ortho Projection
+        #fov is used for an Ortho Projection
+        proj = util.ortho(layer_view.fov.angle_left,
                           layer_view.fov.angle_right,
                           layer_view.fov.angle_down,
                           layer_view.fov.angle_up,
                           0.05,
                           100.0)
 
+        #openXR calls this position
         eye = util.vec(layer_view.pose.position.x,
                            layer_view.pose.position.y,
                            layer_view.pose.position.z
-                           ) #openXR calls this position
+                           )
 
+        #openXR calls this orientation
         target = util.vec(layer_view.pose.orientation.x,
                         layer_view.pose.orientation.y,
-                        layer_view.pose.orientation.z) #openXR calls this orientation
+                        layer_view.pose.orientation.z) 
 
         up = util.vec(1.0,1.0,1.0)
             
         view = util.lookat(eye,target,up)
 
+        print("Visiting vertex arrays")
         #Traverse world
-        scene.render()
-        scene.world.traverse_visit(renderUpdate, scene.world.root)
+        for component in scene.world.root:
+            if component is not None:
+                if component.getClassName()=="VertexArray":
+                    renderUpdate.apply2VertexArray(component)
+        print("After Visiting vertex arrays")
 
         #Update each shader's projection & view
         element: Entity
         for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
-                #Note: All shaders should get their model-view-projection the same way for this loop to work for every shader
+                #Note: All shaders should get their View-Projection the same way for this loop to work
                 element.setUniformVariable(key='Proj', value=proj, mat4=True)
                 element.setUniformVariable(key='View', value=view, mat4=True)
 
@@ -285,4 +304,3 @@ class OpenGLPlugin(GraphicsPlugin):
 
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
 
-        #scene.render_post()

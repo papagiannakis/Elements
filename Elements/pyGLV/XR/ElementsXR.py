@@ -7,7 +7,7 @@ import Elements.pyECSS.utilities as util
 import math
 import Elements.pyGLV.GL.Scene as Scene
 import Elements.pyECSS.System as System
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
 import Elements.pyECSS.Entity as Entity
 from OpenGL import GL
 import enum
@@ -305,6 +305,7 @@ class ElementsXR_program:
                 break
             event_type = event.type
             if event_type == xr.StructureType.EVENT_DATA_INSTANCE_LOSS_PENDING:
+                print("EVENT_DATA_INSTANCE_LOSS_PENDING")
                 return True
             elif event_type == xr.StructureType.EVENT_DATA_SESSION_STATE_CHANGED:
                 exit_render_loop= self.handle_event(event, exit_render_loop)
@@ -320,6 +321,7 @@ class ElementsXR_program:
         if event.session is not None and hash(event.session) != hash(self.session):
             return exit_loop
         if self.session_state == xr.SessionState.READY:
+            print("READY")
             assert self.session is not None
             xr.begin_session(
                 session=self.session,
@@ -329,16 +331,19 @@ class ElementsXR_program:
             )
             self.session_running = True
         elif self.session_state == xr.SessionState.STOPPING:
+            print("STOPPING")
             assert self.session is not None
             self.session_running = False
             xr.end_session(self.session)
         elif self.session_state == xr.SessionState.EXITING:
+            print("EXITING")
             exit_loop = True
         elif self.session_state == xr.SessionState.LOSS_PENDING:
+            print("LOSS_PENDING")
             exit_loop = True
         return exit_loop
 
-    def render_frame(self,renderer: System,scene: Scene) -> None:
+    def render_frame(self,renderer: RenderGLShaderSystem,scene: Scene) -> None:
         """Create and submit a frame."""
         assert self.session is not None
         frame_state = xr.wait_frame(
@@ -377,7 +382,7 @@ class ElementsXR_program:
                      predicted_display_time: xr.Time,
             projection_layer_views: Array,
             layer: xr.CompositionLayerProjection,
-            renderer: System,
+            renderer: RenderGLShaderSystem,
             scene: Scene
             ) -> bool:
         view_capacity_input = len(self.views)
@@ -426,7 +431,7 @@ class ElementsXR_program:
                 self.color_swapchain_format,
                 scene,
                 renderer,
-                mirror=i==0 #mirror left eye only ?
+                mirror=i==0 #mirror left eye only ? what does mirroring mean here?
             )
             xr.release_swapchain_image(
                 swapchain=view_swapchain.handle,
