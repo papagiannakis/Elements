@@ -270,19 +270,17 @@ class OpenGLPlugin(GraphicsPlugin):
         #openXR calls this orientation
         target = util.vec(layer_view.pose.orientation.x,
                         layer_view.pose.orientation.y,
-                        layer_view.pose.orientation.z) 
+                        layer_view.pose.orientation.z)
 
         up = util.vec(1.0,1.0,1.0)
             
         view = util.lookat(eye,target,up)
 
-        print("Visiting vertex arrays")
-        #Traverse world
+        #Traverse Vetex Arrays
         for component in scene.world.root:
             if component is not None:
                 if component.getClassName()=="VertexArray":
                     renderUpdate.apply2VertexArray(component)
-        print("After Visiting vertex arrays")
 
         #Update each shader's projection & view
         element: Entity

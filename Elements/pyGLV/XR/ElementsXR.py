@@ -305,7 +305,6 @@ class ElementsXR_program:
                 break
             event_type = event.type
             if event_type == xr.StructureType.EVENT_DATA_INSTANCE_LOSS_PENDING:
-                print("EVENT_DATA_INSTANCE_LOSS_PENDING")
                 return True
             elif event_type == xr.StructureType.EVENT_DATA_SESSION_STATE_CHANGED:
                 exit_render_loop= self.handle_event(event, exit_render_loop)
@@ -321,7 +320,6 @@ class ElementsXR_program:
         if event.session is not None and hash(event.session) != hash(self.session):
             return exit_loop
         if self.session_state == xr.SessionState.READY:
-            print("READY")
             assert self.session is not None
             xr.begin_session(
                 session=self.session,
@@ -331,15 +329,13 @@ class ElementsXR_program:
             )
             self.session_running = True
         elif self.session_state == xr.SessionState.STOPPING:
-            print("STOPPING")
+
             assert self.session is not None
             self.session_running = False
             xr.end_session(self.session)
         elif self.session_state == xr.SessionState.EXITING:
-            print("EXITING")
             exit_loop = True
         elif self.session_state == xr.SessionState.LOSS_PENDING:
-            print("LOSS_PENDING")
             exit_loop = True
         return exit_loop
 

@@ -38,10 +38,10 @@ scene.world.addEntityChild(rootEntity, skybox)
 transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
-node4 = scene.world.createEntity(Entity(name="node4"))
-scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.identity())) #util.identity()
-mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
+#node4 = scene.world.createEntity(Entity(name="node4"))
+#scene.world.addEntityChild(rootEntity, node4)
+#trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.identity())) #util.identity()
+#mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 
 #Cube
 minbox = -30
@@ -100,15 +100,14 @@ meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
 shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
 
-mesh4.vertex_attributes.append(vertexCube)
-mesh4.vertex_index.append(indexCube)
-vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.TEXTURE_3D_VERT, fragment_source=Shader.TEXTURE_3D_FRAG)))
+#mesh4.vertex_attributes.append(vertexCube)
+#mesh4.vertex_index.append(indexCube)
+#vArray4 = scene.world.addComponent(node4, VertexArray())
+#shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.TEXTURE_3D_VERT, fragment_source=Shader.TEXTURE_3D_FRAG)))
 
 # MAIN RENDERING LOOP
 
 exit = False
-#scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: ElementsXR Example", openGLversion = 4)
 
 program = ElementsXR_program()
 program.createInstance("Elements: ElementsXR Demo")
@@ -126,23 +125,19 @@ top_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "top.jpg
 mat_img = os.path.join(os.path.dirname(__file__), "textures", "dark_wood_texture.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
-face_data_2 = get_single_texture_faces(mat_img)
+#face_data_2 = get_single_texture_faces(mat_img)
 
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
-shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
+#shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
 model_cube = util.translate(0.0,0.5,0.0)
 
-shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
+#shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
 
 while not exit:
     exit = program.poll_events()
     if program.session_running:
-        print("Calling Render Frame")
         program.render_frame(renderUpdate,scene)
-        print("After Render Frame")
     else:
         time.sleep(0.250)
-    print(exit)
     
-#scene.shutdown()
