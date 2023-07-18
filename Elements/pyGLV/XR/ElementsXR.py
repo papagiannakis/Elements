@@ -113,7 +113,7 @@ class ElementsXR_program:
 
     def __init__(self):
         "An openXR program in Elements"
-        self.options = options()
+        self.options = options() # Only Opaque is supported by the OpenXR runtime and/or windows platform
         self.platform_plugin = createPlatformPlugin()
         self.graphics_plugin = OpenGLPlugin(self.options)
         self.debug_callback = xr.PFN_xrDebugUtilsMessengerCallbackEXT(xr_debug_callback)
@@ -398,9 +398,7 @@ class ElementsXR_program:
         assert view_count_output == view_capacity_input
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
-        assert view_count_output == len(projection_layer_views)
-
-        #TODO: add code for rendering the hands here      
+        assert view_count_output == len(projection_layer_views)    
         
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
@@ -427,7 +425,7 @@ class ElementsXR_program:
                 self.color_swapchain_format,
                 scene,
                 renderer,
-                mirror=i==0 #mirror left eye only ? what does mirroring mean here?
+                False #mirror=i==0 #mirror left eye only
             )
             xr.release_swapchain_image(
                 swapchain=view_swapchain.handle,

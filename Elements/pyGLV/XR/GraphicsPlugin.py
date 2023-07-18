@@ -264,19 +264,18 @@ class OpenGLPlugin(GraphicsPlugin):
         #openXR calls this position
         eye = util.vec(layer_view.pose.position.x,
                            layer_view.pose.position.y,
-                           layer_view.pose.position.z
-                           )
+                           layer_view.pose.position.z) 
 
         #openXR calls this orientation
         target = util.vec(layer_view.pose.orientation.x,
                         layer_view.pose.orientation.y,
-                        layer_view.pose.orientation.z)
+                        layer_view.pose.orientation.z) / layer_view.pose.orientation.w
 
         up = util.vec(1.0,1.0,1.0)
             
         view = util.lookat(eye,target,up)
 
-        #Traverse Vetex Arrays
+        #Traverse Vertex Arrays
         for component in scene.world.root:
             if component is not None:
                 if component.getClassName()=="VertexArray":

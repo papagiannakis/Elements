@@ -17,21 +17,15 @@ from Elements.pyGLV.XR.options import options, Blend_Mode, View_Configuration, F
 
 
 """
-Note: Work in progress
+Note: Before running this example open steamVR, go to Settings -> OpenXR and press "SET STEAMVR AS OPENXR RUNTIME"
+      Otherwise the graphics plugin will not find the OpenGL plugin.
+      Tested with Windows Mixed Reality
 """
 
 scene = Scene()    
 
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
-entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.identity()))
-
-entityCam2 = scene.world.createEntity(Entity(name="entityCam2"))
-scene.world.addEntityChild(entityCam1, entityCam2)
-trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="trans2", trs=util.identity()))
-# orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
 
 skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
