@@ -19,7 +19,7 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
 import imgui
-import Elements.pyGLV.GL.UsdImporter as SceneLoader
+import Elements.features.usd.UsdImporter as SceneLoader
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
