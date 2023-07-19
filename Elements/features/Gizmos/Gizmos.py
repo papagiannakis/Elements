@@ -18,7 +18,7 @@ class Mode(enum.Enum):
     ROTATE="Rotate"
     SCALE="Scale"
 
-def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
+def generateCirclepres(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
     """
     Generates and returns data for a circle
     Arguments:
@@ -53,6 +53,68 @@ def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
         else:
             ind[i] = i+1
     return ver, ind, col
+
+def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
+    """
+    Generates and returns data for a circle
+    Arguments:
+        axis: where the circle is on
+        points: number of total points corresponding to the circle
+        color: color of the circle
+    Returns:
+        The vertex, index and color arrays of a circle
+    
+    """
+
+    _angle = 360.0/(points-2)
+    init_indices = np.array([0,3,4,4,3,7,7,6,3,3,6,2,5,6,1,5,2,1,0,4,1,1,4,5],dtype=np.int32)
+    curr_indices = np.array(init_indices,copy=True)
+    inc = 4
+
+    # x-axis gizmos
+    p1 = util.vec(1.0,0.0,-0.01,1.0)
+    p2 = util.vec(1.0,0.0,0.01,1.0)
+    p3 = util.vec(1.01,0.0,-0.01,1.0)
+    p4 = util.vec(1.01,0.0,0.01,1.0)
+
+    if axis=='Y':
+        # y-axis gizmos
+        p1 = util.vec(1.0,-0.01,0.0,1.0)
+        p2 = util.vec(1.0,0.01,0.0,1.0)
+        p3 = util.vec(1.01,0.01,0.0,1.0)
+        p4 = util.vec(1.01,-0.01,0.0,1.0)
+    elif axis=='Z':
+        # z-axis gizmo
+        p1 = util.vec(-0.01,0.0,1.0,1.0)
+        p2 = util.vec(0.01,0.0,1.0,1.0)
+        p3 = util.vec(0.01,0.0,1.01,1.0)
+        p4 = util.vec(-0.01,0.0,1.01,1.0)
+    
+
+    ver = np.array([p1,p2,p3,p4],dtype=np.float32)
+    ind = np.array(init_indices,dtype=np.int32)
+    col = np.full((4 * points,4),color,dtype=np.float32)
+
+    p = np.array([p1,p2,p3,p4],dtype=np.float32)
+
+    for i in range(1,points):
+
+        if axis=='X':
+            p = p @ util.rotate(axis=(0.0,0.0,1.0),angle=_angle)
+        elif axis=='Y':
+            p = p @ util.rotate(axis=(0.0,1.0,0.0),angle=_angle)
+        else:
+            p = p @ util.rotate(axis=(1.0,0.0,0.0),angle=_angle)
+
+        if i==points-1:
+            ind = np.append(ind,init_indices)
+        else:
+            curr_indices = curr_indices + inc
+            ver = np.concatenate((ver,p),axis=0)
+            ind = np.append(ind,curr_indices)
+
+    return ver, ind, col
+
 
 class Gizmos:
 
@@ -180,9 +242,9 @@ class Gizmos:
                           [0.1, -0.1, 1.2, 1.0],
                           [0.1, 0.1, 1.2, 1.0]],dtype=np.float32)
     
-    RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0])
-    RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',points=50,color=[0.0,1.0,0.0,1.0])
-    RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',points=50,color=[0.0,0.0,1.0,1.0])
+    RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',color=[1.0,0.0,0.0,1.0])
+    RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',color=[0.0,1.0,0.0,1.0])
+    RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',color=[0.0,0.0,1.0,1.0])
 
 
     def __init__(self,rootEntity: Entity,Projection=None, View=None):
@@ -331,7 +393,7 @@ class Gizmos:
         self.gizmos_x_R_mesh.vertex_attributes.append(Gizmos.RX_GIZMOS)
         self.gizmos_x_R_mesh.vertex_attributes.append(Gizmos.rcolor_x)
         self.gizmos_x_R_mesh.vertex_index.append(Gizmos.rindex_x)
-        self.gizmos_x_R_vArray = self.scene.world.addComponent(self.gizmos_x_R, VertexArray(primitive=GL_LINES))
+        self.gizmos_x_R_vArray = self.scene.world.addComponent(self.gizmos_x_R, VertexArray())
         self.gizmos_x_R_shader = self.scene.world.addComponent(self.gizmos_x_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         self.gizmos_y_R = self.scene.world.createEntity(Entity(name="Gizmos_y_R"))
@@ -341,7 +403,7 @@ class Gizmos:
         self.gizmos_y_R_mesh.vertex_attributes.append(Gizmos.RY_GIZMOS)
         self.gizmos_y_R_mesh.vertex_attributes.append(Gizmos.rcolor_y)
         self.gizmos_y_R_mesh.vertex_index.append(Gizmos.rindex_y)
-        self.gizmos_y_R_vArray = self.scene.world.addComponent(self.gizmos_y_R, VertexArray(primitive=GL_LINES))
+        self.gizmos_y_R_vArray = self.scene.world.addComponent(self.gizmos_y_R, VertexArray())
         self.gizmos_y_R_shader = self.scene.world.addComponent(self.gizmos_y_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         self.gizmos_z_R = self.scene.world.createEntity(Entity(name="Gizmos_z_R"))
@@ -351,7 +413,7 @@ class Gizmos:
         self.gizmos_z_R_mesh.vertex_attributes.append(Gizmos.RZ_GIZMOS)
         self.gizmos_z_R_mesh.vertex_attributes.append(Gizmos.rcolor_z)
         self.gizmos_z_R_mesh.vertex_index.append(Gizmos.rindex_z)
-        self.gizmos_z_R_vArray = self.scene.world.addComponent(self.gizmos_z_R, VertexArray(primitive=GL_LINES))
+        self.gizmos_z_R_vArray = self.scene.world.addComponent(self.gizmos_z_R, VertexArray())
         self.gizmos_z_R_shader = self.scene.world.addComponent(self.gizmos_z_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         #Translation gizmos bounding boxes
@@ -378,6 +440,24 @@ class Gizmos:
         M = np.array(model,copy=True)
         for i in range(len(M)-1):
             M[i][i] = 1
+        return M
+
+    def __remove_rotation(self,model):
+        """
+        Creates and returns a copy of a given model matrix after removing its rotation
+        Arguments:
+            self: self
+            model: a matrix
+        Returns:
+            The model matrix without rotation
+        """
+        M = np.array(model,copy=True)
+        for i in range(len(M)-1):
+            for j in range(len(M[0]-1)):
+                if i==j:
+                    M[i][j] = 0.0
+                else:
+                    M[i][j] = 1.0
         return M
 
     def reset_to_None(self):
@@ -729,12 +809,13 @@ class Gizmos:
         ray_dir_world = util.vec(ray_end_world[0] - ray_start_World[0],
                                  ray_end_world[1] - ray_start_World[1],
                                  ray_end_world[2] - ray_start_World[2])
+        ray_dir_world_unormalized = ray_dir_world ##
         ray_dir_world = util.normalise(ray_dir_world)
         
         ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2],0.0)
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
 
-        return ray_origin, ray_direction
+        return ray_origin, ray_direction, ray_dir_world_unormalized
 
     def raycast(self):
         """
@@ -747,7 +828,7 @@ class Gizmos:
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
-        ray_origin, ray_direction = self.calculate_ray()
+        ray_origin, ray_direction, ray_direction_unormalized = self.calculate_ray()
 
         x_intersects, x_in_point = False, util.vec(0.0)
         y_intersects, y_in_point = False, util.vec(0.0)
@@ -797,6 +878,31 @@ class Gizmos:
                                                 self.zs_min_bb,
                                                 self.zs_max_bb,
                                                 model_z)
+        elif self.mode==Mode.ROTATE:
+            model_x = self.gizmos_x_R_trans.trs
+            model_y = self.gizmos_y_R_trans.trs
+            model_z = self.gizmos_z_R_trans.trs
+
+            mesh_x = self.gizmos_x_R_mesh
+            mesh_y = self.gizmos_y_R_mesh
+            mesh_z = self.gizmos_z_R_mesh
+
+            x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
+                                                ray_direction,
+                                                mesh_x,
+                                                model_x)
+        
+            y_intersects, y_in_point = self.testRayCircleIntersection(ray_origin,
+                                                ray_direction,
+                                                mesh_y,
+                                                model_y)
+        
+            z_intersects, z_in_point = self.testRayCircleIntersection(ray_origin,
+                                                ray_direction,
+                                                mesh_z,
+                                                model_z)
+            
+
 
         if self.selected_gizmo=='X' or (self.selected_gizmo=='' and x_intersects):
             self.selected_gizmo = 'X'
@@ -874,6 +980,31 @@ class Gizmos:
                         diffZ = 0.01
                     self.previous_z = inter_point[2]
             self.__scale_selected(x=diffX,y=diffY,z=diffZ)
+        else: #Rotate
+            if self.selected_gizmo=='X':
+                if self.picked==False:
+                    self.picked = True
+                    self.previous_x = inter_point[0]
+                else:
+                    diff = 90 * (self.previous_x - inter_point[0])
+                    self.previous_x = inter_point[0]
+                    self.__rotate_selected(_angle = diff, _axis = (0.0,0.0,1.0))
+            elif self.selected_gizmo=='Y':
+                if self.picked==False:
+                    self.picked = True
+                    self.previous_y = inter_point[1]
+                else:
+                    diff = 90 * (self.previous_y - inter_point[1])
+                    self.previous_y = inter_point[1]
+                    self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
+            elif self.selected_gizmo=='Z':
+                if self.picked==False:
+                    self.picked = True
+                    self.previous_z = inter_point[2]
+                else:
+                    diff = 90 * (self.previous_z - inter_point[2])
+                    self.previous_z = inter_point[2]
+                    self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
 
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
@@ -976,7 +1107,7 @@ class Gizmos:
 
         return True, self.intersection_point(tmin,ray_origin,ray_direction)
     
-    def testRayCircleIntersection(self,ray_origin,mesh):
+    def testRayCircleIntersection(self, ray_origin, ray_direction, mesh: RenderMesh, model):
         """
         Tests if a Ray intersects with a Rotation Gizmo
         Arguments:
@@ -984,11 +1115,34 @@ class Gizmos:
             ray_origin: Ray Starting Point
             ray_direction: Ray's Direction
             mesh: the mesh of a Rotation Gizmo
+            model: a model matrix
         Returns:
             True if there is an intersection, False otherwise. Additionally returns the Intersection point
         """
-        pass
-    
+        vertices = np.array(mesh.vertex_attributes[0],copy=True)
+        indices = np.array(mesh.vertex_index[0],copy=True)
+
+        for i in range(0,len(indices)-48,24):
+            #for every 24 indices i have to find those that correspond to 8 unique vertices
+            #from those unique vertices I will calculate a bounding box
+            s = set()
+            for j in range(i,i+23):
+                s.add(indices[j])
+            sub = np.empty(shape=[0,4])
+
+            for index in s:
+                sub = np.append(sub,vertices[index])
+            
+            sub = np.reshape(sub,(8,4))
+            
+            minbb, maxbb = self.calculate_bounding_box(sub)
+
+            intersects, point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,minbb,maxbb,model)
+            if intersects:
+                return intersects, point
+        
+        return False, self.intersection_point(self.previous_distance,ray_origin,ray_direction)
+
     def intersection_point(self,distance,ray_origin,ray_direction):
         """
         Calculates an intersection point given the following Arguments
@@ -1037,9 +1191,7 @@ class Gizmos:
         self.gizmos_x_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
         self.gizmos_y_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
         self.gizmos_z_R_trans.trs = self.__remove_scaling(self.selected_trans.trs)
-
-        
-    
+ 
     def __rotate_selected(self,_angle=0.0,_axis=(1.0,0.0,0.0)):
         """
         Rotate Selected Element
@@ -1051,9 +1203,9 @@ class Gizmos:
             None
         """
         self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
-        self.gizmos_x_trans.trs = self.selected_trans.trs #remove scaling too
-        self.gizmos_y_trans.trs = self.selected_trans.trs
-        self.gizmos_z_trans.trs = self.selected_trans.trs
+        self.gizmos_x_trans.trs = self.__remove_rotation(self.selected_trans.trs)
+        self.gizmos_y_trans.trs = self.__remove_rotation(self.selected_trans.trs)
+        self.gizmos_z_trans.trs = self.__remove_rotation(self.selected_trans.trs)
 
     def __scale_selected(self,x=1.0,y=1.0,z=1.0):
         """
