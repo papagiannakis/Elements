@@ -11,10 +11,34 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.XR.options import options
 from OpenGL import GL, WGL
 import glfw
-
+import numpy as np
 import xr
 
 logger = logging.getLogger("XRprogram.OpenGLPlugin")
+
+def invert_rigid_body(m):
+        """
+        
+        """
+        result = np.empty([4,4],dtype=np.float32)
+        result[0,0] = m[0,0]
+        result[0,1] = m[1,0]
+        result[0,2] = m[2,0]
+        result[0,3] = 0.0
+        result[1,0] = m[0,1]
+        result[1,1] = m[1,1]
+        result[1,2] = m[2,1]
+        result[1,3] = 0.0
+        result[2,0] = m[0,2]
+        result[2,1] = m[1,2]
+        result[2,2] = m[2,2]
+        result[2,3] = 0.0
+        result[3,0] = -(m[0,0] * m[3,0] + m[0,1] * m[3,1] + m[0,2] * m[3,2])
+        result[3,1] = -(m[1,0] * m[3,0] + m[1,1] * m[3,1] + m[1,2] * m[3,2])
+        result[3,2] = -(m[2,0] * m[3,0] + m[2,1] * m[3,1] + m[2,2] * m[3,2])
+        result[3,3] = 1.0
+
+        return result
 
 class GraphicsPlugin(object):
     
@@ -292,16 +316,15 @@ class OpenGLPlugin(GraphicsPlugin):
 
         up = util.vec(1.0,1.0,1.0)
             
-        view = util.lookat(eye,target,up)
+        #view = util.lookat(eye,target,up)
 
         to_view = util.translate(layer_view.pose.position.x,
                            layer_view.pose.position.y,
-                           layer_view.pose.position.z) @ util.quaternion(layer_view.pose.orientation.x,
+                           layer_view.pose.position.z) @ util.quaternion_matrix(util.quaternion(layer_view.pose.orientation.x,
                                                                          layer_view.pose.orientation.y,
                                                                          layer_view.pose.orientation.z,
-                                                                         layer_view.pose.orientation.w) @ util.scale(1.0,1.0,1.0)
-        
-        print(to_view)
+                                                                         layer_view.pose.orientation.w)) @ util.scale(1.0,1.0,1.0)
+        view = invert_rigid_body(to_view)
 
         #Traverse Vertex Arrays
         scene.world.traverse_visit(renderUpdate,scene.world.root)
@@ -325,6 +348,7 @@ class OpenGLPlugin(GraphicsPlugin):
         #    )
 
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
+
 
     def window_should_close(self):
         return glfw.window_should_close(self.window)
