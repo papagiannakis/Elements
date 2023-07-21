@@ -24,7 +24,7 @@ Lcolor = util.vec(1.0,1.0,1.0)
 Lintensity = 0.9
 #Material
 Mshininess = 0.4 
-Mcolor = util.vec(0.8, 0.0, 0.8)
+Mcolor = util.vec(1.0, 0.0, 0.8)
 
 scene = Scene()    
 
@@ -145,7 +145,6 @@ mesh4_yellow_2.vertex_attributes.append(normals_yellow)
 mesh4_yellow_2.vertex_index.append(indices_yellow)
 vArray4_yellow_2 = scene.world.addComponent(node4_yellow_2, VertexArray())
 shaderDec4_yellow_2 = scene.world.addComponent(node4_yellow_2, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-
 
 # Generate terrain
 
