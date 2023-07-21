@@ -10,6 +10,7 @@ from ctypes import c_int, byref
 from OpenGL.GL import GL_LINES
 from math import sqrt, pow
 import numpy as np
+import Elements.utils.normals as norm
 import imgui
 import enum
 
@@ -183,11 +184,11 @@ class Gizmos:
     ], dtype=np.float32)
 
     ARROW_INDEX = np.array((0,1,3, 2,0,3, 
-                            0,4,5, 0,5,1,
-                            2,6,0, 6,4,0,
-                            3,6,2, 3,7,6,
-                            1,5,7, 1,7,3,
-                            7,4,6, 7,5,4), np.int32)
+                            5,4,0, 1,0,5,
+                            7,2,6, 6,2,3,
+                            4,5,7, 6,4,7,
+                            7,5,2, 2,5,0,
+                            4,3,1, 6,3,4), np.int32)
     
     XS_LINE = np.array([[0.0,0.0,0.0,1.0],
                         [1.0,0.0,0.0,1.0]],dtype=np.float32)
@@ -242,10 +243,13 @@ class Gizmos:
                           [0.1, -0.1, 1.2, 1.0],
                           [0.1, 0.1, 1.2, 1.0]],dtype=np.float32)
     
+    XS_GIZMOS, INDEX_XS, COLOR_XS, NORMALS_XS = norm.generateFlatNormalsMesh(XS_GIZMOS,ARROW_INDEX,COLOR_X)
+    YS_GIZMOS, INDEX_YS, COLOR_YS, NORMALS_YS = norm.generateFlatNormalsMesh(YS_GIZMOS,ARROW_INDEX,COLOR_Y)
+    ZS_GIZMOS, INDEX_ZS, COLOR_ZS, NORMALS_ZS = norm.generateFlatNormalsMesh(ZS_GIZMOS,ARROW_INDEX,COLOR_Z)
+    
     RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',color=[1.0,0.0,0.0,1.0])
     RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',color=[0.0,1.0,0.0,1.0])
     RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',color=[0.0,0.0,1.0,1.0])
-
 
     def __init__(self,rootEntity: Entity,Projection=None, View=None):
         sdl.ext.init()
@@ -290,6 +294,17 @@ class Gizmos:
         self.previous_x = 0.0
         self.previous_y = 0.0
         self.previous_z = 0.0
+
+        #Light
+        #Lposition = util.vec(0.0, 2.5, 1.2) #uniform lightpos
+        self.Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
+        self.Lambientstr = 0.3 #uniform ambientStr
+        self.LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
+        self.Lcolor = util.vec(1.0,1.0,1.0)
+        self.Lintensity = 0.9
+        #Material
+        self.Mshininess = 0.4 
+        self.Mcolor = util.vec(0.8, 0.0, 0.8)
 
         ########## Translate components
         self.gizmos_x = self.scene.world.createEntity(Entity(name="Gizmos_X"))
@@ -359,30 +374,33 @@ class Gizmos:
         self.gizmos_x_S_cube_trans = self.scene.world.addComponent(self.gizmos_x_S_cube, BasicTransform(name="Gizmos_x_S_cube_trans", trs=util.identity()))
         self.gizmos_x_S_cube_mesh = self.scene.world.addComponent(self.gizmos_x_S_cube, RenderMesh(name="Gizmos_x_S_cube_mesh"))
         self.gizmos_x_S_cube_mesh.vertex_attributes.append(Gizmos.XS_GIZMOS)
-        self.gizmos_x_S_cube_mesh.vertex_attributes.append(Gizmos.COLOR_X)
-        self.gizmos_x_S_cube_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
+        self.gizmos_x_S_cube_mesh.vertex_attributes.append(Gizmos.COLOR_XS)
+        self.gizmos_x_S_cube_mesh.vertex_attributes.append(Gizmos.NORMALS_XS)
+        self.gizmos_x_S_cube_mesh.vertex_index.append(Gizmos.INDEX_XS)
         self.gizmos_x_S_cube_vArray = self.scene.world.addComponent(self.gizmos_x_S_cube, VertexArray())
-        self.gizmos_x_S_cube_shader = self.scene.world.addComponent(self.gizmos_x_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_x_S_cube_shader = self.scene.world.addComponent(self.gizmos_x_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
         self.gizmos_y_S_cube = self.scene.world.createEntity(Entity(name="Gizmos_y_S_cube"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y_S_cube)
         self.gizmos_y_S_cube_trans = self.scene.world.addComponent(self.gizmos_y_S_cube, BasicTransform(name="Gizmos_y_S_cube_trans", trs=util.identity()))
         self.gizmos_y_S_cube_mesh = self.scene.world.addComponent(self.gizmos_y_S_cube, RenderMesh(name="Gizmos_y_S_cube_mesh"))
         self.gizmos_y_S_cube_mesh.vertex_attributes.append(Gizmos.YS_GIZMOS)
-        self.gizmos_y_S_cube_mesh.vertex_attributes.append(Gizmos.COLOR_Y)
-        self.gizmos_y_S_cube_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
+        self.gizmos_y_S_cube_mesh.vertex_attributes.append(Gizmos.COLOR_YS)
+        self.gizmos_y_S_cube_mesh.vertex_attributes.append(Gizmos.NORMALS_YS)
+        self.gizmos_y_S_cube_mesh.vertex_index.append(Gizmos.INDEX_YS)
         self.gizmos_y_S_cube_vArray = self.scene.world.addComponent(self.gizmos_y_S_cube, VertexArray())
-        self.gizmos_y_S_cube_shader = self.scene.world.addComponent(self.gizmos_y_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_y_S_cube_shader = self.scene.world.addComponent(self.gizmos_y_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
         self.gizmos_z_S_cube = self.scene.world.createEntity(Entity(name="Gizmos_z_S_cube"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z_S_cube)
         self.gizmos_z_S_cube_trans = self.scene.world.addComponent(self.gizmos_z_S_cube, BasicTransform(name="Gizmos_z_S_cube_trans", trs=util.identity()))
         self.gizmos_z_S_cube_mesh = self.scene.world.addComponent(self.gizmos_z_S_cube, RenderMesh(name="Gizmos_z_S_cube_mesh"))
         self.gizmos_z_S_cube_mesh.vertex_attributes.append(Gizmos.ZS_GIZMOS)
-        self.gizmos_z_S_cube_mesh.vertex_attributes.append(Gizmos.COLOR_Z)
-        self.gizmos_z_S_cube_mesh.vertex_index.append(Gizmos.ARROW_INDEX)
+        self.gizmos_z_S_cube_mesh.vertex_attributes.append(Gizmos.COLOR_ZS)
+        self.gizmos_z_S_cube_mesh.vertex_attributes.append(Gizmos.NORMALS_ZS)
+        self.gizmos_z_S_cube_mesh.vertex_index.append(Gizmos.INDEX_ZS)
         self.gizmos_z_S_cube_vArray = self.scene.world.addComponent(self.gizmos_z_S_cube, VertexArray())
-        self.gizmos_z_S_cube_shader = self.scene.world.addComponent(self.gizmos_z_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_z_S_cube_shader = self.scene.world.addComponent(self.gizmos_z_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
         ##############
 
         ############## Rotation Gizmos components
@@ -649,6 +667,45 @@ class Gizmos:
             self.gizmos_x_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_cube, mat4=True)
             self.gizmos_y_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_cube, mat4=True)
             self.gizmos_z_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_cube, mat4=True)
+
+            ##
+            Lposition = util.vec(model_XS_cube[0,3],model_XS_cube[1,3]+0.5,model_XS_cube[2,3]+0.5)
+            ##
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='model',value=model_XS_cube,mat4=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+            self.gizmos_x_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+
+            ##
+            Lposition = util.vec(model_YS_cube[0,3],model_YS_cube[1,3]+0.5,model_YS_cube[2,3]+0.5)
+            ##
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='model',value=model_YS_cube,mat4=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+            self.gizmos_y_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+
+            ##
+            Lposition = util.vec(model_ZS_cube[0,3],model_ZS_cube[1,3]+0.5,model_ZS_cube[2,3]+0.5)
+            ##
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='model',value=model_ZS_cube,mat4=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+            self.gizmos_z_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
 
             model_rx = self.gizmos_x_R_trans.trs
             model_ry = self.gizmos_y_R_trans.trs
