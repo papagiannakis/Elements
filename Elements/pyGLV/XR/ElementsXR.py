@@ -3,21 +3,19 @@ import xr.raw_functions
 from ctypes import Structure, c_int32, POINTER, byref, cast, c_void_p, pointer, Array
 import logging
 from typing import List, Optional, Dict
-import Elements.pyECSS.utilities as util
 import math
-import Elements.pyGLV.GL.Scene as Scene
-import Elements.pyECSS.System as System
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
-import Elements.pyECSS.Entity as Entity
-from OpenGL import GL
-import enum
+import sys
 
-import Elements.pyGLV.XR.PlatformPlugin as PlatformPlugin
 from Elements.pyGLV.XR.PlatformPlugin import createPlatformPlugin
-from Elements.pyGLV.XR.GraphicsPlugin import GraphicsPlugin, OpenGLPlugin
+from Elements.pyGLV.XR.GraphicsPlugin import OpenGLPlugin
 from Elements.pyGLV.XR.options import options, Blend_Mode, View_Configuration, Form_factor
 
-logger = logging.getLogger("XRprogram.OpenGLPlugin")
+logger = logging.getLogger()
+stream = logging.StreamHandler(sys.stdout)
+streamformat = logging.Formatter("%(asctime)s:%(message)s")
+stream.setFormatter(streamformat)
+logger.addHandler(stream)
 
 class Swapchain(Structure):
     _fields_ = [
@@ -108,7 +106,6 @@ def xr_debug_callback(
     d = data.contents
     return True
 
-
 class ElementsXR_program:
 
     def __init__(self):
@@ -135,7 +132,7 @@ class ElementsXR_program:
 
         # Application's current lifecycle state according to the runtime
         self.session_state = xr.SessionState.UNKNOWN
-        self.session_running = True #TODO this should initially be false and to be updated with another method
+        self.session_running = False
 
         self.event_data_buffer = xr.EventDataBuffer()
 
@@ -145,11 +142,33 @@ class ElementsXR_program:
             xr.EnvironmentBlendMode.ALPHA_BLEND,
         ]
 
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for swapchain in self.swapchains:
+            xr.destroy_swapchain(swapchain.handle)
+        self.swapchains[:] = []
+        for visualized_space in self.visualized_spaces:
+            xr.destroy_space(visualized_space)
+        self.visualized_spaces[:] = []
+        if self.app_space is not None:
+            xr.destroy_space(self.app_space)
+            self.app_space = None
+        if self.session is not None:
+            xr.destroy_session(self.session)
+            self.session = None
+        if self.instance is not None:
+            self.instance.destroy()
+            self.instance = None
+
     def create_Swapchains(self):        
         
         assert self.session is not None
         assert len(self.swapchains) == 0
         assert len(self.config_views) == 0
+
+        system_properties = xr.get_system_properties(self.instance.handle, self.system.id)
 
         self.config_views = xr.enumerate_view_configuration_views(
             instance=self.instance.handle,
@@ -339,7 +358,7 @@ class ElementsXR_program:
             exit_loop = True
         return exit_loop
 
-    def render_frame(self,renderer: RenderGLShaderSystem,scene: Scene) -> None:
+    def render_frame(self,renderer: RenderGLShaderSystem) -> None:
         """Create and submit a frame."""
         assert self.session is not None
         frame_state = xr.wait_frame(
@@ -361,7 +380,7 @@ class ElementsXR_program:
             xr.CompositionLayerProjectionView(),
             xr.CompositionLayerProjectionView())
         if frame_state.should_render:
-            if self.render_layer(frame_state.predicted_display_time, projection_layer_views, layer,renderer,scene):
+            if self.render_layer(frame_state.predicted_display_time, projection_layer_views, layer,renderer):
                 layers.append(byref(layer))
 
         xr.end_frame(
@@ -373,13 +392,11 @@ class ElementsXR_program:
             ),
         )
 
-
     def render_layer(self,
                      predicted_display_time: xr.Time,
             projection_layer_views: Array,
             layer: xr.CompositionLayerProjection,
-            renderer: RenderGLShaderSystem,
-            scene: Scene
+            renderer: RenderGLShaderSystem
             ) -> bool:
         view_capacity_input = len(self.views)
         view_state, self.views = xr.locate_views(
@@ -398,7 +415,7 @@ class ElementsXR_program:
         assert view_count_output == view_capacity_input
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
-        assert view_count_output == len(projection_layer_views)    
+        assert view_count_output == len(projection_layer_views)
         
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
@@ -423,7 +440,6 @@ class ElementsXR_program:
                 view,
                 swapchain_image_ptr,
                 self.color_swapchain_format,
-                scene,
                 renderer,
                 False #mirror=i==0 #mirror left eye only
             )
@@ -431,6 +447,7 @@ class ElementsXR_program:
                 swapchain=view_swapchain.handle,
                 release_info=xr.SwapchainImageReleaseInfo()
             )
+        layer.view_count = len(projection_layer_views)
         layer.views = projection_layer_views
         return True
     

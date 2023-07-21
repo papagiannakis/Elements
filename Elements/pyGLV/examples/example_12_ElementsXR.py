@@ -6,15 +6,11 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
-
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.pyGLV.utils.normals as norm
-from Elements.pyGLV.GL.Textures import get_texture_faces, get_single_texture_faces
-
+from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.pyGLV.XR.ElementsXR import ElementsXR_program
-from Elements.pyGLV.XR.options import options, Blend_Mode, View_Configuration, Form_factor
-
 
 """
 Note: Before running this example open steamVR, go to Settings -> OpenXR and press "SET STEAMVR AS OPENXR RUNTIME"
@@ -22,7 +18,7 @@ Note: Before running this example open steamVR, go to Settings -> OpenXR and pre
       Tested with Windows Mixed Reality
 """
 
-scene = Scene()    
+scene = Scene()
 
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
@@ -38,8 +34,8 @@ meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 #mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 
 #Cube
-minbox = -30
-maxbox = 30
+minbox = -20
+maxbox = 20
 vertexSkybox = np.array([
     [minbox, minbox, maxbox, 1.0],
     [minbox, maxbox, maxbox, 1.0],
@@ -79,7 +75,6 @@ indexCube = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32) 
 
-
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
@@ -101,7 +96,7 @@ shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_
 
 # MAIN RENDERING LOOP
 
-exit = False
+exit_loop = False
 
 program = ElementsXR_program()
 program.createInstance("Elements: ElementsXR Demo")
@@ -128,10 +123,9 @@ model_cube = util.translate(0.0,0.5,0.0)
 
 #shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
 
-while not exit:
-    exit = program.poll_events()
+while not exit_loop:
+    exit_loop = program.poll_events()
     if program.session_running:
-        program.render_frame(renderUpdate,scene)
+        program.render_frame(renderUpdate)
     else:
         time.sleep(0.250)
-    

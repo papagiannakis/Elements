@@ -6,11 +6,8 @@ import Elements.pyECSS.utilities as util
 from ctypes import Structure, POINTER, cast, byref
 from Elements.pyGLV.GL.Scene import Scene
 import Elements.pyECSS.System as System
-from Elements.pyGLV.GL.Shader import ShaderGLDecorator, InitGLShaderSystem, RenderGLShaderSystem
-from Elements.pyECSS.Component import BasicTransform, RenderMesh
-from Elements.pyGLV.GL.VertexArray import VertexArray
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
 from Elements.pyECSS.Entity import Entity
-import Elements.pyECSS.Component as Component
 from Elements.pyGLV.XR.options import options
 from OpenGL import GL, WGL
 import glfw
@@ -70,7 +67,6 @@ class GraphicsPlugin(object):
                     layer_view: xr.CompositionLayerProjectionView,
                     swapchain_image_base_ptr: POINTER(xr.SwapchainImageBaseHeader),
                     _swapchain_format: int,
-                    scene: Scene,
                     renderUpdate: System
                     #mirror=False
                     ):
@@ -91,6 +87,27 @@ class OpenGLPlugin(GraphicsPlugin):
         self.window = None
         self.color_to_depth_map: Dict[int, int] = {}
         self.debug_message_proc = None
+
+    def __enter__(self):
+        return self
+    
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.window:
+            glfw.make_context_current(self.window)
+        if self.swapchain_framebuffer is not None:
+            GL.glDeleteFramebuffers(1, [self.swapchain_framebuffer])
+        
+        self.swapchain_framebuffer = None
+        self.program = None
+
+        for color, depth in self.color_to_depth_map.items():
+            if depth is not None:
+                GL.glDeleteTextures(1, [depth])
+        self.color_to_depth_map = {}
+        if self.window is not None:
+            glfw.destroy_window(self.window)
+            self.window = None
+        glfw.terminate()
 
     @property
     def instance_extensions(self) -> List[str]:
@@ -123,7 +140,6 @@ class OpenGLPlugin(GraphicsPlugin):
                           instance: xr.Instance, 
                           system_id: xr.SystemId,
                           renderer: InitGLShaderSystem):
-        scene = Scene()
         pfn_get_open_gl_graphics_requirements_khr = cast(
             xr.get_instance_proc_addr(
                 instance,
@@ -164,11 +180,11 @@ class OpenGLPlugin(GraphicsPlugin):
 
         self.debug_message_proc = GL.GLDEBUGPROC(self.opengl_debug_message_callback)
         GL.glDebugMessageCallback(self.debug_message_proc, None)
-        self.initialize_resources(renderer,scene)
+        self.initialize_resources(renderer)
 
-    def initialize_resources(self,renderer: InitGLShaderSystem,scene: Scene):
+    def initialize_resources(self,renderer: InitGLShaderSystem):
+        scene = Scene()
         self.swapchain_framebuffer = GL.glGenFramebuffers(1)
-        #scene.world.traverse_visit(renderer, scene.world.root)
         for component in scene.world.root:
             if component is not None:
                 if component.getClassName()=="VertexArray":
@@ -179,9 +195,6 @@ class OpenGLPlugin(GraphicsPlugin):
                     renderer.apply2Shader(component)
                 elif component.getClassName()=="ShaderGLDecorator":
                     renderer.apply2ShaderGLDecorator(component)
-
-
-
 
     @property
     def swapchain_image_type(self):
@@ -221,15 +234,21 @@ class OpenGLPlugin(GraphicsPlugin):
                     return sf
         raise RuntimeError("No runtime swapchain format supported for color swapchain")
     
+    def poll_events(self) -> bool:
+        glfw.poll_events()
+        return glfw.window_should_close(self.window)
+
     def Render_View(self, 
                     layer_view: xr.CompositionLayerProjectionView,
                     swapchain_image_base_ptr: POINTER(xr.SwapchainImageBaseHeader),
                     _swapchain_format: int,
-                    scene: Scene,
                     renderUpdate: RenderGLShaderSystem,
                     mirror=False
                     ):
         assert layer_view.sub_image.image_array_index == 0
+
+        scene = Scene()
+        
         glfw.make_context_current(self.window)
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER,self.swapchain_framebuffer)
 
@@ -259,45 +278,53 @@ class OpenGLPlugin(GraphicsPlugin):
                           layer_view.fov.angle_down,
                           layer_view.fov.angle_up,
                           0.05,
-                          100.0)
+                          50.0)
 
         #openXR calls this position
         eye = util.vec(layer_view.pose.position.x,
                            layer_view.pose.position.y,
-                           layer_view.pose.position.z) 
+                           layer_view.pose.position.z)
 
         #openXR calls this orientation
         target = util.vec(layer_view.pose.orientation.x,
                         layer_view.pose.orientation.y,
-                        layer_view.pose.orientation.z) / layer_view.pose.orientation.w
+                        layer_view.pose.orientation.z) # layer_view.pose.orientation.w
 
         up = util.vec(1.0,1.0,1.0)
             
         view = util.lookat(eye,target,up)
 
+        to_view = util.translate(layer_view.pose.position.x,
+                           layer_view.pose.position.y,
+                           layer_view.pose.position.z) @ util.quaternion(layer_view.pose.orientation.x,
+                                                                         layer_view.pose.orientation.y,
+                                                                         layer_view.pose.orientation.z,
+                                                                         layer_view.pose.orientation.w) @ util.scale(1.0,1.0,1.0)
+        
+        print(to_view)
+
         #Traverse Vertex Arrays
-        for component in scene.world.root:
-            if component is not None:
-                if component.getClassName()=="VertexArray":
-                    renderUpdate.apply2VertexArray(component)
+        scene.world.traverse_visit(renderUpdate,scene.world.root)
 
         #Update each shader's projection & view
         element: Entity
         for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
-                #Note: All shaders should get their View-Projection the same way for this loop to work
+                #Note: All shaders should get their View and Projection the same way for this loop to work
                 element.setUniformVariable(key='Proj', value=proj, mat4=True)
                 element.setUniformVariable(key='View', value=view, mat4=True)
 
-        if mirror:
-            GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)
-            w, h = layer_view.sub_image.image_rect.extent.width, layer_view.sub_image.image_rect.extent.height
-            GL.glBlitFramebuffer(
-                0, 0, w, h, 0, 0,
-                640, 480,
-                GL.GL_COLOR_BUFFER_BIT,
-                GL.GL_NEAREST
-            )
+        #if mirror:
+        #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)
+        #    w, h = layer_view.sub_image.image_rect.extent.width, layer_view.sub_image.image_rect.extent.height
+        #    GL.glBlitFramebuffer(
+        #        0, 0, w, h, 0, 0,
+        #        640, 480,
+        #        GL.GL_COLOR_BUFFER_BIT,
+        #        GL.GL_NEAREST
+        #    )
 
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
 
+    def window_should_close(self):
+        return glfw.window_should_close(self.window)
