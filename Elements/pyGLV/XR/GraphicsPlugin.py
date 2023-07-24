@@ -302,29 +302,16 @@ class OpenGLPlugin(GraphicsPlugin):
                           layer_view.fov.angle_down,
                           layer_view.fov.angle_up,
                           0.05,
-                          50.0)
-
-        #openXR calls this position
-        eye = util.vec(layer_view.pose.position.x,
-                           layer_view.pose.position.y,
-                           layer_view.pose.position.z)
-
-        #openXR calls this orientation
-        target = util.vec(layer_view.pose.orientation.x,
-                        layer_view.pose.orientation.y,
-                        layer_view.pose.orientation.z) # layer_view.pose.orientation.w
-
-        up = util.vec(1.0,1.0,1.0)
-            
-        #view = util.lookat(eye,target,up)
+                          100.0)
 
         to_view = util.translate(layer_view.pose.position.x,
                            layer_view.pose.position.y,
                            layer_view.pose.position.z) @ util.quaternion_matrix(util.quaternion(layer_view.pose.orientation.x,
-                                                                         layer_view.pose.orientation.y,
-                                                                         layer_view.pose.orientation.z,
-                                                                         layer_view.pose.orientation.w)) @ util.scale(1.0,1.0,1.0)
+                                                                                                layer_view.pose.orientation.y,
+                                                                                                layer_view.pose.orientation.z,
+                                                                                                layer_view.pose.orientation.w)) @ util.scale(1.0,1.0,1.0)
         view = invert_rigid_body(to_view)
+        #view = util.inverse(to_view)
 
         #Traverse Vertex Arrays
         scene.world.traverse_visit(renderUpdate,scene.world.root)
