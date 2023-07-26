@@ -41,12 +41,12 @@ mesh4_pink_1 = scene.world.addComponent(node4_pink_1, RenderMesh(name="mesh4_pin
 
 node4_pink_2 = scene.world.createEntity(Entity(name="node4_pink_2"))
 scene.world.addEntityChild(node4_pink_1, node4_pink_2)
-trans4_pink_2 = scene.world.addComponent(node4_pink_2, BasicTransform(name="trans4_pink_2", trs=util.translate(0.0,0.5,-1.5))) #util.identity()
+trans4_pink_2 = scene.world.addComponent(node4_pink_2, BasicTransform(name="trans4_pink_2", trs=util.translate(1.5,0.0,0.0))) #util.identity()
 mesh4_pink_2 = scene.world.addComponent(node4_pink_2, RenderMesh(name="mesh4_pink_2"))
 
 node4_pink_3 = scene.world.createEntity(Entity(name="node4_pink_3"))
 scene.world.addEntityChild(node4_pink_2, node4_pink_3)
-trans4_pink_3 = scene.world.addComponent(node4_pink_3, BasicTransform(name="trans4_pink_3", trs=util.translate(1.5,0.5,-1.5))) #util.identity()
+trans4_pink_3 = scene.world.addComponent(node4_pink_3, BasicTransform(name="trans4_pink_3", trs=util.translate(1.5,0.0,0.0))) #util.identity()
 mesh4_pink_3 = scene.world.addComponent(node4_pink_3, RenderMesh(name="mesh4_pink_3"))
 
 node4_yellow_1 = scene.world.createEntity(Entity(name="node4_2_yellow_1"))
@@ -56,7 +56,7 @@ mesh4_yellow_1 = scene.world.addComponent(node4_yellow_1, RenderMesh(name="mesh4
 
 node4_yellow_2 = scene.world.createEntity(Entity(name="node4_2_yellow_2"))
 scene.world.addEntityChild(node4_yellow_1, node4_yellow_2)
-trans4_yellow_2 = scene.world.addComponent(node4_yellow_2, BasicTransform(name="trans4_yellow_2", trs=util.translate(0.0,0.5,0.0))) #util.identity()
+trans4_yellow_2 = scene.world.addComponent(node4_yellow_2, BasicTransform(name="trans4_yellow_2", trs=util.translate(2.0,0.0,0.0))) #util.identity()
 mesh4_yellow_2 = scene.world.addComponent(node4_yellow_2, RenderMesh(name="mesh4_yellow_2"))
 
 #Simple Cube
@@ -250,6 +250,7 @@ shaderDec4_yellow_2.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
 while running:
     running = scene.render()
+    scene.world.traverse_visit(transUpdate, scene.world.root) 
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
     height = scene.renderWindow._windowHeight
@@ -261,12 +262,12 @@ while running:
     gizmos.get_Event()
     gizmos.update_imgui()
 
-    model_cube_pink_1 = trans4_pink_1.trs
-    model_cube_pink_2 = trans4_pink_2.trs
-    model_cube_pink_3 = trans4_pink_3.trs
-    model_terrain = terrain.getChild(0).trs
-    model_cube_yellow_1 = trans4_yellow_1.trs
-    model_cube_yellow_2 = trans4_yellow_2.trs
+    model_cube_pink_1 = trans4_pink_1.l2world
+    model_cube_pink_2 = trans4_pink_2.l2world
+    model_cube_pink_3 = trans4_pink_3.l2world
+    model_terrain = terrain.getChild(0).l2world
+    model_cube_yellow_1 = trans4_yellow_1.l2world
+    model_cube_yellow_2 = trans4_yellow_2.l2world
     
     mvp_cube_pink_1 = projMat @ view @ model_cube_pink_1
     mvp_cube_pink_2 = projMat @ view @ model_cube_pink_2
