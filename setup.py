@@ -41,7 +41,7 @@ setup(
         'ipykernel',
         'usd-core',
         'jupyter',
-        'skspatial',
+        'scikit-spatial',
         'bezier',
         'clifford',
         'trimesh',
