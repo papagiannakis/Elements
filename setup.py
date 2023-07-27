@@ -30,7 +30,6 @@ setup(
         'pip',
         'setuptools>=61',
         'wheel',
-        'clifford',
         'numpy',
         'scipy',
         'imgui',
@@ -40,9 +39,12 @@ setup(
         'pysdl2',
         'pysdl2-dll',
         'ipykernel',
-        'trimesh',
         'usd-core',
         'jupyter',
+        'skspatial',
+        'bezier',
+        'clifford',
+        'trimesh',
     ],
     
 
@@ -64,4 +66,5 @@ setup(
     },
 
     python_requires=">=3.8,<3.10",
+
 )
