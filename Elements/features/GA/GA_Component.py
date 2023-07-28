@@ -108,8 +108,8 @@ class GATransform(BasicTransform):
 
 if __name__ == "__main__":
     
-    from Elements.pyECSS.GA.GA_Component import GATransform
-    from Elements.pyECSS.GA.GATransformSystem import GATransformSystem
+    from Elements.features.GA.GA_Component import GATransform
+    from Elements.features.GA.GATransformSystem import GATransformSystem
 
     t = [1,2,3]
     q = [1,2,3,4] # x,y,z,w

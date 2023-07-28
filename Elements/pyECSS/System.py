@@ -126,7 +126,7 @@ class System(ABC):
         """
         pass
     
-    def apply2GATransform(self, basicTransform: Elements.pyECSS.GA.GA_Component.GATransform , event = None):
+    def apply2GATransform(self, basicTransform: Elements.features.GA.GA_Component.GATransform , event = None):
         """
         method to be subclassed for  behavioral or logic computation 
         when visits Components. 
