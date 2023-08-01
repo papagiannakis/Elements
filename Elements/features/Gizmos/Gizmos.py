@@ -816,13 +816,11 @@ class Gizmos:
         ray_dir_world = util.vec(ray_end_world[0] - ray_start_World[0],
                                  ray_end_world[1] - ray_start_World[1],
                                  ray_end_world[2] - ray_start_World[2])
-        ray_dir_world_unormalized = ray_dir_world ##
         ray_dir_world = util.normalise(ray_dir_world)
-        
         ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2],0.0)
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
 
-        return ray_origin, ray_direction, ray_dir_world_unormalized
+        return ray_origin, ray_direction
 
     def raycast(self):
         """
@@ -835,7 +833,7 @@ class Gizmos:
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
-        ray_origin, ray_direction, ray_direction_unormalized = self.calculate_ray()
+        ray_origin, ray_direction = self.calculate_ray()
 
         x_intersects, x_in_point = False, util.vec(0.0)
         y_intersects, y_in_point = False, util.vec(0.0)
