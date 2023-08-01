@@ -1,6 +1,6 @@
 
 Elements.pyECSS API
-========================
+=====================================
 
 .. currentmodule:: Elements.pyECSS
 
@@ -13,12 +13,12 @@ Elements.pyECSS API
    System
    Event
    ECSSManager
-   utilities
+   math_utilities
 
 
 
 Elements.pyGLV API
-========================
+=====================================
 
 .. currentmodule:: Elements.pyGLV
 

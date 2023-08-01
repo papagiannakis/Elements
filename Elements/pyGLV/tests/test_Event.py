@@ -13,7 +13,7 @@ import unittest
 import time
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
@@ -305,7 +305,7 @@ class TestEvent(unittest.TestCase):
         # print (gWindow._myCamera)
 
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             mvpMat = gWindow._myCamera
             self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)

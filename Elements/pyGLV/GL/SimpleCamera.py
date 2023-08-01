@@ -7,7 +7,7 @@ Convenience class to assemble an OpenGL camera
 
 from Elements.pyGLV.GL.Scene import Scene # for SimpleCamera
 from Elements.pyECSS.Entity import Entity
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Component import BasicTransform, Camera
 
 class SimpleCamera(Entity):

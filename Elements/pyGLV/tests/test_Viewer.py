@@ -37,7 +37,7 @@ class TestSDL2Window(unittest.TestCase):
         # MAIN RENDERING LOOP
         while running:
             self.gWindow.display()
-            running = self.gWindow.event_input_process(running)
+            running = self.gWindow.event_input_process()
             self.gWindow.display_post()
         self.gWindow.shutdown()
         
@@ -59,7 +59,7 @@ class TestSDL2Window(unittest.TestCase):
         # MAIN RENDERING LOOP
         while running:
             self.gGUI.display()
-            running = self.gGUI.event_input_process(running)
+            running = self.gGUI.event_input_process()
             self.gGUI.display_post()
         self.gGUI.shutdown()
         
