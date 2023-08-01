@@ -117,6 +117,22 @@ class TestGizmos(unittest.TestCase):
         self.assertEqual(gizmos.screen_width,width)
         self.assertEqual(gizmos.screen_height,height)
         self.assertTrue(np.array_equiv(gizmos.view,view))
+
+    def test_bounding_box_intersection(self):
+        """
+        Test if the bounding box intersection is working correctly
+        """
+
+        gizmos = Gizmos(self.rootEntity)
+        start = util.vec(2.0,2.0,2.0,0.0)
+        end = util.vec(0.0,0.0,0.0,0.0)
+        direction = end - start
+        minbb = util.vec(-1.0,-1.0,-1.0,1.0)
+        maxbb = util.vec(1.0,1.0,1.0,1.0)
+        model = util.identity()
+
+        res, intersection_point = gizmos.testRayBoundingBoxIntesection(start,direction,minbb,maxbb,model)
+        self.assertTrue(res)
     
     def testEmpty(self):
         """
@@ -227,7 +243,6 @@ class TestGizmos(unittest.TestCase):
             self.scene.render_post()
             
         self.scene.shutdown()
-
 
     def testMultiple(self):
         """
