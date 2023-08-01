@@ -296,13 +296,18 @@ class OpenGLPlugin(GraphicsPlugin):
         GL.glClearDepth(1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
         
-        #fov is used for an Ortho Projection
+        """
         proj = util.ortho(layer_view.fov.angle_left,
                           layer_view.fov.angle_right,
                           layer_view.fov.angle_down,
                           layer_view.fov.angle_up,
                           0.05,
                           100.0)
+        """
+
+        aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
+
+        proj = util.perspective(60.0,aspect_ratio,0.05,100.0)
 
         to_view = util.translate(layer_view.pose.position.x,
                            layer_view.pose.position.y,
