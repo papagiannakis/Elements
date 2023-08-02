@@ -266,6 +266,7 @@ class Gizmos:
                                 "Gizmos_z_R","Gizmos_z_R_trans","Gizmos_z_R_mesh"])
         
         self.seperate_transformations = {}
+        self.initial_transformations = {}
 
         self.cameraInUse = ""
         self.screen_width = 1024.0
@@ -278,9 +279,9 @@ class Gizmos:
         self.previous_z = 0.0
 
         #Light
-        self.Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
-        self.Lambientstr = 0.3 #uniform ambientStr
-        self.LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
+        self.Lambientcolor = util.vec(1.0, 1.0, 1.0)
+        self.Lambientstr = 0.3
+        self.LviewPos = util.vec(2.5, 2.8, 5.0)
         self.Lcolor = util.vec(1.0,1.0,1.0)
         self.Lintensity = 0.9
         #Material
@@ -447,7 +448,7 @@ class Gizmos:
 
     def reset_to_None(self):
         """
-        Resets to initial state
+        Resets Gizmos to initial state
         Arguments:
             self: self
         Returns:
@@ -458,6 +459,19 @@ class Gizmos:
         self.selected_mesh = None
         self.selected_comp = "None"
         #TODO: reset uniform variables too
+
+    def reset_to_default(self):
+        """
+        Resets selected Entity's transformations to identity
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        self.selected_trans.trs = self.initial_transformations[self.selected_comp]
+        self.seperate_transformations[self.selected_comp].scaling = util.vec(1.0,1.0,1.0)
+        self.__update_gizmos_trans()
+        self.__update_gizmos()
 
     def change_target(self):
         """
@@ -519,7 +533,9 @@ class Gizmos:
         """
         for component in self.scene.world.root:
             if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps:
-                self.seperate_transformations[component.parent.name] = entity_transformations()
+                entity_name = component.parent.name
+                self.seperate_transformations[entity_name] = entity_transformations()
+                self.initial_transformations[entity_name] = component.trs
                 self.total = self.total + 1
 
     def get_Event(self):
@@ -546,6 +562,9 @@ class Gizmos:
 
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             self.key_down = False
+
+        if self.key_states[sdl.SDL_SCANCODE_0]:
+            self.reset_to_default()
 
         if self.key_states[sdl.SDL_SCANCODE_T]:
             self.mode = Mode.TRANSLATE
