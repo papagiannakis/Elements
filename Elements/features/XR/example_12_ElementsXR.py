@@ -11,6 +11,9 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.features.XR.ElementsXR import ElementsXR_program
+from Elements.features.XR.GraphicsPlugin import XR_Shaders
+
+from Elements.definitions import TEXTURE_DIR
 
 """
 Note: Before running this example open steamVR, go to Settings -> OpenXR and press "SET STEAMVR AS OPENXR RUNTIME"
@@ -87,7 +90,8 @@ vertexCube, indexCube, _ = norm.generateUniqueVertices(vertexCube,indexCube)
 meshSkybox.vertex_attributes.append(vertexSkybox)
 meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
-shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
+#shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
+shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.STATIC_SKYBOX_VERT_XR, fragment_source=XR_Shaders.STATIC_SKYBOX_FRAG_XR)))
 
 #mesh4.vertex_attributes.append(vertexCube)
 #mesh4.vertex_index.append(indexCube)
@@ -105,12 +109,13 @@ program.InitializeDevice(initUpdate)
 program.InitializeSession()
 program.create_Swapchains()
 
-front_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "front.jpg")
-right_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "right.jpg")
-left_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "left.jpg")
-back_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "back.jpg")
-bottom_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "bottom.jpg")
-top_img = os.path.join(os.path.dirname(__file__), "Skyboxes", "Cloudy", "top.jpg")
+skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
+front_img = os.path.join(skybox_texture_locations, "front.jpg")
+right_img = os.path.join(skybox_texture_locations,"right.jpg")
+left_img = os.path.join(skybox_texture_locations,"left.jpg")
+back_img = os.path.join(skybox_texture_locations,"back.jpg")
+bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
+top_img = os.path.join(skybox_texture_locations,"top.jpg")
 mat_img = os.path.join(os.path.dirname(__file__), "textures", "dark_wood_texture.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)

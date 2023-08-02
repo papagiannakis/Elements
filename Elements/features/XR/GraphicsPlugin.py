@@ -40,6 +40,280 @@ def invert_rigid_body(m):
 
         return result
 
+class XR_Shaders:
+    COLOR_VERT_MVP_XR = """
+        #version 410
+
+        layout (location=0) in vec4 vPosition;
+        layout (location=1) in vec4 vColor;
+
+        out     vec4 color;
+
+        uniform mat4 model;
+        uniform mat4 View;
+        uniform mat4 Proj;
+
+        
+        void main()
+        {
+            gl_Position =  Proj * View * model * vPos;
+            color = vColor;
+        }
+    """
+    COLOR_FRAG_XR = """
+        #version 410
+
+        in vec4 color;
+        out vec4 outputColor;
+
+        void main()
+        {
+            outputColor = color;
+            //outputColor = vec4(0.1, 0.1, 0.1, 1);
+        }
+    """
+    VERT_PHONG_MVP_XR = """
+        #version 410
+
+        layout (location=0) in vec4 vPosition;
+        layout (location=1) in vec4 vColor;
+        layout (location=2) in vec4 vNormal;
+
+        out     vec4 pos;
+        out     vec4 color;
+        out     vec3 normal;
+        
+        uniform mat4 model;
+        uniform mat4 View;
+        uniform mat4 Proj;
+
+        void main()
+        {
+            gl_Position =  Proj * View * model * vPos;
+            pos = model * vPosition;
+            color = vColor;
+            normal = mat3(transpose(inverse(model))) * vNormal.xyz;
+        }
+    """
+    FRAG_PHONG_XR = """
+        #version 410
+
+        in vec4 pos;
+        in vec4 color;
+        in vec3 normal;
+
+        out vec4 outputColor;
+
+        // Phong products
+        uniform vec3 ambientColor;
+        uniform float ambientStr;
+
+        // Lighting 
+        uniform vec3 viewPos;
+        uniform vec3 lightPos;
+        uniform vec3 lightColor;
+        uniform float lightIntensity;
+
+        // Material
+        uniform float shininess;
+        uniform vec3 matColor;
+
+        void main()
+        {
+            vec3 norm = normalize(normal);
+            vec3 lightDir = normalize(lightPos - pos.xyz);
+            vec3 viewDir = normalize(viewPos - pos.xyz);
+            vec3 reflectDir = reflect(-lightDir, norm);
+            
+
+            // Ambient
+            vec3 ambientProduct = ambientStr * ambientColor;
+            // Diffuse
+            float diffuseStr = max(dot(norm, lightDir), 0.0);
+            vec3 diffuseProduct = diffuseStr * lightColor;
+            // Specular
+            float specularStr = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+            vec3 specularProduct = shininess * specularStr * color.xyz;
+            
+            vec3 result = (ambientProduct + (diffuseProduct + specularProduct) * lightIntensity) * color.xyz;
+            outputColor = vec4(result, 1);
+        }
+    """
+    SIMPLE_TEXTURE_VERT_XR = """
+        #version 410
+
+        layout (location=0) in vec4 vPos;
+        layout (location=1) in vec2 vTexCoord;
+
+        out vec2 fragmentTexCoord;
+
+        uniform mat4 model;
+        uniform mat4 View;
+        uniform mat4 Proj;
+
+        void main()
+        {
+            gl_Position =  Proj * View * model * vPos;
+            fragmentTexCoord = vTexCoord;
+        }
+    """
+    SIMPLE_TEXTURE_FRAG_XR = """
+        #version 410
+        
+        in vec2 fragmentTexCoord;
+
+        out vec4 color;
+
+        uniform sampler2D ImageTexture;
+
+        void main()
+        {
+            //vec2 flipped_texcoord = vec2(fragmentTexCoord.x, 1.0 - fragmentTexCoord.y);
+            //color = texture(ImageTexture,flipped_texcoord);
+
+            color = texture(ImageTexture,fragmentTexCoord);
+        }
+    """
+    SIMPLE_TEXTURE_PHONG_VERT_XR = """
+        #version 410
+
+        layout (location=0) in vec4 vPos;
+        layout (location=1) in vec4 vNormal;
+        layout (location=2) in vec2 vTexCoord;
+
+        out vec2 fragmentTexCoord;
+        out vec4 pos;
+        out vec3 normal;
+
+        uniform mat4 model;
+        uniform mat4 View;
+        uniform mat4 Proj;
+
+        void main()
+        {
+            gl_Position =  Proj * View * model * vPos;
+            pos = model * vPos;
+            fragmentTexCoord = vTexCoord;
+            normal = mat3(transpose(inverse(model))) * vNormal.xyz;
+        }
+    """
+    SIMPLE_TEXTURE_PHONG_FRAG_XR = """
+        #version 410
+        
+        in vec2 fragmentTexCoord;
+        in vec4 pos;
+        in vec3 normal;
+
+        out vec4 outputColor;
+
+        // Phong products
+        uniform vec3 ambientColor;
+        uniform float ambientStr;
+
+        // Lighting 
+        uniform vec3 viewPos;
+        uniform vec3 lightPos;
+        uniform vec3 lightColor;
+        uniform float lightIntensity;
+
+        // Material
+        uniform float shininess;
+        //uniform vec3 matColor;
+
+        uniform sampler2D ImageTexture;
+
+        void main()
+        {
+            vec3 norm = normalize(normal);
+            vec3 lightDir = normalize(lightPos - pos.xyz);
+            vec3 viewDir = normalize(viewPos - pos.xyz);
+            vec3 reflectDir = reflect(-lightDir, norm);
+
+            // Ambient
+            vec3 ambientProduct = ambientStr * ambientColor;
+            // Diffuse
+            float diffuseStr = max(dot(norm, lightDir), 0.0);
+            vec3 diffuseProduct = diffuseStr * lightColor;
+            // Specular
+            float specularStr = pow(max(dot(viewDir, reflectDir), 0.0), 32);
+
+            vec4 tex = texture(ImageTexture,fragmentTexCoord);
+
+            vec3 specularProduct = shininess * specularStr * tex.xyz;
+            
+            vec3 result = (ambientProduct + (diffuseProduct + specularProduct) * lightIntensity) * tex.xyz;
+            outputColor = vec4(result, 1);
+        }
+
+    """
+    TEXTURE_3D_VERT_XR = """
+        #version 410
+
+        layout (location=0) in vec4 vPos;
+
+        out vec3 TexCoords;
+
+        uniform mat4 model;
+        uniform mat4 View;
+        uniform mat4 Proj;
+
+        void main()
+        {
+            gl_Position = Proj * View * model * vPos;
+            TexCoords = vPos.xyz;
+        }
+
+    """
+    TEXTURE_3D_FRAG_XR = """
+        #version 410
+
+        in vec3 TexCoords;
+
+        out vec4 FragColor;
+
+        uniform samplerCube cubemap; 
+
+        void main()
+        {             
+            FragColor = texture(cubemap, TexCoords);
+        } 
+    """
+    STATIC_SKYBOX_VERT_XR = """
+        #version 410
+
+        layout (location = 0) in vec4 vPos;
+
+        out vec3 TexCoords;
+
+        uniform mat4 Proj;
+        uniform mat4 View;
+
+        void main()
+        {
+            mat4 viewPos = mat4(mat3(View)); //removes Translation
+            gl_Position = Proj * viewPos * vPos;
+
+            //gl_Position = Proj * View * vPos; // with Translation
+
+            TexCoords = vPos.xyz;
+        } 
+
+    """
+    STATIC_SKYBOX_FRAG_XR = """
+        #version 410
+    
+        out vec4 FragColor;
+
+        in vec3 TexCoords;
+
+        uniform samplerCube cubemap;
+
+        void main()
+        {    
+            FragColor = texture(cubemap, TexCoords);
+        }
+    """
+
 class GraphicsPlugin(object):
     
     @abc.abstractmethod
@@ -306,8 +580,11 @@ class OpenGLPlugin(GraphicsPlugin):
         """
 
         aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
+        print(layer_view.sub_image.image_rect.extent.width)
+        print(layer_view.sub_image.image_rect.extent.height)
+        #aspect_ratio = 1.0
 
-        proj = util.perspective(60.0,aspect_ratio,0.05,100.0)
+        proj = util.perspective(100.0,aspect_ratio,0.05,100.0)
 
         to_view = util.translate(layer_view.pose.position.x,
                            layer_view.pose.position.y,
@@ -315,8 +592,10 @@ class OpenGLPlugin(GraphicsPlugin):
                                                                                                 layer_view.pose.orientation.y,
                                                                                                 layer_view.pose.orientation.z,
                                                                                                 layer_view.pose.orientation.w)) @ util.scale(1.0,1.0,1.0)
-        view = invert_rigid_body(to_view)
+        #view = invert_rigid_body(to_view)
         #view = util.inverse(to_view)
+
+        view = to_view
 
         #Traverse Vertex Arrays
         scene.world.traverse_visit(renderUpdate,scene.world.root)
