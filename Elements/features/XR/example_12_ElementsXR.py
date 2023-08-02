@@ -9,7 +9,7 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
-from Elements.pyGLV.GL.Textures import get_texture_faces
+from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
 from Elements.features.XR.ElementsXR import ElementsXR_program
 from Elements.features.XR.GraphicsPlugin import XR_Shaders
 
@@ -21,6 +21,14 @@ Note: Before running this example open steamVR, go to Settings -> OpenXR and pre
       Tested with Windows Mixed Reality
 """
 
+GROUND_TEX_COORDINATES = [
+    [0.0, 0.0],
+    [1.0, 0.0],
+    [1.0, 1.0],
+    [0.0, 0.0],
+    [1.0, 1.0],
+    [0.0, 1.0]]
+
 scene = Scene()
 
 # Scenegraph with Entities, Components
@@ -30,6 +38,11 @@ skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
 transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
+
+ground = scene.world.createEntity(Entity(name="ground"))
+scene.world.addEntityChild(rootEntity, ground)
+ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.identity()))
+ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 
 #Cube
 minbox = -20
@@ -53,6 +66,15 @@ indexSkybox = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32) 
 
+vertexground = np.array([
+    [-3.0, 0.0, -3.0, 1.0],
+    [3.0, 0.0, -3.0, 1.0],
+    [3.0, 0.0, 3.0, 1.0],
+    [-3.0, 0.0, 3.0, 1.0]
+],dtype=np.float32)
+
+indexground = np.array((2,1,0,2,0,3),np.uint32)
+
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
@@ -64,6 +86,16 @@ meshSkybox.vertex_attributes.append(vertexSkybox)
 meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
 shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.STATIC_SKYBOX_VERT_XR, fragment_source=XR_Shaders.STATIC_SKYBOX_FRAG_XR)))
+
+vertexground, indexground, _ = norm.generateUniqueVertices(vertexground,indexground)
+
+# Add ground
+ground_mesh.vertex_attributes.append(vertexground) 
+ground_mesh.vertex_attributes.append(GROUND_TEX_COORDINATES)
+ground_mesh.vertex_index.append(indexground)
+ground_vArray = scene.world.addComponent(ground, VertexArray())
+ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+
 
 # MAIN RENDERING LOOP
 
@@ -86,11 +118,19 @@ top_img = os.path.join(skybox_texture_locations,"top.jpg")
 mat_img = os.path.join(os.path.dirname(__file__), "textures", "dark_wood_texture.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
+texturePath = os.path.join(TEXTURE_DIR, "black_stones_floor.jpg")
+texture = Texture(texturePath)
 
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
+ground_shader.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while not exit_loop:
     exit_loop = program.poll_events()
+
+    model_ground = ground.getChild(0).trs
+
+    ground_shader.setUniformVariable(key='model', value=model_ground, mat4=True)
+
     if program.session_running:
         program.render_frame(renderUpdate)
     else:
