@@ -31,11 +31,6 @@ scene.world.addEntityChild(rootEntity, skybox)
 transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
-#node4 = scene.world.createEntity(Entity(name="node4"))
-#scene.world.addEntityChild(rootEntity, node4)
-#trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.identity())) #util.identity()
-#mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
-
 #Cube
 minbox = -20
 maxbox = 20
@@ -58,26 +53,6 @@ indexSkybox = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32) 
 
-#Simple Cube
-vertexCube = np.array([
-    [-0.5, -0.5, 0.5, 1.0],
-    [-0.5, 0.5, 0.5, 1.0],
-    [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0], 
-    [-0.5, -0.5, -0.5, 1.0], 
-    [-0.5, 0.5, -0.5, 1.0], 
-    [0.5, 0.5, -0.5, 1.0], 
-    [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32)
-
-#index Array for Cube
-indexCube = np.array((1,0,3, 1,3,2, 
-                  2,3,7, 2,7,6,
-                  3,0,4, 3,4,7,
-                  6,5,1, 6,1,2,
-                  4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) 
-
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
@@ -85,18 +60,10 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 vertexSkybox, indexSkybox, _ = norm.generateUniqueVertices(vertexSkybox,indexSkybox)
 
-vertexCube, indexCube, _ = norm.generateUniqueVertices(vertexCube,indexCube)
-
 meshSkybox.vertex_attributes.append(vertexSkybox)
 meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
-#shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
 shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.STATIC_SKYBOX_VERT_XR, fragment_source=XR_Shaders.STATIC_SKYBOX_FRAG_XR)))
-
-#mesh4.vertex_attributes.append(vertexCube)
-#mesh4.vertex_index.append(indexCube)
-#vArray4 = scene.world.addComponent(node4, VertexArray())
-#shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.TEXTURE_3D_VERT, fragment_source=Shader.TEXTURE_3D_FRAG)))
 
 # MAIN RENDERING LOOP
 
@@ -119,14 +86,8 @@ top_img = os.path.join(skybox_texture_locations,"top.jpg")
 mat_img = os.path.join(os.path.dirname(__file__), "textures", "dark_wood_texture.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
-#face_data_2 = get_single_texture_faces(mat_img)
 
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
-#shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
-
-model_cube = util.translate(0.0,0.5,0.0)
-
-#shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
 
 while not exit_loop:
     exit_loop = program.poll_events()

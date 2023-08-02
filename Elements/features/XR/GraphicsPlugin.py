@@ -580,22 +580,22 @@ class OpenGLPlugin(GraphicsPlugin):
         """
 
         aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
-        print(layer_view.sub_image.image_rect.extent.width)
-        print(layer_view.sub_image.image_rect.extent.height)
         #aspect_ratio = 1.0
 
         proj = util.perspective(100.0,aspect_ratio,0.05,100.0)
 
-        to_view = util.translate(layer_view.pose.position.x,
-                           layer_view.pose.position.y,
-                           layer_view.pose.position.z) @ util.quaternion_matrix(util.quaternion(layer_view.pose.orientation.x,
-                                                                                                layer_view.pose.orientation.y,
-                                                                                                layer_view.pose.orientation.z,
-                                                                                                layer_view.pose.orientation.w)) @ util.scale(1.0,1.0,1.0)
-        #view = invert_rigid_body(to_view)
-        #view = util.inverse(to_view)
+        position = layer_view.pose.position
+        orientation = layer_view.pose.orientation
 
+        to_view = util.translate(position.x,
+                                position.y,
+                                position.z) @ util.inverse(util.quaternion_matrix(util.quaternion(orientation.x,
+                                                                                                    orientation.y,
+                                                                                                    orientation.z,
+                                                                                                   orientation.w))) @ util.scale(1.0,1.0,1.0)
+        #view = invert_rigid_body(to_view)
         view = to_view
+        #view = util.inverse(to_view)
 
         #Traverse Vertex Arrays
         scene.world.traverse_visit(renderUpdate,scene.world.root)
