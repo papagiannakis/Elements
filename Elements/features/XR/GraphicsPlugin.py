@@ -579,20 +579,31 @@ class OpenGLPlugin(GraphicsPlugin):
                           100.0)
         """
 
-        aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
-        #aspect_ratio = 1.0
-
-        proj = util.perspective(100.0,aspect_ratio,0.05,100.0)
-
         position = layer_view.pose.position
         orientation = layer_view.pose.orientation
+        fov = layer_view.fov
 
+        #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
+        #aspect_ratio = 1.0
+
+        #proj = util.perspective(100.0,aspect_ratio,0.05,100.0)
+
+        proj = create_xr_projection(fov.angle_left,fov.angle_right,fov.angle_up,fov.angle_down,0.05,150.0)
+
+        """
         to_view = util.translate(position.x,
                                 position.y,
-                                position.z) @ util.inverse(util.quaternion_matrix(util.quaternion(orientation.x,
-                                                                                                    orientation.y,
-                                                                                                    orientation.z,
-                                                                                                   orientation.w))) @ util.scale(1.0,1.0,1.0)
+                                position.z) @ util.quaternion_matrix(util.quaternion(orientation.x,
+                                                                                    orientation.y,
+                                                                                    orientation.z,
+                                                                                    orientation.w)) @ util.scale(1.0,1.0,1.0)
+        """
+        to_view = util.translate(position.x,
+                                position.y,
+                                position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                                    orientation.y,
+                                                                                    orientation.z,
+                                                                                    orientation.w)) @ util.scale(1.0,1.0,1.0)
         #view = invert_rigid_body(to_view)
         view = to_view
         #view = util.inverse(to_view)
@@ -623,3 +634,92 @@ class OpenGLPlugin(GraphicsPlugin):
 
     def window_should_close(self):
         return glfw.window_should_close(self.window)
+
+def create_xr_projection(tan_angle_left, tan_angle_right, tan_angle_up,tan_angle_down, near_z, far_z):
+    
+    tan_angle_width = tan_angle_right - tan_angle_left
+    tan_angle_height = tan_angle_up - tan_angle_down #OpenGL
+    offset_z = near_z
+
+    result = np.empty([4,4],dtype=np.float32)
+
+    if far_z <= near_z:
+            # place the far plane at infinity
+            result[0][0] = 2.0 / tan_angle_width
+            result[0][1] = 0.0
+            result[0][2] = (tan_angle_right + tan_angle_left) / tan_angle_width
+            result[0][3] = 0.0
+
+            result[1][0] = 0.0
+            result[1][1] = 2.0 / tan_angle_height
+            result[1][2] = (tan_angle_up + tan_angle_down) / tan_angle_height
+            result[1][3] = 0.0
+
+            result[2][0] = 0.0
+            result[2][1] = 0.0
+            result[2][2] = -1.0
+            result[2][3] = -(near_z + offset_z)
+    else:
+            # normal projection
+            result[0][0] = 2.0 / tan_angle_width
+            result[0][1] = 0.0
+            result[0][2] = (tan_angle_right + tan_angle_left) / tan_angle_width
+            result[0][3] = 0.0
+
+            result[1][0] = 0.0
+            result[1][1] = 2.0 / tan_angle_height
+            result[1][2] = (tan_angle_up + tan_angle_down) / tan_angle_height
+            result[1][3] = 0.0
+
+            result[2][0] = 0.0
+            result[2][1] = 0.0
+            result[2][2] = -(far_z + offset_z) / (far_z - near_z)
+            result[2][3] = -(far_z * (near_z + offset_z)) / (far_z - near_z)
+
+    result[3][0] = 0.0
+    result[3][1] = 0.0
+    result[3][2] = -1.0
+    result[3][3] = 0.0
+
+    return result
+
+def create_xr_quaternion(quat):
+
+    x2 = quat[0] + quat[0]
+    y2 = quat[1] + quat[1]
+    z2 = quat[2] + quat[2]
+
+    xx2 = quat[0] * x2
+    yy2 = quat[1] * y2
+    zz2 = quat[2] * z2
+
+    yz2 = quat[1] * z2
+    wx2 = quat[3] * x2
+    xy2 = quat[0] * y2
+    wz2 = quat[3] * z2
+    xz2 = quat[0] * z2
+    wy2 = quat[3] * y2
+
+    result = np.empty([4,4],dtype=np.float32)
+
+    result[0][0] = 1.0 - yy2 - zz2
+    result[0][1] = xy2 + wz2
+    result[0][2] = xz2 - wy2
+    result[0][3] = 0.0
+
+    result[1][0] = xy2 - wz2
+    result[1][1] = 1.0 - xx2 - zz2
+    result[1][2] = yz2 + wx2
+    result[1][3] = 0.0
+
+    result[2][0] = xz2 + wy2
+    result[2][1] = yz2 - wx2
+    result[2][2] = 1.0 - xx2 - yy2
+    result[2][3] = 0.0
+
+    result[3][0] = 0.0
+    result[3][1] = 0.0
+    result[3][2] = 0.0
+    result[3][3] = 1.0
+
+    return result

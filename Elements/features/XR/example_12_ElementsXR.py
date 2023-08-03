@@ -41,12 +41,12 @@ meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 ground = scene.world.createEntity(Entity(name="ground"))
 scene.world.addEntityChild(rootEntity, ground)
-ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.identity()))
+ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-4.0,0.0)))
 ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 
 #Cube
-minbox = -20
-maxbox = 20
+minbox = -60
+maxbox = 60
 vertexSkybox = np.array([
     [minbox, minbox, maxbox, 1.0],
     [minbox, maxbox, maxbox, 1.0],
