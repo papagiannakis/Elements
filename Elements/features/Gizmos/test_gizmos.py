@@ -149,10 +149,11 @@ class TestGizmos(unittest.TestCase):
         far = 10.0
         projMat = util.perspective(fov, aspect_ratio, near, far) 
 
-        gizmos = Gizmos(self.rootEntity,projMat,view)
+        gizmos = Gizmos(self.rootEntity)
         cameraName = self.entityCam1.name
         gizmos.set_camera_in_use(cameraName)
         gizmos.update_projection(projMat)
+        gizmos.update_view(view)
         gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
@@ -163,6 +164,7 @@ class TestGizmos(unittest.TestCase):
 
         while running:
             running = self.scene.render()
+            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             gizmos.update_ray_init_position()
             gizmos.update_view(view)
@@ -198,9 +200,10 @@ class TestGizmos(unittest.TestCase):
         far = 10.0
         projMat = util.perspective(fov, aspect_ratio, near, far) 
 
-        gizmos = Gizmos(self.rootEntity,projMat,view)
+        gizmos = Gizmos(self.rootEntity)
         gizmos.set_camera_in_use("entityCam1")
         gizmos.update_projection(projMat)
+        gizmos.update_view(view)
         gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
@@ -224,6 +227,7 @@ class TestGizmos(unittest.TestCase):
 
         while running:
             running = self.scene.render()
+            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera
             height = self.scene.renderWindow._windowHeight
@@ -235,7 +239,7 @@ class TestGizmos(unittest.TestCase):
             gizmos.get_Event()
             gizmos.update_imgui()
 
-            model_cube = trans4.trs
+            model_cube = trans4.l2world
             mvp_cube = projMat @ view @ model_cube
 
             shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
@@ -255,7 +259,7 @@ class TestGizmos(unittest.TestCase):
 
         node4_2 = self.scene.world.createEntity(Entity(name="node4_2"))
         self.scene.world.addEntityChild(node4, node4_2)
-        trans4_2 = self.scene.world.addComponent(node4_2, BasicTransform(name="trans4_2", trs=util.translate(0.0,0.5,0.0)))
+        trans4_2 = self.scene.world.addComponent(node4_2, BasicTransform(name="trans4_2", trs=util.translate(0.0,0.0,1.5)))
         mesh4_2 = self.scene.world.addComponent(node4_2, RenderMesh(name="mesh4_2"))
 
         mesh4.vertex_attributes.append(self.vertexCube)
@@ -282,9 +286,10 @@ class TestGizmos(unittest.TestCase):
         far = 10.0
         projMat = util.perspective(fov, aspect_ratio, near, far) 
 
-        gizmos = Gizmos(self.rootEntity,projMat,view)
+        gizmos = Gizmos(self.rootEntity)
         gizmos.set_camera_in_use("entityCam1")
         gizmos.update_projection(projMat)
+        gizmos.update_view(view)
         gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
@@ -308,6 +313,7 @@ class TestGizmos(unittest.TestCase):
 
         while running:
             running = self.scene.render()
+            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera
             height = self.scene.renderWindow._windowHeight
@@ -318,8 +324,8 @@ class TestGizmos(unittest.TestCase):
             gizmos.update_ray_init_position()
             gizmos.get_Event()
             gizmos.update_imgui()
-            model_cube = trans4.trs
-            model_cube2 = trans4_2.trs
+            model_cube = trans4.l2world
+            model_cube2 = trans4_2.l2world
 
             mvp_cube = projMat @ view @ model_cube
             mvp_cube2 = projMat @ view @ model_cube2

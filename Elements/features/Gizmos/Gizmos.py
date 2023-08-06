@@ -32,23 +32,23 @@ def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
     inc = 4
 
     # x-axis gizmos
-    p1 = util.vec(1.0,0.0,-0.01,1.0)
-    p2 = util.vec(1.0,0.0,0.01,1.0)
-    p3 = util.vec(1.01,0.0,-0.01,1.0)
-    p4 = util.vec(1.01,0.0,0.01,1.0)
+    p1 = util.vec(1.0,0.0,-0.02,1.0)
+    p2 = util.vec(1.0,0.0,0.02,1.0)
+    p3 = util.vec(1.01,0.0,-0.02,1.0)
+    p4 = util.vec(1.01,0.0,0.02,1.0)
 
     if axis=='Y':
         # y-axis gizmos
-        p1 = util.vec(1.0,-0.01,0.0,1.0)
-        p2 = util.vec(1.0,0.01,0.0,1.0)
-        p3 = util.vec(1.01,0.01,0.0,1.0)
-        p4 = util.vec(1.01,-0.01,0.0,1.0)
+        p1 = util.vec(1.0,-0.02,0.0,1.0)
+        p2 = util.vec(1.0,0.02,0.0,1.0)
+        p3 = util.vec(1.01,0.02,0.0,1.0)
+        p4 = util.vec(1.01,-0.02,0.0,1.0)
     elif axis=='Z':
         # z-axis gizmo
-        p1 = util.vec(-0.01,0.0,1.0,1.0)
-        p2 = util.vec(0.01,0.0,1.0,1.0)
-        p3 = util.vec(0.01,0.0,1.01,1.0)
-        p4 = util.vec(-0.01,0.0,1.01,1.0)
+        p1 = util.vec(-0.02,0.0,1.0,1.0)
+        p2 = util.vec(0.02,0.0,1.0,1.0)
+        p3 = util.vec(0.02,0.0,1.01,1.0)
+        p4 = util.vec(-0.02,0.0,1.01,1.0)
     
 
     ver = np.array([p1,p2,p3,p4],dtype=np.float32)
@@ -231,7 +231,7 @@ class entity_transformations:
 
 class Gizmos:
 
-    def __init__(self,rootEntity: Entity,Projection=None, View=None):
+    def __init__(self,rootEntity: Entity):
         sdl.ext.init()
         self.scene = Scene()
         self.selected = 0
@@ -240,12 +240,9 @@ class Gizmos:
         self.mouse_state = 0 #LMB not clicked
         self.key_states = sdl.SDL_GetKeyboardState(None)
         self.key_down = False
-        self.projection = Projection
-        self.view = View
-        if Projection is not None:
-            self.inv_projection = util.inverse(Projection)
-        if View is not None:
-            self.inv_view = util.inverse(View)
+        self.projection = np.array([4,4],dtype=np.float32)
+        self.view = np.array([4,4],dtype=np.float32)
+
         self.is_selected = False
         self.selected_trans = None
         self.selected_mesh = None
@@ -274,17 +271,18 @@ class Gizmos:
         self.picked = False
         self.selected_gizmo = ''
         self.previous_distance = 0.0
+        self.rotation_distance = 0.0
         self.previous_x = 0.0
         self.previous_y = 0.0
         self.previous_z = 0.0
 
-        #Light
+        #Light parameters for scale cubes
         self.Lambientcolor = util.vec(1.0, 1.0, 1.0)
         self.Lambientstr = 0.3
         self.LviewPos = util.vec(2.5, 2.8, 5.0)
         self.Lcolor = util.vec(1.0,1.0,1.0)
         self.Lintensity = 0.9
-        #Material
+        #Material parameters for scale cubes
         self.Mshininess = 0.4 
         self.Mcolor = util.vec(0.8, 0.0, 0.8)
 
@@ -303,7 +301,7 @@ class Gizmos:
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y)
         self.gizmos_y_trans = self.scene.world.addComponent(self.gizmos_y, BasicTransform(name="Gizmos_Y_trans", trs=util.identity()))
         self.gizmos_y_mesh = self.scene.world.addComponent(self.gizmos_y, RenderMesh(name="Gizmos_Y_mesh"))
-        self.gizmos_y_mesh.vertex_attributes.append(VERTEX_GIZMOS_Y) 
+        self.gizmos_y_mesh.vertex_attributes.append(VERTEX_GIZMOS_Y)
         self.gizmos_y_mesh.vertex_attributes.append(COLOR_Y)
         self.gizmos_y_mesh.vertex_index.append(ARROW_INDEX2)
         self.gizmos_y_vArray = self.scene.world.addComponent(self.gizmos_y, VertexArray())
@@ -469,7 +467,8 @@ class Gizmos:
             None
         """
         self.selected_trans.trs = self.initial_transformations[self.selected_comp]
-        self.seperate_transformations[self.selected_comp].scaling = util.vec(1.0,1.0,1.0)
+        self.seperate_transformations[self.selected_comp] = entity_transformations()
+
         self.__update_gizmos_trans()
         self.__update_gizmos()
 
@@ -911,29 +910,61 @@ class Gizmos:
             mesh_y = self.gizmos_y_R_mesh
             mesh_z = self.gizmos_z_R_mesh
 
+            previous_distance = self.previous_distance
+
             x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
                                                 ray_direction,
                                                 mesh_x,
                                                 model_x)
+            if x_intersects:
+                x_distance = self.previous_distance
+            else:
+                x_distance = 1000000.0
         
             y_intersects, y_in_point = self.testRayCircleIntersection(ray_origin,
                                                 ray_direction,
                                                 mesh_y,
                                                 model_y)
+            if y_intersects:
+                y_distance = self.previous_distance
+            else:
+                y_distance = 1000000.0
         
             z_intersects, z_in_point = self.testRayCircleIntersection(ray_origin,
                                                 ray_direction,
                                                 mesh_z,
                                                 model_z)
+            if z_intersects:
+                z_distance = self.previous_distance
+            else:
+                z_distance = 1000000.0
+
+            #When the ray intersects with more than one gizmo apply rotation to the one closest to the ray origin
+            if x_intersects and (x_distance > y_distance or x_distance > z_distance):
+                x_intersects = False
+            if y_intersects and (y_distance > x_distance or y_distance > z_distance):
+                y_intersects = False
+            if z_intersects and (z_distance > x_distance or z_distance > y_distance):
+                z_intersects = False
+            
+            if self.selected_gizmo=='X':
+                self.rotation_distance = previous_distance - x_distance
+            if self.selected_gizmo=='Y':
+                self.rotation_distance = previous_distance - y_distance
+            if self.selected_gizmo=='Z':
+                self.rotation_distance = previous_distance - z_distance
 
         if self.selected_gizmo=='X' or (self.selected_gizmo=='' and x_intersects):
             self.selected_gizmo = 'X'
+            print("Rotate X")
             self.__transform_selected_entity(x_in_point)
         elif self.selected_gizmo=='Y' or (self.selected_gizmo==''  and y_intersects):
             self.selected_gizmo = 'Y'
+            print("Rotate Y")
             self.__transform_selected_entity(y_in_point)
         elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and z_intersects):
             self.selected_gizmo = 'Z'
+            print("Rotate Z")
             self.__transform_selected_entity(z_in_point)
 
     def __transform_selected_entity(self,inter_point):
@@ -1008,25 +1039,25 @@ class Gizmos:
                     self.picked = True
                     self.previous_x = inter_point[0]
                 else:
-                    diff = 90 * (self.previous_x - inter_point[0])
+                    diff = 90 * (self.previous_x - inter_point[0])/2
                     self.previous_x = inter_point[0]
                     self.__rotate_selected(_angle = diff, _axis = (0.0,0.0,1.0))
             elif self.selected_gizmo=='Y':
                 if self.picked==False:
                     self.picked = True
-                    self.previous_y = inter_point[1]
+                    self.previous_y = inter_point[0]
                 else:
-                    diff = 90 * (self.previous_y - inter_point[1])
-                    self.previous_y = inter_point[1]
-                    self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
+                    diff = -90 * (self.previous_y - inter_point[0])/2
+                    self.previous_y = inter_point[0]
+                    self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
             elif self.selected_gizmo=='Z':
                 if self.picked==False:
                     self.picked = True
                     self.previous_z = inter_point[2]
                 else:
-                    diff = 90 * (self.previous_z - inter_point[2])
+                    diff = -90 * (self.previous_z - inter_point[2])
                     self.previous_z = inter_point[2]
-                    self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
+                    self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
 
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
@@ -1229,25 +1260,28 @@ class Gizmos:
         
         """
         scaling = self.seperate_transformations[self.selected_comp].scaling
-        #rotation = self.seperate_transformations[self.selected_comp].rotation
+        rotation = self.seperate_transformations[self.selected_comp].rotation
 
-        self.gizmos_x_trans.trs = self.__remove_rotation(self.selected_trans.l2world) #@ rotation
-        self.gizmos_y_trans.trs = self.__remove_rotation(self.selected_trans.l2world) #@ rotation
-        self.gizmos_z_trans.trs = self.__remove_rotation(self.selected_trans.l2world) #@ rotation
+        #selected Entity's local-2-world without rotation or scaling
+        no_rotation = self.__remove_rotation(self.selected_trans.l2world)
 
-        self.gizmos_x_S_line_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ util.scale(scaling[0],1.0,1.0)
-        self.gizmos_y_S_line_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ util.scale(1.0,scaling[1],1.0)
-        self.gizmos_z_S_line_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ util.scale(1.0,1.0,scaling[2])
+        self.gizmos_x_trans.trs = no_rotation @ rotation
+        self.gizmos_y_trans.trs = no_rotation @ rotation
+        self.gizmos_z_trans.trs = no_rotation @ rotation
+
+        self.gizmos_x_S_line_trans.trs = no_rotation @ util.scale(scaling[0],1.0,1.0) @ rotation
+        self.gizmos_y_S_line_trans.trs = no_rotation @ util.scale(1.0,scaling[1],1.0) @ rotation
+        self.gizmos_z_S_line_trans.trs = no_rotation @ util.scale(1.0,1.0,scaling[2]) @ rotation
 
         #translate the Scaling cubes based on Selected Entity's current scaling
         x_t = util.translate(x=scaling[0]-1.0)
         y_t = util.translate(y=scaling[1]-1.0)
         z_t = util.translate(z=scaling[2]-1.0)
 
-        self.gizmos_x_S_cube_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ x_t #@ rotation
-        self.gizmos_y_S_cube_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ y_t #@ rotation
-        self.gizmos_z_S_cube_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ z_t #@ rotation
+        self.gizmos_x_S_cube_trans.trs = no_rotation @ x_t @ rotation
+        self.gizmos_y_S_cube_trans.trs = no_rotation @ y_t @ rotation
+        self.gizmos_z_S_cube_trans.trs = no_rotation @ z_t @ rotation
 
-        self.gizmos_x_R_trans.trs = self.__remove_rotation(self.selected_trans.l2world)
-        self.gizmos_y_R_trans.trs = self.__remove_rotation(self.selected_trans.l2world)
-        self.gizmos_z_R_trans.trs = self.__remove_rotation(self.selected_trans.l2world)
+        self.gizmos_x_R_trans.trs = no_rotation
+        self.gizmos_y_R_trans.trs = no_rotation
+        self.gizmos_z_R_trans.trs = no_rotation
