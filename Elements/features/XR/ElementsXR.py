@@ -170,6 +170,17 @@ class ElementsXR_program:
 
         system_properties = xr.get_system_properties(self.instance.handle, self.system.id)
 
+        print("System Properties: "
+                    f"Name={system_properties.system_name.decode()} "
+                    f"VendorId={system_properties.vendor_id}")
+        print("System Graphics Properties: "
+                    f"MaxWidth={system_properties.graphics_properties.max_swapchain_image_width} "
+                    f"MaxHeight={system_properties.graphics_properties.max_swapchain_image_height} "
+                    f"MaxLayers={system_properties.graphics_properties.max_layer_count}")
+        print("System Tracking Properties: "
+                    f"OrientationTracking={bool(system_properties.tracking_properties.orientation_tracking)} "
+                    f"PositionTracking={bool(system_properties.tracking_properties.position_tracking)}")
+
         self.config_views = xr.enumerate_view_configuration_views(
             instance=self.instance.handle,
             system_id=self.system.id,
@@ -186,6 +197,12 @@ class ElementsXR_program:
             
         # Create a swapchain for each view.
         for i, vp in enumerate(self.config_views):
+            print("Creating swapchain for "
+                            f"view {i} with dimensions "
+                            f"Width={vp.recommended_image_rect_width} "
+                            f"Height={vp.recommended_image_rect_height} "
+                            f"SampleCount={vp.recommended_swapchain_sample_count}")
+
             # Create the swapchain.
             swapchain_create_info = xr.SwapchainCreateInfo(
                 array_size=1,
@@ -223,6 +240,8 @@ class ElementsXR_program:
     
     def createInstance(self, name: str):
         "create an XR instance of this program"
+        self.log_layers_and_extensions()
+
         assert self.instance is None
 
         # Create union of extensions required by platform and graphics plugins.
@@ -264,6 +283,7 @@ class ElementsXR_program:
             application_version=xr.Version(0, 0, 1),
             next=next_structure,
         )
+        self.log_instance_info()
 
     def InitializeSystem(self):
         """
@@ -274,11 +294,13 @@ class ElementsXR_program:
         assert self.system is None
         form_factor = options.get_xr_form_factor(self.options.form_factor)
         self.system = xr.SystemObject(instance=self.instance, form_factor=form_factor)
+        print(f"Using system {hex(self.system.id.value)} for form factor {str(form_factor)}")
         assert self.instance.handle is not None
         assert self.system.id is not None
 
     def InitializeDevice(self,
                          renderer : InitGLShaderSystem):
+        self.log_view_configurations()
         "The graphics Plugin takes care of the initialization here"
         self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer)
 
@@ -286,6 +308,9 @@ class ElementsXR_program:
         assert self.instance is not None
         assert self.instance.handle != xr.NULL_HANDLE
         assert self.session is None
+
+        print(f"Creating session...")
+
         graphics_binding_pointer = cast(
             pointer(self.graphics_plugin.graphics_binding),
             c_void_p)
@@ -297,12 +322,20 @@ class ElementsXR_program:
             instance=self.instance.handle,
             create_info=create_info,
         )
+        self.log_reference_spaces()
+
         #TODO initialize actions for hands like grab
+        #self.initialize_actions()
+        
         self.create_visualized_spaces()
         self.app_space = xr.create_reference_space(
             session=self.session,
             create_info=get_xr_reference_space_create_info(self.options.app_space),
         )
+
+    def initialize_actions(self):
+        # Create an action set.
+        pass
 
     def next_event(self)-> Optional[Structure]:
         head = self.event_data_buffer
@@ -466,6 +499,93 @@ class ElementsXR_program:
                 self.visualized_spaces.append(space)
             except xr.XrException as exc:
                 logger.warning(f"Failed to create reference space {visualized_space} with error {exc}")
+
+    #Below are some logging methods for the program's configuration
+
+    def log_environment_blend_mode(self, view_config_type):
+        assert self.instance.handle is not None
+        assert self.system.id is not None
+        blend_modes = xr.enumerate_environment_blend_modes(self.instance.handle, self.system.id, view_config_type)
+        print(f"Available Environment Blend Mode count : ({len(blend_modes)})")
+        blend_mode_found = False
+        for mode_value in blend_modes:
+            mode = xr.EnvironmentBlendMode(mode_value)
+            blend_mode_match = mode == self.options.parsed["environment_blend_mode"]
+            print(f"Environment Blend Mode ({str(mode)}) : "
+                        f"{'(Selected)' if blend_mode_match else ''}")
+            blend_mode_found |= blend_mode_match
+        assert blend_mode_found
+
+    def log_instance_info(self):
+        assert self.instance is not None
+        assert self.instance.handle is not None
+        instance_properties = self.instance.get_properties()
+        print(f"Instance RuntimeName={instance_properties.runtime_name.decode()} "
+              f"RuntimeVersion={xr.Version(instance_properties.runtime_version)}")
+        
+    def _log_extensions(layer_name, indent: int = 0):
+        """Write out extension properties for a given api_layer."""
+        extension_properties = xr.enumerate_instance_extension_properties(layer_name)
+        indent_str = " " * indent
+        print(f"{indent_str}Available Extensions ({len(extension_properties)})")
+        for extension in extension_properties:
+            print(f"{indent_str}  Name={extension.extension_name.decode()} SpecVersion={extension.extension_version}")
+
+    def log_layers_and_extensions(self):
+        # Log non-api_layer extensions
+        self._log_extensions(layer_name=None)
+        # Log layers and any of their extensions
+        layers = xr.enumerate_api_layer_properties()
+        print(f"Available Layers: ({len(layers)})")
+        for layer in layers:
+            print(
+                f"  Name={layer.layer_name.decode()} "
+                f"SpecVersion={self.xr_version_string()} "
+                f"LayerVersion={layer.layer_version} "
+                f"Description={layer.description.decode()}")
+            self._log_extensions(layer_name=layer.layer_name.decode(), indent=4)
+
+    def log_reference_spaces(self):
+        assert self.session is not None
+        spaces = xr.enumerate_reference_spaces(self.session)
+        print(f"Available reference spaces: {len(spaces)}")
+        for space in spaces:
+            print(f"  Name: {str(xr.ReferenceSpaceType(space))}")
+
+    def log_view_configurations(self):
+        assert self.instance.handle is not None
+        assert self.system.id is not None
+        view_config_types = xr.enumerate_view_configurations(self.instance.handle, self.system.id)
+        print(f"Available View Configuration Types: ({len(view_config_types)})")
+        for view_config_type_value in view_config_types:
+            view_config_type = xr.ViewConfigurationType(view_config_type_value)
+            print(
+                f"  View Configuration Type: {str(view_config_type)} "
+                f"{'(Selected)' if view_config_type == self.options.parsed['view_config_type'] else ''}")
+            view_config_properties = xr.get_view_configuration_properties(
+                instance=self.instance.handle,
+                system_id=self.system.id,
+                view_configuration_type=view_config_type,
+            )
+            print(f"  View configuration FovMutable={bool(view_config_properties.fov_mutable)}")
+            configuration_views = xr.enumerate_view_configuration_views(self.instance.handle, self.system.id,
+                                                                        view_config_type)
+            if configuration_views is None or len(configuration_views) < 1:
+                print(f"Empty view configuration type")
+            else:
+                for i, view in enumerate(configuration_views):
+                    print(
+                        f"    View [{i}]: Recommended Width={view.recommended_image_rect_width} "
+                        f"Height={view.recommended_image_rect_height} "
+                        f"SampleCount={view.recommended_swapchain_sample_count}")
+                    print(
+                        f"    View [{i}]:     Maximum Width={view.max_image_rect_width} "
+                        f"Height={view.max_image_rect_height} "
+                        f"SampleCount={view.max_swapchain_sample_count}")
+            self.log_environment_blend_mode(view_config_type)
+    
+    def log_action_source_name(self, action: xr.Action, action_name: str):
+        pass
 
 def hash(key):
     hex(cast(key, c_void_p).value)

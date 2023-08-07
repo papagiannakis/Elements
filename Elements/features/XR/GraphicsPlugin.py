@@ -12,6 +12,7 @@ from Elements.features.XR.options import options
 from OpenGL import GL, WGL
 import glfw
 import numpy as np
+import math
 import xr
 
 logger = logging.getLogger("XRprogram.OpenGLPlugin")
@@ -466,6 +467,7 @@ class OpenGLPlugin(GraphicsPlugin):
         glfw.focus_window(self.window)
         major = GL.glGetIntegerv(GL.GL_MAJOR_VERSION)
         minor = GL.glGetIntegerv(GL.GL_MINOR_VERSION)
+        print(f"OpenGL version {major}.{minor}")
         desired_api_version = xr.Version(major, minor, 0)
         if graphics_requirements.min_api_version_supported > desired_api_version.number():
             ms = xr.Version(graphics_requirements.min_api_version_supported).number()
@@ -588,7 +590,12 @@ class OpenGLPlugin(GraphicsPlugin):
 
         #proj = util.perspective(100.0,aspect_ratio,0.05,100.0)
 
-        proj = create_xr_projection(fov.angle_left,fov.angle_right,fov.angle_up,fov.angle_down,0.05,150.0)
+        #proj = create_xr_projection(fov.angle_left,fov.angle_right,fov.angle_up,fov.angle_down,0.05,150.0)
+        proj = create_xr_projection(math.tan(fov.angle_left),
+                                    math.tan(fov.angle_right),
+                                    math.tan(fov.angle_up),
+                                    math.tan(fov.angle_down),0.05,150.0) #check this out else use previous without tan
+
 
         """
         to_view = util.translate(position.x,
