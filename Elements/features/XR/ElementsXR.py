@@ -498,7 +498,8 @@ class ElementsXR_program:
                 )
                 self.visualized_spaces.append(space)
             except xr.XrException as exc:
-                logger.warning(f"Failed to create reference space {visualized_space} with error {exc}")
+                print(f"Failed to create reference space {visualized_space} with error {exc}")
+                #logger.warning(f"Failed to create reference space {visualized_space} with error {exc}")
 
     #Below are some logging methods for the program's configuration
 
@@ -523,7 +524,8 @@ class ElementsXR_program:
         print(f"Instance RuntimeName={instance_properties.runtime_name.decode()} "
               f"RuntimeVersion={xr.Version(instance_properties.runtime_version)}")
         
-    def _log_extensions(layer_name, indent: int = 0):
+    @staticmethod
+    def _log_extensions(layer_name: str, indent: int = 0):
         """Write out extension properties for a given api_layer."""
         extension_properties = xr.enumerate_instance_extension_properties(layer_name)
         indent_str = " " * indent
@@ -533,13 +535,13 @@ class ElementsXR_program:
 
     def log_layers_and_extensions(self):
         # Log non-api_layer extensions
-        self._log_extensions(layer_name=None)
+        #self._log_extensions(layer_name=None)
         # Log layers and any of their extensions
         layers = xr.enumerate_api_layer_properties()
         print(f"Available Layers: ({len(layers)})")
         for layer in layers:
             print(
-                f"  Name={layer.layer_name.decode()} "
+                f"Name={layer.layer_name.decode()} "
                 f"SpecVersion={self.xr_version_string()} "
                 f"LayerVersion={layer.layer_version} "
                 f"Description={layer.description.decode()}")
@@ -586,6 +588,10 @@ class ElementsXR_program:
     
     def log_action_source_name(self, action: xr.Action, action_name: str):
         pass
+
+    @staticmethod
+    def xr_version_string():
+        return xr.XR_CURRENT_API_VERSION
 
 def hash(key):
     hex(cast(key, c_void_p).value)

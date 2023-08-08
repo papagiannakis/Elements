@@ -577,7 +577,7 @@ class OpenGLPlugin(GraphicsPlugin):
                           layer_view.fov.angle_right,
                           layer_view.fov.angle_down,
                           layer_view.fov.angle_up,
-                          0.05,
+                          0.01,
                           100.0)
         """
 
@@ -586,16 +586,12 @@ class OpenGLPlugin(GraphicsPlugin):
         fov = layer_view.fov
 
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
-        #aspect_ratio = 1.0
+        #proj = util.perspective(100.0,aspect_ratio,0.01,60.0)
 
-        #proj = util.perspective(100.0,aspect_ratio,0.05,100.0)
-
-        #proj = create_xr_projection(fov.angle_left,fov.angle_right,fov.angle_up,fov.angle_down,0.05,150.0)
         proj = create_xr_projection(math.tan(fov.angle_left),
                                     math.tan(fov.angle_right),
                                     math.tan(fov.angle_up),
-                                    math.tan(fov.angle_down),0.05,150.0) #check this out else use previous without tan
-
+                                    math.tan(fov.angle_down),0.01,60.0)
 
         """
         to_view = util.translate(position.x,
@@ -622,9 +618,9 @@ class OpenGLPlugin(GraphicsPlugin):
         element: Entity
         for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
-                #Note: All shaders should get their View and Projection the same way for this loop to work
                 element.setUniformVariable(key='Proj', value=proj, mat4=True)
                 element.setUniformVariable(key='View', value=view, mat4=True)
+                #element.setUniformVariable(key='modelViewProj', value=view, mat4=True)
 
         #if mirror:
         #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)
