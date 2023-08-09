@@ -1223,7 +1223,9 @@ class Gizmos:
         Returns:
             None
         """
-        self.selected_trans.trs = self.selected_trans.trs @ util.translate(x,y,z)
+
+        #
+        self.selected_trans.trs = util.translate(x,y,z) @ self.selected_trans.trs
         self.__update_gizmos_trans()
  
     def __rotate_selected(self,_angle=0.0,_axis=(1.0,0.0,0.0)):
@@ -1236,8 +1238,10 @@ class Gizmos:
         Returns:
             None
         """
+        selected = self.seperate_transformations[self.selected_comp]
+
         self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
-        self.seperate_transformations[self.selected_comp].rotation = self.seperate_transformations[self.selected_comp].rotation @ util.rotate(angle=_angle,axis=_axis)
+        selected.rotation = selected.rotation @ util.rotate(angle=_angle,axis=_axis)
         self.__update_gizmos_trans()
 
     def __scale_selected(self,x=1.0,y=1.0,z=1.0):
@@ -1260,28 +1264,28 @@ class Gizmos:
         
         """
         scaling = self.seperate_transformations[self.selected_comp].scaling
-        rotation = self.seperate_transformations[self.selected_comp].rotation
+        #rotation = self.seperate_transformations[self.selected_comp].rotation
 
         #selected Entity's local-2-world without rotation or scaling
+        #Used for Translation and Scaling Gizmos
         no_rotation = self.__remove_rotation(self.selected_trans.l2world)
 
-        self.gizmos_x_trans.trs = no_rotation @ rotation
-        self.gizmos_y_trans.trs = no_rotation @ rotation
-        self.gizmos_z_trans.trs = no_rotation @ rotation
+        self.gizmos_x_trans.trs = no_rotation
+        self.gizmos_y_trans.trs = no_rotation
+        self.gizmos_z_trans.trs = no_rotation
 
-        self.gizmos_x_S_line_trans.trs = no_rotation @ util.scale(scaling[0],1.0,1.0) @ rotation
-        self.gizmos_y_S_line_trans.trs = no_rotation @ util.scale(1.0,scaling[1],1.0) @ rotation
-        self.gizmos_z_S_line_trans.trs = no_rotation @ util.scale(1.0,1.0,scaling[2]) @ rotation
+        self.gizmos_x_S_line_trans.trs = no_rotation @ util.scale(scaling[0],1.0,1.0)
+        self.gizmos_y_S_line_trans.trs = no_rotation @ util.scale(1.0,scaling[1],1.0)
+        self.gizmos_z_S_line_trans.trs = no_rotation @ util.scale(1.0,1.0,scaling[2])
 
         #translate the Scaling cubes based on Selected Entity's current scaling
         x_t = util.translate(x=scaling[0]-1.0)
         y_t = util.translate(y=scaling[1]-1.0)
         z_t = util.translate(z=scaling[2]-1.0)
 
-        self.gizmos_x_S_cube_trans.trs = no_rotation @ x_t @ rotation
-        self.gizmos_y_S_cube_trans.trs = no_rotation @ y_t @ rotation
-        self.gizmos_z_S_cube_trans.trs = no_rotation @ z_t @ rotation
-
+        self.gizmos_x_S_cube_trans.trs = no_rotation @ x_t
+        self.gizmos_y_S_cube_trans.trs = no_rotation @ y_t
+        self.gizmos_z_S_cube_trans.trs = no_rotation @ z_t 
         self.gizmos_x_R_trans.trs = no_rotation
         self.gizmos_y_R_trans.trs = no_rotation
         self.gizmos_z_R_trans.trs = no_rotation
