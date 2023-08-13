@@ -162,8 +162,19 @@ class ElementsXR_program:
             self.instance.destroy()
             self.instance = None
 
+    def Initialize(self, name: str, renderer : InitGLShaderSystem):
+        """Pack all Initializations inside one method"""
+        self.createInstance(name)
+        self.InitializeSystem()
+        self.InitializeDevice(renderer)
+        self.InitializeSession()
+        self.create_Swapchains()
+
     def create_Swapchains(self):        
-        
+        """
+        Create a Swapchain which requires coordinating with the graphics plugin to select the format, getting the system graphics
+        properties, getting the view configuration and grabbing the resulting swapchain images.
+        """
         assert self.session is not None
         assert len(self.swapchains) == 0
         assert len(self.config_views) == 0
@@ -195,6 +206,18 @@ class ElementsXR_program:
         swapchain_formats = xr.enumerate_swapchain_formats(self.session)
         self.color_swapchain_format = self.graphics_plugin.select_color_swapchain_format(swapchain_formats)
             
+        formats_string = ""
+        for sc_format in swapchain_formats:
+            selected = sc_format == self.color_swapchain_format
+            formats_string += " "
+            if selected:
+                formats_string += "["
+                formats_string += f"{str(self.color_swapchain_format)}({sc_format})"
+                formats_string += "]"
+            else:
+                formats_string += str(sc_format)
+        print(f"Swapchain Formats: {formats_string}")
+        
         # Create a swapchain for each view.
         for i, vp in enumerate(self.config_views):
             print("Creating swapchain for "
@@ -214,6 +237,7 @@ class ElementsXR_program:
                 sample_count=self.graphics_plugin.get_supported_swapchain_sample_count(vp),
                 usage_flags=xr.SwapchainUsageFlags.SAMPLED_BIT | xr.SwapchainUsageFlags.COLOR_ATTACHMENT_BIT,
             )
+
             swapchain = Swapchain(
                 xr.create_swapchain(
                     session=self.session,
@@ -222,12 +246,14 @@ class ElementsXR_program:
                 swapchain_create_info.width,
                 swapchain_create_info.height,
             )
+
             self.swapchains.append(swapchain)
             swapchain_image_buffer = xr.enumerate_swapchain_images(
                 swapchain=swapchain.handle,
                 element_type=self.graphics_plugin.swapchain_image_type,
             )
-                # Keep the buffer alive by moving it into the list of buffers.
+            
+            # Keep the buffer alive by moving it into the list of buffers.
             self.swapchain_image_buffers.append(swapchain_image_buffer)
             capacity = len(swapchain_image_buffer)
             swapchain_image_ptr_buffer = (POINTER(xr.SwapchainImageBaseHeader) * capacity)()
@@ -239,7 +265,7 @@ class ElementsXR_program:
             self.swapchain_image_ptr_buffers[hash(swapchain.handle)] = swapchain_image_ptr_buffer
     
     def createInstance(self, name: str):
-        "create an XR instance of this program"
+        "create an instance"
         self.log_layers_and_extensions()
 
         assert self.instance is None
@@ -305,6 +331,7 @@ class ElementsXR_program:
         self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer)
 
     def InitializeSession(self):
+        """Create a Session and other basic session-level initialization."""
         assert self.instance is not None
         assert self.instance.handle != xr.NULL_HANDLE
         assert self.session is None

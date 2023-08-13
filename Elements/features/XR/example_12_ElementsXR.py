@@ -102,11 +102,7 @@ ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex
 exit_loop = False
 
 program = ElementsXR_program()
-program.createInstance("Elements: ElementsXR Demo")
-program.InitializeSystem()
-program.InitializeDevice(initUpdate)
-program.InitializeSession()
-program.create_Swapchains()
+program.Initialize("Elements: ElementsXR Demo",initUpdate)
 
 skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
 front_img = os.path.join(skybox_texture_locations, "front.jpg")
