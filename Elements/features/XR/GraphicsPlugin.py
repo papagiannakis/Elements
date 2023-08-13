@@ -45,7 +45,7 @@ class XR_Shaders:
     COLOR_VERT_MVP_XR = """
         #version 410
 
-        layout (location=0) in vec4 vPosition;
+        layout (location=0) in vec4 vPos;
         layout (location=1) in vec4 vColor;
 
         out     vec4 color;
@@ -76,7 +76,7 @@ class XR_Shaders:
     VERT_PHONG_MVP_XR = """
         #version 410
 
-        layout (location=0) in vec4 vPosition;
+        layout (location=0) in vec4 vPos;
         layout (location=1) in vec4 vColor;
         layout (location=2) in vec4 vNormal;
 
@@ -618,9 +618,14 @@ class OpenGLPlugin(GraphicsPlugin):
         element: Entity
         for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
+                
+                model = element.parent.getChild(0).l2world
+                mvp = proj @ view @ model
+
                 element.setUniformVariable(key='Proj', value=proj, mat4=True)
                 element.setUniformVariable(key='View', value=view, mat4=True)
-                #element.setUniformVariable(key='modelViewProj', value=view, mat4=True)
+                element.setUniformVariable(key='model', value=model, mat4=True)
+                element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
 
         #if mirror:
         #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)

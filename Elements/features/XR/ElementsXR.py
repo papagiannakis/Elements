@@ -1,15 +1,21 @@
-import xr
-import xr.raw_functions
-from ctypes import Structure, c_int32, POINTER, byref, cast, c_void_p, pointer, Array
+from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyGLV.GL.VertexArray import VertexArray
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem, Shader, ShaderGLDecorator
+from Elements.pyECSS.Entity import Entity
+from Elements.pyECSS.Component import BasicTransform, RenderMesh, Component, ComponentDecorator
+import Elements.pyECSS.math_utilities as util
+from ctypes import Structure, c_int32, c_float, POINTER, byref, cast, c_void_p, pointer, Array
+from Elements.features.XR.PlatformPlugin import createPlatformPlugin
+from Elements.features.XR.GraphicsPlugin import OpenGLPlugin, create_xr_quaternion ,XR_Shaders
+from Elements.features.XR.options import options, Blend_Mode, View_Configuration, Form_factor
 import logging
 from typing import List, Optional, Dict
 import math
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
 import sys
-
-from Elements.features.XR.PlatformPlugin import createPlatformPlugin
-from Elements.features.XR.GraphicsPlugin import OpenGLPlugin
-from Elements.features.XR.options import options, Blend_Mode, View_Configuration, Form_factor
+import enum
+import numpy as np
+import xr
+import xr.raw_functions
 
 logger = logging.getLogger()
 stream = logging.StreamHandler(sys.stdout)
@@ -23,6 +29,27 @@ class Swapchain(Structure):
         ("width", c_int32),
         ("height", c_int32),
     ]
+
+class Side(enum.IntEnum):
+    LEFT = 0
+    RIGHT = 1
+
+class InputState(Structure):
+        def __init__(self):
+            super().__init__()
+            self.hand_scale[:] = [1, 1]
+
+        _fields_ = [
+            ("action_set", xr.ActionSet),
+            ("grab_action", xr.Action),
+            ("pose_action", xr.Action),
+            ("vibrate_action", xr.Action),
+            ("quit_action", xr.Action),
+            ("hand_subaction_path", xr.Path * len(Side)),
+            ("hand_space", xr.Space * len(Side)),
+            ("hand_scale", c_float * len(Side)),
+            ("hand_active", xr.Bool32 * len(Side)),
+        ]
 
 def get_xr_reference_space_create_info(reference_space_type_string: str) -> xr.ReferenceSpaceCreateInfo:
     create_info = xr.ReferenceSpaceCreateInfo(
@@ -124,7 +151,7 @@ class ElementsXR_program:
         self.config_views = []
         self.swapchains = []
         self.swapchain_image_buffers = []  # to keep objects alive
-        self.swapchain_image_ptr_buffers = {}  
+        self.swapchain_image_ptr_buffers = {}
         self.views = (xr.View * 2)(xr.View(), xr.View())
         self.color_swapchain_format = -1
 
@@ -135,6 +162,9 @@ class ElementsXR_program:
         self.session_running = False
 
         self.event_data_buffer = xr.EventDataBuffer()
+        self.input = InputState()
+
+        self.event_data_buffer = xr.EventDataBuffer()
 
         self.acceptable_blend_modes = [
             xr.EnvironmentBlendMode.OPAQUE,
@@ -142,10 +172,76 @@ class ElementsXR_program:
             xr.EnvironmentBlendMode.ALPHA_BLEND,
         ]
 
+        #############
+        self.hands = [Entity()] * 2
+        self.Hands_trans = [BasicTransform()] * 2
+        self.Hands_Mesh = [RenderMesh()] * 2
+        self.Hands_VertexArray = [VertexArray()] * 2
+        self.Hands_Shader = [ShaderGLDecorator(Shader())] * 2
+        
+        VertexHand = np.array([
+                        [-0.1, -0.1, 0.1, 1.0],
+                        [-0.1, 0.1, 0.1, 1.0],
+                        [0.1, 0.1, 0.1, 1.0],
+                        [0.1, -0.1, 0.1, 1.0], 
+                        [-0.1, -0.1, -0.1, 1.0], 
+                        [-0.1, 0.1, -0.1, 1.0], 
+                        [0.1, 0.1, -0.1, 1.0], 
+                        [0.1, -0.1, -0.1, 1.0]
+                    ],dtype=np.float32) 
+        
+        IndexHand = np.array((1,0,3, 1,3,2, 
+                            2,3,7, 2,7,6,
+                            3,0,4, 3,4,7,
+                            6,5,1, 6,1,2,
+                            4,5,6, 4,6,7,
+                            5,4,0, 5,0,1), np.uint32)
+        
+        ColorHand = np.array([
+                        [0.0, 0.0, 0.0, 1.0],
+                        [1.0, 0.0, 0.0, 1.0],
+                        [1.0, 1.0, 0.0, 1.0],
+                        [0.0, 1.0, 0.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0],
+                        [1.0, 0.0, 1.0, 1.0],
+                        [1.0, 1.0, 1.0, 1.0],
+                        [0.0, 1.0, 1.0, 1.0]
+                    ], dtype=np.float32)
+
+        scene = Scene()
+        rootEntity = scene.world.root
+
+        self.hands[Side.LEFT] = scene.world.createEntity(Entity(name="Left_Hand"))
+        scene.world.addEntityChild(rootEntity, self.hands[Side.LEFT])
+        self.Hands_trans[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], BasicTransform(name="transLeftHand", trs=util.identity))
+        self.Hands_Mesh[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], RenderMesh(name="meshLeftHand"))
+        self.Hands_Mesh[Side.LEFT].vertex_attributes.append(VertexHand)
+        self.Hands_Mesh[Side.LEFT].vertex_attributes.append(ColorHand)
+        self.Hands_Mesh[Side.LEFT].vertex_index.append(IndexHand)
+        self.Hands_VertexArray[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], VertexArray())
+        self.Hands_Shader[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
+
+        self.hands[Side.RIGHT] = scene.world.createEntity(Entity(name="Right_Hand"))
+        scene.world.addEntityChild(rootEntity, self.hands[Side.RIGHT])
+        self.Hands_trans[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], BasicTransform(name="transRightHand", trs=util.identity))
+        self.Hands_Mesh[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], RenderMesh(name="meshRightHand"))
+        self.Hands_Mesh[Side.RIGHT].vertex_attributes.append(VertexHand)
+        self.Hands_Mesh[Side.RIGHT].vertex_attributes.append(ColorHand)
+        self.Hands_Mesh[Side.RIGHT].vertex_index.append(IndexHand)
+        self.Hands_VertexArray[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], VertexArray())
+        self.Hands_Shader[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
+
     def __enter__(self):
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
+        if self.input.action_set is not None:
+            for hand in Side:
+                if self.input.hand_space[hand] is not None:
+                    xr.destroy_space(self.input.hand_space[hand])
+                    self.input.hand_space[hand] = None
+            xr.destroy_action_set(self.input.action_set)
+            self.input.action_set = None
         for swapchain in self.swapchains:
             xr.destroy_swapchain(swapchain.handle)
         self.swapchains[:] = []
@@ -163,7 +259,7 @@ class ElementsXR_program:
             self.instance = None
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
-        """Pack all Initializations inside one method"""
+        """All Initializations packed inside a single method"""
         self.createInstance(name)
         self.InitializeSystem()
         self.InitializeDevice(renderer)
@@ -351,8 +447,7 @@ class ElementsXR_program:
         )
         self.log_reference_spaces()
 
-        #TODO initialize actions for hands like grab
-        #self.initialize_actions()
+        self.initialize_actions()
         
         self.create_visualized_spaces()
         self.app_space = xr.create_reference_space(
@@ -362,7 +457,238 @@ class ElementsXR_program:
 
     def initialize_actions(self):
         # Create an action set.
-        pass
+        action_set_info = xr.ActionSetCreateInfo(
+            action_set_name="gameplay",
+            localized_action_set_name="Gameplay",
+            priority=0,
+        )
+        self.input.action_set = xr.create_action_set(self.instance.handle, action_set_info)
+        # Get the XrPath for the left and right hands - we will use them as subaction paths.
+        self.input.hand_subaction_path[Side.LEFT] = xr.string_to_path(
+            self.instance.handle,
+            "/user/hand/left")
+        self.input.hand_subaction_path[Side.RIGHT] = xr.string_to_path(
+            self.instance.handle,
+            "/user/hand/right")
+        # Create actions
+        # Create an input action for grabbing objects with the left and right hands.
+        self.input.grab_action = xr.create_action(
+            action_set=self.input.action_set,
+            create_info=xr.ActionCreateInfo(
+                action_type=xr.ActionType.FLOAT_INPUT,
+                action_name="grab_object",
+                localized_action_name="Grab Object",
+                count_subaction_paths=len(self.input.hand_subaction_path),
+                subaction_paths=self.input.hand_subaction_path,
+            ),
+        )
+        # Create an input action getting the left and right hand poses.
+        self.input.pose_action = xr.create_action(
+            action_set=self.input.action_set,
+            create_info=xr.ActionCreateInfo(
+                action_type=xr.ActionType.POSE_INPUT,
+                action_name="hand_pose",
+                localized_action_name="Hand Pose",
+                count_subaction_paths=len(self.input.hand_subaction_path),
+                subaction_paths=self.input.hand_subaction_path,
+            ),
+        )
+        # Create output actions for vibrating the left and right controller.
+        self.input.vibrate_action = xr.create_action(
+            action_set=self.input.action_set,
+            create_info=xr.ActionCreateInfo(
+                action_type=xr.ActionType.VIBRATION_OUTPUT,
+                action_name="vibrate_hand",
+                localized_action_name="Vibrate Hand",
+                count_subaction_paths=len(self.input.hand_subaction_path),
+                subaction_paths=self.input.hand_subaction_path,
+            ),
+        )
+        # Create input actions for quitting the session using the left and right controller.
+        # Since it doesn't matter which hand did this, we do not specify subaction paths for it.
+        # We will just suggest bindings for both hands, where possible.
+        self.input.quit_action = xr.create_action(
+            action_set=self.input.action_set,
+            create_info=xr.ActionCreateInfo(
+                action_type=xr.ActionType.BOOLEAN_INPUT,
+                action_name="quit_session",
+                localized_action_name="Quit Session",
+                count_subaction_paths=0,
+                subaction_paths=None,
+            ),
+        )
+
+        select_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/select/click"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/select/click")]
+        squeeze_value_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/squeeze/value"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/squeeze/value")]
+        squeeze_force_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/squeeze/force"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/squeeze/force")]
+        squeeze_click_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/squeeze/click"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/squeeze/click")]
+        pose_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/grip/pose"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/grip/pose")]
+        haptic_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/output/haptic"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/output/haptic")]
+        menu_click_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/menu/click"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/menu/click")]
+        b_click_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/b/click"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/b/click")]
+        trigger_value_path = [
+            xr.string_to_path(self.instance.handle, "/user/hand/left/input/trigger/value"),
+            xr.string_to_path(self.instance.handle, "/user/hand/right/input/trigger/value")]
+        
+        # Suggest bindings for KHR Simple.
+        khr_bindings = [
+            # Fall back to a click input for the grab action.
+            xr.ActionSuggestedBinding(self.input.grab_action, select_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.grab_action, select_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.RIGHT]),
+        ]
+
+        xr.suggest_interaction_profile_bindings(
+            instance=self.instance.handle,
+            suggested_bindings=xr.InteractionProfileSuggestedBinding(
+                interaction_profile=xr.string_to_path(
+                    self.instance.handle,
+                    "/interaction_profiles/khr/simple_controller",
+                ),
+                count_suggested_bindings=len(khr_bindings),
+                suggested_bindings=(xr.ActionSuggestedBinding * len(khr_bindings))(*khr_bindings),
+            ),
+        )
+        
+        # Suggest bindings for the Vive Controller.
+        vive_bindings = [
+            xr.ActionSuggestedBinding(self.input.grab_action, trigger_value_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.grab_action, trigger_value_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.RIGHT]),
+        ]
+
+        xr.suggest_interaction_profile_bindings(
+            instance=self.instance.handle,
+            suggested_bindings=xr.InteractionProfileSuggestedBinding(
+                interaction_profile=xr.string_to_path(
+                    self.instance.handle,
+                    "/interaction_profiles/htc/vive_controller",
+                ),
+                count_suggested_bindings=len(vive_bindings),
+                suggested_bindings=(xr.ActionSuggestedBinding * len(vive_bindings))(*vive_bindings),
+            ),
+        )
+
+        # Suggest bindings for the Valve Index Controller.
+        index_bindings = [
+            xr.ActionSuggestedBinding(self.input.grab_action, squeeze_force_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.grab_action, squeeze_force_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, b_click_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, b_click_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.RIGHT]),
+        ]
+
+        xr.suggest_interaction_profile_bindings(
+            instance=self.instance.handle,
+            suggested_bindings=xr.InteractionProfileSuggestedBinding(
+                interaction_profile=xr.string_to_path(
+                    self.instance.handle,
+                    "/interaction_profiles/valve/index_controller",
+                ),
+                count_suggested_bindings=len(index_bindings),
+                suggested_bindings=(xr.ActionSuggestedBinding * len(index_bindings))(*index_bindings),
+            ),
+        )
+
+        # Suggest bindings for the Windows Mixed Reality Controller.
+        wmr_bindings = [
+            xr.ActionSuggestedBinding(self.input.grab_action, squeeze_click_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.grab_action, squeeze_click_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.RIGHT]),
+        ]
+
+        xr.suggest_interaction_profile_bindings(
+            instance=self.instance.handle,
+            suggested_bindings=xr.InteractionProfileSuggestedBinding(
+                interaction_profile=xr.string_to_path(
+                    self.instance.handle,
+                    "/interaction_profiles/microsoft/motion_controller",
+                ),
+                count_suggested_bindings=len(wmr_bindings),
+                suggested_bindings=(xr.ActionSuggestedBinding * len(wmr_bindings))(*wmr_bindings),
+            ),
+        )
+
+        # Suggest bindings for the Oculus Touch.
+        oculus_bindings = [
+            xr.ActionSuggestedBinding(self.input.grab_action, squeeze_value_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.grab_action, squeeze_value_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.pose_action, pose_path[Side.RIGHT]),
+            xr.ActionSuggestedBinding(self.input.quit_action, menu_click_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.LEFT]),
+            xr.ActionSuggestedBinding(self.input.vibrate_action, haptic_path[Side.RIGHT]),
+        ]
+
+        xr.suggest_interaction_profile_bindings(
+            instance=self.instance.handle,
+            suggested_bindings=xr.InteractionProfileSuggestedBinding(
+                interaction_profile=xr.string_to_path(
+                    self.instance.handle,
+                    "/interaction_profiles/oculus/touch_controller",
+                ),
+                count_suggested_bindings=len(oculus_bindings),
+                suggested_bindings=(xr.ActionSuggestedBinding * len(oculus_bindings))(*oculus_bindings),
+            ),
+        )
+        
+
+        action_space_info = xr.ActionSpaceCreateInfo(
+            action=self.input.pose_action,
+            # pose_in_action_space # w already defaults to 1 in python...
+            subaction_path=self.input.hand_subaction_path[Side.LEFT],
+        )
+        assert action_space_info.pose_in_action_space.orientation.w == 1
+        self.input.hand_space[Side.LEFT] = xr.create_action_space(
+            session=self.session,
+            create_info=action_space_info,
+        )
+        action_space_info.subaction_path = self.input.hand_subaction_path[Side.RIGHT]
+        self.input.hand_space[Side.RIGHT] = xr.create_action_space(
+            session=self.session,
+            create_info=action_space_info,
+        )
+        xr.attach_session_action_sets(
+            session=self.session,
+            attach_info=xr.SessionActionSetsAttachInfo(
+                count_action_sets=1,
+                action_sets=pointer(self.input.action_set),
+            ),
+        )
 
     def next_event(self)-> Optional[Structure]:
         head = self.event_data_buffer
@@ -387,6 +713,11 @@ class ElementsXR_program:
                 return True
             elif event_type == xr.StructureType.EVENT_DATA_SESSION_STATE_CHANGED:
                 exit_render_loop= self.handle_event(event, exit_render_loop)
+            elif event_type == xr.StructureType.EVENT_DATA_INTERACTION_PROFILE_CHANGED:
+                self.log_action_source_name(self.input.grab_action, "Grab")
+                self.log_action_source_name(self.input.quit_action, "Quit")
+                self.log_action_source_name(self.input.pose_action, "Pose")
+                self.log_action_source_name(self.input.vibrate_action, "Vibrate")
 
         return exit_render_loop
 
@@ -476,6 +807,30 @@ class ElementsXR_program:
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
         assert view_count_output == len(projection_layer_views)
+
+        # Update each hand's trs. 
+        # Additionally Scale by 0.1 in all axes when the grab action is used
+        for hand in Side:
+            space_location = xr.locate_space(
+                space=self.input.hand_space[hand],
+                base_space=self.app_space,
+                time=predicted_display_time,
+            )
+            loc_flags = space_location.location_flags
+            if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
+                    and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
+                scale = 0.1 * self.input.hand_scale[hand]
+                #cubes.append(Cube(space_location.pose, xr.Vector3f(scale, scale, scale)))
+                #update trs
+                position = space_location.pose.position
+                orientation = space_location.pose.orientation
+
+                m = util.translate(position.x,
+                                position.y,
+                                position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                                    orientation.y,
+                                                                                    orientation.z,
+                                                                                    orientation.w))
         
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
@@ -507,7 +862,7 @@ class ElementsXR_program:
                 swapchain=view_swapchain.handle,
                 release_info=xr.SwapchainImageReleaseInfo()
             )
-        layer.view_count = len(projection_layer_views)
+        #layer.view_count = len(projection_layer_views)
         layer.views = projection_layer_views
         return True
     
@@ -529,6 +884,32 @@ class ElementsXR_program:
                 #logger.warning(f"Failed to create reference space {visualized_space} with error {exc}")
 
     #Below are some logging methods for the program's configuration
+
+    def log_action_source_name(self, action: xr.Action, action_name: str):
+        paths = xr.enumerate_bound_sources_for_action(
+            session=self.session,
+            enumerate_info=xr.BoundSourcesForActionEnumerateInfo(
+                action=action,
+            ),
+        )
+        source_name = ""
+        for path in paths:
+            all_flags = xr.INPUT_SOURCE_LOCALIZED_NAME_USER_PATH_BIT \
+                        | xr.INPUT_SOURCE_LOCALIZED_NAME_INTERACTION_PROFILE_BIT \
+                        | xr.INPUT_SOURCE_LOCALIZED_NAME_COMPONENT_BIT
+            grab_source = xr.get_input_source_localized_name(
+                session=self.session,
+                get_info=xr.InputSourceLocalizedNameGetInfo(
+                    source_path=path,
+                    which_components=all_flags,
+                ),
+            )
+            if len(grab_source) < 1:
+                continue
+            if len(source_name) > 0:
+                source_name += " and "
+            source_name += f"'{grab_source}'"
+        print(f"{action_name} is bound to {source_name if len(source_name) > 0 else 'nothing'}")
 
     def log_environment_blend_mode(self, view_config_type):
         assert self.instance.handle is not None

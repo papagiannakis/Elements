@@ -121,6 +121,7 @@ shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 ground_shader.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while not exit_loop:
+    scene.world.traverse_visit(transUpdate,scene.world.root)
     exit_loop = program.poll_events()
 
     model_ground = ground.getChild(0).trs
