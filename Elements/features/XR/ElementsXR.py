@@ -174,9 +174,9 @@ class ElementsXR_program:
 
         #############
         self.hands = [Entity()] * 2
-        self.Hands_trans = [BasicTransform()] * 2
+        self.Hands_trans = [None] * 2
         self.Hands_Mesh = [RenderMesh()] * 2
-        self.Hands_VertexArray = [VertexArray()] * 2
+        self.Hands_VertexArray = [None] * 2
         self.Hands_Shader = [ShaderGLDecorator(Shader())] * 2
         
         VertexHand = np.array([
@@ -198,14 +198,14 @@ class ElementsXR_program:
                             5,4,0, 5,0,1), np.uint32)
         
         ColorHand = np.array([
-                        [0.0, 0.0, 0.0, 1.0],
-                        [1.0, 0.0, 0.0, 1.0],
-                        [1.0, 1.0, 0.0, 1.0],
-                        [0.0, 1.0, 0.0, 1.0],
                         [0.0, 0.0, 1.0, 1.0],
-                        [1.0, 0.0, 1.0, 1.0],
-                        [1.0, 1.0, 1.0, 1.0],
-                        [0.0, 1.0, 1.0, 1.0]
+                        [0.0, 0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0],
+                        [0.0, 0.0, 1.0, 1.0]
                     ], dtype=np.float32)
 
         scene = Scene()
