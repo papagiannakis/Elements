@@ -9,6 +9,14 @@ from Elements.pyGLV.GL.Scene import Scene # for SimpleCamera
 from Elements.pyECSS.Entity import Entity
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Component import BasicTransform, Camera
+import imgui
+
+def displayGUI_text(text:str):
+    # imgui.set_next_window_size(100.0, 200.0)
+    # imgui.new_frame()
+    imgui.begin("Information", True)
+    imgui.text(text)
+    imgui.end()
 
 class SimpleCamera:
     """
