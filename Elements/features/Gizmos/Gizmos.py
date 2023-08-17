@@ -219,6 +219,7 @@ class Mode(enum.Enum):
     TRANSLATE="Translate"
     ROTATE="Rotate"
     SCALE="Scale"
+    DISAPPEAR="Disappear"
 
 class entity_transformations:
     """
@@ -237,9 +238,9 @@ class Gizmos:
         self.selected = 0
         self.total = 0
         self.mouse_x, self.mouse_y = c_int(0), c_int(0)
-        self.mouse_state = 0 #LMB not clicked
         self.key_states = sdl.SDL_GetKeyboardState(None)
         self.key_down = False
+        self.lmb_down = False
         self.projection = np.array([4,4],dtype=np.float32)
         self.view = np.array([4,4],dtype=np.float32)
 
@@ -264,6 +265,7 @@ class Gizmos:
         
         self.seperate_transformations = {}
         self.initial_transformations = {}
+        self.entity_dict = {}
 
         self.cameraInUse = ""
         self.screen_width = 1024.0
@@ -456,7 +458,13 @@ class Gizmos:
         self.selected_trans = None
         self.selected_mesh = None
         self.selected_comp = "None"
-        #TODO: reset uniform variables too
+        #self.picked = False
+        #self.selected_gizmo=''
+
+        prev = self.mode
+        self.mode = Mode.DISAPPEAR #temporarily
+        self.__update_gizmos()
+        self.mode = prev
 
     def reset_to_default(self):
         """
@@ -514,13 +522,29 @@ class Gizmos:
         Returns:
             None
         """
-        self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
+        mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
         #Raycast only when LMB is pressed
-        if self.mouse_state==1 and self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
-            self.raycast()
+        if mouse_state==1:
+            if self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
+                self.raycast()
+            elif self.lmb_down==False:
+                self.lmb_down = True
+                name = self.pick()
+                if name is not None:
+                    entity: Entity
+                    entity = self.entity_dict[name]
+                    self.is_selected = True
+                    self.selected_comp = name
+                    self.selected_trans = entity.getChildByType(BasicTransform.getClassName())
+                    self.selected_mesh =  entity.getChildByType(RenderMesh.getClassName())
+                    self.__update_gizmos_trans()
+                    self.__update_gizmos()
+                else:
+                    self.reset_to_None()
         else:
+            self.lmb_down = False
+            self.selected_gizmo = ''
             self.picked = False
-            self.selected_gizmo=''
         
     def count_components(self):
         """
@@ -531,10 +555,11 @@ class Gizmos:
             None
         """
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps:
+            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("Skybox")==-1:
                 entity_name = component.parent.name
                 self.seperate_transformations[entity_name] = entity_transformations()
                 self.initial_transformations[entity_name] = component.trs
+                self.entity_dict[entity_name] = component.parent
                 self.total = self.total + 1
 
     def get_Event(self):
@@ -554,11 +579,8 @@ class Gizmos:
             self.change_target()
             if self.total>0:
                 self.is_selected = True
-                
                 self.__update_gizmos_trans()
-
                 self.__update_gizmos()
-
         elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
             self.key_down = False
 
@@ -956,15 +978,12 @@ class Gizmos:
 
         if self.selected_gizmo=='X' or (self.selected_gizmo=='' and x_intersects):
             self.selected_gizmo = 'X'
-            print("Rotate X")
             self.__transform_selected_entity(x_in_point)
         elif self.selected_gizmo=='Y' or (self.selected_gizmo==''  and y_intersects):
             self.selected_gizmo = 'Y'
-            print("Rotate Y")
             self.__transform_selected_entity(y_in_point)
         elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and z_intersects):
             self.selected_gizmo = 'Z'
-            print("Rotate Z")
             self.__transform_selected_entity(z_in_point)
 
     def __transform_selected_entity(self,inter_point):
@@ -993,7 +1012,7 @@ class Gizmos:
                     diff = inter_point[1] - self.previous_y
                     self.previous_y = inter_point[1]
                     self.__translate_selected(y=diff)
-            if self.selected_gizmo=='Z':
+            elif self.selected_gizmo=='Z':
                 if self.picked==False:
                     self.picked = True
                     self.previous_z = inter_point[2]
@@ -1223,8 +1242,6 @@ class Gizmos:
         Returns:
             None
         """
-
-        #
         self.selected_trans.trs = util.translate(x,y,z) @ self.selected_trans.trs
         self.__update_gizmos_trans()
  
@@ -1289,3 +1306,39 @@ class Gizmos:
         self.gizmos_x_R_trans.trs = no_rotation
         self.gizmos_y_R_trans.trs = no_rotation
         self.gizmos_z_R_trans.trs = no_rotation
+
+    def pick(self):
+        """
+        Try to pick an Entity
+        Arguments:
+            self: self
+        Returns:
+            Closest Entity;s name if the raycast intersected with one, None otherwise
+        """
+        hit_entities = {}
+        entity_name : str
+        for entity_name in self.entity_dict:
+            obj : Entity
+            obj = self.entity_dict[entity_name]
+            trans: BasicTransform
+            trans = obj.getChildByType(BasicTransform.getClassName())
+            mesh:RenderMesh
+            mesh = obj.getChildByType(RenderMesh.getClassName())
+            if trans is None or mesh is None:
+                continue
+            vertices = np.array(mesh.vertex_attributes[0],copy=True)
+            model = trans.l2world
+            if len(vertices[0])!=4:
+                continue
+
+            minbb, maxbb = self.calculate_bounding_box(mesh.vertex_attributes[0])
+
+            ray_origin, ray_direction = self.calculate_ray()
+
+            intersects, point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,minbb,maxbb,model)
+            if intersects:
+                hit_entities[entity_name] = self.previous_distance
+        if len(hit_entities)==0:
+            return None
+            
+        return min(hit_entities, key = hit_entities.get)
