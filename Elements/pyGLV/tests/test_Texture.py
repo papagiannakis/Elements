@@ -27,6 +27,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
+from Elements.utils.helper_function import displayGUI_text
 
 from OpenGL.GL import GL_LINES
 
@@ -147,8 +148,11 @@ class TestScene(unittest.TestCase):
         texture = Texture(texturePath)
         self.shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
+        message = "This is a Scene containing a cube with a texture. \nCamera movement is possible via the mouse or the GUI. \nHit ESC or close the window to exit."
+
         while running:
             running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.view =  gWindow._myCamera 
             self.shaderDec4.setUniformVariable(key='model', value=self.model_cube, mat4=True)
