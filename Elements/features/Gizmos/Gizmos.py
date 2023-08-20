@@ -1048,8 +1048,8 @@ class Gizmos:
                     self.previous_z = inter_point[2]
                 else:
                     diffZ = np.abs(inter_point[2]/self.previous_z)
-                    if(diffZ==0.0):
-                        diffZ = 0.01
+                    #if(diffZ==0.0):
+                    #    diffZ = 0.01
                     self.previous_z = inter_point[2]
             self.__scale_selected(x=diffX,y=diffY,z=diffZ)
         else: #Rotate
@@ -1272,8 +1272,11 @@ class Gizmos:
         Returns:
             None
         """
+        selected = self.seperate_transformations[self.selected_comp]
+
         self.selected_trans.trs = self.selected_trans.trs @ util.scale(x,y,z)
-        self.seperate_transformations[self.selected_comp].scaling += util.vec(x-1.0,y-1.0,z-1.0)
+        #self.seperate_transformations[self.selected_comp].scaling += util.vec(x-1.0,y-1.0,z-1.0)
+        selected.scaling *= util.vec(x,y,z)
         self.__update_gizmos_trans()
 
     def __update_gizmos_trans(self):
