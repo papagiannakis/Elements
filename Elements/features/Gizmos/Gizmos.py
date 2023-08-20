@@ -239,7 +239,7 @@ class Gizmos:
         self.total = 0
         self.mouse_x, self.mouse_y = c_int(0), c_int(0)
         self.key_states = sdl.SDL_GetKeyboardState(None)
-        self.key_down = False
+        self.tab_down = False
         self.lmb_down = False
         self.projection = np.array([4,4],dtype=np.float32)
         self.view = np.array([4,4],dtype=np.float32)
@@ -454,17 +454,18 @@ class Gizmos:
         Returns:
             None
         """
+        prev = self.mode
+        self.mode = Mode.DISAPPEAR #temporarily
+        #self.__update_gizmos()
+        self.__update_positions()
+        self.mode = prev
+
         self.is_selected = False
         self.selected_trans = None
         self.selected_mesh = None
         self.selected_comp = "None"
         #self.picked = False
         #self.selected_gizmo=''
-
-        prev = self.mode
-        self.mode = Mode.DISAPPEAR #temporarily
-        self.__update_gizmos()
-        self.mode = prev
 
     def reset_to_default(self):
         """
@@ -516,7 +517,7 @@ class Gizmos:
 
     def update_ray_init_position(self):
         """
-        Update mouse position, mouse state and Raycast
+        Update mouse position and mouse state. Additionally Raycast or try to pick an Entity
         Arguments:
             self: self
         Returns:
@@ -574,15 +575,15 @@ class Gizmos:
         Returns:
             None
         """
-        if self.key_states[sdl.SDL_SCANCODE_TAB] and not self.key_down:
-            self.key_down = True
+        if self.key_states[sdl.SDL_SCANCODE_TAB] and not self.tab_down:
+            self.tab_down = True
             self.change_target()
             if self.total>0:
                 self.is_selected = True
                 self.__update_gizmos_trans()
                 self.__update_gizmos()
-        elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
-            self.key_down = False
+        elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.tab_down:
+            self.tab_down = False
 
         if self.key_states[sdl.SDL_SCANCODE_0]:
             self.reset_to_default()
@@ -606,112 +607,132 @@ class Gizmos:
             None
         """
         if self.is_selected:
-            vp = self.projection @ self.view
+            self.__update_lights()
+            self.__update_positions()
+    
+    def __update_lights(self):
+        """
+        Update Lighting of Scaling Gizmos
+        Arguments:
+            self: self
+        REturns:
+            None
+        """
+        model_XS_cube = self.gizmos_x_S_cube_trans.trs
+        model_YS_cube = self.gizmos_y_S_cube_trans.trs
+        model_ZS_cube = self.gizmos_z_S_cube_trans.trs
+        
+        Lposition = util.vec(model_XS_cube[0,3],model_XS_cube[1,3]+0.5,model_XS_cube[2,3]+0.5)
+            
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='model',value=model_XS_cube,mat4=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+            
+        Lposition = util.vec(model_YS_cube[0,3],model_YS_cube[1,3]+0.5,model_YS_cube[2,3]+0.5)
+            
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='model',value=model_YS_cube,mat4=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+            
+        Lposition = util.vec(model_ZS_cube[0,3],model_ZS_cube[1,3]+0.5,model_ZS_cube[2,3]+0.5)
 
-            #### Translate components
-            model_x = self.gizmos_x_trans.trs
-            model_y = self.gizmos_y_trans.trs
-            model_z = self.gizmos_z_trans.trs
-            mvp_x = 0.0
-            mvp_y = 0.0
-            mvp_z = 0.0
-            if self.mode==Mode.TRANSLATE:
-                mvp_x = vp @ model_x
-                mvp_y = vp @ model_y
-                mvp_z = vp @ model_z
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='model',value=model_ZS_cube,mat4=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
 
-            self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
-            self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
-            self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
+    def __update_positions(self):
+        """
+        Update model matrices of all Gizmo components
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        vp = self.projection @ self.view
 
-            #### Scale components
-            model_XS_line = self.gizmos_x_S_line_trans.trs
-            model_YS_line = self.gizmos_y_S_line_trans.trs
-            model_ZS_line = self.gizmos_z_S_line_trans.trs
+        #### Translate components
+        model_x = self.gizmos_x_trans.trs
+        model_y = self.gizmos_y_trans.trs
+        model_z = self.gizmos_z_trans.trs
+        mvp_x = 0.0
+        mvp_y = 0.0
+        mvp_z = 0.0
+        if self.mode==Mode.TRANSLATE:
+            mvp_x = vp @ model_x
+            mvp_y = vp @ model_y
+            mvp_z = vp @ model_z
 
-            model_XS_cube = self.gizmos_x_S_cube_trans.trs
-            model_YS_cube = self.gizmos_y_S_cube_trans.trs
-            model_ZS_cube = self.gizmos_z_S_cube_trans.trs
+        self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
+        self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
+        self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
 
-            mvp_xs_line = 0.0
-            mvp_ys_line = 0.0
-            mvp_zs_line = 0.0
-            mvp_xs_cube = 0.0
-            mvp_ys_cube = 0.0
-            mvp_zs_cube = 0.0
-            if self.mode==Mode.SCALE:
-                mvp_xs_line = vp @ model_XS_line
-                mvp_ys_line = vp @ model_YS_line
-                mvp_zs_line = vp @ model_ZS_line
+        #### Scale components
+        model_XS_line = self.gizmos_x_S_line_trans.trs
+        model_YS_line = self.gizmos_y_S_line_trans.trs
+        model_ZS_line = self.gizmos_z_S_line_trans.trs
 
-                mvp_xs_cube = vp @ model_XS_cube
-                mvp_ys_cube = vp @ model_YS_cube
-                mvp_zs_cube = vp @ model_ZS_cube
+        model_XS_cube = self.gizmos_x_S_cube_trans.trs
+        model_YS_cube = self.gizmos_y_S_cube_trans.trs
+        model_ZS_cube = self.gizmos_z_S_cube_trans.trs
 
-            #Scale lines
-            self.gizmos_x_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_line, mat4=True)
-            self.gizmos_y_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_line, mat4=True)
-            self.gizmos_z_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_line, mat4=True)
+        mvp_xs_line = 0.0
+        mvp_ys_line = 0.0
+        mvp_zs_line = 0.0
+        mvp_xs_cube = 0.0
+        mvp_ys_cube = 0.0
+        mvp_zs_cube = 0.0
+        if self.mode==Mode.SCALE:
+            mvp_xs_line = vp @ model_XS_line
+            mvp_ys_line = vp @ model_YS_line
+            mvp_zs_line = vp @ model_ZS_line
 
-            #Scale cubes
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_cube, mat4=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_cube, mat4=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_cube, mat4=True)
+            mvp_xs_cube = vp @ model_XS_cube
+            mvp_ys_cube = vp @ model_YS_cube
+            mvp_zs_cube = vp @ model_ZS_cube
 
-            ##
-            Lposition = util.vec(model_XS_cube[0,3],model_XS_cube[1,3]+0.5,model_XS_cube[2,3]+0.5)
-            ##
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='model',value=model_XS_cube,mat4=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+        #Scale lines
+        self.gizmos_x_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_line, mat4=True)
+        self.gizmos_y_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_line, mat4=True)
+        self.gizmos_z_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_line, mat4=True)
 
-            ##
-            Lposition = util.vec(model_YS_cube[0,3],model_YS_cube[1,3]+0.5,model_YS_cube[2,3]+0.5)
-            ##
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='model',value=model_YS_cube,mat4=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+        #Scale cubes
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_cube, mat4=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_cube, mat4=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_cube, mat4=True)
 
-            ##
-            Lposition = util.vec(model_ZS_cube[0,3],model_ZS_cube[1,3]+0.5,model_ZS_cube[2,3]+0.5)
-            ##
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='model',value=model_ZS_cube,mat4=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+        model_rx = self.gizmos_x_R_trans.trs
+        model_ry = self.gizmos_y_R_trans.trs
+        model_rz = self.gizmos_z_R_trans.trs
 
-            model_rx = self.gizmos_x_R_trans.trs
-            model_ry = self.gizmos_y_R_trans.trs
-            model_rz = self.gizmos_z_R_trans.trs
+        mvp_rx = 0.0
+        mvp_ry = 0.0
+        mvp_rz = 0.0
+        if self.mode==Mode.ROTATE:
+            mvp_rx = vp @ model_rx
+            mvp_ry = vp @ model_ry
+            mvp_rz = vp @ model_rz
 
-            mvp_rx = 0.0
-            mvp_ry = 0.0
-            mvp_rz = 0.0
-            if self.mode==Mode.ROTATE:
-                mvp_rx = vp @ model_rx
-                mvp_ry = vp @ model_ry
-                mvp_rz = vp @ model_rz
-
-            self.gizmos_x_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rx, mat4=True)
-            self.gizmos_y_R_shader.setUniformVariable(key='modelViewProj', value=mvp_ry, mat4=True)
-            self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
+        self.gizmos_x_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rx, mat4=True)
+        self.gizmos_y_R_shader.setUniformVariable(key='modelViewProj', value=mvp_ry, mat4=True)
+        self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
 
     def update_imgui(self):
         """
@@ -1316,7 +1337,7 @@ class Gizmos:
         Arguments:
             self: self
         Returns:
-            Closest Entity;s name if the raycast intersected with one, None otherwise
+            Closest Entity's name if the raycast intersected with one, None otherwise
         """
         hit_entities = {}
         entity_name : str
