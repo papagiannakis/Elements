@@ -230,6 +230,14 @@ class entity_transformations:
         self.rotation = util.identity()
         self.scaling=util.vec(1.0,1.0,1.0)
 
+class axis_aligned_bounding_box: #might not be needed
+    """
+    
+    """
+    def __init__(self) -> None:
+        self.minbb = util.vec(0.0,0.0,0.0)
+        self.maxbb = util.vec(0.0,0.0,0.0)
+
 class Gizmos:
 
     def __init__(self,rootEntity: Entity):
@@ -266,6 +274,7 @@ class Gizmos:
         self.seperate_transformations = {}
         self.initial_transformations = {}
         self.entity_dict = {}
+        self.entity_bb_dict = {} # might not be needed
 
         self.cameraInUse = ""
         self.screen_width = 1024.0
@@ -426,6 +435,11 @@ class Gizmos:
         self.ys_min_bb, self.ys_max_bb = self.calculate_bounding_box(self.gizmos_y_S_cube_mesh.vertex_attributes[0])
         self.zs_min_bb, self.zs_max_bb = self.calculate_bounding_box(self.gizmos_z_S_cube_mesh.vertex_attributes[0])
 
+        #Rotation Gizmos Bounding Boxes
+        self.xrot_min_bb, self.xrot_max_bb = self.calculate_bounding_box(self.gizmos_x_R_mesh.vertex_attributes[0])
+        self.yrot_min_bb, self.yrot_max_bb = self.calculate_bounding_box(self.gizmos_y_R_mesh.vertex_attributes[0])
+        self.zrot_min_bb, self.zrot_max_bb = self.calculate_bounding_box(self.gizmos_z_R_mesh.vertex_attributes[0])
+
         self.count_components()
 
     def __remove_rotation(self,model):
@@ -561,6 +575,7 @@ class Gizmos:
                 self.seperate_transformations[entity_name] = entity_transformations()
                 self.initial_transformations[entity_name] = component.trs
                 self.entity_dict[entity_name] = component.parent
+
                 self.total = self.total + 1
 
     def get_Event(self):
@@ -955,32 +970,62 @@ class Gizmos:
 
             previous_distance = self.previous_distance
 
-            x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
-                                                ray_direction,
-                                                mesh_x,
-                                                model_x)
-            if x_intersects:
-                x_distance = self.previous_distance
-            else:
-                x_distance = 1000000.0
-        
-            y_intersects, y_in_point = self.testRayCircleIntersection(ray_origin,
-                                                ray_direction,
-                                                mesh_y,
-                                                model_y)
-            if y_intersects:
-                y_distance = self.previous_distance
-            else:
-                y_distance = 1000000.0
-        
-            z_intersects, z_in_point = self.testRayCircleIntersection(ray_origin,
-                                                ray_direction,
-                                                mesh_z,
-                                                model_z)
-            if z_intersects:
-                z_distance = self.previous_distance
-            else:
-                z_distance = 1000000.0
+            #divide the Gizmos' meshes in smaller bounding boxes and test each one of them during the first iteration
+            if self.selected_gizmo=='':
+                x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
+                                                    ray_direction,
+                                                    mesh_x,
+                                                    model_x)
+                if x_intersects:
+                    x_distance = self.previous_distance
+                else:
+                    x_distance = 1000000.0
+            
+                y_intersects, y_in_point = self.testRayCircleIntersection(ray_origin,
+                                                    ray_direction,
+                                                    mesh_y,
+                                                    model_y)
+                if y_intersects:
+                    y_distance = self.previous_distance
+                else:
+                    y_distance = 1000000.0
+            
+                z_intersects, z_in_point = self.testRayCircleIntersection(ray_origin,
+                                                    ray_direction,
+                                                    mesh_z,
+                                                    model_z)
+                if z_intersects:
+                    z_distance = self.previous_distance
+                else:
+                    z_distance = 1000000.0
+            else: #Use the whole mesh for the other iterations
+                x_intersects, x_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
+                                                                              self.xrot_min_bb,
+                                                                              self.xrot_max_bb,
+                                                                              model_x)
+
+                if x_intersects:
+                    x_distance = self.previous_distance
+                else:
+                    x_distance = 1000000.0
+            
+                y_intersects, y_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
+                                                                              self.yrot_min_bb,
+                                                                              self.yrot_max_bb,
+                                                                              model_y)
+                if y_intersects:
+                    y_distance = self.previous_distance
+                else:
+                    y_distance = 1000000.0
+            
+                z_intersects, z_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
+                                                                              self.zrot_min_bb,
+                                                                              self.zrot_max_bb,
+                                                                              model_z)
+                if z_intersects:
+                    z_distance = self.previous_distance
+                else:
+                    z_distance = 1000000.0
 
             #When the ray intersects with more than one gizmo apply rotation to the one closest to the ray origin
             if x_intersects and (x_distance > y_distance or x_distance > z_distance):
@@ -1073,7 +1118,7 @@ class Gizmos:
                     #    diffZ = 0.01
                     self.previous_z = inter_point[2]
             self.__scale_selected(x=diffX,y=diffY,z=diffZ)
-        else: #Rotate
+        elif self.mode==Mode.ROTATE:
             if self.selected_gizmo=='X':
                 if self.picked==False:
                     self.picked = True
