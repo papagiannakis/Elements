@@ -287,6 +287,8 @@ class Gizmos:
         self.previous_y = 0.0
         self.previous_z = 0.0
 
+        self.rotation = util.identity()
+
         #Light parameters for scale cubes
         self.Lambientcolor = util.vec(1.0, 1.0, 1.0)
         self.Lambientstr = 0.3
@@ -553,13 +555,17 @@ class Gizmos:
                     self.selected_trans = entity.getChildByType(BasicTransform.getClassName())
                     self.selected_mesh =  entity.getChildByType(RenderMesh.getClassName())
                     self.__update_gizmos_trans()
-                    self.__update_gizmos()
+                    self.__update_positions()
                 else:
                     self.reset_to_None()
         else:
             self.lmb_down = False
             self.selected_gizmo = ''
             self.picked = False
+            self.rotation = util.identity()
+            if self.is_selected:
+                self.__update_gizmos_trans()
+                self.__update_positions()
         
     def count_components(self):
         """
@@ -998,6 +1004,8 @@ class Gizmos:
                     z_distance = self.previous_distance
                 else:
                     z_distance = 1000000.0
+                
+
             else: #Use the whole mesh for the other iterations
                 x_intersects, x_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
                                                                               self.xrot_min_bb,
@@ -1124,7 +1132,7 @@ class Gizmos:
                     self.picked = True
                     self.previous_x = inter_point[0]
                 else:
-                    diff = 90 * (self.previous_x - inter_point[0])/2
+                    diff = 45 * (self.previous_x - inter_point[0])/2
                     self.previous_x = inter_point[0]
                     self.__rotate_selected(_angle = diff, _axis = (0.0,0.0,1.0))
             elif self.selected_gizmo=='Y':
@@ -1132,7 +1140,7 @@ class Gizmos:
                     self.picked = True
                     self.previous_y = inter_point[0]
                 else:
-                    diff = -90 * (self.previous_y - inter_point[0])/2
+                    diff = -45 * (self.previous_y - inter_point[0])/2
                     self.previous_y = inter_point[0]
                     self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
             elif self.selected_gizmo=='Z':
@@ -1140,7 +1148,7 @@ class Gizmos:
                     self.picked = True
                     self.previous_z = inter_point[2]
                 else:
-                    diff = -90 * (self.previous_z - inter_point[2])
+                    diff = -45 * (self.previous_z - inter_point[2])
                     self.previous_z = inter_point[2]
                     self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
@@ -1325,6 +1333,9 @@ class Gizmos:
 
         self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
         selected.rotation = selected.rotation @ util.rotate(angle=_angle,axis=_axis)
+
+        self.rotation = self.rotation @ util.rotate(angle=_angle,axis=_axis)
+        
         self.__update_gizmos_trans()
 
     def __scale_selected(self,x=1.0,y=1.0,z=1.0):
@@ -1371,10 +1382,12 @@ class Gizmos:
 
         self.gizmos_x_S_cube_trans.trs = no_rotation @ x_t
         self.gizmos_y_S_cube_trans.trs = no_rotation @ y_t
-        self.gizmos_z_S_cube_trans.trs = no_rotation @ z_t 
-        self.gizmos_x_R_trans.trs = no_rotation
-        self.gizmos_y_R_trans.trs = no_rotation
-        self.gizmos_z_R_trans.trs = no_rotation
+        self.gizmos_z_S_cube_trans.trs = no_rotation @ z_t
+
+        r_gizmos = no_rotation @ self.rotation
+        self.gizmos_x_R_trans.trs = r_gizmos
+        self.gizmos_y_R_trans.trs = r_gizmos
+        self.gizmos_z_R_trans.trs = r_gizmos
 
     def pick(self):
         """
