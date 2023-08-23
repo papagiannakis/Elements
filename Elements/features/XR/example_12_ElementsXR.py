@@ -9,7 +9,10 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
+from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
+from Elements.utils.obj_to_mesh import obj_to_mesh
+from Elements.definitions import TEXTURE_DIR, MODEL_DIR
 from Elements.features.XR.ElementsXR import ElementsXR_program
 from Elements.features.XR.GraphicsPlugin import XR_Shaders
 
@@ -29,6 +32,17 @@ GROUND_TEX_COORDINATES = [
     [1.0, 1.0],
     [0.0, 1.0]]
 
+#Light
+Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
+Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
+Lambientstr = 0.3 #uniform ambientStr
+LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
+Lcolor = util.vec(1.0,1.0,1.0)
+Lintensity = 0.8
+#Material
+Mshininess = 0.4 
+Mcolor = util.vec(0.8, 0.0, 0.8)
+
 scene = Scene()
 
 # Scenegraph with Entities, Components
@@ -41,8 +55,13 @@ meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 ground = scene.world.createEntity(Entity(name="ground"))
 scene.world.addEntityChild(rootEntity, ground)
-ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-0.5,0.0)))
+ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-0.65,0.0)))
 ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
+
+teapot = scene.world.createEntity(Entity(name="Teapot"))
+scene.world.addEntityChild(rootEntity, teapot)
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.65) @ util.scale(0.1, 0.1, 0.1) ))
+teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 #Cube
 minbox = -30
@@ -96,6 +115,22 @@ ground_mesh.vertex_index.append(indexground)
 ground_vArray = scene.world.addComponent(ground, VertexArray())
 ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 
+obj_to_import = os.path.join(MODEL_DIR,'LivingRoom/Table/Table.obj')
+table_entity = GameObject.Spawn(scene, obj_to_import, "Table", rootEntity, util.translate(-0.2, 0.6, 0.0))
+
+teapot_obj = os.path.join(MODEL_DIR, "teapot.obj")
+
+obj_color = [168/255, 168/255 , 210/255, 1.0]
+vert , ind, col = obj_to_mesh(teapot_obj, color=obj_color)
+vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
+
+teapot_mesh.vertex_attributes.append(vertices)
+teapot_mesh.vertex_attributes.append(colors)
+teapot_mesh.vertex_attributes.append(normals)
+teapot_mesh.vertex_index.append(indices)
+vArray_teapot = scene.world.addComponent(teapot, VertexArray())
+ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+
 
 # MAIN RENDERING LOOP
 
@@ -111,10 +146,9 @@ left_img = os.path.join(skybox_texture_locations,"left.jpg")
 back_img = os.path.join(skybox_texture_locations,"back.jpg")
 bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
 top_img = os.path.join(skybox_texture_locations,"top.jpg")
-mat_img = os.path.join(os.path.dirname(__file__), "textures", "dark_wood_texture.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
-texturePath = os.path.join(TEXTURE_DIR, "black_stones_floor.jpg")
+texturePath = os.path.join(TEXTURE_DIR, "Texture_Grass.png")
 texture = Texture(texturePath)
 
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
@@ -127,6 +161,24 @@ while not exit_loop:
     model_ground = ground.getChild(0).trs
 
     ground_shader.setUniformVariable(key='model', value=model_ground, mat4=True)
+
+    for mesh_entity in table_entity.mesh_entities:
+        mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=mesh_entity.transform_component.l2world, mat4=True)
+
+        normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.l2world))
+        mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
+
+        #mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
+
+    ShaderTeapot.setUniformVariable(key='model',value=trans_teapot.trs,mat4=True)
+    ShaderTeapot.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+    ShaderTeapot.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+    ShaderTeapot.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+    ShaderTeapot.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+    ShaderTeapot.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+    ShaderTeapot.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+    ShaderTeapot.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+    ShaderTeapot.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
     if program.session_running:
         program.render_frame(renderUpdate)
