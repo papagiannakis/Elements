@@ -32,6 +32,7 @@ GROUND_TEX_COORDINATES = [
     [1.0, 1.0],
     [0.0, 1.0]]
 
+eye = util.vec(1, 0.54, 1.0)
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
@@ -52,6 +53,10 @@ skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
 transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
+
+entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
+scene.world.addEntityChild(rootEntity, entityCam1)
+trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.translate(2.0,2.0,2.0)))
 
 ground = scene.world.createEntity(Entity(name="ground"))
 scene.world.addEntityChild(rootEntity, ground)
@@ -139,13 +144,13 @@ exit_loop = False
 program = ElementsXR_program()
 program.Initialize("Elements: ElementsXR Demo",initUpdate)
 
-skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
-front_img = os.path.join(skybox_texture_locations, "front.jpg")
-right_img = os.path.join(skybox_texture_locations,"right.jpg")
-left_img = os.path.join(skybox_texture_locations,"left.jpg")
-back_img = os.path.join(skybox_texture_locations,"back.jpg")
-bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
-top_img = os.path.join(skybox_texture_locations,"top.jpg")
+skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Day_Sunless")
+front_img = os.path.join(skybox_texture_locations, "front.png")
+right_img = os.path.join(skybox_texture_locations,"right.png")
+left_img = os.path.join(skybox_texture_locations,"left.png")
+back_img = os.path.join(skybox_texture_locations,"back.png")
+bottom_img = os.path.join(skybox_texture_locations,"bottom.png")
+top_img = os.path.join(skybox_texture_locations,"top.png")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 texturePath = os.path.join(TEXTURE_DIR, "Texture_Grass.png")
@@ -168,7 +173,7 @@ while not exit_loop:
         normalMatrix = np.transpose(util.inverse(mesh_entity.transform_component.l2world))
         mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
-        #mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
+        mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
 
     ShaderTeapot.setUniformVariable(key='model',value=trans_teapot.trs,mat4=True)
     ShaderTeapot.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
