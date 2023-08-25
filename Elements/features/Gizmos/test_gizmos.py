@@ -166,7 +166,7 @@ class TestGizmos(unittest.TestCase):
             running = self.scene.render()
             self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            gizmos.update_ray_init_position()
+            gizmos.update_ray_start()
             gizmos.update_view(view)
             gizmos.get_Event()
             gizmos.update_imgui()
@@ -235,7 +235,7 @@ class TestGizmos(unittest.TestCase):
             
             gizmos.update_screen_dimensions(window_width=width,window_height=height)
             gizmos.update_view(view)
-            gizmos.update_ray_init_position()
+            gizmos.update_ray_start()
             gizmos.get_Event()
             gizmos.update_imgui()
 
@@ -321,7 +321,7 @@ class TestGizmos(unittest.TestCase):
             
             gizmos.update_screen_dimensions(window_width=width,window_height=height)
             gizmos.update_view(view)
-            gizmos.update_ray_init_position()
+            gizmos.update_ray_start()
             gizmos.get_Event()
             gizmos.update_imgui()
             model_cube = trans4.l2world
