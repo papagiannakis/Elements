@@ -288,6 +288,7 @@ class Gizmos:
         self.previous_z = 0.0
 
         self.rotation = util.identity()
+        self.rotation_modifier = 45
 
         #Light parameters for scale cubes
         self.Lambientcolor = util.vec(1.0, 1.0, 1.0)
@@ -1132,7 +1133,7 @@ class Gizmos:
                     self.picked = True
                     self.previous_x = inter_point[0]
                 else:
-                    diff = 45 * (self.previous_x - inter_point[0])/2
+                    diff = self.rotation_modifier * (self.previous_x - inter_point[0])/2
                     self.previous_x = inter_point[0]
                     self.__rotate_selected(_angle = diff, _axis = (0.0,0.0,1.0))
             elif self.selected_gizmo=='Y':
@@ -1140,7 +1141,7 @@ class Gizmos:
                     self.picked = True
                     self.previous_y = inter_point[0]
                 else:
-                    diff = -45 * (self.previous_y - inter_point[0])/2
+                    diff = -self.rotation_modifier * (self.previous_y - inter_point[0])/2
                     self.previous_y = inter_point[0]
                     self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
             elif self.selected_gizmo=='Z':
@@ -1148,7 +1149,7 @@ class Gizmos:
                     self.picked = True
                     self.previous_z = inter_point[2]
                 else:
-                    diff = -45 * (self.previous_z - inter_point[2])
+                    diff = -self.rotation_modifier * (self.previous_z - inter_point[2])
                     self.previous_z = inter_point[2]
                     self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
