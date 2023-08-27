@@ -532,7 +532,7 @@ class Gizmos:
                                 break
                         break
 
-    def update_ray_init_position(self):
+    def update_ray_start(self):
         """
         Update mouse position and mouse state. Additionally Raycast or try to pick an Entity
         Arguments:
