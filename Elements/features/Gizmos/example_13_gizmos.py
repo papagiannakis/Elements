@@ -258,7 +258,7 @@ while running:
     
     gizmos.update_screen_dimensions(window_width=width,window_height=height)
     gizmos.update_view(view)
-    gizmos.update_ray_init_position()
+    gizmos.update_ray_start()
     gizmos.get_Event()
     gizmos.update_imgui()
 
