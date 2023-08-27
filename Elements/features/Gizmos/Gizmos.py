@@ -230,14 +230,6 @@ class entity_transformations:
         self.rotation = util.identity()
         self.scaling=util.vec(1.0,1.0,1.0)
 
-class axis_aligned_bounding_box: #might not be needed
-    """
-    
-    """
-    def __init__(self) -> None:
-        self.minbb = util.vec(0.0,0.0,0.0)
-        self.maxbb = util.vec(0.0,0.0,0.0)
-
 class Gizmos:
 
     def __init__(self,rootEntity: Entity):
@@ -274,7 +266,6 @@ class Gizmos:
         self.seperate_transformations = {}
         self.initial_transformations = {}
         self.entity_dict = {}
-        self.entity_bb_dict = {} # might not be needed
 
         self.cameraInUse = ""
         self.screen_width = 1024.0
@@ -472,17 +463,13 @@ class Gizmos:
             None
         """
         prev = self.mode
-        self.mode = Mode.DISAPPEAR #temporarily
-        #self.__update_gizmos()
+        self.mode = Mode.DISAPPEAR # Temporarily so that Gizmos can disappear in case pick() did not intersect with any Entity
         self.__update_positions()
         self.mode = prev
-
         self.is_selected = False
         self.selected_trans = None
         self.selected_mesh = None
         self.selected_comp = "None"
-        #self.picked = False
-        #self.selected_gizmo=''
 
     def reset_to_default(self):
         """
@@ -514,10 +501,10 @@ class Gizmos:
 
         for component in self.scene.world.root:
 
-            #Have to check because there is always some component that has Nonetype
+            #Have to check because there is always some component that is NoneType
             if component is not None:
                 parentname = component.parent.name
-                #next BasicTransform component that is not one of the gizmos components and is now the camera's in use component
+                #next BasicTransform component that is not one of the gizmos components and is not child of the camera in use
                 if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse:
                     count = count-1
                     if(count==0):
@@ -721,6 +708,7 @@ class Gizmos:
         mvp_xs_cube = 0.0
         mvp_ys_cube = 0.0
         mvp_zs_cube = 0.0
+
         if self.mode==Mode.SCALE:
             mvp_xs_line = vp @ model_XS_line
             mvp_ys_line = vp @ model_YS_line
@@ -772,7 +760,7 @@ class Gizmos:
 
     def update_projection(self, Proj):
         """
-        Update window's projection and calculate its inverse if needed
+        Update window's projection and calculate its inverse, if needed
         Arguments:
             self: self
             Proj: Projection matrix
@@ -786,7 +774,7 @@ class Gizmos:
 
     def update_view(self, View):
         """
-        Update window's View and calculate its inverse if needed
+        Update window's View and calculate its inverse, if needed
         Arguments:
             self: self
             View: View matrix
@@ -837,7 +825,6 @@ class Gizmos:
         """
         vertices = mesh_vertices
 
-        #hmm, is this needed?
         for i in  range(len(vertices)):
             vertices[i] = vertices[i]/vertices[i][3]
 
