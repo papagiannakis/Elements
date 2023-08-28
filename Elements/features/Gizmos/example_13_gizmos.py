@@ -1,5 +1,5 @@
 import numpy as np
-
+import os
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
@@ -7,12 +7,13 @@ from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.features.Gizmos.Gizmos import Gizmos
-
+from Elements.definitions import TEXTURE_DIR
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.utils.terrain import generateTerrain
 import Elements.utils.normals as norm
-
+from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
+from Elements.pyGLV.GL.Textures import get_single_texture_faces
 from OpenGL.GL import GL_LINES
 
 #Light
@@ -33,6 +34,11 @@ rootEntity = scene.world.createEntity(Entity(name="RooT"))
 entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
 scene.world.addEntityChild(rootEntity, entityCam1)
 trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.translate(2.5, 2.5, 2.5)))
+
+skybox = scene.world.createEntity(Entity(name="Skybox"))
+scene.world.addEntityChild(rootEntity, skybox)
+transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) #util.identity()
+meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 node4_pink_1 = scene.world.createEntity(Entity(name="node4_pink_1"))
 scene.world.addEntityChild(rootEntity, node4_pink_1)
@@ -99,6 +105,28 @@ indexCube = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32)
 
+#Skybox
+minbox = -30
+maxbox = 30
+vertexSkybox = np.array([
+    [minbox, minbox, maxbox, 1.0],
+    [minbox, maxbox, maxbox, 1.0],
+    [maxbox, maxbox, maxbox, 1.0],
+    [maxbox, minbox, maxbox, 1.0], 
+    [minbox, minbox, minbox, 1.0], 
+    [minbox, maxbox, minbox, 1.0], 
+    [maxbox, maxbox, minbox, 1.0], 
+    [maxbox, minbox, minbox, 1.0]
+],dtype=np.float32)
+
+#index array for Skybox
+indexSkybox = np.array((1,0,3, 1,3,2, 
+                  2,3,7, 2,7,6,
+                  3,0,4, 3,4,7,
+                  6,5,1, 6,1,2,
+                  4,5,6, 4,6,7,
+                  5,4,0, 5,0,1), np.uint32) 
+
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
 # camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
@@ -108,6 +136,14 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 vertices_pink, indices_pink, color_pink, normals_pink = norm.generateFlatNormalsMesh(vertexCube,indexCube,colorCube)
 vertices_yellow, indices_yellow, color_yellow, normals_yellow = norm.generateFlatNormalsMesh(vertexCube,indexCube,colorCube2)
+
+
+vertexSkybox, indexSkybox, _ = norm.generateUniqueVertices(vertexSkybox,indexSkybox)
+
+meshSkybox.vertex_attributes.append(vertexSkybox)
+meshSkybox.vertex_index.append(indexSkybox)
+vArraySkybox = scene.world.addComponent(skybox, VertexArray())
+shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
 
 ## ADD CUBE ##
 # attach a simple cube in a RenderMesh so that VertexArray can pick it up
@@ -248,6 +284,17 @@ shaderDec4_yellow_2.setUniformVariable(key='lightIntensity',value=Lintensity,flo
 shaderDec4_yellow_2.setUniformVariable(key='shininess',value=Mshininess,float1=True)
 shaderDec4_yellow_2.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
+skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Day_Sunless")
+#skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Meadow")
+front_img = os.path.join(skybox_texture_locations, "front.png")
+right_img = os.path.join(skybox_texture_locations,"right.png")
+left_img = os.path.join(skybox_texture_locations,"left.png")
+back_img = os.path.join(skybox_texture_locations,"back.png")
+bottom_img = os.path.join(skybox_texture_locations,"bottom.png")
+top_img = os.path.join(skybox_texture_locations,"top.png")
+
+face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
+
 while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root) 
@@ -275,6 +322,9 @@ while running:
     mvp_cube_yellow_1 = projMat @ view @ model_cube_yellow_1
     mvp_cube_yellow_2 = projMat @ view @ model_cube_yellow_2
     mvp_terrain = projMat @ view @ model_terrain
+
+    shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
 
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
     shaderDec4_pink_1.setUniformVariable(key='modelViewProj', value=mvp_cube_pink_1, mat4=True)
