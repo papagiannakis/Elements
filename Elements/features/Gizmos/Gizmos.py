@@ -505,7 +505,7 @@ class Gizmos:
             if component is not None:
                 parentname = component.parent.name
                 #next BasicTransform component that is not one of the gizmos components and is not child of the camera in use
-                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse:
+                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse and parentname.find("Skybox")==-1:
                     count = count-1
                     if(count==0):
                         self.selected_trans = component
