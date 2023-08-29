@@ -1396,12 +1396,11 @@ class Gizmos:
             mesh = obj.getChildByType(RenderMesh.getClassName())
             if trans is None or mesh is None:
                 continue
-            vertices = np.array(mesh.vertex_attributes[0],copy=True)
-            model = trans.l2world
-            if len(vertices[0])!=4:
-                continue
 
-            minbb, maxbb = self.calculate_bounding_box(mesh.vertex_attributes[0])
+            model = trans.l2world
+            vertices_world = np.array(mesh.vertex_attributes[0],copy=True) @ model
+
+            minbb, maxbb = self.calculate_bounding_box(vertices_world)
 
             ray_origin, ray_direction = self.calculate_ray()
 
