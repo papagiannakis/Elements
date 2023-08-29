@@ -276,6 +276,7 @@ ShaderTeapot.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
 ShaderTeapot.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
 ShaderTeapot.setUniformVariable(key='shininess',value=Mshininess,float1=True)
 ShaderTeapot.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+
 while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root) 
