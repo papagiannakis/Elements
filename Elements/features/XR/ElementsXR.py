@@ -9,6 +9,7 @@ from Elements.features.XR.PlatformPlugin import createPlatformPlugin
 from Elements.features.XR.GraphicsPlugin import OpenGLPlugin, create_xr_quaternion ,XR_Shaders
 from Elements.features.XR.options import options, Blend_Mode, View_Configuration, Form_factor
 import logging
+import Elements.utils.normals as norm
 from typing import List, Optional, Dict
 import math
 import sys
@@ -178,6 +179,10 @@ class ElementsXR_program:
         self.Hands_Mesh = [RenderMesh()] * 2
         self.Hands_VertexArray = [None] * 2
         self.Hands_Shader = [ShaderGLDecorator(Shader())] * 2
+
+
+        self.position = util.vec(0.0,0.0,0.0)
+        self.raycast = False
         
         VertexHand = np.array([
                         [-0.1, -0.1, 0.1, 1.0],
@@ -257,6 +262,14 @@ class ElementsXR_program:
         if self.instance is not None:
             self.instance.destroy()
             self.instance = None
+
+    @property
+    def position(self, pos: util.vec):
+        self.position = pos
+
+    @property
+    def raycast(self, _raycast: bool):
+        self.raycast = _raycast
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
         """
@@ -895,10 +908,14 @@ class ElementsXR_program:
             if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
                 scale = 0.1 * self.input.hand_scale[hand]
-                #cubes.append(Cube(space_location.pose, xr.Vector3f(scale, scale, scale)))
+
                 #update trs
                 position = space_location.pose.position
                 orientation = space_location.pose.orientation
+
+                position.x += self.position[0]
+                position.y += self.position[1]
+                position.z += self.position[2]
 
                 m = util.translate(position.x,
                                 position.y,
@@ -906,6 +923,8 @@ class ElementsXR_program:
                                                                                     orientation.y,
                                                                                     orientation.z,
                                                                                     orientation.w))
+                
+                self.Hands_trans[hand].trs = self.Hands_trans[hand].trs @ m
         
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
@@ -919,6 +938,12 @@ class ElementsXR_program:
                 wait_info=xr.SwapchainImageWaitInfo(timeout=xr.INFINITE_DURATION),
             )
             view = projection_layer_views[i]
+
+            #In case we want to move the camera somewhere else inside the scene
+            view.pose.position.x += self.position[0]
+            view.pose.position.y += self.position[1]
+            view.pose.position.z += self.position[2]
+
             assert view.type == xr.StructureType.COMPOSITION_LAYER_PROJECTION_VIEW
             view.pose = self.views[i].pose
             view.fov = self.views[i].fov
