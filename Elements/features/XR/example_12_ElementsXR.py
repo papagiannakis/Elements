@@ -145,6 +145,7 @@ eye = util.vec(2.0,2.0,2.0)
 
 program = ElementsXR_program()
 program.position = eye
+program.raycast = True
 program.Initialize("Elements: ElementsXR Demo",initUpdate)
 
 skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Day_Sunless")

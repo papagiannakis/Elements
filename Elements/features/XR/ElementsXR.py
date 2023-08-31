@@ -173,13 +173,19 @@ class ElementsXR_program:
             xr.EnvironmentBlendMode.ALPHA_BLEND,
         ]
 
-        #############
+        #Hand Components
         self.hands = [Entity()] * 2
         self.Hands_trans = [None] * 2
         self.Hands_Mesh = [RenderMesh()] * 2
         self.Hands_VertexArray = [None] * 2
         self.Hands_Shader = [ShaderGLDecorator(Shader())] * 2
 
+        #Hand Components
+        self.rays = [Entity()] * 2
+        self.rays_trans = [None] * 2
+        self.rays_Mesh = [RenderMesh()] * 2
+        self.rays_VertexArray = [None] * 2
+        self.rays_Shader = [ShaderGLDecorator(Shader())] * 2
 
         self.position = util.vec(0.0,0.0,0.0)
         self.raycast = False
@@ -212,6 +218,19 @@ class ElementsXR_program:
                         [0.0, 0.0, 1.0, 1.0],
                         [0.0, 0.0, 1.0, 1.0]
                     ], dtype=np.float32)
+        
+        VertexRay = np.array([
+                        [0.0, 0.0, 0.0, 1.0],
+                        [1.0, 0.0, 0.0, 1.0]
+                    ],dtype=np.float32) 
+        
+        IndexRay = np.array((0,1), np.uint32)
+        
+        ColorRay = np.array([
+                        [1.0, 1.0, 0.0, 1.0],
+                        [1.0, 1.0, 0.0, 1.0]
+                    ], dtype=np.float32)
+
 
         scene = Scene()
         rootEntity = scene.world.root
@@ -235,6 +254,27 @@ class ElementsXR_program:
         self.Hands_Mesh[Side.RIGHT].vertex_index.append(IndexHand)
         self.Hands_VertexArray[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], VertexArray())
         self.Hands_Shader[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
+
+        self.rays[Side.LEFT] = scene.world.createEntity(Entity(name="Left_ray"))
+        scene.world.addEntityChild(rootEntity, self.rays[Side.LEFT])
+        self.rays_trans[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], BasicTransform(name="transLeftray", trs=util.identity))
+        self.rays_Mesh[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], RenderMesh(name="meshLeftray"))
+        self.rays_Mesh[Side.LEFT].vertex_attributes.append(VertexRay)
+        self.rays_Mesh[Side.LEFT].vertex_attributes.append(ColorRay)
+        self.rays_Mesh[Side.LEFT].vertex_index.append(IndexRay)
+        self.rays_VertexArray[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], VertexArray())
+        self.rays_Shader[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
+
+        self.rays[Side.RIGHT] = scene.world.createEntity(Entity(name="Right_ray"))
+        scene.world.addEntityChild(rootEntity, self.rays[Side.RIGHT])
+        self.rays_trans[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], BasicTransform(name="transRightray", trs=util.identity))
+        self.rays_Mesh[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], RenderMesh(name="meshRightray"))
+        self.rays_Mesh[Side.RIGHT].vertex_attributes.append(VertexRay)
+        self.rays_Mesh[Side.RIGHT].vertex_attributes.append(ColorRay)
+        self.rays_Mesh[Side.RIGHT].vertex_index.append(IndexRay)
+        self.rays_VertexArray[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], VertexArray())
+        self.rays_Shader[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
+        
 
     def __enter__(self):
         return self
@@ -925,6 +965,13 @@ class ElementsXR_program:
                                                                                     orientation.w))
                 
                 self.Hands_trans[hand].trs = self.Hands_trans[hand].trs @ m
+                self.rays_trans[hand].trs = self.rays_trans[hand].trs @ m
+
+                self.Hands_Shader[hand].setUniformVariable("model",value=self.Hands_trans[hand].trs,mat4=True)
+
+                #If Raycast is enabled then update rays model matrix
+                if self.raycast:
+                    self.rays_Shader[hand].setUniformVariable("model",value=self.rays_trans[hand].trs,mat4=True)
         
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):

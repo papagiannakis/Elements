@@ -591,15 +591,6 @@ class OpenGLPlugin(GraphicsPlugin):
         GL.glClearColor(*self.background_clear_color)
         GL.glClearDepth(1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
-        
-        """
-        proj = util.ortho(layer_view.fov.angle_left,
-                          layer_view.fov.angle_right,
-                          layer_view.fov.angle_down,
-                          layer_view.fov.angle_up,
-                          0.01,
-                          100.0)
-        """
 
         position = layer_view.pose.position
         orientation = layer_view.pose.orientation
@@ -621,6 +612,7 @@ class OpenGLPlugin(GraphicsPlugin):
                                                                                     orientation.z,
                                                                                     orientation.w)) @ util.scale(1.0,1.0,1.0)
         """
+        
         to_view = util.translate(position.x,
                                 position.y,
                                 position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
