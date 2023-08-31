@@ -483,6 +483,14 @@ class OpenGLPlugin(GraphicsPlugin):
         self.initialize_resources(renderer)
 
     def initialize_resources(self,renderer: InitGLShaderSystem):
+        """
+        Initialize only the required components for 
+        Arguments:
+            self: self
+            renderer: System that initializes all the required elements from the scene
+        Returns:
+            None
+        """
         scene = Scene()
         self.swapchain_framebuffer = GL.glGenFramebuffers(1)
         for component in scene.world.root:
@@ -545,6 +553,18 @@ class OpenGLPlugin(GraphicsPlugin):
                     renderUpdate: RenderGLShaderSystem,
                     mirror=False
                     ):
+        """
+        Renders scene from a given view
+        Arguments:
+            self: self
+            layer_view: holds all necessary information needed to render a view
+            swapchain_image_base_ptr:
+            _swapchain_format:
+            renderUpdate: System that updates uniform variables from the scene
+            mirror: 
+        Returns:
+            None
+        """
         assert layer_view.sub_image.image_array_index == 0
 
         scene = Scene()

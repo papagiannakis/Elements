@@ -259,7 +259,15 @@ class ElementsXR_program:
             self.instance = None
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
-        """All Initializations packed inside a single method"""
+        """
+        All Initializations packed inside a single method
+        Arguments:
+            self: self
+            name: Application name
+            renderer: System that initializes Entities on the scene
+        Returns:
+            None
+        """
         self.createInstance(name)
         self.InitializeSystem()
         self.InitializeDevice(renderer)
@@ -270,7 +278,12 @@ class ElementsXR_program:
         """
         Create a Swapchain which requires coordinating with the graphics plugin to select the format, getting the system graphics
         properties, getting the view configuration and grabbing the resulting swapchain images.
+        Arguments:
+            self: self
+        Returns:
+            None
         """
+        
         assert self.session is not None
         assert len(self.swapchains) == 0
         assert len(self.config_views) == 0
@@ -361,7 +374,14 @@ class ElementsXR_program:
             self.swapchain_image_ptr_buffers[hash(swapchain.handle)] = swapchain_image_ptr_buffer
     
     def createInstance(self, name: str):
-        "create an instance"
+        """
+        create instance of the OpenXR program
+        Arguments:
+            self: self
+            name: Application name
+        Returns:
+            None
+        """
         self.log_layers_and_extensions()
 
         assert self.instance is None
@@ -411,6 +431,10 @@ class ElementsXR_program:
         """
         Select a System for the view configuration specified in the Options and initialize the graphics device for the selected
         system.
+        Arguments:
+            self: self
+        Returns:
+            None
         """
         assert self.instance is not None
         assert self.system is None
@@ -423,11 +447,24 @@ class ElementsXR_program:
     def InitializeDevice(self,
                          renderer : InitGLShaderSystem):
         self.log_view_configurations()
-        "The graphics Plugin takes care of the initialization here"
+        """
+        The graphics Plugin uses the initialization system to initialize the required objects for the scene
+        Arguments:
+            self: self
+            renderer: System that initializes Entities on the scene
+        Returns:
+            None
+        """
         self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer)
 
     def InitializeSession(self):
-        """Create a Session and other basic session-level initialization."""
+        """
+        Create a Session and other basic session-level initialization.
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
         assert self.instance is not None
         assert self.instance.handle != xr.NULL_HANDLE
         assert self.session is None
@@ -456,7 +493,13 @@ class ElementsXR_program:
         )
 
     def initialize_actions(self):
-        # Create an action set.
+        """ 
+        Create an action set for various controllers
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
         action_set_info = xr.ActionSetCreateInfo(
             action_set_name="gameplay",
             localized_action_set_name="Gameplay",
@@ -691,6 +734,13 @@ class ElementsXR_program:
         )
 
     def next_event(self)-> Optional[Structure]:
+        """
+        Check if there is any available xr event
+        Arguments:
+            self: self
+        Returns:
+            True if there is an available event, False otherwise
+        """
         head = self.event_data_buffer
         head.type = xr.StructureType.EVENT_DATA_BUFFER
         result = xr.raw_functions.xrPollEvent(self.instance.handle, byref(self.event_data_buffer))
@@ -703,6 +753,13 @@ class ElementsXR_program:
         raise result2
     
     def poll_events(self):
+        """
+        If there is an available xr event, check what type of event it is
+        Arguments:
+            self: self
+        Returns:
+            True to stop rendering, False otherwise
+        """
         exit_render_loop = False
         while True:
             event = self.next_event()
@@ -722,6 +779,15 @@ class ElementsXR_program:
         return exit_render_loop
 
     def handle_event(self,event,exit_loop):
+        """
+        Handles an event, when there is one
+        Arguments:
+            self: self
+            event: a certain openxr type that refers to a session's contents
+            exit_loop: When this becomes True exit rendering loop
+        Returns:
+            None
+        """
         event = cast(byref(event), POINTER(xr.EventDataSessionStateChanged)).contents
         old_state = self.session_state
         self.session_state = xr.SessionState(event.state)
@@ -750,7 +816,14 @@ class ElementsXR_program:
         return exit_loop
 
     def render_frame(self,renderer: RenderGLShaderSystem) -> None:
-        """Create and submit a frame."""
+        """
+        Create and submit a frame.
+        Arguments:
+            self: self
+            renderer: Rendering System that the graphics plugin uses to update all the uniform variables
+        Returns:
+            None
+        """
         assert self.session is not None
         frame_state = xr.wait_frame(
             session=self.session,
@@ -789,6 +862,8 @@ class ElementsXR_program:
             layer: xr.CompositionLayerProjection,
             renderer: RenderGLShaderSystem
             ) -> bool:
+        """
+        """
         view_capacity_input = len(self.views)
         view_state, self.views = xr.locate_views(
             session=self.session,
@@ -867,6 +942,13 @@ class ElementsXR_program:
         return True
     
     def create_visualized_spaces(self):
+        """
+        Creates available Visualized Spaces
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
         assert self.session is not None
         visualized_spaces = [
             "ViewFront", "Local", "Stage", "StageLeft", "StageRight",
