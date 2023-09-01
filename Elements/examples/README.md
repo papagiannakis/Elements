@@ -30,7 +30,7 @@ you may move the camera using the mouse. Check [Mouse Controls](#mouse-controls)
   * [Example 12](./3.Advanced/example_12_usd_scene.py) A scene with a GUI that allows to import a [USD](https://openusd.org/release/index.html) file. Upon loading the demo usd, three cubes shall appear.
   * [Example 13](./3.Advanced/example_13_proper_resize.py) A window that is properly resized, resetting the 
   projection matrix, on each frame, based on the window aspect. 
-  * [Example 14](./3.Advanced/example_14_ECS_behavior.py) An example demonstrating how behavior can be embedded. Using the InsertAction or RemoveAction, we may check if a component got close or far away respectively from another designated component. 
+  * [Example 14](./3.Advanced/example_14_ECS_behavior.py) An example demonstrating how behavior can be embedded. Using the InsertAction or RemoveAction, we may check if a component got close or far away respectively from another designated component. In this example, if you translate the RemoveCube away from the terrain, you will complete the RemoveAction. To complete the InsertAction, you may translate the InsertCube close to the terrain.
 
 
 ## 4.Experimental examples
