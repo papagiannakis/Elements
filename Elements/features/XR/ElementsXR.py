@@ -303,13 +303,8 @@ class ElementsXR_program:
             self.instance.destroy()
             self.instance = None
 
-    @property
-    def position(self, pos: util.vec):
+    def update_initial_position(self,pos: util.vec):
         self.position = pos
-
-    @property
-    def raycast(self, _raycast: bool):
-        self.raycast = _raycast
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
         """

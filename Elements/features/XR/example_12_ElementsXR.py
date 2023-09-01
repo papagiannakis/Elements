@@ -141,10 +141,10 @@ ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_
 
 exit_loop = False
 
-eye = util.vec(2.0,2.0,2.0)
+eye = util.vec(3.0,10.0,3.0)
 
 program = ElementsXR_program()
-program.position = eye
+program.update_initial_position(eye)
 program.raycast = True
 program.Initialize("Elements: ElementsXR Demo",initUpdate)
 
