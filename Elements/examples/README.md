@@ -47,3 +47,9 @@ Some examples require a CUDA enabled Windows machine to run them.
 
 
 ## Mouse Controls <a name="mouse-controls"></a>
+
+If camera movement is enabled then you can change the camera settings as follows:
+
+  * Right mouse button changes the camera position.
+  * Ctrl + Right mouse button zooms in and out.
+  * Shift + Right mouse button changes the target location.
