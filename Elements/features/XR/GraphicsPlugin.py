@@ -387,6 +387,8 @@ class OpenGLPlugin(GraphicsPlugin):
         self.color_to_depth_map: Dict[int, int] = {}
         self.debug_message_proc = None
 
+        self.position = util.vec(0.0,0.0,0.0)
+
     def __enter__(self):
         return self
     
@@ -411,6 +413,9 @@ class OpenGLPlugin(GraphicsPlugin):
     @property
     def instance_extensions(self) -> List[str]:
         return [xr.KHR_OPENGL_ENABLE_EXTENSION_NAME]
+    
+    def update_initial_position(self, eye: util.vec):
+        self.position = eye
     
     def focus_window(self):
         glfw.focus_window(self.window)
@@ -595,6 +600,10 @@ class OpenGLPlugin(GraphicsPlugin):
         position = layer_view.pose.position
         orientation = layer_view.pose.orientation
         fov = layer_view.fov
+
+        position.x += self.position[0]
+        position.y += self.position[1]
+        position.z += self.position[2]
 
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
         #proj = util.perspective(100.0,aspect_ratio,0.01,60.0)

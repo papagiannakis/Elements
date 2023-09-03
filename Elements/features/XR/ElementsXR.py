@@ -305,6 +305,7 @@ class ElementsXR_program:
 
     def update_initial_position(self,pos: util.vec):
         self.position = pos
+        self.graphics_plugin.update_initial_position(self.position)
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
         """
@@ -959,8 +960,8 @@ class ElementsXR_program:
                                                                                     orientation.z,
                                                                                     orientation.w))
                 
-                self.Hands_trans[hand].trs = self.Hands_trans[hand].trs @ m
-                self.rays_trans[hand].trs = self.rays_trans[hand].trs @ m
+                self.Hands_trans[hand].trs = m
+                self.rays_trans[hand].trs = m
 
                 self.Hands_Shader[hand].setUniformVariable("model",value=self.Hands_trans[hand].trs,mat4=True)
 
@@ -981,10 +982,6 @@ class ElementsXR_program:
             )
             view = projection_layer_views[i]
 
-            #In case we want to move the camera somewhere else inside the scene
-            view.pose.position.x += self.position[0]
-            view.pose.position.y += self.position[1]
-            view.pose.position.z += self.position[2]
 
             assert view.type == xr.StructureType.COMPOSITION_LAYER_PROJECTION_VIEW
             view.pose = self.views[i].pose
