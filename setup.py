@@ -45,6 +45,7 @@ setup(
         'bezier',
         'clifford',
         'trimesh',
+        'pyganja'
     ],
     
 
