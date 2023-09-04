@@ -31,8 +31,6 @@ GROUND_TEX_COORDINATES = [
     [0.0, 0.0],
     [1.0, 1.0],
     [0.0, 1.0]]
-
-eye = util.vec(1, 0.54, 1.0)
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
@@ -141,7 +139,7 @@ ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_
 
 exit_loop = False
 
-eye = util.vec(3.0,10.0,3.0)
+eye = util.vec(-2.0,-6.0,-8.0)
 
 program = ElementsXR_program()
 program.update_initial_position(eye)

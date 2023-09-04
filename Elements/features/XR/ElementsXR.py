@@ -904,9 +904,6 @@ class ElementsXR_program:
                 layers=layers,
             ),
         )
-        ##testing
-        print(self.input)
-        ##
 
     def render_layer(self,
                      predicted_display_time: xr.Time,
