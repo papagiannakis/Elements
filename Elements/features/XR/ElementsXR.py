@@ -14,6 +14,7 @@ from typing import List, Optional, Dict
 import math
 import sys
 import enum
+import ctypes
 import numpy as np
 import xr
 import xr.raw_functions
@@ -757,7 +758,6 @@ class ElementsXR_program:
                 suggested_bindings=(xr.ActionSuggestedBinding * len(oculus_bindings))(*oculus_bindings),
             ),
         )
-        
 
         action_space_info = xr.ActionSpaceCreateInfo(
             action=self.input.pose_action,
@@ -774,6 +774,9 @@ class ElementsXR_program:
             session=self.session,
             create_info=action_space_info,
         )
+
+        #I need to add more action_space_info here, for the other actions too
+
         xr.attach_session_action_sets(
             session=self.session,
             attach_info=xr.SessionActionSetsAttachInfo(
@@ -864,6 +867,7 @@ class ElementsXR_program:
             exit_loop = True
         return exit_loop
 
+
     def render_frame(self,renderer: RenderGLShaderSystem) -> None:
         """
         Create and submit a frame.
@@ -879,6 +883,43 @@ class ElementsXR_program:
             frame_wait_info=xr.FrameWaitInfo(),
         )
         xr.begin_frame(self.session, xr.FrameBeginInfo())
+
+        ##################
+
+        context = xr.ContextObject(
+            instance_create_info=xr.InstanceCreateInfo(
+                enabled_extension_names=[
+                    # A graphics extension is mandatory (without a headless extension)
+                    xr.KHR_OPENGL_ENABLE_EXTENSION_NAME,
+                ],
+            ),
+        )
+        if context.session_state == xr.SessionState.FOCUSED:
+            active_action_set = xr.ActiveActionSet(
+                action_set=context.default_action_set,
+                subaction_path=xr.NULL_PATH,
+            )
+            xr.sync_actions(
+                session=context.session,
+                sync_info=xr.ActionsSyncInfo(
+                    count_active_action_sets=1,
+                    active_action_sets=ctypes.pointer(active_action_set),
+                ),
+            )
+            found_count = 0
+            for index, space in enumerate(self.input.hand_space):
+                space_location = xr.locate_space(
+                    space=space,
+                    base_space=context.space,
+                    time=frame_state.predicted_display_time,
+                )
+                if space_location.location_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT:
+                    print(index + 1, space_location.pose)
+                    found_count += 1
+            if found_count == 0:
+                print("no controllers active")
+
+        ##################
 
         layers = []
         layer_flags = 0
@@ -940,6 +981,7 @@ class ElementsXR_program:
                 base_space=self.app_space,
                 time=predicted_display_time,
             )
+
             loc_flags = space_location.location_flags
             if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
