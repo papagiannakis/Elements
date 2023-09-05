@@ -51,31 +51,18 @@ trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(rootEntity, teapot)
-<<<<<<< HEAD
 trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=13.0)))
-=======
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.65))) # util.scale(0.1, 0.1, 0.1)
->>>>>>> d031fa67247db0f25bbc5b28ec354089e4c365e0
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 ground = scene.world.createEntity(Entity(name="ground"))
 scene.world.addEntityChild(rootEntity, ground)
-<<<<<<< HEAD
 ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-1.1,0.0) @ util.scale(10.0,1.0,10.0)))
-=======
-ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-0.65,0.0) @ util.scale(10.0,1.0,10.0)))
->>>>>>> d031fa67247db0f25bbc5b28ec354089e4c365e0
 ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 
 Table = scene.world.createEntity(Entity(name="Table"))
 scene.world.addEntityChild(rootEntity, Table)
-<<<<<<< HEAD
 trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.translate(y=10.0) @ util.scale(10.0,10.0,10.0)))
 mesh_TableTop = scene.world.addComponent(Table, RenderMesh(name="mesh_Table"))
-=======
-trans_Table = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.identity()))
-mesh_Table = scene.world.addComponent(Table, RenderMesh(name="mesh_Table"))
->>>>>>> d031fa67247db0f25bbc5b28ec354089e4c365e0
 
 TableTop = scene.world.createEntity(Entity(name="TableTop"))
 trans_TableTop = scene.world.addComponent(TableTop, BasicTransform(name="trans_TableTop", trs=util.translate(0.0,0.2,0.0)))
@@ -219,11 +206,7 @@ shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shad
 
 exit_loop = False
 
-<<<<<<< HEAD
 eye = util.vec(16.0,19.0,19.0)
-=======
-eye = util.vec(-2.0,-6.0,-6.0)
->>>>>>> d031fa67247db0f25bbc5b28ec354089e4c365e0
 
 program = ElementsXR_program()
 program.update_initial_position(eye)
