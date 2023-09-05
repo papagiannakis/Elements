@@ -19,6 +19,7 @@ from Elements.pyGLV.GL.Textures import Texture
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
+from Elements.definitions import TEXTURE_DIR
 
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
@@ -213,7 +214,7 @@ model_cube = util.translate(0.0,0.5,0.0)
 rotate_y = 0.0
 rotation_speed = 1.0
 
-texturePath = os.path.join(os.path.dirname(__file__), "..","files","textures","dark_wood_texture.jpg")
+texturePath = os.path.join(TEXTURE_DIR,"dark_wood_texture.jpg")
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
