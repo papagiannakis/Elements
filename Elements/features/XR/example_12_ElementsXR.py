@@ -42,7 +42,7 @@ rootEntity = scene.world.createEntity(Entity(name="RooT"))
 
 skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
-transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
+transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) 
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
@@ -51,21 +51,20 @@ trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(rootEntity, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.65) @ util.scale(0.1, 0.1, 0.1) ))
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.65))) # util.scale(0.1, 0.1, 0.1)
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 ground = scene.world.createEntity(Entity(name="ground"))
 scene.world.addEntityChild(rootEntity, ground)
-ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-0.65,0.0)))
+ground_trans = scene.world.addComponent(ground, BasicTransform(name="ground_trans", trs=util.translate(0.0,-0.65,0.0) @ util.scale(10.0,1.0,10.0)))
 ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 
 Table = scene.world.createEntity(Entity(name="Table"))
 scene.world.addEntityChild(rootEntity, Table)
-trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.identity()))
-mesh_TableTop = scene.world.addComponent(Table, RenderMesh(name="mesh_Table"))
+trans_Table = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.identity()))
+mesh_Table = scene.world.addComponent(Table, RenderMesh(name="mesh_Table"))
 
 TableTop = scene.world.createEntity(Entity(name="TableTop"))
-scene.world.addEntityChild(Table, TableTop)
 trans_TableTop = scene.world.addComponent(TableTop, BasicTransform(name="trans_TableTop", trs=util.translate(0.0,0.2,0.0)))
 mesh_TableTop = scene.world.addComponent(TableTop, RenderMesh(name="mesh_TableTop"))
 
@@ -88,6 +87,7 @@ TableLeg4 = scene.world.createEntity(Entity(name="TableLeg4"))
 scene.world.addEntityChild(Table,TableLeg4)
 trans_TableLeg4 = scene.world.addComponent(TableLeg4, BasicTransform(name="trans_TableLeg4", trs=util.translate(-0.65,-0.5,-0.65)))
 mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_TableLeg4"))
+
 
 #Cube
 minbox = -30
@@ -206,7 +206,7 @@ shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shad
 
 exit_loop = False
 
-eye = util.vec(-2.0,-6.0,-8.0)
+eye = util.vec(-2.0,-6.0,-6.0)
 
 program = ElementsXR_program()
 program.update_initial_position(eye)
@@ -222,11 +222,19 @@ bottom_img = os.path.join(skybox_texture_locations,"bottom.png")
 top_img = os.path.join(skybox_texture_locations,"top.png")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
-texturePath = os.path.join(TEXTURE_DIR, "black_stones_floor.jpg")
-texture = Texture(texturePath)
+texturePathFloor = os.path.join(TEXTURE_DIR, "black_stones_floor.jpg")
+textureFloor = Texture(texturePathFloor)
+texturePathWood = os.path.join(TEXTURE_DIR, "dark_wood_texture.jpg")
+textureWood = Texture(texturePathWood)
 
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
-ground_shader.setUniformVariable(key='ImageTexture', value=texture, texture=True)
+ground_shader.setUniformVariable(key='ImageTexture', value=textureFloor, texture=True)
+shaderDec_TableTop.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
+shaderDec_TableLeg1.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
+shaderDec_TableLeg2.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
+shaderDec_TableLeg3.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
+shaderDec_TableLeg4.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
+
 
 ShaderTeapot.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
 ShaderTeapot.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)

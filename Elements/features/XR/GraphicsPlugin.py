@@ -632,14 +632,10 @@ class OpenGLPlugin(GraphicsPlugin):
         view = to_view
         #view = util.inverse(to_view)
 
-        #Traverse Vertex Arrays
-        scene.world.traverse_visit(renderUpdate,scene.world.root)
-
         #Update each shader's projection & view
         element: Entity
         for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
-                
                 model = element.parent.getChild(0).l2world
                 mvp = proj @ view @ model
 
@@ -647,6 +643,9 @@ class OpenGLPlugin(GraphicsPlugin):
                 element.setUniformVariable(key='View', value=view, mat4=True)
                 element.setUniformVariable(key='model', value=model, mat4=True)
                 element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+
+        #Traverse Vertex Arrays
+        scene.world.traverse_visit(renderUpdate,scene.world.root)
 
         #if mirror:
         #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)

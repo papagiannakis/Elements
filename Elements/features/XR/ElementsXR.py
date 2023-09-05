@@ -238,7 +238,7 @@ class ElementsXR_program:
 
         self.hands[Side.LEFT] = scene.world.createEntity(Entity(name="Left_Hand"))
         scene.world.addEntityChild(rootEntity, self.hands[Side.LEFT])
-        self.Hands_trans[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], BasicTransform(name="transLeftHand", trs=util.identity))
+        self.Hands_trans[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], BasicTransform(name="transLeftHand", trs=util.identity()))
         self.Hands_Mesh[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], RenderMesh(name="meshLeftHand"))
         self.Hands_Mesh[Side.LEFT].vertex_attributes.append(VertexHand)
         self.Hands_Mesh[Side.LEFT].vertex_attributes.append(ColorHand)
@@ -248,7 +248,7 @@ class ElementsXR_program:
 
         self.hands[Side.RIGHT] = scene.world.createEntity(Entity(name="Right_Hand"))
         scene.world.addEntityChild(rootEntity, self.hands[Side.RIGHT])
-        self.Hands_trans[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], BasicTransform(name="transRightHand", trs=util.identity))
+        self.Hands_trans[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], BasicTransform(name="transRightHand", trs=util.identity()))
         self.Hands_Mesh[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], RenderMesh(name="meshRightHand"))
         self.Hands_Mesh[Side.RIGHT].vertex_attributes.append(VertexHand)
         self.Hands_Mesh[Side.RIGHT].vertex_attributes.append(ColorHand)
@@ -258,7 +258,7 @@ class ElementsXR_program:
 
         self.rays[Side.LEFT] = scene.world.createEntity(Entity(name="Left_ray"))
         scene.world.addEntityChild(rootEntity, self.rays[Side.LEFT])
-        self.rays_trans[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], BasicTransform(name="transLeftray", trs=util.identity))
+        self.rays_trans[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], BasicTransform(name="transLeftray", trs=util.identity()))
         self.rays_Mesh[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], RenderMesh(name="meshLeftray"))
         self.rays_Mesh[Side.LEFT].vertex_attributes.append(VertexRay)
         self.rays_Mesh[Side.LEFT].vertex_attributes.append(ColorRay)
@@ -268,7 +268,7 @@ class ElementsXR_program:
 
         self.rays[Side.RIGHT] = scene.world.createEntity(Entity(name="Right_ray"))
         scene.world.addEntityChild(rootEntity, self.rays[Side.RIGHT])
-        self.rays_trans[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], BasicTransform(name="transRightray", trs=util.identity))
+        self.rays_trans[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], BasicTransform(name="transRightray", trs=util.identity()))
         self.rays_Mesh[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], RenderMesh(name="meshRightray"))
         self.rays_Mesh[Side.RIGHT].vertex_attributes.append(VertexRay)
         self.rays_Mesh[Side.RIGHT].vertex_attributes.append(ColorRay)
