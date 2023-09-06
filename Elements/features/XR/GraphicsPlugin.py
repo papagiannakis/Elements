@@ -91,7 +91,7 @@ class XR_Shaders:
         void main()
         {
             gl_Position =  Proj * View * model * vPos;
-            pos = model * vPosition;
+            pos = model * vPos;
             color = vColor;
             normal = mat3(transpose(inverse(model))) * vNormal.xyz;
         }

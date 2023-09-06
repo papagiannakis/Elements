@@ -162,14 +162,16 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 meshSkybox.vertex_attributes.append(vertexSkybox)
 meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
-shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.STATIC_SKYBOX_VERT_XR, fragment_source=XR_Shaders.STATIC_SKYBOX_FRAG_XR)))
+#shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.STATIC_SKYBOX_VERT_XR, fragment_source=XR_Shaders.STATIC_SKYBOX_FRAG_XR)))
+shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
 
 # Add ground
 ground_mesh.vertex_attributes.append(vertexground) 
 ground_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 ground_mesh.vertex_index.append(indexground)
 ground_vArray = scene.world.addComponent(ground, VertexArray())
-ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.SIMPLE_TEXTURE_VERT_XR, fragment_source=XR_Shaders.SIMPLE_TEXTURE_FRAG_XR)))
+#ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.SIMPLE_TEXTURE_VERT_XR, fragment_source=XR_Shaders.SIMPLE_TEXTURE_FRAG_XR)))
+ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 
 teapot_obj = os.path.join(MODEL_DIR, "teapot.obj")
 
