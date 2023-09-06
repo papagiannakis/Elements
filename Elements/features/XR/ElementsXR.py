@@ -174,6 +174,9 @@ class ElementsXR_program:
             xr.EnvironmentBlendMode.ALPHA_BLEND,
         ]
 
+        #Head Entity
+        self.head = None
+
         #Hand Components
         self.hands = [Entity()] * 2
         self.Hands_trans = [None] * 2
@@ -189,7 +192,7 @@ class ElementsXR_program:
         self.rays_Shader = [ShaderGLDecorator(Shader())] * 2
 
         self.position = util.vec(0.0,0.0,0.0)
-        self.raycast = False
+        #self.raycast = False
         
         VertexHand = np.array([
                         [-0.1, -0.1, 0.1, 1.0],
@@ -304,9 +307,21 @@ class ElementsXR_program:
             self.instance.destroy()
             self.instance = None
 
-    def update_initial_position(self,pos: util.vec):
-        self.position = pos
-        self.graphics_plugin.update_initial_position(self.position)
+    #def update_initial_position(self,pos: util.vec):
+    #    self.position = pos
+    #    self.graphics_plugin.update_initial_position(self.position)
+
+    def set_Head(self, _Head: Entity):
+        """
+        Setter method for Head Entity
+        Arguments:
+            self: self
+            _Head: Head Entity
+        Returns:
+            None
+        """
+        self.head = _Head
+        self.graphics_plugin.set_Head(_Head)
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
         """
@@ -975,6 +990,8 @@ class ElementsXR_program:
 
         # Update each hand's trs. 
         # Additionally Scale by 0.1 in all axes when the grab action is used
+
+        """
         for hand in Side:
             space_location = xr.locate_space(
                 space=self.input.hand_space[hand],
@@ -1008,9 +1025,10 @@ class ElementsXR_program:
                 self.Hands_Shader[hand].setUniformVariable("model",value=self.Hands_trans[hand].trs,mat4=True)
 
                 #If Raycast is enabled then update rays model matrix
-                if self.raycast:
-                    self.rays_Shader[hand].setUniformVariable("model",value=self.rays_trans[hand].trs,mat4=True)
-        
+                #if self.raycast:
+                #    self.rays_Shader[hand].setUniformVariable("model",value=self.rays_trans[hand].trs,mat4=True)
+        """
+
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
             view_swapchain = self.swapchains[i]

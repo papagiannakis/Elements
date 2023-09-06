@@ -387,7 +387,9 @@ class OpenGLPlugin(GraphicsPlugin):
         self.color_to_depth_map: Dict[int, int] = {}
         self.debug_message_proc = None
 
-        self.position = util.vec(0.0,0.0,0.0)
+        #self.position = util.vec(0.0,0.0,0.0)
+        self.head: Entity
+        self.head = None
 
     def __enter__(self):
         return self
@@ -414,8 +416,19 @@ class OpenGLPlugin(GraphicsPlugin):
     def instance_extensions(self) -> List[str]:
         return [xr.KHR_OPENGL_ENABLE_EXTENSION_NAME]
     
-    def update_initial_position(self, eye: util.vec):
-        self.position = eye
+    #def update_initial_position(self, eye: util.vec):
+    #    self.position = eye
+
+    def set_Head(self,_Head: Entity):
+        """
+        Setter method for Head Entity
+        Arguments:
+            self: self
+            _Head: Head Entity
+        Returns:
+            None
+        """
+        self.head = _Head
     
     def focus_window(self):
         glfw.focus_window(self.window)
@@ -600,13 +613,14 @@ class OpenGLPlugin(GraphicsPlugin):
         #Traverse Vertex Arrays
         scene.world.traverse_visit(renderUpdate,scene.world.root)
 
+        model_head = self.head.getChild(0).l2world
         position = layer_view.pose.position
         orientation = layer_view.pose.orientation
         fov = layer_view.fov
 
-        position.x += self.position[0]
-        position.y += self.position[1]
-        position.z += self.position[2]
+        #position.x += self.position[0]
+        #position.y += self.position[1]
+        #position.z += self.position[2]
 
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
         #aspect_ratio = layer_view.sub_image.image_rect.extent.height / layer_view.sub_image.image_rect.extent.width
@@ -626,14 +640,14 @@ class OpenGLPlugin(GraphicsPlugin):
                                                                                     orientation.w)) @ util.scale(1.0,1.0,1.0)
         """
         
-        to_view = util.translate(position.x,
-                                position.y,
-                                position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
-                                                                                    orientation.y,
-                                                                                    orientation.z,
-                                                                                    orientation.w)) @ util.scale(1.0,1.0,1.0)
+        view = model_head @ util.translate(position.x,
+                                            position.y,
+                                            position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                                                orientation.y,
+                                                                                                orientation.z,
+                                                                                                orientation.w)) @ util.scale(1.0,1.0,1.0) 
+                                                                                                #Note: check what happens if scaling is lower
         #view = invert_rigid_body(to_view)
-        view = to_view
         #view = util.inverse(to_view)
 
         #Update each shader's projection & view

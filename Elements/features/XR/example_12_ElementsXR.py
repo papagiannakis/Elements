@@ -88,6 +88,19 @@ scene.world.addEntityChild(Table,TableLeg4)
 trans_TableLeg4 = scene.world.addComponent(TableLeg4, BasicTransform(name="trans_TableLeg4", trs=util.translate(-0.65,-0.5,-0.65)))
 mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_TableLeg4"))
 
+Head = scene.world.createEntity(Entity(name="Head"))
+scene.world.addEntityChild(rootEntity,Head)
+trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-18.0,-15.0,-15.0)))
+
+Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
+#scene.world.addEntityChild(Head,Left_Hand)
+scene.world.addEntityChild(rootEntity,Left_Hand)
+trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(1.0,-1.0,1.0)))
+
+Right_Hand = scene.world.createEntity(Entity(name="Right_hand"))
+#scene.world.addEntityChild(Head,Right_Hand)
+scene.world.addEntityChild(rootEntity,Right_Hand)
+trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(1.0,-1.0,1.0)))
 
 #Cube
 minbox = -30
@@ -209,8 +222,9 @@ exit_loop = False
 eye = util.vec(-18.0,-15.0,-15.0)
 
 program = ElementsXR_program()
-program.update_initial_position(eye)
-program.raycast = True
+#program.head = Head
+#program.raycast = True
+program.hands = [Left_Hand,Right_Hand]
 program.Initialize("Elements: ElementsXR Demo",initUpdate)
 
 skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Day_Sunless")
