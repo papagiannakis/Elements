@@ -597,6 +597,9 @@ class OpenGLPlugin(GraphicsPlugin):
         GL.glClearDepth(1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
 
+        #Traverse Vertex Arrays
+        scene.world.traverse_visit(renderUpdate,scene.world.root)
+
         position = layer_view.pose.position
         orientation = layer_view.pose.orientation
         fov = layer_view.fov
@@ -606,12 +609,13 @@ class OpenGLPlugin(GraphicsPlugin):
         position.z += self.position[2]
 
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
+        #aspect_ratio = layer_view.sub_image.image_rect.extent.height / layer_view.sub_image.image_rect.extent.width
         #proj = util.perspective(100.0,aspect_ratio,0.01,60.0)
 
         proj = create_xr_projection(math.tan(fov.angle_left),
                                     math.tan(fov.angle_right),
                                     math.tan(fov.angle_up),
-                                    math.tan(fov.angle_down),0.01,60.0)
+                                    math.tan(fov.angle_down),0.01,120.0)
 
         """
         to_view = util.translate(position.x,
@@ -644,8 +648,6 @@ class OpenGLPlugin(GraphicsPlugin):
                 element.setUniformVariable(key='model', value=model, mat4=True)
                 element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
 
-        #Traverse Vertex Arrays
-        scene.world.traverse_visit(renderUpdate,scene.world.root)
 
         #if mirror:
         #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)

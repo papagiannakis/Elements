@@ -156,7 +156,7 @@ ground_mesh.vertex_attributes.append(vertexground)
 ground_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 ground_mesh.vertex_index.append(indexground)
 ground_vArray = scene.world.addComponent(ground, VertexArray())
-ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = XR_Shaders.SIMPLE_TEXTURE_VERT_XR, fragment_source=XR_Shaders.SIMPLE_TEXTURE_FRAG_XR)))
 
 teapot_obj = os.path.join(MODEL_DIR, "teapot.obj")
 
@@ -206,7 +206,7 @@ shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shad
 
 exit_loop = False
 
-eye = util.vec(16.0,19.0,19.0)
+eye = util.vec(-18.0,-15.0,-15.0)
 
 program = ElementsXR_program()
 program.update_initial_position(eye)
@@ -248,12 +248,6 @@ ShaderTeapot.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 while not exit_loop:
     scene.world.traverse_visit(transUpdate,scene.world.root)
     exit_loop = program.poll_events()
-
-    model_ground = ground.getChild(0).trs
-    model_teapot = trans_teapot.trs
-
-    ground_shader.setUniformVariable(key='model', value=model_ground, mat4=True)
-    ShaderTeapot.setUniformVariable(key='model',value=model_teapot,mat4=True)
 
     if program.session_running:
         program.render_frame(renderUpdate)
