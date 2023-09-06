@@ -62,9 +62,9 @@ ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 Table = scene.world.createEntity(Entity(name="Table"))
 scene.world.addEntityChild(rootEntity, Table)
 trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.translate(y=10.0) @ util.scale(10.0,10.0,10.0)))
-mesh_TableTop = scene.world.addComponent(Table, RenderMesh(name="mesh_Table"))
 
 TableTop = scene.world.createEntity(Entity(name="TableTop"))
+scene.world.addEntityChild(Table,TableTop)
 trans_TableTop = scene.world.addComponent(TableTop, BasicTransform(name="trans_TableTop", trs=util.translate(0.0,0.2,0.0)))
 mesh_TableTop = scene.world.addComponent(TableTop, RenderMesh(name="mesh_TableTop"))
 
