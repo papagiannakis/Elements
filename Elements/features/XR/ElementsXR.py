@@ -307,10 +307,6 @@ class ElementsXR_program:
             self.instance.destroy()
             self.instance = None
 
-    #def update_initial_position(self,pos: util.vec):
-    #    self.position = pos
-    #    self.graphics_plugin.update_initial_position(self.position)
-
     def set_Head(self, _Head: Entity):
         """
         Setter method for Head Entity
@@ -987,6 +983,17 @@ class ElementsXR_program:
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
         assert view_count_output == len(projection_layer_views)
+
+        ########################
+        hand1 = xr.locate_space(
+                space=self.input.hand_space[0],
+                base_space=self.app_space,
+                time=predicted_display_time,
+            )
+        print(hand1.pose)
+        print(self.input.hand_scale[0])
+        
+        #########################
 
         # Update each hand's trs. 
         # Additionally Scale by 0.1 in all axes when the grab action is used

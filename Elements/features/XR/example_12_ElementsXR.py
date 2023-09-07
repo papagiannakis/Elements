@@ -90,7 +90,7 @@ mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_Table
 
 Head = scene.world.createEntity(Entity(name="Head"))
 scene.world.addEntityChild(rootEntity,Head)
-trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-18.0,-15.0,-15.0)))
+trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-22.0,-40.0,-22.0)))
 
 Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
 #scene.world.addEntityChild(Head,Left_Hand)
@@ -221,10 +221,8 @@ shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shad
 
 exit_loop = False
 
-eye = util.vec(-18.0,-15.0,-15.0)
-
 program = ElementsXR_program()
-#program.head = Head
+program.set_Head(Head)
 #program.raycast = True
 program.hands = [Left_Hand,Right_Hand]
 program.Initialize("Elements: ElementsXR Demo",initUpdate)

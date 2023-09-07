@@ -640,13 +640,16 @@ class OpenGLPlugin(GraphicsPlugin):
                                                                                     orientation.w)) @ util.scale(1.0,1.0,1.0)
         """
         
-        view = model_head @ util.translate(position.x,
-                                            position.y,
-                                            position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
-                                                                                                orientation.y,
-                                                                                                orientation.z,
-                                                                                                orientation.w)) @ util.scale(1.0,1.0,1.0) 
-                                                                                                #Note: check what happens if scaling is lower
+        #view = model_head @ util.translate(position.x,
+        #                                    position.y,
+        #                                    position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+        #                                                                                        orientation.y,
+        #                                                                                        orientation.z,
+        #                                                                                        orientation.w)) @ util.scale(1.5,1.5,1.5) 
+        view = model_head @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                orientation.y,
+                                                                orientation.z,
+                                                                orientation.w)) @ util.scale(1.5,1.5,1.5) 
         #view = invert_rigid_body(to_view)
         #view = util.inverse(to_view)
 
