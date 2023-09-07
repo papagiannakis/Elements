@@ -322,9 +322,9 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
 
-        GL.glFrontFace(GL.GL_CW)
-        GL.glCullFace(GL.GL_BACK)
-        GL.glEnable(GL.GL_CULL_FACE)
+        GL.glFrontFace(GL.GL_CW) #orientation of front face polygons GL_CW -> clock wise //GL_CCW might work
+        GL.glCullFace(GL.GL_BACK) # Sus
+        GL.glEnable(GL.GL_CULL_FACE) # Sus what if I do not cull polygons
         GL.glEnable(GL.GL_DEPTH_TEST)
         
         color_texture = swapchain_image.image
@@ -344,10 +344,6 @@ class OpenGLPlugin(GraphicsPlugin):
         orientation = layer_view.pose.orientation
         fov = layer_view.fov
 
-        #position.x += self.position[0]
-        #position.y += self.position[1]
-        #position.z += self.position[2]
-
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
         #aspect_ratio = layer_view.sub_image.image_rect.extent.height / layer_view.sub_image.image_rect.extent.width
         #proj = util.perspective(100.0,aspect_ratio,0.01,60.0)
@@ -366,16 +362,12 @@ class OpenGLPlugin(GraphicsPlugin):
                                                                                     orientation.w)) @ util.scale(1.0,1.0,1.0)
         """
         
-        #view = model_head @ util.translate(position.x,
-        #                                    position.y,
-        #                                    position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
-        #                                                                                        orientation.y,
-        #                                                                                        orientation.z,
-        #                                                                                        orientation.w)) @ util.scale(1.5,1.5,1.5) 
-        view = model_head @ create_xr_quaternion(util.quaternion(orientation.x,
-                                                                orientation.y,
-                                                                orientation.z,
-                                                                orientation.w)) @ util.scale(1.5,1.5,1.5) 
+        view = model_head @ util.translate(position.x,
+                                            position.y,
+                                            position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                                                orientation.y,
+                                                                                                orientation.z,
+                                                                                                orientation.w)) @ util.scale(1.5,1.5,1.5) 
         #view = invert_rigid_body(to_view)
         #view = util.inverse(to_view)
 
