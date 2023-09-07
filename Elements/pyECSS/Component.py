@@ -513,6 +513,8 @@ class RenderMesh(Component):
                 self.vertex_index = [] #list of vertex attribute lists 
         else:
             self._vertex_index = vertex_index
+        
+        self.AddedBB = False
     
     @property
     def vertex_attributes(self):
@@ -530,6 +532,16 @@ class RenderMesh(Component):
     def vertex_index(self, value):
         self._vertex_index = value
         
+    #MYCHANGE
+    @property
+    def AddedBB(self):
+        return self._AddedBB
+    
+    @AddedBB.setter
+    def AddedBB(self, AddedBB):
+        self._AddedBB = AddedBB
+        
+        
     def update(self):
         pass
         # print(self.getClassName(), ": update() called")
@@ -543,6 +555,9 @@ class RenderMesh(Component):
         :type system: [System]
         """
         system.apply2RenderMesh(self)
+        #MYCHANGE
+        if(self.AddedBB == False):
+            system.applyBB2RenderMesh(self)
     
     
     def init(self):
