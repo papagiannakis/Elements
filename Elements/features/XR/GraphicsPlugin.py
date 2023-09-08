@@ -322,9 +322,9 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
 
-        GL.glFrontFace(GL.GL_CW) #orientation of front face polygons GL_CW -> clock wise //GL_CCW might work
-        GL.glCullFace(GL.GL_BACK) # Sus
-        GL.glEnable(GL.GL_CULL_FACE) # Sus what if I do not cull polygons
+        #GL.glFrontFace(GL.GL_CW) #orientation of front face polygons GL_CW -> clock wise //GL_CCW might work
+        #GL.glCullFace(GL.GL_BACK) # Sus
+        #GL.glEnable(GL.GL_CULL_FACE) # Sus what if I do not cull polygons
         GL.glEnable(GL.GL_DEPTH_TEST)
         
         color_texture = swapchain_image.image

@@ -6,7 +6,7 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh, Component, Com
 import Elements.pyECSS.math_utilities as util
 from ctypes import Structure, c_int32, c_float, POINTER, byref, cast, c_void_p, pointer, Array
 from Elements.features.XR.PlatformPlugin import createPlatformPlugin
-from Elements.features.XR.GraphicsPlugin import OpenGLPlugin, create_xr_quaternion ,XR_Shaders
+from Elements.features.XR.GraphicsPlugin import OpenGLPlugin, create_xr_quaternion
 from Elements.features.XR.options import options, Blend_Mode, View_Configuration, Form_factor
 import logging
 import Elements.utils.normals as norm
@@ -177,108 +177,14 @@ class ElementsXR_program:
         #Head Entity
         self.head = None
 
-        #Hand Components
+        #Hand Entities
         self.hands = [Entity()] * 2
-        self.Hands_trans = [None] * 2
-        self.Hands_Mesh = [RenderMesh()] * 2
-        self.Hands_VertexArray = [None] * 2
-        self.Hands_Shader = [ShaderGLDecorator(Shader())] * 2
 
-        #Hand Components
+        #Hand Entities
         self.rays = [Entity()] * 2
-        self.rays_trans = [None] * 2
-        self.rays_Mesh = [RenderMesh()] * 2
-        self.rays_VertexArray = [None] * 2
-        self.rays_Shader = [ShaderGLDecorator(Shader())] * 2
 
         self.position = util.vec(0.0,0.0,0.0)
         #self.raycast = False
-        
-        VertexHand = np.array([
-                        [-0.1, -0.1, 0.1, 1.0],
-                        [-0.1, 0.1, 0.1, 1.0],
-                        [0.1, 0.1, 0.1, 1.0],
-                        [0.1, -0.1, 0.1, 1.0], 
-                        [-0.1, -0.1, -0.1, 1.0], 
-                        [-0.1, 0.1, -0.1, 1.0], 
-                        [0.1, 0.1, -0.1, 1.0], 
-                        [0.1, -0.1, -0.1, 1.0]
-                    ],dtype=np.float32) 
-        
-        IndexHand = np.array((1,0,3, 1,3,2, 
-                            2,3,7, 2,7,6,
-                            3,0,4, 3,4,7,
-                            6,5,1, 6,1,2,
-                            4,5,6, 4,6,7,
-                            5,4,0, 5,0,1), np.uint32)
-        
-        ColorHand = np.array([
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0],
-                        [0.0, 0.0, 1.0, 1.0]
-                    ], dtype=np.float32)
-        
-        VertexRay = np.array([
-                        [0.0, 0.0, 0.0, 1.0],
-                        [1.0, 0.0, 0.0, 1.0]
-                    ],dtype=np.float32) 
-        
-        IndexRay = np.array((0,1), np.uint32)
-        
-        ColorRay = np.array([
-                        [1.0, 1.0, 0.0, 1.0],
-                        [1.0, 1.0, 0.0, 1.0]
-                    ], dtype=np.float32)
-
-
-        scene = Scene()
-        rootEntity = scene.world.root
-
-        self.hands[Side.LEFT] = scene.world.createEntity(Entity(name="Left_Hand"))
-        scene.world.addEntityChild(rootEntity, self.hands[Side.LEFT])
-        self.Hands_trans[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], BasicTransform(name="transLeftHand", trs=util.identity()))
-        self.Hands_Mesh[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], RenderMesh(name="meshLeftHand"))
-        self.Hands_Mesh[Side.LEFT].vertex_attributes.append(VertexHand)
-        self.Hands_Mesh[Side.LEFT].vertex_attributes.append(ColorHand)
-        self.Hands_Mesh[Side.LEFT].vertex_index.append(IndexHand)
-        self.Hands_VertexArray[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], VertexArray())
-        self.Hands_Shader[Side.LEFT] = scene.world.addComponent(self.hands[Side.LEFT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
-
-        self.hands[Side.RIGHT] = scene.world.createEntity(Entity(name="Right_Hand"))
-        scene.world.addEntityChild(rootEntity, self.hands[Side.RIGHT])
-        self.Hands_trans[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], BasicTransform(name="transRightHand", trs=util.identity()))
-        self.Hands_Mesh[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], RenderMesh(name="meshRightHand"))
-        self.Hands_Mesh[Side.RIGHT].vertex_attributes.append(VertexHand)
-        self.Hands_Mesh[Side.RIGHT].vertex_attributes.append(ColorHand)
-        self.Hands_Mesh[Side.RIGHT].vertex_index.append(IndexHand)
-        self.Hands_VertexArray[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], VertexArray())
-        self.Hands_Shader[Side.RIGHT] = scene.world.addComponent(self.hands[Side.RIGHT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
-
-        self.rays[Side.LEFT] = scene.world.createEntity(Entity(name="Left_ray"))
-        scene.world.addEntityChild(rootEntity, self.rays[Side.LEFT])
-        self.rays_trans[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], BasicTransform(name="transLeftray", trs=util.identity()))
-        self.rays_Mesh[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], RenderMesh(name="meshLeftray"))
-        self.rays_Mesh[Side.LEFT].vertex_attributes.append(VertexRay)
-        self.rays_Mesh[Side.LEFT].vertex_attributes.append(ColorRay)
-        self.rays_Mesh[Side.LEFT].vertex_index.append(IndexRay)
-        self.rays_VertexArray[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], VertexArray())
-        self.rays_Shader[Side.LEFT] = scene.world.addComponent(self.rays[Side.LEFT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
-
-        self.rays[Side.RIGHT] = scene.world.createEntity(Entity(name="Right_ray"))
-        scene.world.addEntityChild(rootEntity, self.rays[Side.RIGHT])
-        self.rays_trans[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], BasicTransform(name="transRightray", trs=util.identity()))
-        self.rays_Mesh[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], RenderMesh(name="meshRightray"))
-        self.rays_Mesh[Side.RIGHT].vertex_attributes.append(VertexRay)
-        self.rays_Mesh[Side.RIGHT].vertex_attributes.append(ColorRay)
-        self.rays_Mesh[Side.RIGHT].vertex_index.append(IndexRay)
-        self.rays_VertexArray[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], VertexArray())
-        self.rays_Shader[Side.RIGHT] = scene.world.addComponent(self.rays[Side.RIGHT], ShaderGLDecorator(Shader(vertex_source = XR_Shaders.COLOR_VERT_MVP_XR, fragment_source=XR_Shaders.COLOR_FRAG_XR)))
-        
 
     def __enter__(self):
         return self
