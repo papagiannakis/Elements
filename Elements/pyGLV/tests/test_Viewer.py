@@ -14,12 +14,13 @@ import time
 import numpy as np
 
 from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
+
 class TestSDL2Window(unittest.TestCase):
     
     def setUp(self):
         """[summary]
         """
-        self.gWindow = SDL2Window()
+        self.gWindow = SDL2Window(windowTitle="Sample SDL WINDOW: Hit ESC OR Close the window to quit")
         self.gGUI = ImGUIDecorator(self.gWindow)
     
     #@unittest.skip("test_initSDL2Decorator or test_initSDL2Decorator, skipping the test")

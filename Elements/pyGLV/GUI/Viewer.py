@@ -27,7 +27,7 @@ import imgui
 from imgui.integrations.sdl2 import SDL2Renderer
 
 import Elements.pyECSS.System  
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 import Elements.pyECSS.Event
 from Elements.pyECSS.System import System 
 from Elements.pyECSS.Component import BasicTransform

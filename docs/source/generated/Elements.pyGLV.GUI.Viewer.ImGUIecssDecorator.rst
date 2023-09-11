@@ -15,6 +15,8 @@ Elements.pyGLV.GUI.Viewer.ImGUIecssDecorator
    
       ~ImGUIecssDecorator.__init__
       ~ImGUIecssDecorator.accept
+      ~ImGUIecssDecorator.cameraHandling
+      ~ImGUIecssDecorator.createViewMatrix
       ~ImGUIecssDecorator.display
       ~ImGUIecssDecorator.display_post
       ~ImGUIecssDecorator.drawNode
@@ -23,8 +25,13 @@ Elements.pyGLV.GUI.Viewer.ImGUIecssDecorator
       ~ImGUIecssDecorator.getClassName
       ~ImGUIecssDecorator.init
       ~ImGUIecssDecorator.init_post
+      ~ImGUIecssDecorator.on_mouse_motion
+      ~ImGUIecssDecorator.on_mouse_press
+      ~ImGUIecssDecorator.resetAll
       ~ImGUIecssDecorator.scenegraphVisualiser
       ~ImGUIecssDecorator.shutdown
+      ~ImGUIecssDecorator.traverseCamera
+      ~ImGUIecssDecorator.updateCamera
    
    
 
