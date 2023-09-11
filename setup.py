@@ -11,7 +11,7 @@ with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup(
-    name='ElementsProject',
+    name='Elements',
     version=__version__, 
     license='Apache 2', 
     description = "The Elements project",
@@ -30,7 +30,6 @@ setup(
         'pip',
         'setuptools>=61',
         'wheel',
-        'clifford',
         'numpy',
         'scipy',
         'imgui',
@@ -39,7 +38,14 @@ setup(
         'PyOpenGL_accelerate',
         'pysdl2',
         'pysdl2-dll',
-        'ipykernel'
+        'ipykernel',
+        'usd-core',
+        'jupyter',
+        'scikit-spatial',
+        'bezier',
+        'clifford',
+        'trimesh',
+        'pyganja'
     ],
     
 
@@ -61,4 +67,5 @@ setup(
     },
 
     python_requires=">=3.8,<3.10",
+
 )

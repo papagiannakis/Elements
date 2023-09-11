@@ -16,7 +16,7 @@ import unittest
 import numpy as np
 # from sympy import true
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
@@ -31,6 +31,8 @@ from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
 
+from Elements.utils.helper_function import displayGUI_text
+import imgui
 
 
 class TestScene(unittest.TestCase):
@@ -227,17 +229,21 @@ class TestScene(unittest.TestCase):
         
         ## ADD AXES TO THIS MESH - END ##
 
-        
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes")
+        
+        
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
+        message = "This should be a Scene with simple colored axes. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
+
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -278,11 +284,13 @@ class TestScene(unittest.TestCase):
         # MAIN RENDERING LOOP
         running = True
         
-        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
+        message = "This should be a Scene with a simple colored triangle. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -329,14 +337,17 @@ class TestScene(unittest.TestCase):
         
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
+        message = "This should be a Scene with a simple colored cube. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
+
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -412,8 +423,11 @@ class TestScene(unittest.TestCase):
         mvpMat =  projMat @ view @ model 
         # self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
+        message="This should be a Scene with a simple colored triangle and colored axes. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
+
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view = gWindow._myCamera 
             mvpMat =  projMat @ view @ model
@@ -461,7 +475,7 @@ class TestScene(unittest.TestCase):
         self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
-        from Elements.pyGLV.utils.terrain import generateTerrain
+        from Elements.utils.terrain import generateTerrain
         self.vertexTerrain, self.indexTerrain, self.colorTerrain = generateTerrain(size=2,N=5,uniform_color = [0.2,0.2,0.2,1.0])
 
         
@@ -496,11 +510,14 @@ class TestScene(unittest.TestCase):
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=False, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderAxesTerrain")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderAxesTerrain")
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
+        message = "This should be a Scene with a simple colored axes and a terrain. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
+
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
             
@@ -536,7 +553,7 @@ class TestScene(unittest.TestCase):
         self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
         # self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
-        from Elements.pyGLV.utils.terrain import generateTerrain
+        from Elements.utils.terrain import generateTerrain
         self.vertexTerrain, self.indexTerrain, self.colorTerrain= generateTerrain(size=2,N=20)
         
         
@@ -574,7 +591,9 @@ class TestScene(unittest.TestCase):
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
+        
 
+        
 
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
@@ -616,8 +635,10 @@ class TestScene(unittest.TestCase):
         gWindow._myCamera = view
         mvpMat = projMat @ view @ model
 
+        message = "This should be a Scene with a simple colored axes and a terrain. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view = gWindow._myCamera
             mvpMat = projMat @ view @ model
@@ -708,8 +729,10 @@ class TestScene(unittest.TestCase):
         
         running = True
         
+        message = "This should be a Scene with a simple colored axes and a cube. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera # updates view via the imgui
             mvp_cube = projMat @ view @ model_cube
@@ -745,7 +768,7 @@ class TestScene(unittest.TestCase):
         
 
         # Generate terrain
-        from Elements.pyGLV.utils.terrain import generateTerrain
+        from Elements.utils.terrain import generateTerrain
         self.vertexTerrain, self.indexTerrain, self.colorTerrain= generateTerrain(size=4,N=20)
         # Add terrain
         self.terrain = self.scene.world.createEntity(Entity(name="terrain"))
@@ -835,8 +858,10 @@ class TestScene(unittest.TestCase):
         model_terrain_axes = util.translate(0.0,0.0,0.0)
         model_cube = util.scale(0.3) @ util.translate(0.0,0.5,0.0)
 
+        message = "This should be a Scene with a simple colored axes and a terrain. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
         while running:
-            running = self.scene.render(running)
+            running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             view =  gWindow._myCamera # updates view via the imgui
             mvp_cube = projMat @ view @ model_cube
