@@ -1,0 +1,72 @@
+newmtl Chair:wire_166229229
+illum 4
+Kd 0.65 0.90 0.90
+Ka 0.65 0.90 0.90
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.35 0.35 0.35
+Ns 32.00
+newmtl Wood_Table:Wood_Table
+illum 4
+Kd 0.00 0.00 0.00
+Ka 1.00 1.00 1.00
+Tf 1.00 1.00 1.00
+Ni 1.00
+Ks 0.00 0.00 0.00
+map_Ks Wood_Table_C_2.jpg
+Ns 96.08
+newmtl Wood_Table:Wood_Table_Glass
+illum 4
+Kd 0.00 0.00 0.00
+Ka 1.00 1.00 1.00
+Tf 0.40 0.40 0.40
+map_Kd Wood_Table_N.jpg
+Ni 1.00
+Ks 0.50 0.50 0.50
+Ns 96.08
+newmtl _Bean_Bag_Chair_v2_max2008_it2:mtl_10216_Bean_Bag_Chair_v1
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 10216_Bean_Bag_Chair_v1_Diffuse.jpg
+map_Ka 10216_Bean_Bag_Chair_v1_Diffuse.jpg
+Ni 1.50
+Ks 0.14 0.14 0.14
+Ns 5.00
+newmtl _Sectional_Sofa_v1_L3:_Sectional_Sofa_v2
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 10247_Sectional_Sofa_v1_Diffuse.jpg
+map_Ka 10247_Sectional_Sofa_v1_Diffuse.jpg
+Ni 1.50
+Ks 0.14 0.14 0.14
+Ns 10.00
+newmtl _table_lamp_v2_L3:_Table_Lamp_1
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+map_Kd 10321_Table_Lamp_diffuse_v1.jpg
+map_Ka 10321_Table_Lamp_diffuse_v1.jpg
+Ni 1.50
+Ks 0.25 0.25 0.25
+Ns 29.00
+newmtl _table_lamp_v2_L3:_Table_Lamp_3
+illum 4
+Kd 0.00 0.00 0.00
+Ka 0.00 0.00 0.00
+Tf 0.70 0.70 0.70
+map_Kd 10321_Table_Lamp_diffuse_v1.jpg
+map_Ka 10321_Table_Lamp_diffuse_v1.jpg
+Ni 1.50
+Ks 0.25 0.25 0.25
+Ns 29.00
+newmtl initialShadingGroup
+illum 4
+Kd 0.50 0.50 0.50
+Ka 0.00 0.00 0.00
+Tf 1.00 1.00 1.00
+Ni 1.00

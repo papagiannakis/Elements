@@ -10,12 +10,6 @@ Elements.pyGLV (Computer Graphics for Deep Learning and Scientific Visualization
 
 import unittest
 
-import Elements.pyECSS.utilities as util
-from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
-from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
-from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyECSS.ECSSManager import ECSSManager
 
 from Elements.pyGLV.GL.VertexArray import VertexArray
 

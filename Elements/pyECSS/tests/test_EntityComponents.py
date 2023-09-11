@@ -15,7 +15,7 @@ from typing import List
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import Component, BasicTransform, Camera, RenderMesh, CompNullIterator, BasicTransformDecorator
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 
 class TestEntity(unittest.TestCase):
     

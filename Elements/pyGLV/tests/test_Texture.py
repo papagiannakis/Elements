@@ -16,7 +16,7 @@ import unittest
 
 import numpy as np
 import os
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
@@ -25,8 +25,9 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-import Elements.pyGLV.utils.normals as norm
+import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
+from Elements.utils.helper_function import displayGUI_text
 
 from OpenGL.GL import GL_LINES
 
@@ -142,13 +143,16 @@ class TestScene(unittest.TestCase):
 
 
         self.model_cube = self.trans4.trs
-
-        texture = os.path.join(os.path.dirname(__file__),'..' ,"examples/textures/uoc_logo.png")
-
+        from Elements.definitions import TEXTURE_DIR
+        texturePath = os.path.join( TEXTURE_DIR , "uoc_logo.png")
+        texture = Texture(texturePath)
         self.shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
+
+        message = "This is a Scene containing a cube with a texture. \nCamera movement is possible via the mouse or the GUI. \nHit ESC or close the window to exit."
 
         while running:
             running = self.scene.render()
+            displayGUI_text(message)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.view =  gWindow._myCamera 
             self.shaderDec4.setUniformVariable(key='model', value=self.model_cube, mat4=True)
