@@ -801,43 +801,6 @@ class ElementsXR_program:
         )
         xr.begin_frame(self.session, xr.FrameBeginInfo())
 
-        ##################
-
-        context = xr.ContextObject(
-            instance_create_info=xr.InstanceCreateInfo(
-                enabled_extension_names=[
-                    # A graphics extension is mandatory (without a headless extension)
-                    xr.KHR_OPENGL_ENABLE_EXTENSION_NAME,
-                ],
-            ),
-        )
-        if context.session_state == xr.SessionState.FOCUSED:
-            active_action_set = xr.ActiveActionSet(
-                action_set=context.default_action_set,
-                subaction_path=xr.NULL_PATH,
-            )
-            xr.sync_actions(
-                session=context.session,
-                sync_info=xr.ActionsSyncInfo(
-                    count_active_action_sets=1,
-                    active_action_sets=ctypes.pointer(active_action_set),
-                ),
-            )
-            found_count = 0
-            for index, space in enumerate(self.input.hand_space):
-                space_location = xr.locate_space(
-                    space=space,
-                    base_space=context.space,
-                    time=frame_state.predicted_display_time,
-                )
-                if space_location.location_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT:
-                    print(index + 1, space_location.pose)
-                    found_count += 1
-            if found_count == 0:
-                print("no controllers active")
-
-        ##################
-
         layers = []
         layer_flags = 0
         if self.options.environment_blend_mode == "AlphaBlend":
@@ -900,47 +863,7 @@ class ElementsXR_program:
         print(self.input.hand_scale[0])
         
         #########################
-
-        # Update each hand's trs. 
-        # Additionally Scale by 0.1 in all axes when the grab action is used
-
-        """
-        for hand in Side:
-            space_location = xr.locate_space(
-                space=self.input.hand_space[hand],
-                base_space=self.app_space,
-                time=predicted_display_time,
-            )
-
-            loc_flags = space_location.location_flags
-            if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
-                    and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
-                scale = 0.1 * self.input.hand_scale[hand]
-
-                #update trs
-                position = space_location.pose.position
-                orientation = space_location.pose.orientation
-
-                position.x += self.position[0]
-                position.y += self.position[1]
-                position.z += self.position[2]
-
-                m = util.translate(position.x,
-                                position.y,
-                                position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
-                                                                                    orientation.y,
-                                                                                    orientation.z,
-                                                                                    orientation.w))
-                
-                self.Hands_trans[hand].trs = m
-                self.rays_trans[hand].trs = m
-
-                self.Hands_Shader[hand].setUniformVariable("model",value=self.Hands_trans[hand].trs,mat4=True)
-
-                #If Raycast is enabled then update rays model matrix
-                #if self.raycast:
-                #    self.rays_Shader[hand].setUniformVariable("model",value=self.rays_trans[hand].trs,mat4=True)
-        """
+        
 
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):

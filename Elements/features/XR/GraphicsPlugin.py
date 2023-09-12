@@ -305,7 +305,7 @@ class OpenGLPlugin(GraphicsPlugin):
             swapchain_image_base_ptr:
             _swapchain_format:
             renderUpdate: System that updates uniform variables from the scene
-            mirror: 
+            mirror: if true show left eye's view  on the glfw window
         Returns:
             None
         """
@@ -322,9 +322,10 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
 
-        #GL.glFrontFace(GL.GL_CW) #orientation of front face polygons GL_CW -> clock wise //GL_CCW might work
-        #GL.glCullFace(GL.GL_BACK) # Sus
-        #GL.glEnable(GL.GL_CULL_FACE) # Sus what if I do not cull polygons
+        #TODO: Find out how to use OpenGL's culling methods correctly
+        #GL.glFrontFace(GL.GL_CW) 
+        #GL.glCullFace(GL.GL_BACK)
+        #GL.glEnable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_DEPTH_TEST)
         
         color_texture = swapchain_image.image
@@ -352,15 +353,6 @@ class OpenGLPlugin(GraphicsPlugin):
                                     math.tan(fov.angle_right),
                                     math.tan(fov.angle_up),
                                     math.tan(fov.angle_down),0.01,120.0)
-
-        """
-        to_view = util.translate(position.x,
-                                position.y,
-                                position.z) @ util.quaternion_matrix(util.quaternion(orientation.x,
-                                                                                    orientation.y,
-                                                                                    orientation.z,
-                                                                                    orientation.w)) @ util.scale(1.0,1.0,1.0)
-        """
         
         view = model_head @ util.translate(position.x,
                                             position.y,
@@ -368,8 +360,6 @@ class OpenGLPlugin(GraphicsPlugin):
                                                                                                 orientation.y,
                                                                                                 orientation.z,
                                                                                                 orientation.w)) @ util.scale(1.5,1.5,1.5) 
-        #view = invert_rigid_body(to_view)
-        #view = util.inverse(to_view)
 
         #Update each shader's projection & view
         element: Entity

@@ -9,6 +9,7 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
+from OpenGL.GL import GL_LINES
 from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
 from Elements.utils.obj_to_mesh import obj_to_mesh
@@ -94,12 +95,24 @@ trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=
 Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
 #scene.world.addEntityChild(Head,Left_Hand)
 scene.world.addEntityChild(rootEntity,Left_Hand)
-trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(1.0,-1.0,1.0)))
+trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(z=1.0)))
+mesh_left_hand = scene.world.addComponent(Left_Hand, RenderMesh(name="mesh_Left_Hand"))
 
 Right_Hand = scene.world.createEntity(Entity(name="Right_hand"))
 #scene.world.addEntityChild(Head,Right_Hand)
 scene.world.addEntityChild(rootEntity,Right_Hand)
-trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(1.0,-1.0,1.0)))
+trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(z=-1.0)))
+mesh_right_hand = scene.world.addComponent(Right_Hand, RenderMesh(name="mesh_Right_Hand"))
+
+Left_Ray = scene.world.createEntity(Entity(name="Left_Ray"))
+scene.world.addEntityChild(Left_Hand,Left_Ray)
+trans_left_ray = scene.world.addComponent(Left_Ray,BasicTransform(name="trans_Left_Ray",trs=util.identity()))
+mesh_left_ray = scene.world.addComponent(Left_Ray, RenderMesh(name="mesh_Left_Ray"))
+
+Right_Ray = scene.world.createEntity(Entity(name="Right_Ray"))
+scene.world.addEntityChild(Right_Hand,Right_Ray)
+trans_Right_ray = scene.world.addComponent(Right_Ray,BasicTransform(name="trans_Right_Ray",trs=util.identity()))
+mesh_Right_ray = scene.world.addComponent(Right_Ray, RenderMesh(name="mesh_Right_Ray"))
 
 #Cube
 minbox = -30
@@ -142,6 +155,25 @@ indexCube = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32)
 
+colorCube = np.array([
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0]
+], dtype=np.float32)
+
+VertexRay = np.array([[0.0,0.0,0.0,1.0],
+                      [-10.0,0.0,0.0,1.0]],dtype=np.float32)
+
+indexRay = np.array((0,1),dtype=np.uint32)
+
+ColorRay = np.array([[0.0,1.0,1.0,1.0],
+                     [0.0,1.0,1.0,1.0]],dtype=np.float32)
+
 VertexTerrain = np.array(vertexCube,copy=True) @ util.scale(6.0,0.05,6.0)
 
 VertexTableTop = np.array(vertexCube,copy=True) @ util.scale(1.5,0.2,1.5)
@@ -152,6 +184,7 @@ verticesTableTop, indicesTableTop, _ = norm.generateUniqueVertices(VertexTableTo
 verticesTableLeg, indicesTableLeg, _ = norm.generateUniqueVertices(VertexTableLeg,indexCube)
 vertexSkybox, indexSkybox, _ = norm.generateUniqueVertices(vertexSkybox,indexSkybox)
 vertexground, indexground, _ = norm.generateUniqueVertices(VertexTerrain,indexCube)
+vertexHand, indexHand,ColorHand ,normalsHand = norm.generateFlatNormalsMesh(vertexCube,indexCube,colorCube)
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -213,6 +246,33 @@ mesh_TableLeg4.vertex_index.append(indicesTableLeg)
 vArray_TableLeg4 = scene.world.addComponent(TableLeg4, VertexArray())
 shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 
+mesh_left_hand.vertex_attributes.append(vertexHand)
+mesh_left_hand.vertex_attributes.append(ColorHand)
+mesh_left_hand.vertex_attributes.append(normalsHand)
+mesh_left_hand.vertex_index.append(indexHand)
+VArrayLeftHand = scene.world.addComponent(Left_Hand,VertexArray())
+ShaderDec_Left_Hand = scene.world.addComponent(Left_Hand,ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+
+mesh_right_hand.vertex_attributes.append(vertexHand)
+mesh_right_hand.vertex_attributes.append(ColorHand)
+mesh_right_hand.vertex_attributes.append(normalsHand)
+mesh_right_hand.vertex_index.append(indexHand)
+VArrayRightHand = scene.world.addComponent(Right_Hand,VertexArray())
+ShaderDec_Right_Hand = scene.world.addComponent(Right_Hand,ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+
+
+mesh_left_ray.vertex_attributes.append(VertexRay)
+mesh_left_ray.vertex_attributes.append(ColorRay)
+mesh_left_ray.vertex_index.append(indexRay)
+VArrayLeftRay = scene.world.addComponent(Left_Ray,VertexArray(primitive=GL_LINES))
+Shader_Left_Ray = scene.world.addComponent(Left_Ray,ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
+mesh_Right_ray.vertex_attributes.append(VertexRay)
+mesh_Right_ray.vertex_attributes.append(ColorRay)
+mesh_Right_ray.vertex_index.append(indexRay)
+VArrayrightRay = scene.world.addComponent(Right_Ray,VertexArray(primitive=GL_LINES))
+Shader_right_Ray = scene.world.addComponent(Right_Ray,ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
 
 # MAIN RENDERING LOOP
 
@@ -255,6 +315,24 @@ ShaderTeapot.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
 ShaderTeapot.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
 ShaderTeapot.setUniformVariable(key='shininess',value=Mshininess,float1=True)
 ShaderTeapot.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+
+ShaderDec_Left_Hand.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
+ShaderDec_Left_Hand.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+ShaderDec_Left_Hand.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+ShaderDec_Left_Hand.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+ShaderDec_Left_Hand.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+ShaderDec_Left_Hand.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+ShaderDec_Left_Hand.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+ShaderDec_Left_Hand.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+
+ShaderDec_Right_Hand.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
+ShaderDec_Right_Hand.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+ShaderDec_Right_Hand.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+ShaderDec_Right_Hand.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+ShaderDec_Right_Hand.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+ShaderDec_Right_Hand.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+ShaderDec_Right_Hand.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+ShaderDec_Right_Hand.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
 while not exit_loop:
     scene.world.traverse_visit(transUpdate,scene.world.root)
