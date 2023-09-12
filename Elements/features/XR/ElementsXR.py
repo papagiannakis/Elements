@@ -784,6 +784,73 @@ class ElementsXR_program:
             exit_loop = True
         return exit_loop
 
+    def poll_actions(self):
+        """
+        Update poses and all other available actions
+        Arguments: 
+            self: self
+        Returns:
+            None
+        """
+
+        self.input.hand_active[:] = [xr.FALSE, xr.FALSE]
+        # Sync actions
+        active_action_set = xr.ActiveActionSet(self.input.action_set, xr.NULL_PATH)
+        xr.sync_actions(
+            self.session,
+            xr.ActionsSyncInfo(
+                count_active_action_sets=1,
+                active_action_sets=pointer(active_action_set)
+            ),
+        )
+        # Get pose and grab action state and start haptic vibrate when hand is 90% squeezed.
+        for hand in Side:
+            grab_value = xr.get_action_state_float(
+                self.session,
+                xr.ActionStateGetInfo(
+                    action=self.input.grab_action,
+                    subaction_path=self.input.hand_subaction_path[hand],
+                ),
+            )
+            if grab_value.is_active:
+                # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
+                self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state
+                if grab_value.current_state > 0.9:
+                    vibration = xr.HapticVibration(
+                        amplitude=0.5,
+                        duration=xr.MIN_HAPTIC_DURATION,
+                        frequency=xr.FREQUENCY_UNSPECIFIED,
+                    )
+                    xr.apply_haptic_feedback(
+                        session=self.session,
+                        haptic_action_info=xr.HapticActionInfo(
+                            action=self.input.vibrate_action,
+                            subaction_path=self.input.hand_subaction_path[hand],
+                        ),
+                        haptic_feedback=cast(byref(vibration), POINTER(xr.HapticBaseHeader)).contents,
+                    )
+            pose_state = xr.get_action_state_pose(
+                session=self.session,
+                get_info=xr.ActionStateGetInfo(
+                    action=self.input.pose_action,
+                    subaction_path=self.input.hand_subaction_path[hand],
+                ),
+            )
+            self.input.hand_active[hand] = pose_state.is_active
+        # There were no subaction paths specified for the quit action, because we don't care which hand did it.
+        quit_value = xr.get_action_state_boolean(
+            session=self.session,
+            get_info=xr.ActionStateGetInfo(
+                action=self.input.quit_action,
+                subaction_path=xr.NULL_PATH,
+            ),
+        )
+        if quit_value.is_active and quit_value.changed_since_last_sync and quit_value.current_state:
+            xr.request_exit_session(self.session)
+
+        ######################
+        print(self.input)
+        ######################
 
     def render_frame(self,renderer: RenderGLShaderSystem) -> None:
         """
@@ -852,18 +919,6 @@ class ElementsXR_program:
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
         assert view_count_output == len(projection_layer_views)
-
-        ########################
-        hand1 = xr.locate_space(
-                space=self.input.hand_space[0],
-                base_space=self.app_space,
-                time=predicted_display_time,
-            )
-        print(hand1.pose)
-        print(self.input.hand_scale[0])
-        
-        #########################
-        
 
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
@@ -1037,7 +1092,30 @@ class ElementsXR_program:
             self.log_environment_blend_mode(view_config_type)
     
     def log_action_source_name(self, action: xr.Action, action_name: str):
-        pass
+        paths = xr.enumerate_bound_sources_for_action(
+            session=self.session,
+            enumerate_info=xr.BoundSourcesForActionEnumerateInfo(
+                action=action,
+            ),
+        )
+        source_name = ""
+        for path in paths:
+            all_flags = xr.INPUT_SOURCE_LOCALIZED_NAME_USER_PATH_BIT \
+                        | xr.INPUT_SOURCE_LOCALIZED_NAME_INTERACTION_PROFILE_BIT \
+                        | xr.INPUT_SOURCE_LOCALIZED_NAME_COMPONENT_BIT
+            grab_source = xr.get_input_source_localized_name(
+                session=self.session,
+                get_info=xr.InputSourceLocalizedNameGetInfo(
+                    source_path=path,
+                    which_components=all_flags,
+                ),
+            )
+            if len(grab_source) < 1:
+                continue
+            if len(source_name) > 0:
+                source_name += " and "
+            source_name += f"'{grab_source}'"
+        print(f"{action_name} is bound to {source_name if len(source_name) > 0 else 'nothing'}")
 
     @staticmethod
     def xr_version_string():

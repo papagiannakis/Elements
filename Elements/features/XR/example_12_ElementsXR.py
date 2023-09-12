@@ -282,6 +282,7 @@ program = ElementsXR_program()
 program.set_Head(Head)
 #program.raycast = True
 program.hands = [Left_Hand,Right_Hand]
+program.rays = [Left_Ray,Right_Ray]
 program.Initialize("Elements: ElementsXR Demo",initUpdate)
 
 skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Day_Sunless")
@@ -339,6 +340,8 @@ while not exit_loop:
     exit_loop = program.poll_events()
 
     if program.session_running:
+        program.poll_actions()
+
         program.render_frame(renderUpdate)
     else:
         time.sleep(0.250)
