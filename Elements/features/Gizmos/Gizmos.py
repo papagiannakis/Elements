@@ -32,23 +32,23 @@ def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
     inc = 4
 
     # x-axis gizmos
-    p1 = util.vec(1.0,0.0,-0.01,1.0)
-    p2 = util.vec(1.0,0.0,0.01,1.0)
-    p3 = util.vec(1.01,0.0,-0.01,1.0)
-    p4 = util.vec(1.01,0.0,0.01,1.0)
+    p1 = util.vec(1.0,0.0,-0.02,1.0)
+    p2 = util.vec(1.0,0.0,0.02,1.0)
+    p3 = util.vec(1.01,0.0,-0.02,1.0)
+    p4 = util.vec(1.01,0.0,0.02,1.0)
 
     if axis=='Y':
         # y-axis gizmos
-        p1 = util.vec(1.0,-0.01,0.0,1.0)
-        p2 = util.vec(1.0,0.01,0.0,1.0)
-        p3 = util.vec(1.01,0.01,0.0,1.0)
-        p4 = util.vec(1.01,-0.01,0.0,1.0)
+        p1 = util.vec(1.0,-0.02,0.0,1.0)
+        p2 = util.vec(1.0,0.02,0.0,1.0)
+        p3 = util.vec(1.01,0.02,0.0,1.0)
+        p4 = util.vec(1.01,-0.02,0.0,1.0)
     elif axis=='Z':
         # z-axis gizmo
-        p1 = util.vec(-0.01,0.0,1.0,1.0)
-        p2 = util.vec(0.01,0.0,1.0,1.0)
-        p3 = util.vec(0.01,0.0,1.01,1.0)
-        p4 = util.vec(-0.01,0.0,1.01,1.0)
+        p1 = util.vec(-0.02,0.0,1.0,1.0)
+        p2 = util.vec(0.02,0.0,1.0,1.0)
+        p3 = util.vec(0.02,0.0,1.01,1.0)
+        p4 = util.vec(-0.02,0.0,1.01,1.0)
     
 
     ver = np.array([p1,p2,p3,p4],dtype=np.float32)
@@ -219,6 +219,7 @@ class Mode(enum.Enum):
     TRANSLATE="Translate"
     ROTATE="Rotate"
     SCALE="Scale"
+    DISAPPEAR="Disappear"
 
 class entity_transformations:
     """
@@ -231,21 +232,18 @@ class entity_transformations:
 
 class Gizmos:
 
-    def __init__(self,rootEntity: Entity,Projection=None, View=None):
+    def __init__(self,rootEntity: Entity):
         sdl.ext.init()
         self.scene = Scene()
         self.selected = 0
         self.total = 0
         self.mouse_x, self.mouse_y = c_int(0), c_int(0)
-        self.mouse_state = 0 #LMB not clicked
         self.key_states = sdl.SDL_GetKeyboardState(None)
-        self.key_down = False
-        self.projection = Projection
-        self.view = View
-        if Projection is not None:
-            self.inv_projection = util.inverse(Projection)
-        if View is not None:
-            self.inv_view = util.inverse(View)
+        self.tab_down = False
+        self.lmb_down = False
+        self.projection = np.array([4,4],dtype=np.float32)
+        self.view = np.array([4,4],dtype=np.float32)
+
         self.is_selected = False
         self.selected_trans = None
         self.selected_mesh = None
@@ -266,6 +264,8 @@ class Gizmos:
                                 "Gizmos_z_R","Gizmos_z_R_trans","Gizmos_z_R_mesh"])
         
         self.seperate_transformations = {}
+        self.initial_transformations = {}
+        self.entity_dict = {}
 
         self.cameraInUse = ""
         self.screen_width = 1024.0
@@ -273,17 +273,21 @@ class Gizmos:
         self.picked = False
         self.selected_gizmo = ''
         self.previous_distance = 0.0
+        self.rotation_distance = 0.0
         self.previous_x = 0.0
         self.previous_y = 0.0
         self.previous_z = 0.0
 
-        #Light
-        self.Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
-        self.Lambientstr = 0.3 #uniform ambientStr
-        self.LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
+        self.rotation = util.identity()
+        self.rotation_modifier = 45
+
+        #Light parameters for scale cubes
+        self.Lambientcolor = util.vec(1.0, 1.0, 1.0)
+        self.Lambientstr = 0.3
+        self.LviewPos = util.vec(2.5, 2.8, 5.0)
         self.Lcolor = util.vec(1.0,1.0,1.0)
         self.Lintensity = 0.9
-        #Material
+        #Material parameters for scale cubes
         self.Mshininess = 0.4 
         self.Mcolor = util.vec(0.8, 0.0, 0.8)
 
@@ -302,7 +306,7 @@ class Gizmos:
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y)
         self.gizmos_y_trans = self.scene.world.addComponent(self.gizmos_y, BasicTransform(name="Gizmos_Y_trans", trs=util.identity()))
         self.gizmos_y_mesh = self.scene.world.addComponent(self.gizmos_y, RenderMesh(name="Gizmos_Y_mesh"))
-        self.gizmos_y_mesh.vertex_attributes.append(VERTEX_GIZMOS_Y) 
+        self.gizmos_y_mesh.vertex_attributes.append(VERTEX_GIZMOS_Y)
         self.gizmos_y_mesh.vertex_attributes.append(COLOR_Y)
         self.gizmos_y_mesh.vertex_index.append(ARROW_INDEX2)
         self.gizmos_y_vArray = self.scene.world.addComponent(self.gizmos_y, VertexArray())
@@ -425,6 +429,11 @@ class Gizmos:
         self.ys_min_bb, self.ys_max_bb = self.calculate_bounding_box(self.gizmos_y_S_cube_mesh.vertex_attributes[0])
         self.zs_min_bb, self.zs_max_bb = self.calculate_bounding_box(self.gizmos_z_S_cube_mesh.vertex_attributes[0])
 
+        #Rotation Gizmos Bounding Boxes
+        self.xrot_min_bb, self.xrot_max_bb = self.calculate_bounding_box(self.gizmos_x_R_mesh.vertex_attributes[0])
+        self.yrot_min_bb, self.yrot_max_bb = self.calculate_bounding_box(self.gizmos_y_R_mesh.vertex_attributes[0])
+        self.zrot_min_bb, self.zrot_max_bb = self.calculate_bounding_box(self.gizmos_z_R_mesh.vertex_attributes[0])
+
         self.count_components()
 
     def __remove_rotation(self,model):
@@ -447,17 +456,34 @@ class Gizmos:
 
     def reset_to_None(self):
         """
-        Resets to initial state
+        Resets Gizmos to initial state
         Arguments:
             self: self
         Returns:
             None
         """
+        prev = self.mode
+        self.mode = Mode.DISAPPEAR # Temporarily so that Gizmos can disappear in case pick() did not intersect with any Entity
+        self.__update_positions()
+        self.mode = prev
         self.is_selected = False
         self.selected_trans = None
         self.selected_mesh = None
         self.selected_comp = "None"
-        #TODO: reset uniform variables too
+
+    def reset_to_default(self):
+        """
+        Resets selected Entity's transformations to identity
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        self.selected_trans.trs = self.initial_transformations[self.selected_comp]
+        self.seperate_transformations[self.selected_comp] = entity_transformations()
+
+        self.__update_gizmos_trans()
+        self.__update_gizmos()
 
     def change_target(self):
         """
@@ -475,11 +501,11 @@ class Gizmos:
 
         for component in self.scene.world.root:
 
-            #Have to check because there is always some component that has Nonetype
+            #Have to check because there is always some component that is NoneType
             if component is not None:
                 parentname = component.parent.name
-                #next BasicTransform component that is not one of the gizmos components and is now the camera's in use component
-                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse:
+                #next BasicTransform component that is not one of the gizmos components and is not child of the camera in use
+                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse and parentname.find("Skybox")==-1:
                     count = count-1
                     if(count==0):
                         self.selected_trans = component
@@ -493,21 +519,41 @@ class Gizmos:
                                 break
                         break
 
-    def update_ray_init_position(self):
+    def update_ray_start(self):
         """
-        Update mouse position, mouse state and Raycast
+        Update mouse position and mouse state. Additionally Raycast or try to pick an Entity
         Arguments:
             self: self
         Returns:
             None
         """
-        self.mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
+        mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
         #Raycast only when LMB is pressed
-        if self.mouse_state==1 and self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
-            self.raycast()
+        if mouse_state==1:
+            if self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
+                self.raycast()
+            elif self.lmb_down==False:
+                self.lmb_down = True
+                name = self.pick()
+                if name is not None:
+                    entity: Entity
+                    entity = self.entity_dict[name]
+                    self.is_selected = True
+                    self.selected_comp = name
+                    self.selected_trans = entity.getChildByType(BasicTransform.getClassName())
+                    self.selected_mesh =  entity.getChildByType(RenderMesh.getClassName())
+                    self.__update_gizmos_trans()
+                    self.__update_positions()
+                else:
+                    self.reset_to_None()
         else:
+            self.lmb_down = False
+            self.selected_gizmo = ''
             self.picked = False
-            self.selected_gizmo=''
+            self.rotation = util.identity()
+            if self.is_selected:
+                self.__update_gizmos_trans()
+                self.__update_positions()
         
     def count_components(self):
         """
@@ -518,8 +564,12 @@ class Gizmos:
             None
         """
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps:
-                self.seperate_transformations[component.parent.name] = entity_transformations()
+            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("Skybox")==-1:
+                entity_name = component.parent.name
+                self.seperate_transformations[entity_name] = entity_transformations()
+                self.initial_transformations[entity_name] = component.trs
+                self.entity_dict[entity_name] = component.parent
+
                 self.total = self.total + 1
 
     def get_Event(self):
@@ -534,18 +584,18 @@ class Gizmos:
         Returns:
             None
         """
-        if self.key_states[sdl.SDL_SCANCODE_TAB] and not self.key_down:
-            self.key_down = True
+        if self.key_states[sdl.SDL_SCANCODE_TAB] and not self.tab_down:
+            self.tab_down = True
             self.change_target()
             if self.total>0:
                 self.is_selected = True
-                
                 self.__update_gizmos_trans()
-
                 self.__update_gizmos()
+        elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.tab_down:
+            self.tab_down = False
 
-        elif not self.key_states[sdl.SDL_SCANCODE_TAB] and self.key_down:
-            self.key_down = False
+        if self.key_states[sdl.SDL_SCANCODE_0]:
+            self.reset_to_default()
 
         if self.key_states[sdl.SDL_SCANCODE_T]:
             self.mode = Mode.TRANSLATE
@@ -566,112 +616,133 @@ class Gizmos:
             None
         """
         if self.is_selected:
-            vp = self.projection @ self.view
+            self.__update_lights()
+            self.__update_positions()
+    
+    def __update_lights(self):
+        """
+        Update Lighting of Scaling Gizmos
+        Arguments:
+            self: self
+        REturns:
+            None
+        """
+        model_XS_cube = self.gizmos_x_S_cube_trans.trs
+        model_YS_cube = self.gizmos_y_S_cube_trans.trs
+        model_ZS_cube = self.gizmos_z_S_cube_trans.trs
+        
+        Lposition = util.vec(model_XS_cube[0,3],model_XS_cube[1,3]+0.5,model_XS_cube[2,3]+0.5)
+            
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='model',value=model_XS_cube,mat4=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+            
+        Lposition = util.vec(model_YS_cube[0,3],model_YS_cube[1,3]+0.5,model_YS_cube[2,3]+0.5)
+            
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='model',value=model_YS_cube,mat4=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+            
+        Lposition = util.vec(model_ZS_cube[0,3],model_ZS_cube[1,3]+0.5,model_ZS_cube[2,3]+0.5)
 
-            #### Translate components
-            model_x = self.gizmos_x_trans.trs
-            model_y = self.gizmos_y_trans.trs
-            model_z = self.gizmos_z_trans.trs
-            mvp_x = 0.0
-            mvp_y = 0.0
-            mvp_z = 0.0
-            if self.mode==Mode.TRANSLATE:
-                mvp_x = vp @ model_x
-                mvp_y = vp @ model_y
-                mvp_z = vp @ model_z
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='model',value=model_ZS_cube,mat4=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
 
-            self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
-            self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
-            self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
+    def __update_positions(self):
+        """
+        Update model matrices of all Gizmo components
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        vp = self.projection @ self.view
 
-            #### Scale components
-            model_XS_line = self.gizmos_x_S_line_trans.trs
-            model_YS_line = self.gizmos_y_S_line_trans.trs
-            model_ZS_line = self.gizmos_z_S_line_trans.trs
+        #### Translate components
+        model_x = self.gizmos_x_trans.trs
+        model_y = self.gizmos_y_trans.trs
+        model_z = self.gizmos_z_trans.trs
+        mvp_x = 0.0
+        mvp_y = 0.0
+        mvp_z = 0.0
+        if self.mode==Mode.TRANSLATE:
+            mvp_x = vp @ model_x
+            mvp_y = vp @ model_y
+            mvp_z = vp @ model_z
 
-            model_XS_cube = self.gizmos_x_S_cube_trans.trs
-            model_YS_cube = self.gizmos_y_S_cube_trans.trs
-            model_ZS_cube = self.gizmos_z_S_cube_trans.trs
+        self.gizmos_x_shader.setUniformVariable(key='modelViewProj', value=mvp_x, mat4=True)
+        self.gizmos_y_shader.setUniformVariable(key='modelViewProj', value=mvp_y, mat4=True)
+        self.gizmos_z_shader.setUniformVariable(key='modelViewProj', value=mvp_z, mat4=True)
 
-            mvp_xs_line = 0.0
-            mvp_ys_line = 0.0
-            mvp_zs_line = 0.0
-            mvp_xs_cube = 0.0
-            mvp_ys_cube = 0.0
-            mvp_zs_cube = 0.0
-            if self.mode==Mode.SCALE:
-                mvp_xs_line = vp @ model_XS_line
-                mvp_ys_line = vp @ model_YS_line
-                mvp_zs_line = vp @ model_ZS_line
+        #### Scale components
+        model_XS_line = self.gizmos_x_S_line_trans.trs
+        model_YS_line = self.gizmos_y_S_line_trans.trs
+        model_ZS_line = self.gizmos_z_S_line_trans.trs
 
-                mvp_xs_cube = vp @ model_XS_cube
-                mvp_ys_cube = vp @ model_YS_cube
-                mvp_zs_cube = vp @ model_ZS_cube
+        model_XS_cube = self.gizmos_x_S_cube_trans.trs
+        model_YS_cube = self.gizmos_y_S_cube_trans.trs
+        model_ZS_cube = self.gizmos_z_S_cube_trans.trs
 
-            #Scale lines
-            self.gizmos_x_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_line, mat4=True)
-            self.gizmos_y_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_line, mat4=True)
-            self.gizmos_z_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_line, mat4=True)
+        mvp_xs_line = 0.0
+        mvp_ys_line = 0.0
+        mvp_zs_line = 0.0
+        mvp_xs_cube = 0.0
+        mvp_ys_cube = 0.0
+        mvp_zs_cube = 0.0
 
-            #Scale cubes
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_cube, mat4=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_cube, mat4=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_cube, mat4=True)
+        if self.mode==Mode.SCALE:
+            mvp_xs_line = vp @ model_XS_line
+            mvp_ys_line = vp @ model_YS_line
+            mvp_zs_line = vp @ model_ZS_line
 
-            ##
-            Lposition = util.vec(model_XS_cube[0,3],model_XS_cube[1,3]+0.5,model_XS_cube[2,3]+0.5)
-            ##
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='model',value=model_XS_cube,mat4=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-            self.gizmos_x_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+            mvp_xs_cube = vp @ model_XS_cube
+            mvp_ys_cube = vp @ model_YS_cube
+            mvp_zs_cube = vp @ model_ZS_cube
 
-            ##
-            Lposition = util.vec(model_YS_cube[0,3],model_YS_cube[1,3]+0.5,model_YS_cube[2,3]+0.5)
-            ##
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='model',value=model_YS_cube,mat4=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-            self.gizmos_y_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+        #Scale lines
+        self.gizmos_x_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_line, mat4=True)
+        self.gizmos_y_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_line, mat4=True)
+        self.gizmos_z_S_line_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_line, mat4=True)
 
-            ##
-            Lposition = util.vec(model_ZS_cube[0,3],model_ZS_cube[1,3]+0.5,model_ZS_cube[2,3]+0.5)
-            ##
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='model',value=model_ZS_cube,mat4=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-            self.gizmos_z_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
+        #Scale cubes
+        self.gizmos_x_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_xs_cube, mat4=True)
+        self.gizmos_y_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_ys_cube, mat4=True)
+        self.gizmos_z_S_cube_shader.setUniformVariable(key='modelViewProj', value=mvp_zs_cube, mat4=True)
 
-            model_rx = self.gizmos_x_R_trans.trs
-            model_ry = self.gizmos_y_R_trans.trs
-            model_rz = self.gizmos_z_R_trans.trs
+        model_rx = self.gizmos_x_R_trans.trs
+        model_ry = self.gizmos_y_R_trans.trs
+        model_rz = self.gizmos_z_R_trans.trs
 
-            mvp_rx = 0.0
-            mvp_ry = 0.0
-            mvp_rz = 0.0
-            if self.mode==Mode.ROTATE:
-                mvp_rx = vp @ model_rx
-                mvp_ry = vp @ model_ry
-                mvp_rz = vp @ model_rz
+        mvp_rx = 0.0
+        mvp_ry = 0.0
+        mvp_rz = 0.0
+        if self.mode==Mode.ROTATE:
+            mvp_rx = vp @ model_rx
+            mvp_ry = vp @ model_ry
+            mvp_rz = vp @ model_rz
 
-            self.gizmos_x_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rx, mat4=True)
-            self.gizmos_y_R_shader.setUniformVariable(key='modelViewProj', value=mvp_ry, mat4=True)
-            self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
+        self.gizmos_x_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rx, mat4=True)
+        self.gizmos_y_R_shader.setUniformVariable(key='modelViewProj', value=mvp_ry, mat4=True)
+        self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
 
     def update_imgui(self):
         """
@@ -689,7 +760,7 @@ class Gizmos:
 
     def update_projection(self, Proj):
         """
-        Update window's projection and calculate its inverse if needed
+        Update window's projection and calculate its inverse, if needed
         Arguments:
             self: self
             Proj: Projection matrix
@@ -703,7 +774,7 @@ class Gizmos:
 
     def update_view(self, View):
         """
-        Update window's View and calculate its inverse if needed
+        Update window's View and calculate its inverse, if needed
         Arguments:
             self: self
             View: View matrix
@@ -754,7 +825,6 @@ class Gizmos:
         """
         vertices = mesh_vertices
 
-        #hmm, is this needed?
         for i in  range(len(vertices)):
             vertices[i] = vertices[i]/vertices[i][3]
 
@@ -816,13 +886,11 @@ class Gizmos:
         ray_dir_world = util.vec(ray_end_world[0] - ray_start_World[0],
                                  ray_end_world[1] - ray_start_World[1],
                                  ray_end_world[2] - ray_start_World[2])
-        ray_dir_world_unormalized = ray_dir_world ##
         ray_dir_world = util.normalise(ray_dir_world)
-        
         ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2],0.0)
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
 
-        return ray_origin, ray_direction, ray_dir_world_unormalized
+        return ray_origin, ray_direction
 
     def raycast(self):
         """
@@ -835,7 +903,7 @@ class Gizmos:
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
-        ray_origin, ray_direction, ray_direction_unormalized = self.calculate_ray()
+        ray_origin, ray_direction = self.calculate_ray()
 
         x_intersects, x_in_point = False, util.vec(0.0)
         y_intersects, y_in_point = False, util.vec(0.0)
@@ -894,20 +962,81 @@ class Gizmos:
             mesh_y = self.gizmos_y_R_mesh
             mesh_z = self.gizmos_z_R_mesh
 
-            x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
-                                                ray_direction,
-                                                mesh_x,
-                                                model_x)
-        
-            y_intersects, y_in_point = self.testRayCircleIntersection(ray_origin,
-                                                ray_direction,
-                                                mesh_y,
-                                                model_y)
-        
-            z_intersects, z_in_point = self.testRayCircleIntersection(ray_origin,
-                                                ray_direction,
-                                                mesh_z,
-                                                model_z)
+            previous_distance = self.previous_distance
+
+            #divide the Gizmos' meshes in smaller bounding boxes and test each one of them during the first iteration
+            if self.selected_gizmo=='':
+                x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
+                                                    ray_direction,
+                                                    mesh_x,
+                                                    model_x)
+                if x_intersects:
+                    x_distance = self.previous_distance
+                else:
+                    x_distance = 1000000.0
+            
+                y_intersects, y_in_point = self.testRayCircleIntersection(ray_origin,
+                                                    ray_direction,
+                                                    mesh_y,
+                                                    model_y)
+                if y_intersects:
+                    y_distance = self.previous_distance
+                else:
+                    y_distance = 1000000.0
+            
+                z_intersects, z_in_point = self.testRayCircleIntersection(ray_origin,
+                                                    ray_direction,
+                                                    mesh_z,
+                                                    model_z)
+                if z_intersects:
+                    z_distance = self.previous_distance
+                else:
+                    z_distance = 1000000.0
+                
+
+            else: #Use the whole mesh for the other iterations
+                x_intersects, x_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
+                                                                              self.xrot_min_bb,
+                                                                              self.xrot_max_bb,
+                                                                              model_x)
+
+                if x_intersects:
+                    x_distance = self.previous_distance
+                else:
+                    x_distance = 1000000.0
+            
+                y_intersects, y_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
+                                                                              self.yrot_min_bb,
+                                                                              self.yrot_max_bb,
+                                                                              model_y)
+                if y_intersects:
+                    y_distance = self.previous_distance
+                else:
+                    y_distance = 1000000.0
+            
+                z_intersects, z_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
+                                                                              self.zrot_min_bb,
+                                                                              self.zrot_max_bb,
+                                                                              model_z)
+                if z_intersects:
+                    z_distance = self.previous_distance
+                else:
+                    z_distance = 1000000.0
+
+            #When the ray intersects with more than one gizmo apply rotation to the one closest to the ray origin
+            if x_intersects and (x_distance > y_distance or x_distance > z_distance):
+                x_intersects = False
+            if y_intersects and (y_distance > x_distance or y_distance > z_distance):
+                y_intersects = False
+            if z_intersects and (z_distance > x_distance or z_distance > y_distance):
+                z_intersects = False
+            
+            if self.selected_gizmo=='X':
+                self.rotation_distance = previous_distance - x_distance
+            if self.selected_gizmo=='Y':
+                self.rotation_distance = previous_distance - y_distance
+            if self.selected_gizmo=='Z':
+                self.rotation_distance = previous_distance - z_distance
 
         if self.selected_gizmo=='X' or (self.selected_gizmo=='' and x_intersects):
             self.selected_gizmo = 'X'
@@ -945,7 +1074,7 @@ class Gizmos:
                     diff = inter_point[1] - self.previous_y
                     self.previous_y = inter_point[1]
                     self.__translate_selected(y=diff)
-            if self.selected_gizmo=='Z':
+            elif self.selected_gizmo=='Z':
                 if self.picked==False:
                     self.picked = True
                     self.previous_z = inter_point[2]
@@ -981,35 +1110,35 @@ class Gizmos:
                     self.previous_z = inter_point[2]
                 else:
                     diffZ = np.abs(inter_point[2]/self.previous_z)
-                    if(diffZ==0.0):
-                        diffZ = 0.01
+                    #if(diffZ==0.0):
+                    #    diffZ = 0.01
                     self.previous_z = inter_point[2]
             self.__scale_selected(x=diffX,y=diffY,z=diffZ)
-        else: #Rotate
+        elif self.mode==Mode.ROTATE:
             if self.selected_gizmo=='X':
                 if self.picked==False:
                     self.picked = True
                     self.previous_x = inter_point[0]
                 else:
-                    diff = 90 * (self.previous_x - inter_point[0])
+                    diff = self.rotation_modifier * (self.previous_x - inter_point[0])/2
                     self.previous_x = inter_point[0]
                     self.__rotate_selected(_angle = diff, _axis = (0.0,0.0,1.0))
             elif self.selected_gizmo=='Y':
                 if self.picked==False:
                     self.picked = True
-                    self.previous_y = inter_point[1]
+                    self.previous_y = inter_point[0]
                 else:
-                    diff = 90 * (self.previous_y - inter_point[1])
-                    self.previous_y = inter_point[1]
-                    self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
+                    diff = -self.rotation_modifier * (self.previous_y - inter_point[0])/2
+                    self.previous_y = inter_point[0]
+                    self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
             elif self.selected_gizmo=='Z':
                 if self.picked==False:
                     self.picked = True
                     self.previous_z = inter_point[2]
                 else:
-                    diff = 90 * (self.previous_z - inter_point[2])
+                    diff = -self.rotation_modifier * (self.previous_z - inter_point[2])
                     self.previous_z = inter_point[2]
-                    self.__rotate_selected(_angle = diff, _axis = (0.0,1.0,0.0))
+                    self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
 
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
@@ -1175,7 +1304,7 @@ class Gizmos:
         Returns:
             None
         """
-        self.selected_trans.trs = self.selected_trans.trs @ util.translate(x,y,z)
+        self.selected_trans.trs = util.translate(x,y,z) @ self.selected_trans.trs
         self.__update_gizmos_trans()
  
     def __rotate_selected(self,_angle=0.0,_axis=(1.0,0.0,0.0)):
@@ -1188,8 +1317,13 @@ class Gizmos:
         Returns:
             None
         """
+        selected = self.seperate_transformations[self.selected_comp]
+
         self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
-        self.seperate_transformations[self.selected_comp].rotation = self.seperate_transformations[self.selected_comp].rotation @ util.rotate(angle=_angle,axis=_axis)
+        selected.rotation = selected.rotation @ util.rotate(angle=_angle,axis=_axis)
+
+        self.rotation = self.rotation @ util.rotate(angle=_angle,axis=_axis)
+        
         self.__update_gizmos_trans()
 
     def __scale_selected(self,x=1.0,y=1.0,z=1.0):
@@ -1203,8 +1337,11 @@ class Gizmos:
         Returns:
             None
         """
+        selected = self.seperate_transformations[self.selected_comp]
+
         self.selected_trans.trs = self.selected_trans.trs @ util.scale(x,y,z)
-        self.seperate_transformations[self.selected_comp].scaling += util.vec(x-1.0,y-1.0,z-1.0)
+        #self.seperate_transformations[self.selected_comp].scaling += util.vec(x-1.0,y-1.0,z-1.0)
+        selected.scaling *= util.vec(x,y,z)
         self.__update_gizmos_trans()
 
     def __update_gizmos_trans(self):
@@ -1214,23 +1351,63 @@ class Gizmos:
         scaling = self.seperate_transformations[self.selected_comp].scaling
         #rotation = self.seperate_transformations[self.selected_comp].rotation
 
-        self.gizmos_x_trans.trs = self.__remove_rotation(self.selected_trans.l2world) #@ rotation
-        self.gizmos_y_trans.trs = self.__remove_rotation(self.selected_trans.l2world) #@ rotation
-        self.gizmos_z_trans.trs = self.__remove_rotation(self.selected_trans.l2world) #@ rotation
+        #selected Entity's local-2-world without rotation or scaling
+        #Used for Translation and Scaling Gizmos
+        no_rotation = self.__remove_rotation(self.selected_trans.l2world)
 
-        self.gizmos_x_S_line_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ util.scale(scaling[0],1.0,1.0)
-        self.gizmos_y_S_line_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ util.scale(1.0,scaling[1],1.0)
-        self.gizmos_z_S_line_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ util.scale(1.0,1.0,scaling[2])
+        self.gizmos_x_trans.trs = no_rotation
+        self.gizmos_y_trans.trs = no_rotation
+        self.gizmos_z_trans.trs = no_rotation
+
+        self.gizmos_x_S_line_trans.trs = no_rotation @ util.scale(scaling[0],1.0,1.0)
+        self.gizmos_y_S_line_trans.trs = no_rotation @ util.scale(1.0,scaling[1],1.0)
+        self.gizmos_z_S_line_trans.trs = no_rotation @ util.scale(1.0,1.0,scaling[2])
 
         #translate the Scaling cubes based on Selected Entity's current scaling
         x_t = util.translate(x=scaling[0]-1.0)
         y_t = util.translate(y=scaling[1]-1.0)
         z_t = util.translate(z=scaling[2]-1.0)
 
-        self.gizmos_x_S_cube_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ x_t #@ rotation
-        self.gizmos_y_S_cube_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ y_t #@ rotation
-        self.gizmos_z_S_cube_trans.trs = self.__remove_rotation(self.selected_trans.l2world) @ z_t #@ rotation
+        self.gizmos_x_S_cube_trans.trs = no_rotation @ x_t
+        self.gizmos_y_S_cube_trans.trs = no_rotation @ y_t
+        self.gizmos_z_S_cube_trans.trs = no_rotation @ z_t
 
-        self.gizmos_x_R_trans.trs = self.__remove_rotation(self.selected_trans.l2world)
-        self.gizmos_y_R_trans.trs = self.__remove_rotation(self.selected_trans.l2world)
-        self.gizmos_z_R_trans.trs = self.__remove_rotation(self.selected_trans.l2world)
+        r_gizmos = no_rotation @ self.rotation
+        self.gizmos_x_R_trans.trs = r_gizmos
+        self.gizmos_y_R_trans.trs = r_gizmos
+        self.gizmos_z_R_trans.trs = r_gizmos
+
+    def pick(self):
+        """
+        Try to pick an Entity
+        Arguments:
+            self: self
+        Returns:
+            Closest Entity's name if the raycast intersected with one, None otherwise
+        """
+        hit_entities = {}
+        entity_name : str
+        for entity_name in self.entity_dict:
+            obj : Entity
+            obj = self.entity_dict[entity_name]
+            trans: BasicTransform
+            trans = obj.getChildByType(BasicTransform.getClassName())
+            mesh:RenderMesh
+            mesh = obj.getChildByType(RenderMesh.getClassName())
+            if trans is None or mesh is None:
+                continue
+
+            model = trans.l2world
+            vertices_world = np.array(mesh.vertex_attributes[0],copy=True) @ model
+
+            minbb, maxbb = self.calculate_bounding_box(vertices_world)
+
+            ray_origin, ray_direction = self.calculate_ray()
+
+            intersects, point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,minbb,maxbb,model)
+            if intersects:
+                hit_entities[entity_name] = self.previous_distance
+        if len(hit_entities)==0:
+            return None
+            
+        return min(hit_entities, key = hit_entities.get)

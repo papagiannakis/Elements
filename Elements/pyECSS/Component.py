@@ -388,7 +388,6 @@ class BasicTransform(Component):
         :type system: [System]
         """
         
-        system.apply2GATransform(self) # from GATransform
         system.apply2BasicTransform(self) #from TransformSystem
         system.applyCamera2BasicTransform(self) #from CameraSystem
         
@@ -469,7 +468,7 @@ class Camera(Component):
         
         # In Python due to ducktyping, either call a System concrete method
         # or leave it generic as is and check within System apply() if the 
-        #correct node is visited (there is no automatic inference which System to call 
+        # correct node is visited (there is no automatic inference which System to call 
         # due to its type. We need to call a System specific concrete method otherwise)
         system.apply2Camera(self)
     
