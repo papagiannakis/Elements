@@ -793,6 +793,9 @@ class ElementsXR_program:
             None
         """
 
+        #If an application does not have focus it cannot get input for the hands
+        if self.session_state != xr.SessionState.FOCUSED:
+            return
         self.input.hand_active[:] = [xr.FALSE, xr.FALSE]
         # Sync actions
         active_action_set = xr.ActiveActionSet(self.input.action_set, xr.NULL_PATH)
