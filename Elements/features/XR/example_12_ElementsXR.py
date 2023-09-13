@@ -340,7 +340,7 @@ while not exit_loop:
     exit_loop = program.poll_events()
 
     if program.session_running:
-        program.poll_actions()
+        program.poll_actions() #poll only if session is focused
 
         program.render_frame(renderUpdate)
     else:
