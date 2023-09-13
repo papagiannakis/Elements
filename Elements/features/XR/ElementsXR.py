@@ -860,7 +860,7 @@ class ElementsXR_program:
         Create and submit a frame.
         Arguments:
             self: self
-            renderer: Rendering System that the graphics plugin uses to update all the uniform variables
+            renderer: Rendering System that the graphics plugin uses to update uniform variables
         Returns:
             None
         """
@@ -922,6 +922,8 @@ class ElementsXR_program:
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
         assert view_count_output == len(projection_layer_views)
+
+        #TODO update hands before rendering
 
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
