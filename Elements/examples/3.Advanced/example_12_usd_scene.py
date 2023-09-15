@@ -32,7 +32,7 @@ import os
 models = []
 newShaders = []
 
-USD_input_filepath = os.path.join(SCENES_DIR,'ExampleScene.usd')
+USD_input_filepath = str(SCENES_DIR / 'ExampleScene.usd')
 
 
 def SceneGUI(scene, initUpdate):

@@ -199,7 +199,7 @@ model_terrain_axes = terrain.getChild(0).trs # notice that terrain.getChild(0) =
 # OR 
 # model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
 
-texturePath = os.path.join(TEXTURE_DIR, "uoc_logo.png")
+texturePath = TEXTURE_DIR / "uoc_logo.png"
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 

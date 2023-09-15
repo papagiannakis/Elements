@@ -15,7 +15,7 @@ import Elements.utils.CreateScenes as CreateScenes
 from Elements.definitions import ATLAS_DIR
 from os import path
 
-file = open(path.join(ATLAS_DIR, 'opt.pickle'), 'rb')
+file = open( ATLAS_DIR / 'opt.pickle', 'rb')
 opt = pickle.load(file)
 file.close()
 # list of all the methods
