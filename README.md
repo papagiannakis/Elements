@@ -39,10 +39,6 @@ Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying
 * [docs](./docs): Files used to generate the [documentation](https://elementsproject.readthedocs.io/en/latest/index.html)
 * [Elements](./Elements/): Contains all the source code of Elements
   * [examples](./Elements/examples): Example files related to pyECSS
-    * [Introductory](./Elements/examples/Introductory): Suitable for introduction to Computer Graphics and Elements
-    * [Intermediate](./Elements/examples/Intermediate): Intermediate examples of textures (2D and Cubemaps), lights, and complete ECS
-    * [Advanced](./Elements/examples/Advanced): Advanced examples for USD scenes, obj-importer and more
-    * [Experimental](./Elements/examples/Experimental): Cutting-edge examples demonstrating advanced functionality
   * [features](./Elements/features): Features extending basic functionality of Elements
     * [BasicShapes](./Elements/features/BasicShapes): Quickly add basic shapes (cubes, spheres, cones) to the scene with helper functions
     * [GA](./Elements/features/GA): Use Geometric Algebra in the context of Elements
