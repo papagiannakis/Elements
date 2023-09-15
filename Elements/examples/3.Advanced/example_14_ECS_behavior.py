@@ -61,7 +61,7 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 # Load Object
 
-obj_to_import = os.path.join(MODEL_DIR,'cube/cube.obj')
+obj_to_import = MODEL_DIR / 'cube' / 'cube.obj'
 model_entity = GameObject.Spawn(scene, obj_to_import, "RemoveCube", rootEntity, util.scale(0.2))
 modelsList.append(model_entity)
 
