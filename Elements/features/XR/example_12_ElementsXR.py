@@ -115,8 +115,8 @@ trans_Right_ray = scene.world.addComponent(Right_Ray,BasicTransform(name="trans_
 mesh_Right_ray = scene.world.addComponent(Right_Ray, RenderMesh(name="mesh_Right_Ray"))
 
 #Cube
-minbox = -30
-maxbox = 30
+minbox = -40
+maxbox = 40
 vertexSkybox = np.array([
     [minbox, minbox, maxbox, 1.0],
     [minbox, maxbox, maxbox, 1.0],
@@ -129,12 +129,12 @@ vertexSkybox = np.array([
 ],dtype=np.float32)
 
 #index array for Skybox
-indexSkybox = np.array((1,0,3, 1,3,2, 
-                  2,3,7, 2,7,6,
-                  3,0,4, 3,4,7,
-                  6,5,1, 6,1,2,
-                  4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) 
+indexSkybox = np.array((3,0,1, 2,3,1, 
+                  7,3,2, 6,7,2,
+                  4,0,3, 7,4,3,
+                  1,5,6, 2,1,6,
+                  6,5,4, 7,6,4,
+                  0,4,5, 1,0,5), np.uint32) 
 
 #Simple Cube
 vertexCube = np.array([
@@ -341,6 +341,7 @@ while not exit_loop:
 
     if program.session_running:
         program.poll_actions() #poll only if session is focused
+
 
         program.render_frame(renderUpdate)
     else:

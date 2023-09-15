@@ -323,9 +323,9 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.extent.height)
 
         #TODO: Find out how to use OpenGL's culling methods correctly
-        #GL.glFrontFace(GL.GL_CW) 
-        #GL.glCullFace(GL.GL_BACK)
-        #GL.glEnable(GL.GL_CULL_FACE)
+        GL.glFrontFace(GL.GL_CCW) 
+        GL.glCullFace(GL.GL_BACK)
+        GL.glEnable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_DEPTH_TEST)
         
         color_texture = swapchain_image.image
