@@ -136,3 +136,8 @@ imgui.ini
 data/GeometricShapes
 *.off
 *.pt
+Elements/.vscode/settings.json
+.vscode/settings.json
+
+#dataset
+Elements/pyEEL/notebooks/SciCom/db
