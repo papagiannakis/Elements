@@ -142,9 +142,6 @@ class OpenGLPlugin(GraphicsPlugin):
     def instance_extensions(self) -> List[str]:
         return [xr.KHR_OPENGL_ENABLE_EXTENSION_NAME]
     
-    #def update_initial_position(self, eye: util.vec):
-    #    self.position = eye
-
     def set_Head(self,_Head: Entity):
         """
         Setter method for Head Entity
@@ -322,8 +319,7 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
 
-        #TODO: Find out how to use OpenGL's culling methods correctly
-        GL.glFrontFace(GL.GL_CCW) 
+        GL.glFrontFace(GL.GL_CCW)
         GL.glCullFace(GL.GL_BACK)
         GL.glEnable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_DEPTH_TEST)
@@ -385,7 +381,6 @@ class OpenGLPlugin(GraphicsPlugin):
         #    )
 
         GL.glBindFramebuffer(GL.GL_FRAMEBUFFER, 0)
-
 
     def window_should_close(self):
         return glfw.window_should_close(self.window)

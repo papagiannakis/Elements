@@ -10,7 +10,6 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from OpenGL.GL import GL_LINES
-from Elements.pyGLV.GL.GameObject import GameObject
 from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
 from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
@@ -340,8 +339,9 @@ while not exit_loop:
     exit_loop = program.poll_events()
 
     if program.session_running:
-        program.poll_actions() #poll only if session is focused
 
+        # Get new input from controllers
+        program.poll_actions()
 
         program.render_frame(renderUpdate)
     else:

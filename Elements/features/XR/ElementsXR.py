@@ -1,8 +1,5 @@
-from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem, Shader, ShaderGLDecorator
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform, RenderMesh, Component, ComponentDecorator
 import Elements.pyECSS.math_utilities as util
 from ctypes import Structure, c_int32, c_float, POINTER, byref, cast, c_void_p, pointer, Array
 from Elements.features.XR.PlatformPlugin import createPlatformPlugin
@@ -14,7 +11,6 @@ from typing import List, Optional, Dict
 import math
 import sys
 import enum
-import ctypes
 import numpy as np
 import xr
 import xr.raw_functions
