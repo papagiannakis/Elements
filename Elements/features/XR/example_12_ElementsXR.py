@@ -50,7 +50,7 @@ trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(rootEntity, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=13.0)))
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs= util.scale(0.1,0.1,0.1) @ util.translate(y=14.0)))
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 ground = scene.world.createEntity(Entity(name="ground"))
@@ -60,7 +60,7 @@ ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 
 Table = scene.world.createEntity(Entity(name="Table"))
 scene.world.addEntityChild(rootEntity, Table)
-trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.translate(y=10.0) @ util.scale(10.0,10.0,10.0)))
+trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.translate(y=1.1)))
 
 TableTop = scene.world.createEntity(Entity(name="TableTop"))
 scene.world.addEntityChild(Table,TableTop)
@@ -89,7 +89,7 @@ mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_Table
 
 Head = scene.world.createEntity(Entity(name="Head"))
 scene.world.addEntityChild(rootEntity,Head)
-trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-22.0,-40.0,-22.0)))
+trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-0.5,1.1,-1.7)))
 
 Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
 #scene.world.addEntityChild(Head,Left_Hand)
@@ -155,14 +155,14 @@ indexCube = np.array((1,0,3, 1,3,2,
                   5,4,0, 5,0,1), np.uint32)
 
 colorCube = np.array([
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0]
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0],
+    [1.0, 1.0, 1.0, 1.0]
 ], dtype=np.float32)
 
 VertexRay = np.array([[0.0,0.0,0.0,1.0],
@@ -170,8 +170,8 @@ VertexRay = np.array([[0.0,0.0,0.0,1.0],
 
 indexRay = np.array((0,1),dtype=np.uint32)
 
-ColorRay = np.array([[0.0,1.0,1.0,1.0],
-                     [0.0,1.0,1.0,1.0]],dtype=np.float32)
+ColorRay = np.array([[1.0,0.0,1.0,1.0],
+                     [1.0,0.0,1.0,1.0]],dtype=np.float32)
 
 VertexTerrain = np.array(vertexCube,copy=True) @ util.scale(6.0,0.05,6.0)
 
