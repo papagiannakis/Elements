@@ -279,7 +279,7 @@ exit_loop = False
 
 program = ElementsXR_program()
 program.set_Head(Head)
-#program.raycast = True
+program.raycast = True
 program.hands = [Left_Hand,Right_Hand]
 program.rays = [Left_Ray,Right_Ray]
 program.Initialize("Elements: ElementsXR Demo",initUpdate)

@@ -176,11 +176,10 @@ class ElementsXR_program:
         #Hand Entities
         self.hands = [Entity()] * 2
 
-        #Hand Entities
+        #Ray Entities
         self.rays = [Entity()] * 2
 
-        self.position = util.vec(0.0,0.0,0.0)
-        #self.raycast = False
+        self.raycast = False
 
     def __enter__(self):
         return self
@@ -919,7 +918,30 @@ class ElementsXR_program:
         assert view_count_output == len(self.swapchains)
         assert view_count_output == len(projection_layer_views)
 
-        #TODO update hands before rendering
+        #Update hands before rendering
+        for hand in Side:
+            space_location = xr.locate_space(
+                space=self.input.hand_space[hand],
+                base_space=self.app_space,
+                time=predicted_display_time,
+            )
+            loc_flags = space_location.location_flags
+
+
+            if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
+                    and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
+                print("Application has focus !!!")
+                scale = 0.1 * self.input.hand_scale[hand]
+                position = space_location.pose.position
+                orientation = space_location.pose.orientation
+
+                model = util.translate(position.x,
+                                       position.y,
+                                       position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                                          orientation.y,
+                                                                                          orientation.z,
+                                                                                          orientation.w)) @ util.scale(scale,scale,scale)
+                self.hands[hand].getChild(0).trs = model
 
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
@@ -933,7 +955,6 @@ class ElementsXR_program:
                 wait_info=xr.SwapchainImageWaitInfo(timeout=xr.INFINITE_DURATION),
             )
             view = projection_layer_views[i]
-
 
             assert view.type == xr.StructureType.COMPOSITION_LAYER_PROJECTION_VIEW
             view.pose = self.views[i].pose

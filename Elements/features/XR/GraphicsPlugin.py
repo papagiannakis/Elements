@@ -369,7 +369,6 @@ class OpenGLPlugin(GraphicsPlugin):
                 element.setUniformVariable(key='model', value=model, mat4=True)
                 element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
 
-
         #if mirror:
         #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)
         #    w, h = layer_view.sub_image.image_rect.extent.width, layer_view.sub_image.image_rect.extent.height
