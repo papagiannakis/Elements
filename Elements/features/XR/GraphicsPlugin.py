@@ -355,7 +355,7 @@ class OpenGLPlugin(GraphicsPlugin):
                                             position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
                                                                                                 orientation.y,
                                                                                                 orientation.z,
-                                                                                                orientation.w)) @ util.scale(1.5,1.5,1.5) 
+                                                                                                orientation.w)) @ util.scale(2.5,2.5,2.5) 
 
         #Update each shader's projection & view
         element: Entity

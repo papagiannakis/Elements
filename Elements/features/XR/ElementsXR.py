@@ -789,66 +789,62 @@ class ElementsXR_program:
         """
 
         #If an application does not have focus it cannot get input for the hands
-        if self.session_state != xr.SessionState.FOCUSED:
-            return
-        self.input.hand_active[:] = [xr.FALSE, xr.FALSE]
-        # Sync actions
-        active_action_set = xr.ActiveActionSet(self.input.action_set, xr.NULL_PATH)
-        xr.sync_actions(
-            self.session,
-            xr.ActionsSyncInfo(
-                count_active_action_sets=1,
-                active_action_sets=pointer(active_action_set)
-            ),
-        )
-        # Get pose and grab action state and start haptic vibrate when hand is 90% squeezed.
-        for hand in Side:
-            grab_value = xr.get_action_state_float(
+        if self.session_state == xr.SessionState.FOCUSED:
+
+            self.input.hand_active[:] = [xr.FALSE, xr.FALSE]
+            # Sync actions
+            active_action_set = xr.ActiveActionSet(self.input.action_set, xr.NULL_PATH)
+            xr.sync_actions(
                 self.session,
-                xr.ActionStateGetInfo(
-                    action=self.input.grab_action,
-                    subaction_path=self.input.hand_subaction_path[hand],
+                xr.ActionsSyncInfo(
+                    count_active_action_sets=1,
+                    active_action_sets=pointer(active_action_set)
                 ),
             )
-            if grab_value.is_active:
-                # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
-                self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state
-                if grab_value.current_state > 0.9:
-                    vibration = xr.HapticVibration(
-                        amplitude=0.5,
-                        duration=xr.MIN_HAPTIC_DURATION,
-                        frequency=xr.FREQUENCY_UNSPECIFIED,
-                    )
-                    xr.apply_haptic_feedback(
-                        session=self.session,
-                        haptic_action_info=xr.HapticActionInfo(
-                            action=self.input.vibrate_action,
-                            subaction_path=self.input.hand_subaction_path[hand],
-                        ),
-                        haptic_feedback=cast(byref(vibration), POINTER(xr.HapticBaseHeader)).contents,
-                    )
-            pose_state = xr.get_action_state_pose(
+            # Get pose and grab action state and start haptic vibrate when hand is 90% squeezed.
+            for hand in Side:
+                grab_value = xr.get_action_state_float(
+                    self.session,
+                    xr.ActionStateGetInfo(
+                        action=self.input.grab_action,
+                        subaction_path=self.input.hand_subaction_path[hand],
+                    ),
+                )
+                if grab_value.is_active:
+                    # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
+                    self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state
+                    if grab_value.current_state > 0.9:
+                        vibration = xr.HapticVibration(
+                            amplitude=0.5,
+                            duration=xr.MIN_HAPTIC_DURATION,
+                            frequency=xr.FREQUENCY_UNSPECIFIED,
+                        )
+                        xr.apply_haptic_feedback(
+                            session=self.session,
+                            haptic_action_info=xr.HapticActionInfo(
+                                action=self.input.vibrate_action,
+                                subaction_path=self.input.hand_subaction_path[hand],
+                            ),
+                            haptic_feedback=cast(byref(vibration), POINTER(xr.HapticBaseHeader)).contents,
+                        )
+                pose_state = xr.get_action_state_pose(
+                    session=self.session,
+                    get_info=xr.ActionStateGetInfo(
+                        action=self.input.pose_action,
+                        subaction_path=self.input.hand_subaction_path[hand],
+                    ),
+                )
+                self.input.hand_active[hand] = pose_state.is_active
+            # There are no subaction paths specified for the quit action, because we don't care which hand did it.
+            quit_value = xr.get_action_state_boolean(
                 session=self.session,
                 get_info=xr.ActionStateGetInfo(
-                    action=self.input.pose_action,
-                    subaction_path=self.input.hand_subaction_path[hand],
+                    action=self.input.quit_action,
+                    subaction_path=xr.NULL_PATH,
                 ),
             )
-            self.input.hand_active[hand] = pose_state.is_active
-        # There were no subaction paths specified for the quit action, because we don't care which hand did it.
-        quit_value = xr.get_action_state_boolean(
-            session=self.session,
-            get_info=xr.ActionStateGetInfo(
-                action=self.input.quit_action,
-                subaction_path=xr.NULL_PATH,
-            ),
-        )
-        if quit_value.is_active and quit_value.changed_since_last_sync and quit_value.current_state:
-            xr.request_exit_session(self.session)
-
-        ######################
-        print(self.input)
-        ######################
+            if quit_value.is_active and quit_value.changed_since_last_sync and quit_value.current_state:
+                xr.request_exit_session(self.session)
 
     def render_frame(self,renderer: RenderGLShaderSystem) -> None:
         """
@@ -930,17 +926,18 @@ class ElementsXR_program:
 
             if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
-                print("Application has focus !!!")
                 scale = 0.1 * self.input.hand_scale[hand]
                 position = space_location.pose.position
                 orientation = space_location.pose.orientation
 
-                model = util.translate(position.x,
-                                       position.y,
-                                       position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
-                                                                                          orientation.y,
-                                                                                          orientation.z,
-                                                                                          orientation.w)) @ util.scale(scale,scale,scale)
+                model_head = self.head.getChild(0).trs
+
+                model =util.translate(position.x,
+                                    position.y,
+                                    position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                                                                                        orientation.y,
+                                                                                                        orientation.z,
+                                                                                                        orientation.w)) @ util.scale(scale,scale,scale)
                 self.hands[hand].getChild(0).trs = model
 
         # Render view to the appropriate part of the swapchain image.

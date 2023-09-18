@@ -44,13 +44,13 @@ scene.world.addEntityChild(rootEntity, skybox)
 transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) 
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
-entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.translate(2.0,2.0,2.0)))
+#entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
+#scene.world.addEntityChild(rootEntity, entityCam1)
+#trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.translate(2.0,2.0,2.0)))
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(rootEntity, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs= util.scale(0.1,0.1,0.1) @ util.translate(y=14.0)))
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs= util.scale(0.1,0.1,0.1) @ util.translate(y=3.0)))
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 ground = scene.world.createEntity(Entity(name="ground"))
@@ -60,7 +60,7 @@ ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 
 Table = scene.world.createEntity(Entity(name="Table"))
 scene.world.addEntityChild(rootEntity, Table)
-trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.translate(y=1.1)))
+trans_TableTop = scene.world.addComponent(Table, BasicTransform(name="trans_Table", trs=util.identity()))
 
 TableTop = scene.world.createEntity(Entity(name="TableTop"))
 scene.world.addEntityChild(Table,TableTop)
@@ -89,18 +89,18 @@ mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_Table
 
 Head = scene.world.createEntity(Entity(name="Head"))
 scene.world.addEntityChild(rootEntity,Head)
-trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-0.5,1.1,-1.7)))
+trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-0.1,-4.0,-4.5)))
 
 Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
 #scene.world.addEntityChild(Head,Left_Hand)
 scene.world.addEntityChild(rootEntity,Left_Hand)
-trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(z=1.0)))
+trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(y=-1.0)))
 mesh_left_hand = scene.world.addComponent(Left_Hand, RenderMesh(name="mesh_Left_Hand"))
 
 Right_Hand = scene.world.createEntity(Entity(name="Right_hand"))
 #scene.world.addEntityChild(Head,Right_Hand)
 scene.world.addEntityChild(rootEntity,Right_Hand)
-trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(z=-1.0)))
+trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(y=-1.0)))
 mesh_right_hand = scene.world.addComponent(Right_Hand, RenderMesh(name="mesh_Right_Hand"))
 
 Left_Ray = scene.world.createEntity(Entity(name="Left_Ray"))
@@ -114,8 +114,8 @@ trans_Right_ray = scene.world.addComponent(Right_Ray,BasicTransform(name="trans_
 mesh_Right_ray = scene.world.addComponent(Right_Ray, RenderMesh(name="mesh_Right_Ray"))
 
 #Cube
-minbox = -40
-maxbox = 40
+minbox = -30
+maxbox = 30
 vertexSkybox = np.array([
     [minbox, minbox, maxbox, 1.0],
     [minbox, maxbox, maxbox, 1.0],
@@ -166,7 +166,7 @@ colorCube = np.array([
 ], dtype=np.float32)
 
 VertexRay = np.array([[0.0,0.0,0.0,1.0],
-                      [-10.0,0.0,0.0,1.0]],dtype=np.float32)
+                      [-30.0,0.0,0.0,1.0]],dtype=np.float32)
 
 indexRay = np.array((0,1),dtype=np.uint32)
 
