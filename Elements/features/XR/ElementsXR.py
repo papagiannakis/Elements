@@ -180,6 +180,7 @@ class ElementsXR_program:
         self.rays = [Entity()] * 2
 
         self.raycast = False
+        self.hand_dist = 0.2
 
     def __enter__(self):
         return self
@@ -788,7 +789,7 @@ class ElementsXR_program:
             None
         """
 
-        #If an application does not have focus it cannot get input for the hands
+        #If an application does not have focus it cannot get input from the controllers
         if self.session_state == xr.SessionState.FOCUSED:
 
             self.input.hand_active[:] = [xr.FALSE, xr.FALSE]
@@ -811,11 +812,12 @@ class ElementsXR_program:
                     ),
                 )
                 if grab_value.is_active:
+                    print("Hand ",hand," grab is active")
                     # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
                     self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state
                     if grab_value.current_state > 0.9:
                         vibration = xr.HapticVibration(
-                            amplitude=0.5,
+                            amplitude=0.2,
                             duration=xr.MIN_HAPTIC_DURATION,
                             frequency=xr.FREQUENCY_UNSPECIFIED,
                         )
@@ -835,7 +837,7 @@ class ElementsXR_program:
                     ),
                 )
                 self.input.hand_active[hand] = pose_state.is_active
-            # There are no subaction paths specified for the quit action, because we don't care which hand did it.
+            # There are no subaction paths specified for quit action, because we don't care which hand did it.
             quit_value = xr.get_action_state_boolean(
                 session=self.session,
                 get_info=xr.ActionStateGetInfo(
@@ -930,14 +932,15 @@ class ElementsXR_program:
                 position = space_location.pose.position
                 orientation = space_location.pose.orientation
 
-                model_head = self.head.getChild(0).trs
-
-                model =util.translate(position.x,
+                between_hands = self.hand_dist
+                if not hand: #Left hand goes a bit to the left, while the right hand goes a bit to the right.
+                    between_hands = -between_hands
+                model = util.translate(position.x+0.8+between_hands,
                                     position.y,
-                                    position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
+                                    position.z+1.5) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
                                                                                                         orientation.y,
                                                                                                         orientation.z,
-                                                                                                        orientation.w)) @ util.scale(scale,scale,scale)
+                                                                                                        orientation.w))) @ util.scale(scale,scale,scale)
                 self.hands[hand].getChild(0).trs = model
 
         # Render view to the appropriate part of the swapchain image.

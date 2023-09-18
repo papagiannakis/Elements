@@ -94,13 +94,13 @@ trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=
 Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
 #scene.world.addEntityChild(Head,Left_Hand)
 scene.world.addEntityChild(rootEntity,Left_Hand)
-trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(y=-1.0)))
+trans_left_hand = scene.world.addComponent(Left_Hand,BasicTransform(name="trans_Left_Hand",trs=util.translate(y=-10.0)))
 mesh_left_hand = scene.world.addComponent(Left_Hand, RenderMesh(name="mesh_Left_Hand"))
 
 Right_Hand = scene.world.createEntity(Entity(name="Right_hand"))
 #scene.world.addEntityChild(Head,Right_Hand)
 scene.world.addEntityChild(rootEntity,Right_Hand)
-trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(y=-1.0)))
+trans_right_hand = scene.world.addComponent(Right_Hand,BasicTransform(name="trans_Right_Hand",trs=util.translate(y=-10.0)))
 mesh_right_hand = scene.world.addComponent(Right_Hand, RenderMesh(name="mesh_Right_Hand"))
 
 Left_Ray = scene.world.createEntity(Entity(name="Left_Ray"))
@@ -166,7 +166,7 @@ colorCube = np.array([
 ], dtype=np.float32)
 
 VertexRay = np.array([[0.0,0.0,0.0,1.0],
-                      [-30.0,0.0,0.0,1.0]],dtype=np.float32)
+                      [0.0,0.0,-30.0,1.0]],dtype=np.float32)
 
 indexRay = np.array((0,1),dtype=np.uint32)
 
@@ -183,7 +183,7 @@ verticesTableTop, indicesTableTop, _ = norm.generateUniqueVertices(VertexTableTo
 verticesTableLeg, indicesTableLeg, _ = norm.generateUniqueVertices(VertexTableLeg,indexCube)
 vertexSkybox, indexSkybox, _ = norm.generateUniqueVertices(vertexSkybox,indexSkybox)
 vertexground, indexground, _ = norm.generateUniqueVertices(VertexTerrain,indexCube)
-vertexHand, indexHand,ColorHand ,normalsHand = norm.generateFlatNormalsMesh(vertexCube,indexCube,colorCube)
+vertexHand, indexHand,ColorHand ,normalsHand = norm.generateFlatNormalsMesh(vertexCube @ util.scale(3.0,3.0,3.0),indexCube,colorCube)
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
