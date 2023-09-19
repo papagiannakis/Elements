@@ -332,14 +332,15 @@ class OpenGLPlugin(GraphicsPlugin):
         GL.glClearColor(*self.background_clear_color)
         GL.glClearDepth(1.0)
         GL.glClear(GL.GL_COLOR_BUFFER_BIT | GL.GL_DEPTH_BUFFER_BIT | GL.GL_STENCIL_BUFFER_BIT)
-
-        #Traverse Vertex Arrays
+        
         scene.world.traverse_visit(renderUpdate,scene.world.root)
 
         model_head = self.head.getChild(0).l2world
         position = layer_view.pose.position
         orientation = layer_view.pose.orientation
         fov = layer_view.fov
+        translation = model_head @ util.translate(position.x,position.y,position.z)
+        rotation = create_xr_quaternion(util.quaternion(orientation.x,orientation.y,orientation.z,orientation.w))
 
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
         #aspect_ratio = layer_view.sub_image.image_rect.extent.height / layer_view.sub_image.image_rect.extent.width
@@ -349,13 +350,9 @@ class OpenGLPlugin(GraphicsPlugin):
                                     math.tan(fov.angle_right),
                                     math.tan(fov.angle_up),
                                     math.tan(fov.angle_down),0.01,120.0)
-        
-        view = model_head @ util.translate(position.x,
-                                            position.y,
-                                            position.z) @ create_xr_quaternion(util.quaternion(orientation.x,
-                                                                                                orientation.y,
-                                                                                                orientation.z,
-                                                                                                orientation.w)) @ util.scale(2.5,2.5,2.5)
+
+        #view = translation @ rotation @ util.scale(2.5,2.5,2.5) 
+        view = rotation @ translation @ util.scale(2.5,2.5,2.5)
 
         #Update each shader's projection & view
         element: Entity
