@@ -1,0 +1,87 @@
+from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyECSS.Entity import Entity
+from Elements.pyECSS.Component import BasicTransform
+import Elements.pyECSS.math_utilities as util
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyGLV.GL.VertexArray import VertexArray
+import sdl2 as sdl
+from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
+from ctypes import c_int, byref
+from OpenGL.GL import GL_LINES
+from math import sqrt, pow
+import numpy as np
+import Elements.utils.normals as norm
+import imgui
+import enum
+from Elements.features.Gizmos.Gizmos import Gizmos
+
+class Gizmos_XR(Gizmos):
+
+    def __init__(self, rootEntity: Entity):
+        super().__init__(rootEntity)
+
+    def update_projection(self, Proj):
+        """
+        Update window's projection and calculate its inverse, if needed
+        Arguments:
+            self: self
+            Proj: Projection matrix
+        Returns:
+            None
+        """
+        raise NotImplementedError("Projection is only used for Gizmos on a window")
+    
+    def update_view(self, View):
+        """
+        Update window's View and calculate its inverse, if needed
+        Arguments:
+            self: self
+            View: View matrix
+            Returns:
+                None
+        """
+        raise NotImplementedError("View is only used for Gizmos on a window")
+
+    def __update_positions(self):
+        """
+        Uniform variables used for Model/View/Projection are updated inside Render View at graphics plugin 
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        raise NotImplementedError("Uniform Variables are updated inside Render View of the graphics Plugin in Virtual Reality")
+    
+    def update_ray_start(self):
+        """
+        Update mouse position and mouse state. Additionally Raycast or try to pick an Entity
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        raise NotImplementedError("Use a different prototype for this method")
+    
+    def get_Event(self):
+        """
+        When the user presses the left controller trigger do one of the following
+            First time: Change target and use Translate mode
+            Second time: use Scale mode
+            Third time: use Rotation mode
+            Fourth time: go back to first
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        pass
+
+    def update_ray_start(self,controllers_input):
+        """
+        Update the ray's starting point based in the controllers' model and mesh
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        pass
