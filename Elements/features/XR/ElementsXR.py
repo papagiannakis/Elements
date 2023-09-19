@@ -1,6 +1,7 @@
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem, Shader, ShaderGLDecorator
 from Elements.pyECSS.Entity import Entity
 import Elements.pyECSS.math_utilities as util
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from ctypes import Structure, c_int32, c_float, POINTER, byref, cast, c_void_p, pointer, Array
 from Elements.features.XR.PlatformPlugin import createPlatformPlugin
 from Elements.features.XR.GraphicsPlugin import OpenGLPlugin, create_xr_quaternion
@@ -48,6 +49,11 @@ class InputState(Structure):
             ("hand_scale", c_float * len(Side)),
             ("hand_active", xr.Bool32 * len(Side)),
         ]
+
+class RayDirection:
+    def __init__(self):
+        self.origin = util.vec(0.0,0.0,0.0)
+        self.direction = util.vec(0.0,0.0,0.0)
 
 def get_xr_reference_space_create_info(reference_space_type_string: str) -> xr.ReferenceSpaceCreateInfo:
     create_info = xr.ReferenceSpaceCreateInfo(
@@ -848,6 +854,59 @@ class ElementsXR_program:
             if quit_value.is_active and quit_value.changed_since_last_sync and quit_value.current_state:
                 xr.request_exit_session(self.session)
 
+    def getRays(self):
+        """
+        Returns ray's starting point and Direction from both controllers, if raycast is true
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        if self.raycast==False:
+            raise("Raycast is not Enabled")
+
+        left_ray_mesh = np.array(self.rays[0].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
+        right_ray_mesh = np.array(self.rays[1].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
+
+        left_ray_transform = self.rays[0].getChildByType(BasicTransform.getClassName())
+        right_ray_transform = self.rays[1].getChildByType(BasicTransform.getClassName())
+
+        left_ray_mesh = left_ray_mesh @ left_ray_transform.l2world
+        right_ray_mesh = right_ray_mesh @ right_ray_transform.l2world
+
+        #for i in range(len(left_ray_mesh)):
+        #    left_ray_mesh[i] = left_ray_mesh[i]/left_ray_mesh[i][3]
+
+        #for i in range(len(right_ray_mesh)):
+        #    right_ray_mesh[i] = right_ray_mesh[i]/right_ray_mesh[i][3]
+
+        left_ray_mesh = left_ray_mesh/left_ray_mesh[3]
+        right_ray_mesh = right_ray_mesh/right_ray_mesh[3]
+        
+        ray_start_left = util.vec(left_ray_mesh[0][0],left_ray_mesh[0][1],left_ray_mesh[0][2])
+        ray_end_left = util.vec(left_ray_mesh[1][0],left_ray_mesh[1][1],left_ray_mesh[1][2])
+
+        ray_start_right = util.vec(right_ray_mesh[0][0],right_ray_mesh[0][1],right_ray_mesh[0][2])
+        ray_end_right = util.vec(right_ray_mesh[1][0],right_ray_mesh[1][1],right_ray_mesh[1][2])
+
+        #Note: this array get an extra position when used on the Gizmos. Same goes for ray origins
+        ray_direction_left = util.normalise(util.vec(ray_end_left[0] - ray_start_left[0],
+                                                    ray_end_left[1] - ray_start_left[1],
+                                                    ray_end_left[2] - ray_start_left[2]))
+        
+        ray_direction_right = util.normalise(util.vec(ray_end_right[0] - ray_start_right[0],
+                                                    ray_end_right[1] - ray_start_right[1],
+                                                    ray_end_right[2] - ray_start_right[2]))
+        
+        rays = [RayDirection()] * 2
+
+        rays[0].origin = ray_start_left
+        rays[0].direction = ray_direction_left
+        rays[1].origin = ray_start_right
+        rays[1].direction = ray_direction_right
+        
+        return rays
+            
     def render_frame(self,renderer: RenderGLShaderSystem) -> None:
         """
         Create and submit a frame.
