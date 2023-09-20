@@ -1,50 +1,43 @@
-"""
-PointCloudTomesh using Delaunay triangulation
-    
-@author Nikos Iliakis csd4375
-"""
-
+import open3d as o3d
 import numpy as np
-from scipy.spatial import Delaunay
 
-def generateTrianglesFromPointCloud(point_list):
-    # Perform Delaunay triangulation to create a mesh from the point cloud
-    triangulation = Delaunay(point_list[:, :3])
-
-    # Get the tetrahedra from the triangulation
-    tetrahedra = point_list[triangulation.simplices]
-
-    # Extract the surface triangles from the tetrahedra
-    surface_triangles = []
-    surface_triangle_indices = []  # To keep track of indices
-
-    for i, tetra in enumerate(tetrahedra):
-        for j in range(4):
-            # Create triangles by omitting one vertex at a time
-            triangle = np.delete(tetra, j, axis=0)
-            # Check if the triangle is not already in the list
-            if not any(np.all(np.sort(triangle, axis=1) == np.sort(tri, axis=1)) for tri in surface_triangles):
-                surface_triangles.append(triangle)
-                surface_triangle_indices.append(np.delete(triangulation.simplices[i], j, axis=0))
-
-    # Convert the lists to NumPy arrays
-    surface_triangles = np.array(surface_triangles)
-    surface_triangle_indices = np.array(surface_triangle_indices)
+def generateTrianglesFromCustomList(point_list):
+    # Create a point cloud from the vertices
+    point_cloud = o3d.geometry.PointCloud()    
     
-    # print(surface_triangles)
-    # print(surface_triangle_indices)
+    point_list = [row[:3] for row in point_list]
+    point_cloud.points = o3d.utility.Vector3dVector(point_list)
     
-    return point_list, surface_triangle_indices
+    # Estimate normals for the point cloud
+    point_cloud.estimate_normals()
+    
+    # Generate a mesh using Delaunay triangulation
+    mesh = o3d.geometry.TriangleMesh.create_from_point_cloud_ball_pivoting(
+        point_cloud,
+        o3d.utility.DoubleVector([100, 100 * 2])
+    )
+    
+    # print(np.asarray(mesh.triangles))
+    # print(np.asarray(mesh.vertices))
+    return np.asarray(mesh.vertices), np.asarray(mesh.triangles)
 
-#hexagonical prism example
-vertices = np.array([
-    [-0.5, -0.5, 0.5, 1.0],   # Bottom left-front corner
-    [0.5, -0.5, 0.5, 1.0],    # Bottom right-front corner
-    [0.25, 0.25, 0.5, 1.0],   # Bottom middle-front
-    [-0.5, -0.5, -0.5, 1.0],  # Bottom left-back corner
-    [0.5, -0.5, -0.5, 1.0],   # Bottom right-back corner
-    [0.25, 0.25, -0.5, 1.0],  # Bottom middle-back
-    [0.0, 0.0, 0.75, 1.0],    # Top center
-    [0.0, 0.0, -0.75, 1.0],   # Bottom center
-], dtype=np.float32)
-generateTrianglesFromPointCloud(vertices)
+def generateBunnyExample():
+    bunny = o3d.data.BunnyMesh()
+    mesh  = o3d.io.read_triangle_mesh(bunny.path)
+    
+    # print(np.asarray(mesh.triangles))
+    # print(np.asarray(mesh.vertices))
+    return np.asarray(mesh.vertices), np.asarray(mesh.triangles)
+
+    
+vertexCube = np.array([
+    [-0.5, -0.5, 0.5, 1.0],
+    [-0.5, 0.5, 0.5, 1.0],
+    [0.5, 0.5, 0.5, 1.0],
+    [0.5, -0.5, 0.5, 1.0], 
+    [-0.5, -0.5, -0.5, 1.0], 
+    [-0.5, 0.5, -0.5, 1.0], 
+    [0.5, 0.5, -0.5, 1.0], 
+    [0.5, -0.5, -0.5, 1.0]
+],dtype=np.float32) 
+generateTrianglesFromCustomList(vertexCube)
