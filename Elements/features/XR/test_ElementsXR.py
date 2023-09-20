@@ -24,7 +24,7 @@ class TestElementsXR(unittest.TestCase):
 
         self.Head = self.scene.world.createEntity(Entity(name="Head"))
         self.scene.world.addEntityChild(self.rootEntity,self.Head)
-        trans_head = self.scene.world.addComponent(self.Head,BasicTransform(name="trans_head",trs=util.translate(-22.0,-40.0,-22.0)))
+        self.trans_head = self.scene.world.addComponent(self.Head,BasicTransform(name="trans_head",trs=util.translate(-22.0,-40.0,-22.0)))
 
         # Systems
         self.transUpdate = self.scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))

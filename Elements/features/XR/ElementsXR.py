@@ -788,7 +788,7 @@ class ElementsXR_program:
 
     def poll_actions(self):
         """
-        Update poses and all other available actions
+        Update poses and all other available controller actions
         Arguments: 
             self: self
         Returns:
@@ -818,12 +818,11 @@ class ElementsXR_program:
                     ),
                 )
                 if grab_value.is_active:
-                    print("Hand ",hand," grab is active")
                     # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
-                    self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state
+                    self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state #1.0 when trigger is fully pressed
                     if grab_value.current_state > 0.9:
                         vibration = xr.HapticVibration(
-                            amplitude=0.2,
+                            amplitude=0.1,
                             duration=xr.MIN_HAPTIC_DURATION,
                             frequency=xr.FREQUENCY_UNSPECIFIED,
                         )
@@ -995,7 +994,7 @@ class ElementsXR_program:
                 if not hand: #Left hand goes a bit to the left, while the right hand goes a bit to the right.
                     between_hands = -between_hands
                 model = util.translate(position.x+0.8+between_hands,
-                                    position.y,
+                                    position.y-0.5,
                                     position.z+1.5) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
                                                                                                         orientation.y,
                                                                                                         orientation.z,
