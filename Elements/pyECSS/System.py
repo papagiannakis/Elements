@@ -108,28 +108,7 @@ class System(ABC):
         """
         pass
     
-    #MYCHANGE
-    def test(self, comp: Elements.pyECSS.Component):
-        pass
     
-    #MYCHANGE
-    def apply2BoundingBox(self, aabb_comp: Elements.pyECSS.Component.AABoundingBox, event = None):
-        """
-        method to be subclassed for  behavioral or logic computation 
-        when visits Components. 
-        """
-        
-        pass
-    
-    #MYCHANGE
-    def applyBB2RenderMesh(self, renderMesh: Elements.pyECSS.Component.RenderMesh, event = None):
-        """
-        method to be subclassed for  behavioral or logic computation 
-        when visits Components. 
-        
-        """
-        pass
-        
     def apply2RenderMesh(self, renderMesh: Elements.pyECSS.Component.RenderMesh, event = None):
         """
         method to be subclassed for  behavioral or logic computation 
@@ -147,7 +126,7 @@ class System(ABC):
         """
         pass
     
-    def apply2GATransform(self, basicTransform: Elements.pyECSS.GA.GA_Component.GATransform , event = None):
+    def apply2GATransform(self, basicTransform: Elements.features.GA.GA_Component.GATransform , event = None):
         """
         method to be subclassed for  behavioral or logic computation 
         when visits Components. 
@@ -280,6 +259,7 @@ class TransformSystem(System):
                 l2worldTRS = l2worldTRS @ parentBasicTrans.trs
                 
         return l2worldTRS
+        
     def apply2BasicTransform(self, basicTransform: Elements.pyECSS.Component.BasicTransform):
         """
         method to be subclassed for  behavioral or logic computation 
@@ -288,7 +268,7 @@ class TransformSystem(System):
         In this case calculate the l2w BasicTransform component matrix
         
         """
-
+        
         #check if the visitor visits a node that it should not
         if (isinstance(basicTransform,Elements.pyECSS.Component.BasicTransform)) == False:
             return #in Python due to duck typing we need to check this!

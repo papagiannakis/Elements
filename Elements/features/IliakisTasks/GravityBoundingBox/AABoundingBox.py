@@ -1,22 +1,24 @@
-import Elements
-import numpy as np
+"""
+Axis Alinged bounding box class
+    
+@author Nikos Iliakis csd4375
+"""
 from Elements.pyECSS.Component import Component
-from Elements.pyECSS.System import System
+from GravityCollisonSystem import GravityCollisionSystem
 
+"""Axis Aligned bounding boxes Class"""
 class AABoundingBox(Component):
-    '''Axis Aligned bounding boxes'''
     def __init__(self, name=None, type=None, id=None, min_points=None, max_points=None, floor=None, density=0.01, hasGravity=True):
-        """Just testing"""
         super().__init__(name, type, id)
         
-        self._max_points = max_points
+        self._max_points = max_points   
         self._min_points = min_points
         self._trans_max_points = max_points
         self._trans_min_points = min_points
         self._floor = floor
         self._density = density
         self._hasGravity = hasGravity
-        self._collision = False
+        self._isColliding = False
 
     @property
     def max_points(self):
@@ -59,12 +61,12 @@ class AABoundingBox(Component):
         self._floor = floor
         
     @property
-    def collision(self):
-        return self._collision
+    def isColliding(self):
+        return self._isColliding
     
-    @collision.setter
-    def collision(self, collision):
-        self._collision = collision
+    @isColliding.setter
+    def isColliding(self, isColliding):
+        self._isColliding = isColliding
     
     @property
     def mass(self):
@@ -106,13 +108,17 @@ class AABoundingBox(Component):
         "Debug Only"
         pass
     
-    def accept(self, system: System, event = None):
+    def accept(self, system: GravityCollisionSystem, event = None):
         """
         Accepts a class object to operate on the Component, based on the Visitor pattern.
 
         :param system: [a System object]
         :type system: [System]
         """
-        system.apply2BoundingBox(self)
         
+        # We need this to check if the current system in accept is the GravityCollisionSystem
+        # Because if it isnt it wont have apply2BoundingBox function and it will throw an error
+        if hasattr(system, 'apply2BoundingBox'):
+            # Call the method if it exists
+            system.apply2BoundingBox(self)
     
