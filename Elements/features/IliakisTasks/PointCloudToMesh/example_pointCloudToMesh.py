@@ -18,7 +18,8 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.utils.terrain import generateTerrain
 from OpenGL.GL import GL_POINTS
 
-from PointCloudToMesh import generateTrianglesFromPointCloud
+from PointCloudToMesh import generateTrianglesFromCustomList
+from PointCloudToMesh import generateBunnyExample
 
 scene = Scene()    
 
@@ -38,65 +39,35 @@ transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "Transform
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
-# cube with hole 
-# vertices = np.array([
-#     [-0.5, -0.5, 0.5, 1.0],  # Front bottom-left
-#     [-0.5, 0.5, 0.5, 1.0],   # Front top-left
-#     [0.5, 0.5, 0.5, 1.0],    # Front top-right
-#     [0.5, -0.5, 0.5, 1.0],   # Front bottom-right
-#     [-0.25, -0.25, -0.5, 1.0],  # Back bottom-left
-#     [-0.25, 0.25, -0.5, 1.0],   # Back top-left
-#     [0.25, 0.25, -0.5, 1.0],    # Back top-right
-#     [0.25, -0.25, -0.5, 1.0],   # Back bottom-right
-# ], dtype=np.float32)
-
 #hexagonical prism
-# vertices = np.array([
-#     [-0.5, -0.5, 0.5, 1.0],   # Bottom left-front corner
-#     [0.5, -0.5, 0.5, 1.0],    # Bottom right-front corner
-#     [0.25, 0.25, 0.5, 1.0],   # Bottom middle-front
-#     [-0.5, -0.5, -0.5, 1.0],  # Bottom left-back corner
-#     [0.5, -0.5, -0.5, 1.0],   # Bottom right-back corner
-#     [0.25, 0.25, -0.5, 1.0],  # Bottom middle-back
-#     [0.0, 0.0, 0.75, 1.0],    # Top center
-#     [0.0, 0.0, -0.75, 1.0],   # Bottom center
-# ], dtype=np.float32)
-
-#tree with branches
 vertices = np.array([
-    [0.0, 0.0, 1.0, 1.0],      # Tree trunk base
-    [0.0, 0.0, 0.5, 1.0],      # Middle of the trunk
-    [0.0, 0.0, 0.2, 1.0],      # Top of the trunk
-    [0.0, 0.0, -0.2, 1.0],     # Root of the tree
-    [0.0, 0.4, 0.5, 1.0],      # Branch 1
-    [0.0, -0.4, 0.5, 1.0],     # Branch 2
-    [0.4, 0.0, 0.5, 1.0],      # Branch 3
-    [-0.4, 0.0, 0.5, 1.0],     # Branch 4
+    [-0.5, -0.5, 0.5, 1.0],   # Bottom left-front corner
+    [0.5, -0.5, 0.5, 1.0],    # Bottom right-front corner
+    [0.25, 0.25, 0.5, 1.0],   # Bottom middle-front
+    [-0.5, -0.5, -0.5, 1.0],  # Bottom left-back corner
+    [0.5, -0.5, -0.5, 1.0],   # Bottom right-back corner
+    [0.25, 0.25, -0.5, 1.0],  # Bottom middle-back
+    [0.0, 0.0, 0.75, 1.0],    # Top center
+    [0.0, 0.0, -0.75, 1.0],   # Bottom center
 ], dtype=np.float32)
 
-# Pyramid
+#tree with branches
 # vertices = np.array([
-#     [-0.5, -0.5, 0.5, 1.0],  # Base vertex 1
-#     [-0.5, 0.5, 0.5, 1.0],   # Base vertex 2
-#     [0.5, 0.5, 0.5, 1.0],    # Base vertex 3
-#     [0.5, -0.5, 0.5, 1.0],   # Base vertex 4
-#     [0.0, 0.0, -0.5, 1.0],   # Apex of the pyramid
-# ], dtype=np.float32)
-
-# Spherical blob
-# vertices = np.array([
-#     [0.0, 0.0, 0.0, 1.0],      # Center of the blob
-#     [0.5, 0.0, 0.0, 1.0],      # Right
-#     [-0.5, 0.0, 0.0, 1.0],     # Left
-#     [0.0, 0.5, 0.0, 1.0],      # Top
-#     [0.0, -0.5, 0.0, 1.0],     # Bottom
-#     [0.0, 0.0, 0.5, 1.0],      # Front
-#     [0.0, 0.0, -0.5, 1.0],     # Back
-#     [0.25, 0.25, 0.25, 1.0],   # Top-right-front
+#     [0.0, 0.0, 1.0, 1.0],      # Tree trunk base
+#     [0.0, 0.0, 0.5, 1.0],      # Middle of the trunk
+#     [0.0, 0.0, 0.2, 1.0],      # Top of the trunk
+#     [0.0, 0.0, -0.2, 1.0],     # Root of the tree
+#     [0.0, 0.4, 0.5, 1.0],      # Branch 1
+#     [0.0, -0.4, 0.5, 1.0],     # Branch 2
+#     [0.4, 0.0, 0.5, 1.0],      # Branch 3
+#     [-0.4, 0.0, 0.5, 1.0],     # Branch 4
 # ], dtype=np.float32)
 
 
-mesh_vertices, mesh_indices = generateTrianglesFromPointCloud(vertices)
+
+#mesh_vertices, mesh_indices = generateTrianglesFromCustomList(vertices)
+mesh_vertices, mesh_indices = generateBunnyExample()
+
 mesh_colors = np.random.rand(len(mesh_vertices), 3)
 
 # attach object
