@@ -1,13 +1,13 @@
 import unittest
-from Elements.features.XR.ElementsXR import options, Blend_Mode, View_Configuration, Form_factor
+from Elements.features.XR.ElementsXR import options, Blend_Mode
 import xr
 from Elements.pyGLV.GL.Scene import Scene
 import time
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
 from Elements.pyECSS.System import  TransformSystem
-from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.Component import BasicTransform
 from Elements.features.XR.ElementsXR import ElementsXR_program
 
 class TestElementsXR(unittest.TestCase):
@@ -22,19 +22,11 @@ class TestElementsXR(unittest.TestCase):
 
         self.rootEntity = self.scene.world.createEntity(Entity(name="RooT"))
 
-        self.Head = self.scene.world.createEntity(Entity(name="Head"))
-        self.scene.world.addEntityChild(self.rootEntity,self.Head)
-        self.trans_head = self.scene.world.addComponent(self.Head,BasicTransform(name="trans_head",trs=util.translate(-22.0,-40.0,-22.0)))
-
         # Systems
         self.transUpdate = self.scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
         self.renderUpdate = self.scene.world.createSystem(RenderGLShaderSystem())
         self.initUpdate = self.scene.world.createSystem(InitGLShaderSystem())
 
-        self.exit_loop = False
-
-        self.program = ElementsXR_program()
-        self.program.set_Head(self.Head)
 
     def test_optionsXR(self):
         """
@@ -61,11 +53,20 @@ class TestElementsXR(unittest.TestCase):
 
     def test_empty_scene_XR(self):
         
+        Head = self.scene.world.createEntity(Entity(name="Head"))
+        self.scene.world.addEntityChild(self.rootEntity,Head)
+        trans_head = self.scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.identity()))
+
+        exit_loop = False
+
+        program = ElementsXR_program()
+        program.set_Head(Head)
+
         self.program.Initialize("ElementsXR Unit-test",self.initUpdate)
 
-        while not self.exit_loop:
-            if self.program.session_running:
-                self.program.poll_actions()
-                self.program.render_frame(self.renderUpdate)
+        while not exit_loop:
+            if program.session_running:
+                program.poll_actions()
+                program.render_frame(self.renderUpdate)
             else:
                 time.sleep(0.250)
