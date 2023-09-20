@@ -1,3 +1,10 @@
+"""
+A Gravity Collision System that applies the force of gravity on entities, 
+that have a RenderMesh a GravityCollisionSystem and a Transform
+    
+@author Nikos Iliakis csd4375
+"""
+
 import Elements
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.System import System
@@ -23,10 +30,10 @@ class GravityCollisionSystem(System):
     def apply2BoundingBox(self, aabb_comp: Elements.pyECSS.Component):
         # Check if aa bound box is colliding with floor if so then set collision bool to true else false
         if(aabb_comp.floor != None):
-            aabb_comp.collision = self.collision_with_other_aabb(aabb_comp=aabb_comp, other_aabb_comp=aabb_comp.floor)
+            aabb_comp.isColliding = self.collision_with_other_aabb(aabb_comp=aabb_comp, other_aabb_comp=aabb_comp.floor)
         
         # Checking if the aa bound box is not of the floors and if its not colliding with anything
-        if(aabb_comp.hasGravity and aabb_comp.collision == False):
+        if(aabb_comp.hasGravity and aabb_comp.isColliding == False):
             self.apply_force_of_gravity(aabb_comp, 9.8)
         
         # Updating translated bounding_box_points

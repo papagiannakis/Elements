@@ -1,15 +1,18 @@
+"""
+Generating floor with existing function generateTerrain but adding bounding box to test gravity Collision
+    
+@author Nikos Iliakis csd4375
+"""
 from __future__         import annotations
 import Elements.pyECSS.math_utilities as util
 import numpy as np
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform,  RenderMesh
 
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
+from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 from Elements.utils.terrain import generateTerrain
-from Elements.utils.normals import Convert
 from OpenGL.GL import GL_LINES
 from AABoundingBox import AABoundingBox
 
@@ -22,13 +25,15 @@ def find_min_axis(vertices, axis=0):
 def find_max_axis(vertices, axis=0):
     return np.max(vertices[:, axis])
 
+# Creating a list that has the minimum points of a bounding box
 def create_min_points_list(vertices):
     return [find_min_axis(vertices, axis=0), find_min_axis(vertices, axis=1),find_min_axis(vertices, axis=2), 1]
 
+# Creating a list that has the maximum points of a bounding box
 def create_max_points_list(vertices):
     return [find_max_axis(vertices, axis=0), find_max_axis(vertices, axis=1), find_max_axis(vertices, axis=2), 1]
 
-
+# Generates a floor with a bounding box
 def generate_floor_with_bb(rootEntity, size=6,N=300,uniform_color = [0.4,0.4,0.4,0.5]):
     scene = Scene()
     # ---------------------------
@@ -44,9 +49,9 @@ def generate_floor_with_bb(rootEntity, size=6,N=300,uniform_color = [0.4,0.4,0.4
     floor_mesh.vertex_attributes.append(vertexTerrain)
     floor_mesh.vertex_attributes.append(colorTerrain)
     floor_mesh.vertex_index.append(indexTerrain)
-    floor_mesh._AddedBB = True #IMPORTANT !
-    
+        
     vertices = floor_mesh.vertex_attributes[0]
+    # create the bounding box of the floor
     floor_bb = scene.world.addComponent(floor, AABoundingBox(name="floor_bb", min_points=create_min_points_list(vertices), max_points=create_max_points_list(vertices)))
     
         

@@ -1,14 +1,8 @@
 """
-BasicWindow example, showcasing the pyglGA SDK ECSS
+Example using bounding boxes components and a gravity collision system
     
-glGA SDK v2021.0.5 ECSS (Entity Component System in a Scenegraph)
-@Coopyright 2020-2021 George Papagiannakis
-    
-The classes below are all related to the GUI and Display of 3D 
-content using the OpenGL, GLSL and SDL2, ImGUI APIs, on top of the
-Elements ECSS package
+@author Nikos Iliakis csd4375
 """
-
 from __future__         import annotations
 import numpy as np
 
@@ -26,10 +20,8 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 from Elements.utils.normals import Convert
-from OpenGL.GL import GL_LINES
 
 from AABoundingBox import AABoundingBox
-from AABoundingBoxSystem import AABoundingBoxSystem
 from GravityCollisonSystem import GravityCollisionSystem
 from floor import generate_floor_with_bb
 from floor import create_max_points_list
@@ -117,7 +109,7 @@ def CubeSpawn(cubename = "Cube"):
     cube.SetVertexAttributes(vertices, colors, indices, normals);
     
     return cube;
-
+    
 def main(imguiFlag = False):
     ##########################################################
     # Instantiate a simple complete ECSS with Entities, 
@@ -130,7 +122,6 @@ def main(imguiFlag = False):
     scene = Scene()    
 
     # Initialize Systems used for this script
-    aaboxsystem = scene.world.createSystem(AABoundingBoxSystem(id="002"))
     gravitycollisionSystem = scene.world.createSystem(GravityCollisionSystem())
     transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
     camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
@@ -154,33 +145,22 @@ def main(imguiFlag = False):
     trans = BasicTransform(name="trans", trs=util.identity());    
     scene.world.addComponent(home1, trans)
     
+    # Generating floor with bounding box so that the objects can collide
+    floor_trans, floor_shader, floor_bb = generate_floor_with_bb(rootEntity)
+    
+    # Spawning 10 cubes with random transformations with bounding boxes
     for i in range(0, 10):
         cube: GameObjectEntity = CubeSpawn()
         scene.world.addEntityChild(home1, cube)
         cube.trans.trs = util.translate(rand.uniform(-4, 4), 0, rand.uniform(-4, 4))
         #cube.trans.trs = cube.trans.trs @ util.rotate(axis=[0, 0, rand.randint(0, 1),], angle = rand.uniform(0,180))
         cube.trans.trs = cube.trans.trs @ util.scale(rand.uniform(0.2, 1),rand.uniform(0.2, 1),rand.uniform(0.2, 1)) 
+        scene.world.addComponent(cube, AABoundingBox(name="AABoundingBox",
+                                        min_points=create_min_points_list(cube.mesh.vertex_attributes[0]), 
+                                        max_points=create_max_points_list(cube.mesh.vertex_attributes[0]),
+                                        floor= floor_bb))
         
     home1.getChild(0).trs = util.translate(0, 2, 0)
-    
-    
-    
-    #MYCHANGE
-    #FLOOR GENERATIONx``
-    floor_trans, floor_shader, floor_bb = generate_floor_with_bb(rootEntity)
-    aaboxsystem._floor_bb = floor_bb #IMPORTANT IF WE WANT OBJECTS TO HIT THE FLOOR
-    
-    #TOP BOUNDING_BOX
-   # bounding_box_top = scene.world.createEntity(Entity("CubeBoundingBox"))
-   # vertices = cube_top.mesh.vertex_attributes[0]
-   # scene.world.addComponent(bounding_box_top, AABoundingBox(name="CubeBoundingBoxComponent",
-   #                                                          min_points=create_min_points_list(vertices), 
-   #                                                          max_points=create_max_points_list(vertices), 
-  #                                                           floor= floor_bb))
-    
-    #scene.world.addComponent(bounding_box_top, BasicTransform(name="trans", trs=util.identity()))
-   # scene.world.addEntityChild(cube_top, bounding_box_top)
-    #ENDCHANGE
 
     
     # MAIN RENDERING LOOP
@@ -236,22 +216,18 @@ def main(imguiFlag = False):
 
     # Add RenderWindow to the EventManager publishers
     eManager._publishers[updateBackground.name] = gGUI
-
-
     
     while running:
-        #running = scene._gContext.event_input_process()
-        #if not running :
-           # continue
-        scene.world.traverse_visit(aaboxsystem, scene.world.root)
+        # Here we traverse with the gravity Collision System
         scene.world.traverse_visit(gravitycollisionSystem, scene.world.root)
+        
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
         for i in range(1, 10):
             home1.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(i).trans.l2cam, mat4=True);
             home1.getChild(i).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
-
+        
         floor_shader.setUniformVariable(key='modelViewProj', value=floor_trans.l2cam, mat4=True);  
         
         # call SDLWindow/ImGUI display() and ImGUI event input process
