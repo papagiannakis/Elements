@@ -36,6 +36,10 @@ Go to the ```Elements/examples``` folder and quickstart by using/modifying one o
 
 Installation instructions can be found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
 
+> [!NOTE]
+> We strongly recommend using [Anaconda](https://www.anaconda.com/products/individual) for your python environment, as well as 
+> [Visual Studio Code](https://code.visualstudio.com) as your IDE.
+
 ## Folder Structure
 
 * [docs](./docs): Files used to generate the [documentation](https://elementsproject.readthedocs.io/en/latest/index.html)
