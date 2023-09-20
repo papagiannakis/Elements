@@ -32,7 +32,9 @@ To dive in the details of the project check [its detailed developer documentatio
 
 Download (or clone) this repo (or your fork) and, in a python 3.8 environment, run ```pip install -e .```
 
-Go to the ```Elements/pyGLV/examples``` folder and quickstart by using/modifying one of the existing examples.
+Go to the ```Elements/examples``` folder and quickstart by using/modifying one of the existing examples.
+
+Installation instructions can be found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
 
 ## Folder Structure
 
