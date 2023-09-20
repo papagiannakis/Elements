@@ -1,5 +1,5 @@
 import unittest
-from Elements.features.XR.ElementsXR import options, Blend_Mode
+from Elements.features.XR.options import options, Blend_Mode
 import xr
 from Elements.pyGLV.GL.Scene import Scene
 import time
@@ -59,12 +59,16 @@ class TestElementsXR(unittest.TestCase):
 
         exit_loop = False
 
+        program: ElementsXR_program
         program = ElementsXR_program()
         program.set_Head(Head)
 
         self.program.Initialize("ElementsXR Unit-test",self.initUpdate)
 
         while not exit_loop:
+            self.scene.world.traverse_visit(self.transUpdate,self.scene.world.root)
+            exit_loop = program.poll_events()
+
             if program.session_running:
                 program.poll_actions()
                 program.render_frame(self.renderUpdate)

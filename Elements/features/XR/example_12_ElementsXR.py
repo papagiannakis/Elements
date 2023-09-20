@@ -14,7 +14,6 @@ from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
 from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
 from Elements.features.XR.ElementsXR import ElementsXR_program
-from Elements.features.Gizmos import Gizmos_XR
 from Elements.definitions import TEXTURE_DIR
 
 """
