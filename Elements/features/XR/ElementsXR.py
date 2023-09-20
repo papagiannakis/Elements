@@ -995,7 +995,7 @@ class ElementsXR_program:
                     between_hands = -between_hands
                 model = util.translate(position.x+0.8+between_hands,
                                     position.y-0.5,
-                                    position.z+1.5) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
+                                    position.z+2.0) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
                                                                                                         orientation.y,
                                                                                                         orientation.z,
                                                                                                         orientation.w))) @ util.scale(scale,scale,scale)
