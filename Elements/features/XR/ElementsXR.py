@@ -1,14 +1,14 @@
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem, Shader, ShaderGLDecorator
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
 from Elements.pyECSS.Entity import Entity
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from ctypes import Structure, c_int32, c_float, POINTER, byref, cast, c_void_p, pointer, Array
 from Elements.features.XR.PlatformPlugin import createPlatformPlugin
 from Elements.features.XR.GraphicsPlugin import OpenGLPlugin, create_xr_quaternion
-from Elements.features.XR.options import options, Blend_Mode, View_Configuration, Form_factor
+from Elements.features.XR.options import options
 import logging
 import Elements.utils.normals as norm
-from typing import List, Optional, Dict
+from typing import Optional
 import math
 import sys
 import enum
@@ -187,6 +187,9 @@ class ElementsXR_program:
 
         self.raycast = False
         self.hand_dist = 0.2
+
+        #shows whether the controllers trigger buttons are pressed or not
+        self.grab_values = [False, False]
 
     def __enter__(self):
         return self
@@ -819,7 +822,13 @@ class ElementsXR_program:
                 )
                 if grab_value.is_active:
                     # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
-                    self.input.hand_scale[hand] = 1 - 0.5 * grab_value.current_state #1.0 when trigger is fully pressed
+                    self.input.hand_scale[hand] = 1 - 0.3 * grab_value.current_state
+                    
+                    #grab value equals 1.0 when trigger is fully pressed
+                    self.grab_values[hand] = (grab_value.current_state==1.0)
+
+                    #uncomment these if you want the controllers to vibrate when the triggers are pressed
+                    """
                     if grab_value.current_state > 0.9:
                         vibration = xr.HapticVibration(
                             amplitude=0.1,
@@ -834,6 +843,8 @@ class ElementsXR_program:
                             ),
                             haptic_feedback=cast(byref(vibration), POINTER(xr.HapticBaseHeader)).contents,
                         )
+                    """
+
                 pose_state = xr.get_action_state_pose(
                     session=self.session,
                     get_info=xr.ActionStateGetInfo(
@@ -873,14 +884,11 @@ class ElementsXR_program:
         left_ray_mesh = left_ray_mesh @ left_ray_transform.l2world
         right_ray_mesh = right_ray_mesh @ right_ray_transform.l2world
 
-        #for i in range(len(left_ray_mesh)):
-        #    left_ray_mesh[i] = left_ray_mesh[i]/left_ray_mesh[i][3]
+        for i in range(len(left_ray_mesh)):
+            left_ray_mesh[i] = left_ray_mesh[i]/left_ray_mesh[i][3]
 
-        #for i in range(len(right_ray_mesh)):
-        #    right_ray_mesh[i] = right_ray_mesh[i]/right_ray_mesh[i][3]
-
-        left_ray_mesh = left_ray_mesh/left_ray_mesh[3]
-        right_ray_mesh = right_ray_mesh/right_ray_mesh[3]
+        for i in range(len(right_ray_mesh)):
+            right_ray_mesh[i] = right_ray_mesh[i]/right_ray_mesh[i][3]
         
         ray_start_left = util.vec(left_ray_mesh[0][0],left_ray_mesh[0][1],left_ray_mesh[0][2])
         ray_end_left = util.vec(left_ray_mesh[1][0],left_ray_mesh[1][1],left_ray_mesh[1][2])
@@ -888,7 +896,7 @@ class ElementsXR_program:
         ray_start_right = util.vec(right_ray_mesh[0][0],right_ray_mesh[0][1],right_ray_mesh[0][2])
         ray_end_right = util.vec(right_ray_mesh[1][0],right_ray_mesh[1][1],right_ray_mesh[1][2])
 
-        #Note: this array get an extra position when used on the Gizmos. Same goes for ray origins
+        #Note: this array must get an extra position when used on the Gizmos. Same goes for ray origins
         ray_direction_left = util.normalise(util.vec(ray_end_left[0] - ray_start_left[0],
                                                     ray_end_left[1] - ray_start_left[1],
                                                     ray_end_left[2] - ray_start_left[2]))
@@ -983,7 +991,7 @@ class ElementsXR_program:
             )
             loc_flags = space_location.location_flags
 
-
+            #if true then the program has focus -> it can take input from the controllers
             if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
                 scale = 0.1 * self.input.hand_scale[hand]
@@ -999,7 +1007,8 @@ class ElementsXR_program:
                                                                                                         orientation.y,
                                                                                                         orientation.z,
                                                                                                         orientation.w))) @ util.scale(scale,scale,scale)
-                self.hands[hand].getChild(0).trs = model
+                self.hands[hand].getChildByType(BasicTransform.getClassName()).trs = model
+                #self.hands[hand].getChild(0).trs = model
 
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):

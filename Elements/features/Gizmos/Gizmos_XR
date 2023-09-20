@@ -14,16 +14,24 @@ import numpy as np
 import Elements.utils.normals as norm
 import imgui
 import enum
-from Elements.features.Gizmos.Gizmos import Gizmos
+from Elements.features.XR.ElementsXR import ElementsXR_program
+from Elements.features.Gizmos.Gizmos import Gizmos, Mode
 
 class Gizmos_XR(Gizmos):
 
     def __init__(self, rootEntity: Entity):
         super().__init__(rootEntity)
+
+        self.program: ElementsXR_program
+        self.program = None
+        
         self.origin_left = util.vec(0.0,0.0,0.0,0.0)
         self.origin_right = util.vec(0.0,0.0,0.0,0.0)
         self.direction_left = util.vec(0.0,0.0,0.0,0.0)
         self.direction_right = util.vec(0.0,0.0,0.0,0.0)
+
+        self.left_grab_lock = False
+        self.left_grab_counter = 0;
 
     def update_projection(self, Proj):
         """
@@ -49,13 +57,13 @@ class Gizmos_XR(Gizmos):
 
     def __update_positions(self):
         """
-        Uniform variables used for Model/View/Projection are updated inside Render View at graphics plugin 
+        Uniform variables used for Model/View/Projection are updated inside Render View at graphics plugin
         Arguments:
             self: self
         Returns:
             None
         """
-        raise NotImplementedError("Uniform Variables are updated inside Render View of the graphics Plugin in Virtual Reality")
+        return
     
     def update_ray_start(self):
         """
@@ -69,7 +77,7 @@ class Gizmos_XR(Gizmos):
     
     def get_Event(self):
         """
-        When the user presses the left controller trigger do one of the following
+        When the user presses the left controller grab buttons do one of the following:
             First time: Change target and use Translate mode
             Second time: use Scale mode
             Third time: use Rotation mode
@@ -79,7 +87,27 @@ class Gizmos_XR(Gizmos):
         Returns:
             None
         """
-        pass
+        #if left trigger was pressed, then change target and.or transformation
+        assert self.program is not None
+
+        grab_values = self.program.grab_values
+        if grab_values[0]:
+            if not self.left_grab_lock:
+                self.left_grab_lock = True
+                self.left_grab_counter +=1
+
+                if self.left_grab_counter==4:
+                    self.left_grab_counter = 1
+
+                if self.left_grab_counter==1:
+                    self.mode = Mode.TRANSLATE
+                    self.change_target()
+                elif self.left_grab_counter==2:
+                    self.mode==Mode.SCALE
+                elif self.left_grab_counter==3:
+                    self.mode = Mode.ROTATE
+        else:
+            self.left_grab_lock = False
 
     def update_ray_start(self,RaysDirections: list[RayDirection]):
         """
@@ -89,18 +117,23 @@ class Gizmos_XR(Gizmos):
         Returns:
             None
         """
-        self.origin_left = util.vec(RaysDirections[0].origin,0.0)
-        self.origin_right = util.vec(RaysDirections[1].origin,0.0)
-        self.direction_left = util.vec(RaysDirections[0].direction,0.0)
-        self.direction_right = util.vec(RaysDirections[1].direction,0.0)
-        #Note update correctly
+        left_origin = RaysDirections[0].origin
+        right_origin = RaysDirections[1].origin
+        left_direction = RaysDirections[0].direction
+        right_direction = RaysDirections[1].direction
+
+
+        self.origin_left = util.vec(left_origin[0],left_origin[1],left_origin[2],0.0)
+        self.origin_right = util.vec(right_origin[0],right_origin[1],right_origin[2],0.0)
+        self.direction_left = util.vec(left_direction[0],left_direction[1],left_direction[2],0.0)
+        self.direction_right = util.vec(right_direction[0],right_direction[1],right_direction[2],0.0)
 
     def calculate_ray(self):
         """
-        Calculate and Return a Ray that starts from right controller
+        Return last origin and direction taken from the right controller
         Arguments:
             self: self
         Returns:
             a ray's starting position and direction
         """
-        pass
+        return self.origin_right, self.direction_right
