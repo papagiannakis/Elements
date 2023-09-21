@@ -1453,9 +1453,14 @@ class Gizmos_XR(Gizmos):
         y_scale = self.gizmos_y_S_cube.name
         z_scale = self.gizmos_z_S_cube.name
 
+        x_scale_line = self.gizmos_x_S_line.name
+        y_scale_line = self.gizmos_y_S_line.name
+        z_scale_line = self.gizmos_z_S_line.name
+
         self.program.set_translation_gizmos(x_trans,y_trans,z_trans)
         self.program.set_rotation_gizmos(x_rot,y_rot,z_rot)
-        self.program.set_scaling_gizmos(x_scale,y_scale,z_scale)
+        self.program.set_scaling_gizmos(x_scale,y_scale,z_scale,
+                                        x_scale_line,y_scale_line,z_scale_line)
 
     def update_projection(self, Proj):
         """

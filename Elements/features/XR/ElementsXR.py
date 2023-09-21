@@ -253,12 +253,15 @@ class ElementsXR_program:
         self.rotation_gizmos.add(z)
         self.graphics_plugin.set_rotation_gizmos(x,y,z)
 
-    def set_scaling_gizmos(self,x: str,y: str,z: str):
+    def set_scaling_gizmos(self,x: str,y: str,z: str,line_X: str,line_y: str,line_z: str):
         """
         """
         self.scaling_gizmos.add(x)
         self.scaling_gizmos.add(y)
         self.scaling_gizmos.add(z)
+        self.scaling_gizmos.add(line_X)
+        self.scaling_gizmos.add(line_y)
+        self.scaling_gizmos.add(line_z)
         self.graphics_plugin.set_scaling_gizmos(x,y,z)
 
     def set_gizmos_mode(self, _mode: str):

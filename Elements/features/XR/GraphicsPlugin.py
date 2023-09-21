@@ -180,16 +180,22 @@ class OpenGLPlugin(GraphicsPlugin):
         self.all_gizmos.add(y)
         self.all_gizmos.add(z)
 
-    def set_scaling_gizmos(self,x: str,y: str,z: str):
+    def set_scaling_gizmos(self,x: str,y: str,z: str,line_X: str,line_y: str,line_z: str):
         """
         """
         self.scaling_gizmos.add(x)
         self.scaling_gizmos.add(y)
         self.scaling_gizmos.add(z)
+        self.scaling_gizmos.add(line_X)
+        self.scaling_gizmos.add(line_y)
+        self.scaling_gizmos.add(line_z)
         
         self.all_gizmos.add(x)
         self.all_gizmos.add(y)
         self.all_gizmos.add(z)
+        self.all_gizmos.add(line_X)
+        self.all_gizmos.add(line_y)
+        self.all_gizmos.add(line_z)
 
     def set_gizmos_mode(self, _mode: str):
         self.gizmos_Mode = _mode
