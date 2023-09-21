@@ -118,7 +118,7 @@ class TestEvent(unittest.TestCase):
             [0.0,1.0,0.0,20.0],
             [0.0,0.0,1.0,30.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertEqual(mT.tolist(), e.value.tolist())
         self.assertEqual(e.name, "OnUpdate")
