@@ -39,12 +39,12 @@ Begin by following the installation instructions, found [HERE](https://elementsp
 > * [Fork](https://git-fork.com)/[Sourcetree](https://www.sourcetreeapp.com) for version control.
 
 The main steps are:
-* Install Anaconda, VSCode, Git and a optionally a version control app (e.g., )
-* Clone (or download) this repo (or your forked repo) and, 
+* Install Anaconda, VSCode, Git and a optionally a version control app
+* Clone (or download) this repo (or your forked repo)
 * Create a python 3.8 environment, by running 
   ```conda create -n elements python=3.8```,
-  and activate it 
-  ```conda activate elements```,
+  and activate it via
+  ```conda activate elements```
 * Install the Elements in editable mode by running
  ```pip install -e .```
 * Start exploring the examples in the ```Elements/examples``` folder.
