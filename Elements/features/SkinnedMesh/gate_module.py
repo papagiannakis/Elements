@@ -81,12 +81,12 @@ def initialize_M(b):
 def get_bone_names(b):
     return [str(b[i]) for i in range(len(b))]
 
-def read_tree(scene,mesh_id,M,transform):
-  b = scene.meshes[mesh_id].bones
+def read_tree(object,mesh_id,M,transform):
+  b = object.meshes[mesh_id].bones
   MM = np.zeros([len(b),4,4])
-  G = np.linalg.inv(scene.rootnode.transformation)
+  G = np.linalg.inv(object.rootnode.transformation)
   bone_names = get_bone_names(b)
-  read_tree_names(MM,M,scene.rootnode,G,bone_names,transform)
+  read_tree_names(MM,M,object.rootnode,G,bone_names,transform)
   return MM
 
 def read_tree_names(MM,M,node,parentmatrix,bone_names, transform = False):
@@ -172,11 +172,11 @@ def down_vertex(mv):
     down = fast_down(mv)
     return np.array([down[e1], down[e2], down[e3]])
 
-def read_tree_ga(scene,mesh_id,tt,rr,dd,transform):
-  b = scene.meshes[mesh_id].bones
+def read_tree_ga(object,mesh_id,tt,rr,dd,transform):
+  b = object.meshes[mesh_id].bones
   bone_names = get_bone_names(b)
   rotors = [1 for i in range(len(b))]
-  read_tree_names_ga(rotors,tt,rr,dd,scene.rootnode,1,bone_names,transform)
+  read_tree_names_ga(rotors,tt,rr,dd,object.rootnode,1,bone_names,transform)
   return rotors
 
 def LERP(source,end, alpha):

@@ -103,13 +103,17 @@ class GATransform(BasicTransform):
             self._trs = kwargs[arg2]
         if arg3 in kwargs:
             # print("Setting: ", arg3," with: \n", kwargs[arg3])
-            self._l2cam = kwargs[arg3]        
+            self._l2cam = kwargs[arg3]   
 
-
+    def accept(self, system: Elements.pyECSS.System, event = None):
+        """ Accepts visitor and calls visit method """
+        system.apply2GATransform(self) # from GATransform
+        super().accept(system, event) 
+    
 if __name__ == "__main__":
     
-    from Elements.pyECSS.GA.GA_Component import GATransform
-    from Elements.pyECSS.GA.GATransformSystem import GATransformSystem
+    from Elements.features.GA.GA_Component import GATransform
+    from Elements.features.GA.GATransformSystem import GATransformSystem
 
     t = [1,2,3]
     q = [1,2,3,4] # x,y,z,w

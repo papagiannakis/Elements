@@ -114,9 +114,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-# obj_to_import = os.path.join(MODEL_DIR, "teapot.obj")
-# obj_to_import = os.path.join(MODEL_DIR, "teddy.obj")
-obj_to_import = os.path.join(MODEL_DIR, "cow.obj")
+# obj_to_import = MODEL_DIR / "teapot.obj"
+# obj_to_import = MODEL_DIR / "teddy.obj
+obj_to_import = MODEL_DIR/"cow.obj"
 
 
 
