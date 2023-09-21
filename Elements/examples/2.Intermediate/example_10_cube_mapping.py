@@ -144,17 +144,17 @@ projMat = util.perspective(50.0, 1.0, 0.01, 100.0)
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
-# skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Cloudy")
-skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
-front_img = os.path.join(skybox_texture_locations, "front.jpg")
-right_img = os.path.join(skybox_texture_locations,"right.jpg")
-left_img = os.path.join(skybox_texture_locations,"left.jpg")
-back_img = os.path.join(skybox_texture_locations,"back.jpg")
-bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
-top_img = os.path.join(skybox_texture_locations,"top.jpg")
+# skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Cloudy"
+skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Sea"
+front_img = skybox_texture_locations / "front.jpg"
+right_img = skybox_texture_locations / "right.jpg"
+left_img = skybox_texture_locations / "left.jpg"
+back_img = skybox_texture_locations / "back.jpg"
+bottom_img = skybox_texture_locations / "bottom.jpg"
+top_img = skybox_texture_locations / "top.jpg"
 
 
-mat_img = os.path.join(TEXTURE_DIR, "dark_wood_texture.jpg")
+mat_img = TEXTURE_DIR / "dark_wood_texture.jpg"
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 face_data_2 = get_single_texture_faces(mat_img)

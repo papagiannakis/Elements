@@ -112,9 +112,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 ## object load 
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-obj_to_import = os.path.join(MODEL_DIR, "teapot.obj")
-# obj_to_import = os.path.join(models_dirname, "cow.obj")
-# obj_to_import = os.path.join(models_dirname, "teddy.obj")
+obj_to_import = MODEL_DIR / "teapot.obj"
+# obj_to_import = MODEL_DIR / "cow.obj"
+# obj_to_import = MODEL_DIR / "teddy.obj"
 
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
