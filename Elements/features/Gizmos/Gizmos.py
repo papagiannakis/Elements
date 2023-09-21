@@ -1505,7 +1505,6 @@ class Gizmos_XR(Gizmos):
         left_direction = RaysDirections[0].direction
         right_direction = RaysDirections[1].direction
 
-
         self.origin_left = util.vec(left_origin[0],left_origin[1],left_origin[2],0.0)
         self.origin_right = util.vec(right_origin[0],right_origin[1],right_origin[2],0.0)
         self.direction_left = util.vec(left_direction[0],left_direction[1],left_direction[2],0.0)
@@ -1546,6 +1545,8 @@ class Gizmos_XR(Gizmos):
 
                 if self.left_grab_counter==4:
                     self.left_grab_counter = 1
+                
+                print(self.left_grab_counter) #when grab counter==2 it should change to scaling
 
                 if self.left_grab_counter==1:
                     self.mode = Mode.TRANSLATE
@@ -1728,8 +1729,40 @@ class Gizmos_XR(Gizmos):
             self.selected_gizmo = 'Z'
             self.__transform_selected_entity(z_in_point)
     
-    def calculate_bounding_box(self, mesh_vertices):
-        return super().calculate_bounding_box(mesh_vertices)
+    def calculate_bounding_box(self,mesh_vertices):
+        """
+        A simple method that calculates an axis aligned bounding box using a given mesh's vertices
+        Arguments:
+            self: self
+            mesh: A RenderMesh component
+        Returns
+            minbb: minimum bounding box coordinates
+            maxbb: maximum bounding box coordinates
+        """
+        vertices = mesh_vertices
+
+        for i in  range(len(vertices)):
+            vertices[i] = vertices[i]/vertices[i][3]
+
+        minbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
+        maxbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
+        for i in range(1,len(vertices)):
+            #min coordinates
+            if vertices[i][0]<minbb[0]:
+                minbb[0] = vertices[i][0]
+            if vertices[i][1]<minbb[1]:
+                minbb[1] = vertices[i][1]
+            if vertices[i][2]<minbb[2]:
+                minbb[2] = vertices[i][2]
+                
+            #max coordinates
+            if vertices[i][0] > maxbb[0]:
+                maxbb[0] = vertices[i][0]
+            if vertices[i][1] > maxbb[1]:
+                maxbb[1] = vertices[i][1]
+            if vertices[i][2] > maxbb[2]:
+                maxbb[2] = vertices[i][2]
+        return minbb, maxbb
 
     def change_target(self):
         return super().change_target()
@@ -1869,6 +1902,23 @@ class Gizmos_XR(Gizmos):
         
         return False, self.intersection_point(self.previous_distance,ray_origin,ray_direction)
 
+    def intersection_point(self,distance,ray_origin,ray_direction):
+        """
+        Calculates an intersection point given the following Arguments
+        Arguments:
+            self: self
+            distance: minimum intersection distance
+            ray_origin: ray starting point
+            ray_direction: ray direction
+        Returns:
+            The intersection point on a bounding box
+        """
+        bottom = sqrt(pow(ray_direction[0],2)+pow(ray_direction[1],2)+pow(ray_direction[2],2))
+        x = ray_origin[0]+(ray_direction[0]*distance)/bottom
+        y = ray_origin[1]+(ray_direction[1]*distance)/bottom
+        z = ray_origin[2]+(ray_direction[2]*distance)/bottom
+        return util.vec(x,y,z)
+
     def __transform_selected_entity(self, inter_point):
         """
         When a gizmo is selected Transform selected Entity based on the selected mode and selected axis
@@ -2006,6 +2056,7 @@ class Gizmos_XR(Gizmos):
         Returns:
             None
         """
+        print("Translate: ",self.selected_gizmo)
         self.selected_trans.trs = util.translate(x,y,z) @ self.selected_trans.trs
         self.__update_gizmos_trans()
  
@@ -2122,6 +2173,3 @@ class Gizmos_XR(Gizmos):
         """
         if self.is_selected:
             self.__update_lights()
-
-    def pick(self):
-        return

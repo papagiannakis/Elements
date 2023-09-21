@@ -162,7 +162,7 @@ colorCube = np.array([
 ], dtype=np.float32)
 
 VertexRay = np.array([[0.0,0.0,0.0,1.0],
-                      [0.0,0.0,-30.0,1.0]],dtype=np.float32)
+                      [0.0,0.0,-50.0,1.0]],dtype=np.float32)
 
 indexRay = np.array((0,1),dtype=np.uint32)
 
@@ -268,7 +268,6 @@ mesh_Right_ray.vertex_index.append(indexRay)
 VArrayrightRay = scene.world.addComponent(Right_Ray,VertexArray(primitive=GL_LINES))
 Shader_right_Ray = scene.world.addComponent(Right_Ray,ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
-
 gizmos = Gizmos_XR(rootEntity)
 gizmos.add_ignored_item("Head")
 gizmos.add_ignored_item("trans_head")
@@ -323,7 +322,6 @@ shaderDec_TableLeg2.setUniformVariable(key='ImageTexture', value=textureWood, te
 shaderDec_TableLeg3.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
 shaderDec_TableLeg4.setUniformVariable(key='ImageTexture', value=textureWood, texture=True)
 
-
 ShaderTeapot.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
 ShaderTeapot.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
 ShaderTeapot.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
@@ -362,7 +360,7 @@ while not exit_loop:
 
         # Get new input from controllers
         program.poll_actions()
-
         program.render_frame(renderUpdate)
+
     else:
         time.sleep(0.250)

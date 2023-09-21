@@ -191,6 +191,8 @@ class ElementsXR_program:
         #shows whether the controllers trigger buttons are pressed or not
         self.grab_values = [False, False]
 
+        self.hand_trs = [util.identity(),util.identity()]
+
         self.gizmos_Mode = "Disappear"
         self.translate_gizmos = set()
         self.rotation_gizmos = set()
@@ -908,14 +910,15 @@ class ElementsXR_program:
         if self.raycast==False:
             raise("Raycast is not Enabled")
 
+        #TBC
         left_ray_mesh = np.array(self.rays[0].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
         right_ray_mesh = np.array(self.rays[1].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
 
-        left_ray_transform = self.hands[0].getChildByType(BasicTransform.getClassName())
-        right_ray_transform = self.hands[1].getChildByType(BasicTransform.getClassName())
+        left_ray_transform = self.hands[Side.LEFT].getChildByType(BasicTransform.getClassName()).l2world
+        right_ray_transform = self.hands[Side.RIGHT].getChildByType(BasicTransform.getClassName()).l2world
 
-        left_ray_mesh = left_ray_mesh @ left_ray_transform.l2world
-        right_ray_mesh = right_ray_mesh @ right_ray_transform.l2world
+        left_ray_mesh = left_ray_mesh @ left_ray_transform
+        right_ray_mesh = right_ray_mesh @ right_ray_transform
 
         for i in range(len(left_ray_mesh)):
             left_ray_mesh[i] = left_ray_mesh[i]/left_ray_mesh[i][3]
@@ -925,6 +928,7 @@ class ElementsXR_program:
         
         ray_start_left = util.vec(left_ray_mesh[0][0],left_ray_mesh[0][1],left_ray_mesh[0][2])
         ray_end_left = util.vec(left_ray_mesh[1][0],left_ray_mesh[1][1],left_ray_mesh[1][2])
+
 
         ray_start_right = util.vec(right_ray_mesh[0][0],right_ray_mesh[0][1],right_ray_mesh[0][2])
         ray_end_right = util.vec(right_ray_mesh[1][0],right_ray_mesh[1][1],right_ray_mesh[1][2])
@@ -944,7 +948,7 @@ class ElementsXR_program:
         rays[0].direction = ray_direction_left
         rays[1].origin = ray_start_right
         rays[1].direction = ray_direction_right
-        
+
         return rays
             
     def render_frame(self,renderer: RenderGLShaderSystem) -> None:
