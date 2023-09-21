@@ -14,6 +14,12 @@ from Elements.utils.terrain import generateTerrain
 
 from OpenGL.GL import GL_LINES
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This is a scene with some a cube, a terrain and axes. \n\
+The cube and axes are rendered with a simple shader. \n\
+You cannot move the camera through the GUI. Hit ESC OR Close the window to quit." 
+
 winWidth = 1024
 winHeight = 768
 
@@ -207,6 +213,7 @@ model_axes = axes_trans.trs
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

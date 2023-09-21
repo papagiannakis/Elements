@@ -21,6 +21,16 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.definitions import TEXTURE_DIR
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the ability to apply image textures to geometry. \n\
+The scene is being lit using the Blinn-Phong algorithm. \n\n\
+To stop cube from rotating and  manipulate it via the ECSS graph \n\
+simply set the want_to_rotate variable to False. \n\n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
@@ -218,6 +228,8 @@ texturePath = TEXTURE_DIR / "dark_wood_texture.jpg"
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
+want_to_rotate = True
+
 while running:
     running = scene.render()
     scene.world.traverse_visit(renderUpdate, scene.world.root)
@@ -227,9 +239,11 @@ while running:
     # mvp_cube = projMat @ view @ model_cube
 
     model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)
-    rotate_y += rotation_speed
-    # OR
-    # model_cube = trans4.trs
+    
+    if want_to_rotate:
+        rotate_y += rotation_speed
+    else:
+        model_cube = trans4.trs
 
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
