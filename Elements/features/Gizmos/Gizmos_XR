@@ -15,7 +15,8 @@ import Elements.utils.normals as norm
 import imgui
 import enum
 from Elements.features.XR.ElementsXR import ElementsXR_program
-from Elements.features.Gizmos.Gizmos import Gizmos, Mode
+from Gizmos import Gizmos, Mode
+
 
 class Gizmos_XR(Gizmos):
 

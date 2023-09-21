@@ -113,9 +113,14 @@ class OpenGLPlugin(GraphicsPlugin):
         self.color_to_depth_map: Dict[int, int] = {}
         self.debug_message_proc = None
 
-        #self.position = util.vec(0.0,0.0,0.0)
         self.head: Entity
         self.head = None
+
+        self.gizmos_Mode = "DISAPPEAR"
+        self.all_gizmos = set()
+        self.translate_gizmos = set()
+        self.rotation_gizmos = set()
+        self.scaling_gizmos = set()
 
     def __enter__(self):
         return self
@@ -152,6 +157,55 @@ class OpenGLPlugin(GraphicsPlugin):
             None
         """
         self.head = _Head
+
+    def set_translation_gizmos(self,x: str,y: str,z: str):
+        """
+        """
+        self.translate_gizmos.add(x)
+        self.translate_gizmos.add(y)
+        self.translate_gizmos.add(z)
+        
+        self.all_gizmos.add(x)
+        self.all_gizmos.add(y)
+        self.all_gizmos.add(z)
+
+    def set_rotation_gizmos(self,x: str,y: str,z: str):
+        """
+        """
+        self.rotation_gizmos.add(x)
+        self.rotation_gizmos.add(y)
+        self.rotation_gizmos.add(z)
+        
+        self.all_gizmos.add(x)
+        self.all_gizmos.add(y)
+        self.all_gizmos.add(z)
+
+    def set_scaling_gizmos(self,x: str,y: str,z: str):
+        """
+        """
+        self.scaling_gizmos.add(x)
+        self.scaling_gizmos.add(y)
+        self.scaling_gizmos.add(z)
+        
+        self.all_gizmos.add(x)
+        self.all_gizmos.add(y)
+        self.all_gizmos.add(z)
+
+    def set_gizmos_mode(self, _mode: str):
+        self.gizmos_Mode = _mode
+
+    def is_active_gizmo(self,name: str):
+        """
+        
+        """
+        if name in self.translate_gizmos and self.gizmos_Mode=="Translate":
+            return True
+        if name in self.rotation_gizmos and self.gizmos_Mode=="Rotate":
+            return True
+        if name in self.scaling_gizmos and self.gizmos_Mode=="Scale":
+            return True
+
+        return False
     
     def focus_window(self):
         glfw.focus_window(self.window)
@@ -361,10 +415,19 @@ class OpenGLPlugin(GraphicsPlugin):
                 model = element.parent.getChild(0).l2world
                 mvp = proj @ view @ model
 
-                element.setUniformVariable(key='Proj', value=proj, mat4=True)
-                element.setUniformVariable(key='View', value=view, mat4=True)
-                element.setUniformVariable(key='model', value=model, mat4=True)
-                element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+                parent = element.parent.name
+
+                if parent not in self.all_gizmos:
+                    element.setUniformVariable(key='Proj', value=proj, mat4=True)
+                    element.setUniformVariable(key='View', value=view, mat4=True)
+                    element.setUniformVariable(key='model', value=model, mat4=True)
+                    element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+                else:
+                    if self.is_active_gizmo(parent):
+                        element.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+                    else:
+                        element.setUniformVariable(key='modelViewProj', value=0.0, mat4=True)
+
 
         #if mirror:
         #    GL.glBindFramebuffer(GL.GL_DRAW_FRAMEBUFFER, 0)

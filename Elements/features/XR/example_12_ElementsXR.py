@@ -15,6 +15,7 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
 from Elements.features.XR.ElementsXR import ElementsXR_program
 from Elements.definitions import TEXTURE_DIR
+from Elements.features.Gizmos.Gizmos import Gizmos_XR
 
 """
 Note: Before running this example open steamVR, go to Settings -> OpenXR and press "SET STEAMVR AS OPENXR RUNTIME"
@@ -42,10 +43,6 @@ skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
 transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) 
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
-
-#entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-#scene.world.addEntityChild(rootEntity, entityCam1)
-#trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.translate(2.0,2.0,2.0)))
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(rootEntity, teapot)
@@ -119,10 +116,10 @@ vertexSkybox = np.array([
     [minbox, minbox, maxbox, 1.0],
     [minbox, maxbox, maxbox, 1.0],
     [maxbox, maxbox, maxbox, 1.0],
-    [maxbox, minbox, maxbox, 1.0], 
-    [minbox, minbox, minbox, 1.0], 
-    [minbox, maxbox, minbox, 1.0], 
-    [maxbox, maxbox, minbox, 1.0], 
+    [maxbox, minbox, maxbox, 1.0],
+    [minbox, minbox, minbox, 1.0],
+    [minbox, maxbox, minbox, 1.0],
+    [maxbox, maxbox, minbox, 1.0],
     [maxbox, minbox, minbox, 1.0]
 ],dtype=np.float32)
 
@@ -272,11 +269,32 @@ VArrayrightRay = scene.world.addComponent(Right_Ray,VertexArray(primitive=GL_LIN
 Shader_right_Ray = scene.world.addComponent(Right_Ray,ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
 
+gizmos = Gizmos_XR(rootEntity)
+gizmos.add_ignored_item("Head")
+gizmos.add_ignored_item("trans_head")
+
+gizmos.add_ignored_item("Left_hand")
+gizmos.add_ignored_item("trans_Left_hand")
+gizmos.add_ignored_item("mesh_Left_hand")
+gizmos.add_ignored_item("Right_hand")
+gizmos.add_ignored_item("trans_Right_hand")
+gizmos.add_ignored_item("mesh_Right_hand")
+
+gizmos.add_ignored_item("Left_Ray")
+gizmos.add_ignored_item("trans_Left_Ray")
+gizmos.add_ignored_item("mesh_Left_Ray")
+gizmos.add_ignored_item("Right_Ray")
+gizmos.add_ignored_item("trans_Right_Ray")
+gizmos.add_ignored_item("mesh_Right_Ray")
+
 # MAIN RENDERING LOOP
 
 exit_loop = False
 
 program = ElementsXR_program()
+gizmos.program = program
+gizmos.exclude_gizmos()
+
 program.set_Head(Head)
 program.raycast = True
 program.hands = [Left_Hand,Right_Hand]
@@ -336,6 +354,9 @@ ShaderDec_Right_Hand.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 while not exit_loop:
     scene.world.traverse_visit(transUpdate,scene.world.root)
     exit_loop = program.poll_events()
+
+    gizmos.update_ray_start()
+    gizmos.get_Event()
 
     if program.session_running:
 

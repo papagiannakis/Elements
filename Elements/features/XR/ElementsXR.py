@@ -191,6 +191,11 @@ class ElementsXR_program:
         #shows whether the controllers trigger buttons are pressed or not
         self.grab_values = [False, False]
 
+        self.gizmos_Mode = "Disappear"
+        self.translate_gizmos = set()
+        self.rotation_gizmos = set()
+        self.scaling_gizmos = set()
+
     def __enter__(self):
         return self
     
@@ -229,6 +234,34 @@ class ElementsXR_program:
         """
         self.head = _Head
         self.graphics_plugin.set_Head(_Head)
+
+    def set_translation_gizmos(self,x: str,y: str,z: str):
+        """
+        """
+        self.translate_gizmos.add(x)
+        self.translate_gizmos.add(y)
+        self.translate_gizmos.add(z)
+        self.graphics_plugin.set_translation_gizmos(x,y,z)
+
+    def set_rotation_gizmos(self,x: str,y: str,z: str):
+        """
+        """
+        self.rotation_gizmos.add(x)
+        self.rotation_gizmos.add(y)
+        self.rotation_gizmos.add(z)
+        self.graphics_plugin.set_rotation_gizmos(x,y,z)
+
+    def set_scaling_gizmos(self,x: str,y: str,z: str):
+        """
+        """
+        self.scaling_gizmos.add(x)
+        self.scaling_gizmos.add(y)
+        self.scaling_gizmos.add(z)
+        self.graphics_plugin.set_scaling_gizmos(x,y,z)
+
+    def set_gizmos_mode(self, _mode: str):
+        self.gizmos_Mode = _mode
+        self.graphics_plugin.set_gizmos_mode(_mode)
 
     def Initialize(self, name: str, renderer : InitGLShaderSystem):
         """
@@ -878,8 +911,8 @@ class ElementsXR_program:
         left_ray_mesh = np.array(self.rays[0].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
         right_ray_mesh = np.array(self.rays[1].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
 
-        left_ray_transform = self.rays[0].getChildByType(BasicTransform.getClassName())
-        right_ray_transform = self.rays[1].getChildByType(BasicTransform.getClassName())
+        left_ray_transform = self.hands[0].getChildByType(BasicTransform.getClassName())
+        right_ray_transform = self.hands[1].getChildByType(BasicTransform.getClassName())
 
         left_ray_mesh = left_ray_mesh @ left_ray_transform.l2world
         right_ray_mesh = right_ray_mesh @ right_ray_transform.l2world
@@ -1008,7 +1041,6 @@ class ElementsXR_program:
                                                                                                         orientation.z,
                                                                                                         orientation.w))) @ util.scale(scale,scale,scale)
                 self.hands[hand].getChildByType(BasicTransform.getClassName()).trs = model
-                #self.hands[hand].getChild(0).trs = model
 
         # Render view to the appropriate part of the swapchain image.
         for i in range(view_count_output):
