@@ -17,17 +17,18 @@ def generateTrianglesFromCustomList(point_list):
         o3d.utility.DoubleVector([100, 100 * 2])
     )
     
+    mesh.compute_vertex_normals()
     # print(np.asarray(mesh.triangles))
     # print(np.asarray(mesh.vertices))
-    return np.asarray(mesh.vertices), np.asarray(mesh.triangles)
+    return np.asarray(mesh.vertices), mesh.vertex_normals, np.asarray(mesh.triangles)
 
 def generateBunnyExample():
     bunny = o3d.data.BunnyMesh()
     mesh  = o3d.io.read_triangle_mesh(bunny.path)
+    mesh.compute_vertex_normals()
     
-    # print(np.asarray(mesh.triangles))
-    # print(np.asarray(mesh.vertices))
-    return np.asarray(mesh.vertices), np.asarray(mesh.triangles)
+    #o3d.visualization.draw_geometries_with_vertex_selection([mesh])
+    return np.asarray(mesh.vertices), mesh.vertex_normals, np.asarray(mesh.triangles)
 
     
 vertexCube = np.array([
@@ -41,3 +42,4 @@ vertexCube = np.array([
     [0.5, -0.5, -0.5, 1.0]
 ],dtype=np.float32) 
 generateTrianglesFromCustomList(vertexCube)
+generateBunnyExample()
