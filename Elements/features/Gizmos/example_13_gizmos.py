@@ -14,6 +14,22 @@ import Elements.utils.normals as norm
 from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
+from Elements.utils.helper_function import displayGUI_text
+
+example_description = """
+This example demonstrates the Gizmos functionality
+
+Instructions:
+Use the following keys to change transformation mode:
+    T: translation
+    R: Rotation
+    S: Scaling
+In Order to apply transformations on a selected 
+Entity press and hold Left-alt-key + Left-mouse-button, 
+then move the cursor anywhere to see the result
+
+Additionally, you can change the Selected Entity by pressing TAB
+"""
 
 #Light
 Lposition = util.vec(0.0, 2.5, 1.2) #uniform lightpos
@@ -281,6 +297,7 @@ while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root) 
     scene.world.traverse_visit(renderUpdate, scene.world.root)
+    displayGUI_text(example_description)
     view =  gWindow._myCamera # updates view via the imgui
     height = scene.renderWindow._windowHeight
     width = scene.renderWindow._windowWidth
