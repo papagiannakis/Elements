@@ -28,17 +28,25 @@ To dive in the details of the project check [its detailed developer documentatio
 
 
 
-## Quick Start
+## Getting Started - Installation Instructions
 
-Download (or clone) this repo (or your fork) and, in a python 3.8 environment, run ```pip install -e .```
-
-Go to the ```Elements/examples``` folder and quickstart by using/modifying one of the existing examples.
-
-Installation instructions can be found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
+Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
 
 > [!NOTE]
-> We strongly recommend using [Anaconda](https://www.anaconda.com/products/individual) for your python environment, as well as 
-> [Visual Studio Code](https://code.visualstudio.com) as your IDE.
+> We strongly recommend using 
+> * [Anaconda](https://www.anaconda.com/products/individual) for your python environment, and
+> * [Visual Studio Code](https://code.visualstudio.com) as your IDE.
+
+
+
+Clone (or download) this repo (or your forked repo) and, in a python 3.8 environment, 
+created by running ```conda create -n elements python=3.8```, install the Elements in editable mode by running
+ ```pip install -e .```
+
+For a quick start, go to the ```Elements/examples``` folder and use/modify any of the existing examples.
+
+
+
 
 ## Folder Structure
 
