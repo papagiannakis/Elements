@@ -30,20 +30,25 @@ To dive in the details of the project check [its detailed developer documentatio
 
 ## Getting Started - Installation Instructions
 
-Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
+Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). For HY358 students, the instructions are [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions-for-HY358-Students).
 
 > [!NOTE]
-> We strongly recommend using 
-> * [Anaconda](https://www.anaconda.com/products/individual) for your python environment, and
-> * [Visual Studio Code](https://code.visualstudio.com) as your IDE.
+> We strongly recommend using:
+> * [Anaconda](https://www.anaconda.com/products/individual) for your python environment, 
+> * [Visual Studio Code](https://code.visualstudio.com) as your IDE, and
+> * [Fork](https://git-fork.com)/[Sourcetree](https://www.sourcetreeapp.com) for version control.
 
-
-
-Clone (or download) this repo (or your forked repo) and, in a python 3.8 environment, 
-created by running ```conda create -n elements python=3.8```, install the Elements in editable mode by running
+The main steps are:
+* Install Anaconda, VSCode, Git and a optionally a version control app (e.g., )
+* Clone (or download) this repo (or your forked repo) and, 
+* Create a python 3.8 environment, by running 
+  ```conda create -n elements python=3.8```,
+  and activate it 
+  ```conda activate elements```,
+* Install the Elements in editable mode by running
  ```pip install -e .```
+* Start exploring the examples in the ```Elements/examples``` folder.
 
-For a quick start, go to the ```Elements/examples``` folder and use/modify any of the existing examples.
 
 
 
