@@ -15,6 +15,16 @@ from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
 from Elements.definitions import TEXTURE_DIR
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the cube map texture, i.e., \n\
+we encapsulate the scene intro a huge cube and apply texture to them\n\
+creating the illusion of a scenery. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
+
 winWidth = 1024
 winHeight = 768
 scene = Scene()    
@@ -166,6 +176,7 @@ model_cube = util.translate(0.0,0.5,0.0)
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

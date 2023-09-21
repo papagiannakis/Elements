@@ -18,6 +18,14 @@ from Elements.definitions import TEXTURE_DIR
 
 from OpenGL.GL import GL_LINES
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the ability to apply image textures to geometry. \n\
+The scene is being lit using the Blinn-Phong algorithm. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 winWidth = 1024
 winHeight = 768
 scene = Scene()    

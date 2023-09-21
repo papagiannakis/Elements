@@ -2,9 +2,6 @@
 Examples using ECS
 
 This is code examples that create entities, components and systems
-    
-Elements.pyECSS (Entity Component Systems in a Scenegraph) package
-@Copyright 2021-2022 Dr. George Papagiannakis
 """
 
 from Elements.pyECSS.Entity import Entity
