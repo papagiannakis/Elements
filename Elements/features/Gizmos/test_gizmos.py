@@ -42,7 +42,7 @@ class TestGizmos(unittest.TestCase):
 
         self.emptymsg = """
 Since this scene is empty no Gizmos appear
-when you press TAB 
+when TAB is pressed
 
 Instructions:
 Use the following keys to change transformation mode:
