@@ -32,8 +32,8 @@ import os
 models = []
 newShaders = []
 
-USD_input_filepath = str(SCENES_DIR / 'ExampleScene.usd')
-
+USD_input_filepath = SCENES_DIR / "ExampleScene.usd"
+USD_input_filepath = str(USD_input_filepath) # this is required for the imgui input_text function, possix.path -> str
 
 def SceneGUI(scene, initUpdate):
     global USD_input_filepath
