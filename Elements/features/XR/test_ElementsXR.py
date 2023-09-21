@@ -63,7 +63,7 @@ class TestElementsXR(unittest.TestCase):
         program = ElementsXR_program()
         program.set_Head(Head)
 
-        self.program.Initialize("ElementsXR Unit-test",self.initUpdate)
+        program.Initialize("ElementsXR Unit-test",self.initUpdate)
 
         while not exit_loop:
             self.scene.world.traverse_visit(self.transUpdate,self.scene.world.root)
