@@ -31,11 +31,12 @@ from Elements.definitions import SCENES_DIR
 from Elements.utils.helper_function import displayGUI_text
 example_description = \
 "This example demonstrates the ability to import \n\
-basic USD files, in this case a 3 red cube scene. \n\
-You may move the camera using the mouse or the GUI. \n\
-You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
-
+basic USD files. By pressing the button load scene \n\
+on a blank scene, the default usd is loaded and \n\
+3 red cubes are imported in the scene. You can choose to \n\
+import the usd file of your choice, by inputing the \n\
+appropriate filepath in the text box. Pressing \n\
+button save scene the current scene is saved in usd format file."
 
 models = []
 newShaders = []
