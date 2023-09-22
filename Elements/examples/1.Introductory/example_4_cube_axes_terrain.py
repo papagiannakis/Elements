@@ -18,7 +18,7 @@ from Elements.utils.helper_function import displayGUI_text
 example_description = \
 "This is a scene with a cube, a terrain and axes. \n\
 The cube and axes are rendered with a simple shader. \n\
-You cannot move the camera through the GUI. Hit ESC OR Close the window to quit." 
+You move the camera through the GUI or the camera. Hit ESC OR Close the window to quit." 
 
 winWidth = 1024
 winHeight = 768
