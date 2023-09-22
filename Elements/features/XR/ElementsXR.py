@@ -262,7 +262,7 @@ class ElementsXR_program:
         self.scaling_gizmos.add(line_X)
         self.scaling_gizmos.add(line_y)
         self.scaling_gizmos.add(line_z)
-        self.graphics_plugin.set_scaling_gizmos(x,y,z)
+        self.graphics_plugin.set_scaling_gizmos(x,y,z,line_X,line_y,line_z)
 
     def set_gizmos_mode(self, _mode: str):
         self.gizmos_Mode = _mode
