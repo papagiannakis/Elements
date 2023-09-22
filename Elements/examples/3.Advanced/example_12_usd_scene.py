@@ -27,7 +27,15 @@ import OpenGL.GL as gl
 
 from Elements.utils.terrain import generateTerrain
 from Elements.definitions import SCENES_DIR
-import os
+
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the ability to import \n\
+basic USD files, in this case a 3 red cube scene. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 
 models = []
 newShaders = []
@@ -196,6 +204,7 @@ model_terrain_axes = util.translate(0.0, 0.0, 0.0)
 White_Map = (b'\xff\xff\xff\xff', 1, 1)
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
