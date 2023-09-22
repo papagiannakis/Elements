@@ -28,17 +28,30 @@ To dive in the details of the project check [its detailed developer documentatio
 
 
 
-## Quick Start
+## Getting Started - Installation Instructions
 
-Download (or clone) this repo (or your fork) and, in a python 3.8 environment, run ```pip install -e .```
-
-Go to the ```Elements/examples``` folder and quickstart by using/modifying one of the existing examples.
-
-Installation instructions can be found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
+Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). For HY358 students, the instructions are [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions-for-HY358-Students).
 
 > [!NOTE]
-> We strongly recommend using [Anaconda](https://www.anaconda.com/products/individual) for your python environment, as well as 
-> [Visual Studio Code](https://code.visualstudio.com) as your IDE.
+> We strongly recommend using:
+> * [Anaconda](https://www.anaconda.com/products/individual) for your python environment, 
+> * [Visual Studio Code](https://code.visualstudio.com) as your IDE, and
+> * [Fork](https://git-fork.com)/[Sourcetree](https://www.sourcetreeapp.com) for version control.
+
+The main steps are:
+* Install Anaconda, VSCode, Git and a optionally a version control app
+* Clone (or download) this repo (or your forked repo)
+* Create a python 3.8 environment, by running 
+  ```conda create -n elements python=3.8```,
+  and activate it via
+  ```conda activate elements```
+* Install the Elements in editable mode by running
+ ```pip install -e .```
+* Start exploring the examples in the ```Elements/examples``` folder.
+
+
+
+
 
 ## Folder Structure
 
