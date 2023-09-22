@@ -21,6 +21,15 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.definitions import MODEL_DIR
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates a window where the projection matrix\n\
+is properly reset after a window resize. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
+
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
@@ -204,6 +213,7 @@ model_cube = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
