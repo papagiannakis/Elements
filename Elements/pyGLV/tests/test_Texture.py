@@ -28,6 +28,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.utils.helper_function import displayGUI_text
+from Elements.definitions import TEXTURE_DIR
 
 from OpenGL.GL import GL_LINES
 
@@ -143,8 +144,8 @@ class TestScene(unittest.TestCase):
 
 
         self.model_cube = self.trans4.trs
-        from Elements.definitions import TEXTURE_DIR
-        texturePath = os.path.join( TEXTURE_DIR , "uoc_logo.png")
+        
+        texturePath = TEXTURE_DIR / "uoc_logo.png"
         texture = Texture(texturePath)
         self.shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 

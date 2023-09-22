@@ -15,6 +15,16 @@ from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
 from Elements.definitions import TEXTURE_DIR
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the cube map texture, i.e., \n\
+we encapsulate the scene into a huge cube and apply texture to them\n\
+creating the illusion of a scenery. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
+
 winWidth = 1024
 winHeight = 768
 scene = Scene()    
@@ -144,17 +154,17 @@ projMat = util.perspective(50.0, 1.0, 0.01, 100.0)
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
-# skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Cloudy")
-skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
-front_img = os.path.join(skybox_texture_locations, "front.jpg")
-right_img = os.path.join(skybox_texture_locations,"right.jpg")
-left_img = os.path.join(skybox_texture_locations,"left.jpg")
-back_img = os.path.join(skybox_texture_locations,"back.jpg")
-bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
-top_img = os.path.join(skybox_texture_locations,"top.jpg")
+# skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Cloudy"
+skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Sea"
+front_img = skybox_texture_locations / "front.jpg"
+right_img = skybox_texture_locations / "right.jpg"
+left_img = skybox_texture_locations / "left.jpg"
+back_img = skybox_texture_locations / "back.jpg"
+bottom_img = skybox_texture_locations / "bottom.jpg"
+top_img = skybox_texture_locations / "top.jpg"
 
 
-mat_img = os.path.join(TEXTURE_DIR, "dark_wood_texture.jpg")
+mat_img = TEXTURE_DIR / "dark_wood_texture.jpg"
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 face_data_2 = get_single_texture_faces(mat_img)
@@ -166,6 +176,7 @@ model_cube = util.translate(0.0,0.5,0.0)
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

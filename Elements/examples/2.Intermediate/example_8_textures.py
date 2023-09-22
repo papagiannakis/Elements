@@ -18,6 +18,13 @@ from Elements.definitions import TEXTURE_DIR
 
 from OpenGL.GL import GL_LINES
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the ability to apply image textures to geometry. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 winWidth = 1024
 winHeight = 768
 scene = Scene()    
@@ -199,12 +206,13 @@ model_terrain_axes = terrain.getChild(0).trs # notice that terrain.getChild(0) =
 # OR 
 # model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
 
-texturePath = os.path.join(TEXTURE_DIR, "uoc_logo.png")
+texturePath = TEXTURE_DIR / "uoc_logo.png"
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
