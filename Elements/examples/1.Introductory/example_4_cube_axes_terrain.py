@@ -16,7 +16,7 @@ from OpenGL.GL import GL_LINES
 
 from Elements.utils.helper_function import displayGUI_text
 example_description = \
-"This is a scene with some a cube, a terrain and axes. \n\
+"This is a scene with a cube, a terrain and axes. \n\
 The cube and axes are rendered with a simple shader. \n\
 You cannot move the camera through the GUI. Hit ESC OR Close the window to quit." 
 
