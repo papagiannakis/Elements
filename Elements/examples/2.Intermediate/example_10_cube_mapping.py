@@ -18,7 +18,7 @@ from Elements.definitions import TEXTURE_DIR
 from Elements.utils.helper_function import displayGUI_text
 example_description = \
 "This example demonstrates the cube map texture, i.e., \n\
-we encapsulate the scene intro a huge cube and apply texture to them\n\
+we encapsulate the scene into a huge cube and apply texture to them\n\
 creating the illusion of a scenery. \n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\

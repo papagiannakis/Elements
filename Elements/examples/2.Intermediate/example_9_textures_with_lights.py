@@ -26,7 +26,7 @@ example_description = \
 "This example demonstrates the ability to apply image textures to geometry. \n\
 The scene is being lit using the Blinn-Phong algorithm. \n\n\
 To stop cube from rotating and  manipulate it via the ECSS graph \n\
-simply set the want_to_rotate variable to False. \n\n\
+simply set the want_to_rotate variable (in the code) to False. \n\n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
 various information about them. Hit ESC OR Close the window to quit." 
@@ -232,6 +232,7 @@ want_to_rotate = True
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
