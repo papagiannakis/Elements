@@ -1539,7 +1539,7 @@ class Gizmos_XR(Gizmos):
         Returns:
             None
         """
-        #if left trigger was pressed, then change target and/or transformation
+        #if left grab was pressed, then change target and/or transformation
         assert self.program is not None
 
         grab_values = self.program.grab_values
@@ -1550,8 +1550,6 @@ class Gizmos_XR(Gizmos):
 
                 if self.left_grab_counter==4:
                     self.left_grab_counter = 1
-                
-                print(self.left_grab_counter) #when grab counter==2 it should change to scaling
 
                 if self.left_grab_counter==1:
                     self.mode = Mode.TRANSLATE
@@ -1560,10 +1558,10 @@ class Gizmos_XR(Gizmos):
                         self.is_selected = True
                         self.__update_gizmos_trans()
                         self.__update_gizmos()
-                elif self.left_grab_counter==2:
-                    self.mode==Mode.SCALE
                 elif self.left_grab_counter==3:
                     self.mode = Mode.ROTATE
+                else:
+                    self.mode==Mode.SCALE
                 self.program.set_gizmos_mode(self.mode.value)
         else:
             self.left_grab_lock = False
