@@ -352,6 +352,7 @@ class OpenGLPlugin(GraphicsPlugin):
                     swapchain_image_base_ptr: POINTER(xr.SwapchainImageBaseHeader),
                     _swapchain_format: int,
                     renderUpdate: RenderGLShaderSystem,
+                    offset=util.vec(0.064),
                     mirror=False
                     ):
         """
@@ -427,6 +428,7 @@ class OpenGLPlugin(GraphicsPlugin):
         for element in scene.world.root:
             if element is not None and element.getClassName()=="ShaderGLDecorator":
                 model = element.parent.getChild(0).l2world
+                #model = element.parent.getChild(0).l2world @ util.translate(offset)
                 mvp = proj @ view @ model
 
                 parent = element.parent.name

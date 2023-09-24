@@ -1072,6 +1072,10 @@ class ElementsXR_program:
             view.sub_image.image_rect.extent[:] = [view_swapchain.width, view_swapchain.height ]
             swapchain_image_ptr = self.swapchain_image_ptr_buffers[hash(view_swapchain.handle)][swapchain_image_index]
 
+            offset = util.vec(0.064,0.0,0.0)
+            if i==1:
+                offset = -offset
+
             print("Inside render_layer:")
             print("Viewport parameters:")
             print("offset: (x,y) = (",view.sub_image.image_rect.offset.x,",",view.sub_image.image_rect.offset.y,")")
@@ -1082,11 +1086,12 @@ class ElementsXR_program:
             print("fov: ",view.pose.fov)
 
             self.graphics_plugin.Render_View(
-                view,
-                swapchain_image_ptr,
-                self.color_swapchain_format,
-                renderer,
-                False #mirror=i==0 #mirror left eye only
+                layer_view=view,
+                swapchain_image_base_ptr=swapchain_image_ptr,
+                _swapchain_format=self.color_swapchain_format,
+                renderUpdate=renderer,
+                offset=offset,
+                mirror=False #mirror=i==0 #mirror left eye only
             )
             xr.release_swapchain_image(
                 swapchain=view_swapchain.handle,
