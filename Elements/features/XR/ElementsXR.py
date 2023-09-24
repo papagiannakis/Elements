@@ -1016,7 +1016,7 @@ class ElementsXR_program:
         vsf = view_state.view_state_flags
         if (vsf & xr.VIEW_STATE_POSITION_VALID_BIT == 0
                 or vsf & xr.VIEW_STATE_ORIENTATION_VALID_BIT == 0):
-            return False  # There are no valid tracking poses for the views.
+            return False  # No valid tracking poses for the views.
         assert view_count_output == view_capacity_input
         assert view_count_output == len(self.config_views)
         assert view_count_output == len(self.swapchains)
@@ -1034,7 +1034,8 @@ class ElementsXR_program:
             #if true then the program has focus -> it can take input from the controllers
             if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
-                scale = 0.1 * self.input.hand_scale[hand]
+                #scale = 0.1 * self.input.hand_scale[hand]
+                scale = 1.0
                 position = space_location.pose.position
                 orientation = space_location.pose.orientation
 
@@ -1060,6 +1061,7 @@ class ElementsXR_program:
                 swapchain=view_swapchain.handle,
                 wait_info=xr.SwapchainImageWaitInfo(timeout=xr.INFINITE_DURATION),
             )
+            view: xr.CompositionLayerProjectionView ##
             view = projection_layer_views[i]
 
             assert view.type == xr.StructureType.COMPOSITION_LAYER_PROJECTION_VIEW
@@ -1069,6 +1071,16 @@ class ElementsXR_program:
             view.sub_image.image_rect.offset[:] = [0, 0]
             view.sub_image.image_rect.extent[:] = [view_swapchain.width, view_swapchain.height ]
             swapchain_image_ptr = self.swapchain_image_ptr_buffers[hash(view_swapchain.handle)][swapchain_image_index]
+
+            print("Inside render_layer:")
+            print("Viewport parameters:")
+            print("offset: (x,y) = (",view.sub_image.image_rect.offset.x,",",view.sub_image.image_rect.offset.y,")")
+            print("Width: ",view.sub_image.image_rect.extent.width)
+            print("Height: ",view.sub_image.image_rect.extent.height)
+            print("View Translation: ",view.pose.position)
+            print("View Rotation: ",view.pose.orientation)
+            print("fov: ",view.pose.fov)
+
             self.graphics_plugin.Render_View(
                 view,
                 swapchain_image_ptr,

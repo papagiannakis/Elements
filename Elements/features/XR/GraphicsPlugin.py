@@ -378,6 +378,11 @@ class OpenGLPlugin(GraphicsPlugin):
                       layer_view.sub_image.image_rect.offset.y,
                       layer_view.sub_image.image_rect.extent.width,
                       layer_view.sub_image.image_rect.extent.height)
+        print("Inside Render_View:")
+        print("Viewport parameters:")
+        print("offset: (x,y) = (",layer_view.sub_image.image_rect.offset.x,",",layer_view.sub_image.image_rect.offset.y,")")
+        print("Width: ",layer_view.sub_image.image_rect.extent.width)
+        print("Height: ",layer_view.sub_image.image_rect.extent.height)
 
         GL.glFrontFace(GL.GL_CCW)
         GL.glCullFace(GL.GL_BACK)
@@ -401,6 +406,9 @@ class OpenGLPlugin(GraphicsPlugin):
         fov = layer_view.fov
         translation = model_head @ util.translate(position.x,position.y,position.z)
         rotation = create_xr_quaternion(util.quaternion(orientation.x,orientation.y,orientation.z,orientation.w))
+        print("View Translation: ",position)
+        print("View Rotation: ",orientation)
+        print("fov: ",fov)
 
         #aspect_ratio = layer_view.sub_image.image_rect.extent.width / layer_view.sub_image.image_rect.extent.height
         #aspect_ratio = layer_view.sub_image.image_rect.extent.height / layer_view.sub_image.image_rect.extent.width
