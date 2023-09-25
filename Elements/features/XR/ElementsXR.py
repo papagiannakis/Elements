@@ -1037,7 +1037,6 @@ class ElementsXR_program:
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
                 scale = 0.1 * self.input.hand_scale[hand]
                 #scale = 1.0
-                print(self.input.hand_scale[hand])
                 position = space_location.pose.position
                 orientation = space_location.pose.orientation
 

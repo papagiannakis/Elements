@@ -1551,17 +1551,19 @@ class Gizmos_XR(Gizmos):
                 if self.left_grab_counter==4:
                     self.left_grab_counter = 1
 
+                print(self.left_grab_counter)
                 if self.left_grab_counter==1:
                     self.mode = Mode.TRANSLATE
                     self.change_target()
                     if self.total>0:
                         self.is_selected = True
                         self.__update_gizmos_trans()
-                        self.__update_gizmos()
-                elif self.left_grab_counter==3:
+                        #self.__update_gizmos()
+                if self.left_grab_counter==2:
                     self.mode = Mode.ROTATE
-                else:
-                    self.mode==Mode.SCALE
+                if self.left_grab_counter==3:
+                    self.mode = Mode.SCALE
+                self.__update_gizmos()
                 self.program.set_gizmos_mode(self.mode.value)
         else:
             self.left_grab_lock = False
