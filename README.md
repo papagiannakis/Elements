@@ -60,7 +60,7 @@ The main steps summarize as follows:
   * [examples](./Elements/examples): Example files related to pyECSS
   * [features](./Elements/features): Features extending basic functionality of Elements
     * [BasicShapes](./Elements/features/BasicShapes): Quickly add basic shapes (cubes, spheres, cones) to the scene with helper functions
-    * [GA](./Elements/features/GA): Use Geometric Algebra in the context of Elements
+    * [GA](./Elements/features/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
     * [Gizmos](./Elements/features/Gizmos): Introducing Unity-like Gizmos to the Elements, for object manipulation
     * [SkinnedMesh](./Elements/features/SkinnedMesh): Visualize skinned meshes by applying the animation equation
     * [Slicing](./Elements/features/Slicing): Visualize sliced version of a 3D object
@@ -71,20 +71,18 @@ The main steps summarize as follows:
     * [rigid_body_animation](./Elements/features/rigid_body_animation): Animate a skinned mesh (preliminary version)
     * [usd](./Elements/features/usd): Enable loading/saving using Pixar's Universal Scene Descriptor (USD) format
   * [files](./Elements/files): Static files required
-    * [atlas_files](./Elements/files/atlas_files): Required for the [atlas](./Elements/features/atlas) feature
+    * [atlas_files](./Elements/files/atlas_files): Required for the Classification and Generative AI examples/notebooks
     * [models](./Elements/files/models): Various 3D models, static or rigged
     * [scenes](./Elements/files/scenes): Scenes in USD format
     * [scv](./Elements/files/scv): Various SCV files
     * [shaders](./Elements/files/shaders): Various shader files
     * [textures](./Elements/files/textures): Various texture files
   * [pyECSS](./Elements/pyECSS): Contains all the source code for pyECSS - Entity, Component, System, Scenegraph functionality
-    * [GA](./Elements/pyECSS/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
     * [tests](./Elements/pyECSS/tests): Test files for pyECSS
   * [pyGLV](./Elements/pyGLV): Contains all the source code for pyGLV - graphics, shading, imgui functionality
     * [tests](./Elements/pyGLV/tests): Test files for pyGLV
     * [GL](./Elements/pyGLV/GL): The basic Graphics Library files (Scene, Shader, Texture, VertexArray)
     * [GUI](./Elements/pyGLV/GUI): Files related to the window and GUI instantiation.
-    * [utils](./Elements/pyGLV/utils): Utility files and functions for pyGLV.
   * [pyEEL](./Elements/pyEEL): The pyEEL learning hub
     * [notebooks](./Elements/pyEEL/notebooks): Contains all the jupyter notebooks of pyEEL  
       * [SciCom](./Elements/pyEEL/notebooks/SciCom): Scientific Computation related notebooks
