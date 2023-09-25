@@ -1084,7 +1084,7 @@ class ElementsXR_program:
             #print("Height: ",view.sub_image.image_rect.extent.height)
             #print("View Translation: ",view.pose.position)
             #print("View Rotation: ",view.pose.orientation)
-            #print("View: ",i)
+            print("View: ",i)
 
             self.graphics_plugin.Render_View(
                 layer_view=view,
@@ -1098,7 +1098,7 @@ class ElementsXR_program:
                 swapchain=view_swapchain.handle,
                 release_info=xr.SwapchainImageReleaseInfo()
             )
-        #layer.view_count = len(projection_layer_views)
+        layer.view_count = len(projection_layer_views)
         layer.views = projection_layer_views
         return True
     
