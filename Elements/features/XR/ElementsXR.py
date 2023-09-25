@@ -912,16 +912,18 @@ class ElementsXR_program:
         """
         if self.raycast==False:
             raise("Raycast is not Enabled")
-
-        #TBC
+        
         left_ray_mesh = np.array(self.rays[0].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
         right_ray_mesh = np.array(self.rays[1].getChildByType(RenderMesh.getClassName()).vertex_attributes[0],copy=True)
 
         left_ray_transform = self.hands[Side.LEFT].getChildByType(BasicTransform.getClassName()).l2world
         right_ray_transform = self.hands[Side.RIGHT].getChildByType(BasicTransform.getClassName()).l2world
 
-        left_ray_mesh = left_ray_mesh @ left_ray_transform
-        right_ray_mesh = right_ray_mesh @ right_ray_transform
+        left_ray_mesh = left_ray_transform @ left_ray_mesh.transpose()
+        right_ray_mesh = right_ray_transform @ right_ray_mesh.transpose()
+
+        left_ray_mesh = left_ray_mesh.transpose()
+        right_ray_mesh = right_ray_mesh.transpose()
 
         for i in range(len(left_ray_mesh)):
             left_ray_mesh[i] = left_ray_mesh[i]/left_ray_mesh[i][3]
@@ -936,7 +938,6 @@ class ElementsXR_program:
         ray_start_right = util.vec(right_ray_mesh[0][0],right_ray_mesh[0][1],right_ray_mesh[0][2])
         ray_end_right = util.vec(right_ray_mesh[1][0],right_ray_mesh[1][1],right_ray_mesh[1][2])
 
-        #Note: this array must get an extra position when used on the Gizmos. Same goes for ray origins
         ray_direction_left = util.normalise(util.vec(ray_end_left[0] - ray_start_left[0],
                                                     ray_end_left[1] - ray_start_left[1],
                                                     ray_end_left[2] - ray_start_left[2]))
@@ -1034,8 +1035,9 @@ class ElementsXR_program:
             #if true then the program has focus -> it can take input from the controllers
             if (loc_flags & xr.SPACE_LOCATION_POSITION_VALID_BIT != 0
                     and loc_flags & xr.SPACE_LOCATION_ORIENTATION_VALID_BIT != 0):
-                #scale = 0.1 * self.input.hand_scale[hand]
-                scale = 1.0
+                scale = 0.1 * self.input.hand_scale[hand]
+                #scale = 1.0
+                print(self.input.hand_scale[hand])
                 position = space_location.pose.position
                 orientation = space_location.pose.orientation
 
@@ -1076,14 +1078,14 @@ class ElementsXR_program:
             if i==1:
                 offset = -offset
 
-            print("Inside render_layer:")
-            print("Viewport parameters:")
-            print("offset: (x,y) = (",view.sub_image.image_rect.offset.x,",",view.sub_image.image_rect.offset.y,")")
-            print("Width: ",view.sub_image.image_rect.extent.width)
-            print("Height: ",view.sub_image.image_rect.extent.height)
-            print("View Translation: ",view.pose.position)
-            print("View Rotation: ",view.pose.orientation)
-            print("fov: ",view.pose.fov)
+            #print("Inside render_layer:")
+            #print("Viewport parameters:")
+            #print("offset: (x,y) = (",view.sub_image.image_rect.offset.x,",",view.sub_image.image_rect.offset.y,")")
+            #print("Width: ",view.sub_image.image_rect.extent.width)
+            #print("Height: ",view.sub_image.image_rect.extent.height)
+            #print("View Translation: ",view.pose.position)
+            #print("View Rotation: ",view.pose.orientation)
+            #print("View: ",i)
 
             self.graphics_plugin.Render_View(
                 layer_view=view,
