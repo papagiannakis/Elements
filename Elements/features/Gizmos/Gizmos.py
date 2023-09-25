@@ -1551,7 +1551,6 @@ class Gizmos_XR(Gizmos):
                 if self.left_grab_counter==4:
                     self.left_grab_counter = 1
 
-                print(self.left_grab_counter)
                 if self.left_grab_counter==1:
                     self.mode = Mode.TRANSLATE
                     self.change_target()
@@ -2061,7 +2060,6 @@ class Gizmos_XR(Gizmos):
         Returns:
             None
         """
-        print("Translate: ",self.selected_gizmo)
         self.selected_trans.trs = util.translate(x,y,z) @ self.selected_trans.trs
         self.__update_gizmos_trans()
  

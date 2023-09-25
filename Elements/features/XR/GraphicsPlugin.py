@@ -385,9 +385,9 @@ class OpenGLPlugin(GraphicsPlugin):
         #print("Width: ",layer_view.sub_image.image_rect.extent.width)
         #print("Height: ",layer_view.sub_image.image_rect.extent.height)
 
-        GL.glFrontFace(GL.GL_CCW)
-        GL.glCullFace(GL.GL_BACK)
-        GL.glEnable(GL.GL_CULL_FACE)
+        #GL.glFrontFace(GL.GL_CCW)
+        #GL.glCullFace(GL.GL_BACK)
+        #GL.glEnable(GL.GL_CULL_FACE)
         GL.glEnable(GL.GL_DEPTH_TEST)
         
         color_texture = swapchain_image.image
