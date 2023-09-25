@@ -30,7 +30,7 @@ To dive in the details of the project check [its detailed developer documentatio
 
 ## Getting Started - Installation Instructions
 
-Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). For HY358 students, the instructions are [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions-for-HY358-Students).
+Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). For **Computer Graphics Course students**, the instructions are [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions-for-HY358-Students).
 
 > [!NOTE]
 > We strongly recommend using:
@@ -38,7 +38,7 @@ Begin by following the installation instructions, found [HERE](https://elementsp
 > * [Visual Studio Code](https://code.visualstudio.com) as your IDE, and
 > * [Fork](https://git-fork.com)/[Sourcetree](https://www.sourcetreeapp.com) for version control.
 
-The main steps are:
+The main steps summarize as follows:
 * Install Anaconda, VSCode, Git and a optionally a version control app
 * Clone (or download) this repo (or your forked repo)
 * Create a python 3.8 environment, by running 
