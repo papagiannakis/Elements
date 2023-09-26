@@ -1062,12 +1062,14 @@ class ElementsXR_program:
                 swapchain=view_swapchain.handle,
                 wait_info=xr.SwapchainImageWaitInfo(timeout=xr.INFINITE_DURATION),
             )
-            view: xr.CompositionLayerProjectionView ##
+            view: xr.CompositionLayerProjectionView
             view = projection_layer_views[i]
 
             assert view.type == xr.StructureType.COMPOSITION_LAYER_PROJECTION_VIEW
             view.pose = self.views[i].pose
             view.fov = self.views[i].fov
+            view.next = None
+            view.sub_image.image_array_index = 0
             view.sub_image.swapchain = view_swapchain.handle
             view.sub_image.image_rect.offset[:] = [0, 0]
             view.sub_image.image_rect.extent[:] = [view_swapchain.width, view_swapchain.height ]
@@ -1076,15 +1078,6 @@ class ElementsXR_program:
             offset = util.vec(0.064,0.0,0.0)
             if i==1:
                 offset = -offset
-
-            #print("Inside render_layer:")
-            #print("Viewport parameters:")
-            #print("offset: (x,y) = (",view.sub_image.image_rect.offset.x,",",view.sub_image.image_rect.offset.y,")")
-            #print("Width: ",view.sub_image.image_rect.extent.width)
-            #print("Height: ",view.sub_image.image_rect.extent.height)
-            #print("View Translation: ",view.pose.position)
-            #print("View Rotation: ",view.pose.orientation)
-            print("View: ",i)
 
             self.graphics_plugin.Render_View(
                 layer_view=view,
