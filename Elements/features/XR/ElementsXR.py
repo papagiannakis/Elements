@@ -320,6 +320,7 @@ class ElementsXR_program:
         view_count = len(self.config_views)
         assert view_count == 2 # 2 eyes
         self.views = (xr.View * view_count)(*([xr.View()] * view_count))
+
         # Create the swapchain and get the images.
         # Select a swapchain format.
         swapchain_formats = xr.enumerate_swapchain_formats(self.session)
@@ -862,10 +863,10 @@ class ElementsXR_program:
                     # Scale the rendered hand by 1.0f (open) to 0.5f (fully squeezed).
                     self.input.hand_scale[hand] = 1 - 0.3 * grab_value.current_state
                     
-                    #grab value equals 1.0 when trigger is fully pressed
+                    #grab value equals 1.0 when grab is fully pressed
                     self.grab_values[hand] = (grab_value.current_state==1.0)
 
-                    #uncomment these if you want the controllers to vibrate when the triggers are pressed
+                    #un-comment these if you want the controllers to vibrate when grab buttons are pressed
                     """
                     if grab_value.current_state > 0.9:
                         vibration = xr.HapticVibration(
@@ -992,6 +993,7 @@ class ElementsXR_program:
             frame_end_info=xr.FrameEndInfo(
                 display_time=frame_state.predicted_display_time,
                 environment_blend_mode=self.options.parsed["environment_blend_mode"],
+                layer_count=len(layers),
                 layers=layers,
             ),
         )
