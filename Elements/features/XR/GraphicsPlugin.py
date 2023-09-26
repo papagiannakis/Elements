@@ -17,30 +17,6 @@ import xr
 
 logger = logging.getLogger("XRprogram.OpenGLPlugin")
 
-def invert_rigid_body(m):
-        """
-        
-        """
-        result = np.empty([4,4],dtype=np.float32)
-        result[0,0] = m[0,0]
-        result[0,1] = m[1,0]
-        result[0,2] = m[2,0]
-        result[0,3] = 0.0
-        result[1,0] = m[0,1]
-        result[1,1] = m[1,1]
-        result[1,2] = m[2,1]
-        result[1,3] = 0.0
-        result[2,0] = m[0,2]
-        result[2,1] = m[1,2]
-        result[2,2] = m[2,2]
-        result[2,3] = 0.0
-        result[3,0] = -(m[0,0] * m[3,0] + m[0,1] * m[3,1] + m[0,2] * m[3,2])
-        result[3,1] = -(m[1,0] * m[3,0] + m[1,1] * m[3,1] + m[1,2] * m[3,2])
-        result[3,2] = -(m[2,0] * m[3,0] + m[2,1] * m[3,1] + m[2,2] * m[3,2])
-        result[3,3] = 1.0
-
-        return result
-
 class GraphicsPlugin(object):
     
     @abc.abstractmethod
