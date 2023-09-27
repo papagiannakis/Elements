@@ -311,7 +311,7 @@ top_img = os.path.join(skybox_texture_locations,"top.png")
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 texturePathFloor = os.path.join(TEXTURE_DIR, "black_stones_floor.jpg")
 textureFloor = Texture(texturePathFloor)
-texturePathWood = os.path.join(TEXTURE_DIR, "dark_wood_texture.jpg")
+texturePathWood = os.path.join(TEXTURE_DIR, "Black_Wooden_Floor.png")
 textureWood = Texture(texturePathWood)
 
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)

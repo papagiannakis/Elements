@@ -270,11 +270,11 @@ top_img = os.path.join(skybox_texture_locations,"top.jpg")
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 
-texturePath_Ground = os.path.join(TEXTURE_DIR, "Texture_Grass.png")
+texturePath_Ground = os.path.join(TEXTURE_DIR, "black_stones_floor.jpg")
 texture = Texture(texturePath_Ground)
 ground_shader.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
-texturePath_Wood_Material = os.path.join(TEXTURE_DIR, "dark_wood_texture.jpg")
+texturePath_Wood_Material = os.path.join(TEXTURE_DIR, "Black_Wooden_Floor.png")
 texture_Wood = Texture(texturePath_Wood_Material)
 
 shaderDec_TableTop.setUniformVariable(key='ImageTexture', value=texture_Wood, texture=True)
