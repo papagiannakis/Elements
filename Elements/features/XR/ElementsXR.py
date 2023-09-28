@@ -1039,6 +1039,11 @@ class ElementsXR_program:
         assert view_count_output == len(self.swapchains)
         assert view_count_output == len(projection_layer_views)
 
+        model_head = util.identity()
+
+        if self.head is not None:
+            model_head = self.head.getChild(0).l2world
+
         #Update hands before rendering
         for hand in Side:
             space_location = xr.locate_space(
@@ -1059,7 +1064,7 @@ class ElementsXR_program:
                 between_hands = self.hand_dist
                 if not hand: #Left hand goes a bit to the left, while the right hand goes a bit to the right.
                     between_hands = -between_hands
-                model = util.translate(position.x+0.8+between_hands,
+                model = model_head @ util.translate(position.x+0.8+between_hands,
                                     position.y-0.5,
                                     position.z+2.0) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
                                                                                                         orientation.y,
