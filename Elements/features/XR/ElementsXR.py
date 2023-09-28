@@ -286,8 +286,8 @@ class ElementsXR_program:
 
     def create_Swapchains(self):        
         """
-        Create a Swapchain which requires coordinating with the graphics plugin to select the format, getting the system graphics
-        properties, getting the view configuration and grabbing the resulting swapchain images.
+        Create a Swapchain for each view which require coordinating with the graphics plugin to select the format, 
+        getting the system graphics properties, getting the view configuration and grabbing the resulting swapchain images.
         Arguments:
             self: self
         Returns:
@@ -505,7 +505,12 @@ class ElementsXR_program:
 
     def initialize_actions(self):
         """ 
-        Create an action set for various controllers
+        Create an action set for various controllers. 
+        Available Actions:
+            pose Action: Action used to update each hand's position and orientation
+            grab Action: Action used to get the value from the grab button of each controller in range [0.0,1.0]
+            quit Action: Action used to get the quit button's input. When the quit button is pressed the program terminates
+            vibrate Action: Action that can be used to vibrate the controllers
         Arguments:
             self: self
         Returns:
@@ -767,7 +772,7 @@ class ElementsXR_program:
     
     def poll_events(self):
         """
-        If there is an available xr event, check what type of event it is
+        process an xr event, if there is one
         Arguments:
             self: self
         Returns:
@@ -793,7 +798,7 @@ class ElementsXR_program:
 
     def handle_event(self,event,exit_loop):
         """
-        Handles an event, when there is one
+        Handle an event, when there is one
         Arguments:
             self: self
             event: a certain openxr type that refers to a session's contents
@@ -1005,6 +1010,15 @@ class ElementsXR_program:
             renderer: RenderGLShaderSystem
             ) -> bool:
         """
+        Render and return a layer
+        Arguments:
+            self: self
+            predicted_display_time: 
+            projection_layer_views: array containing information about each view
+            layer: layer to be rendered
+            renderer: Rendering System that the graphics plugin uses to update uniform variables
+        Returns:
+            True if the layer could be rendered, False otherwise
         """
         view_capacity_input = len(self.views)
         view_state, self.views = xr.locate_views(
@@ -1119,7 +1133,6 @@ class ElementsXR_program:
                 self.visualized_spaces.append(space)
             except xr.XrException as exc:
                 print(f"Failed to create reference space {visualized_space} with error {exc}")
-                #logger.warning(f"Failed to create reference space {visualized_space} with error {exc}")
 
     #Below are some logging methods for the program's configuration
 
