@@ -1064,9 +1064,9 @@ class ElementsXR_program:
                 between_hands = self.hand_dist
                 if not hand: #Left hand goes a bit to the left, while the right hand goes a bit to the right.
                     between_hands = -between_hands
-                model = model_head @ util.translate(position.x+0.8+between_hands,
-                                    position.y-0.5,
-                                    position.z+2.0) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
+                model = model_head @ util.translate(position.x-0.2+between_hands,
+                                    position.y+4.0,
+                                    position.z+6.3) @ util.inverse(create_xr_quaternion(util.quaternion(orientation.x,
                                                                                                         orientation.y,
                                                                                                         orientation.z,
                                                                                                         orientation.w))) @ util.scale(scale,scale,scale)

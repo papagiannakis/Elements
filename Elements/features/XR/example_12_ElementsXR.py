@@ -85,7 +85,7 @@ mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_Table
 
 Head = scene.world.createEntity(Entity(name="Head"))
 scene.world.addEntityChild(rootEntity,Head)
-trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-0.1,-4.0,-4.5)))
+trans_head = scene.world.addComponent(Head,BasicTransform(name="trans_head",trs=util.translate(-0.1,-5.0,-4.5)))
 
 Left_Hand = scene.world.createEntity(Entity(name="Left_hand"))
 #scene.world.addEntityChild(Head,Left_Hand)
