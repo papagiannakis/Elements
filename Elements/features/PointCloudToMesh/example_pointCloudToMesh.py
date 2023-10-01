@@ -21,9 +21,18 @@ from OpenGL.GL import GL_POINTS
 import imgui
 from PointCloudToMesh import generateTrianglesFromCustomList
 from PointCloudToMesh import generateBunnyExample
+from Elements.utils.helper_function import displayGUI_text
+
+example_description = \
+"This example shows the conversion of a point cloud to a mesh. \n\
+Input can be randomly generated or you can see the bunny example\n\
+The scene is being lit using the Blinn-Phong algorithm. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may alter the variables of the shader through the Shader vars window \n\
+Hit ESC OR Close the window to quit." 
 
 ambColor, ambStr = [1,0,0], 0
-vwPos, lghtPos, lghtCol, lghtInt = [0,0,0], [0,0,0], [0.5, 0.5, 0.5], 3
+vwPos, lghtPos, lghtCol, lghtInt = [0,0,0], [0,2,2], [0.5, 0.5, 0.5], 3
 str, matCol= 0.5, [0.5, 0.5, 0.5]
 
 def displayGUI():
@@ -31,7 +40,7 @@ def displayGUI():
     global vwPos, lghtPos, lghtCol, lghtInt
     global str, matCol
     
-    imgui.begin("TRS")
+    imgui.begin("Shader vars")
     
     changed, ambColor = imgui.drag_float3("ambientColor", *ambColor, change_speed=0.05)
     changed, ambStr = imgui.drag_float("ambientStr", ambStr, change_speed=0.05)
@@ -121,7 +130,7 @@ def main():
     # MAIN RENDERING LOOP
 
     running = True
-    scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: A Working Event Manager", openGLversion = 4)
+    scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: point Cloud to Mesh", openGLversion = 4)
     scene.world.traverse_visit(initUpdate, scene.world.root)
 
     ################### EVENT MANAGER ###################
@@ -148,8 +157,8 @@ def main():
     projMat = util.perspective(50.0, 1.0, 0.01, 10.0)
 
     gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-
-
+    gWindow._colorEditor = 173, 216, 230
+    
     model_cube = trans4.trs @ util.scale(10,10,10)
 
 
@@ -163,6 +172,7 @@ def main():
         mvp_terrain_axes = projMat @ view @ model_terrain_axes
         
         displayGUI()
+        displayGUI_text(example_description)
         
         points_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
         

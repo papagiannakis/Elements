@@ -3,38 +3,44 @@ Axis Alinged bounding box class
     
 @author Nikos Iliakis csd4375
 """
+import numpy as np
 from Elements.pyECSS.Component import Component
 from GravityCollisonSystem import GravityCollisionSystem
 
 """Axis Aligned bounding boxes Class"""
 class AABoundingBox(Component):
-    def __init__(self, name=None, type=None, id=None, min_points=None, max_points=None, floor=None, density=0.01, hasGravity=True):
+    def __init__(self, name=None, type=None, id=None, vertices=None, objectCollisionList=None, density=0.001, hasGravity=True):
         super().__init__(name, type, id)
         
-        self._max_points = max_points   
-        self._min_points = min_points
-        self._trans_max_points = max_points
-        self._trans_min_points = min_points
-        self._floor = floor
+        mins = [np.min(vertices[:, 0]), np.min(vertices[:, 1]), np.min(vertices[:, 2])]
+        maxs = [np.max(vertices[:, 0]), np.max(vertices[:, 1]), np.max(vertices[:, 2])]
+        
+        self._vertices = [
+            [mins[0], mins[1], mins[2], 1],
+            [mins[0], mins[1], maxs[2], 1],
+            [mins[0], maxs[1], mins[2], 1],
+            [mins[0], maxs[1], maxs[2], 1],
+            [maxs[0], mins[1], mins[2], 1],
+            [maxs[0], mins[1], maxs[2], 1],
+            [maxs[0], maxs[1], mins[2], 1],
+            [maxs[0], maxs[1], maxs[2], 1],
+        ]
+            
+        self._trans_max_points = mins
+        self._trans_min_points = maxs
+        
+        self._objectCollisionList = objectCollisionList
         self._density = density
         self._hasGravity = hasGravity
         self._isColliding = False
 
     @property
-    def max_points(self):
-        return self._max_points
+    def vertices(self):
+        return self._vertices
     
-    @max_points.setter
-    def max_points(self, max_points):
-        self._max_points = max_points
-
-    @property
-    def min_points(self):
-        return self._min_points
-    
-    @min_points.setter
-    def min_points(self, min_points):
-        self._min_points = min_points
+    @vertices.setter
+    def vertices(self, vertices):
+        self._vertices = vertices
     
     @property
     def trans_max_points(self):
@@ -53,12 +59,12 @@ class AABoundingBox(Component):
         self._trans_min_points = trans_min_points
         
     @property
-    def floor(self):
-        return self._floor
+    def objectCollisionList(self):
+        return self._objectCollisionList
     
-    @floor.setter
-    def floor(self, floor):
-        self._floor = floor
+    @objectCollisionList.setter
+    def objectCollisionList(self, objectCollisionList):
+        self._objectCollisionList = objectCollisionList
         
     @property
     def isColliding(self):
@@ -119,6 +125,6 @@ class AABoundingBox(Component):
         # We need this to check if the current system in accept is the GravityCollisionSystem
         # Because if it isnt it wont have apply2BoundingBox function and it will throw an error
         if hasattr(system, 'apply2BoundingBox'):
-            # Call the method if it exists
-            system.apply2BoundingBox(self)
+            system.apply2BoundingBox(self)   # Call the method if it exists
+            
     
