@@ -24,8 +24,9 @@ from Elements.utils.normals import Convert
 from AABoundingBox import AABoundingBox
 from GravityCollisonSystem import GravityCollisionSystem
 from floor import generate_floor_with_bb
-from floor import create_max_points_list
-from floor import create_min_points_list
+
+from Elements.utils.helper_function import displayGUI_text
+
 
 
 class GameObjectEntity(Entity):
@@ -78,16 +79,18 @@ def CubeSpawn(cubename = "Cube"):
         [0.5, 0.5, -0.5, 1.0], 
         [0.5, -0.5, -0.5, 1.0]
     ];
+    
+    color = [rand.uniform(0,1), rand.uniform(0,1), rand.uniform(0,1), 1.0]
     colors = [
-        [1.0, 0.0, 0.0, 1.0],
-        [1.0, 0.5, 0.0, 1.0],
-        [1.0, 0.0, 0.5, 1.0],
-        [0.5, 1.0, 0.0, 1.0],
-        [0.0, 1.0, 1.5, 1.0],
-        [0.0, 1.0, 1.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0],
-        [0.0, 1.0, 0.0, 1.0]                    
-    ];
+        color,
+        color,
+        color,
+        color,
+        color,
+        color,
+        color,
+        color                    
+    ]
     # OR
     # colors =  [cube.color] * len(vertices) 
     
@@ -109,7 +112,16 @@ def CubeSpawn(cubename = "Cube"):
     cube.SetVertexAttributes(vertices, colors, indices, normals);
     
     return cube;
-    
+
+example_description = \
+"This example shows the application of gravity on objects with \n\
+axis aligned bounding boxes. As well as the collision between \n\
+the bounding boxes of the cubes and the floor. The moment a cube hits \n\
+the floor it is considered as part of it and more cubes can land on it \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 def main(imguiFlag = False):
     ##########################################################
     # Instantiate a simple complete ECSS with Entities, 
@@ -147,25 +159,27 @@ def main(imguiFlag = False):
     
     # Generating floor with bounding box so that the objects can collide
     floor_trans, floor_shader, floor_bb = generate_floor_with_bb(rootEntity)
+
+    collisionObjectList = [floor_bb] # NEED TO PASS THE SAME LIST TO ALL OF THEM
+    number_of_cubes_in_scene = 125
     
-    # Spawning 10 cubes with random transformations with bounding boxes
-    for i in range(0, 10):
+    # Spawning 125 cubes with random transformations with bounding boxes
+    for i in range(0, number_of_cubes_in_scene):
         cube: GameObjectEntity = CubeSpawn()
         scene.world.addEntityChild(home1, cube)
-        cube.trans.trs = util.translate(rand.uniform(-4, 4), 0, rand.uniform(-4, 4))
-        #cube.trans.trs = cube.trans.trs @ util.rotate(axis=[0, 0, rand.randint(0, 1),], angle = rand.uniform(0,180))
+        cube.trans.trs = util.translate(rand.uniform(-5, 5), rand.uniform(2, 20), rand.uniform(-5, 5))
+        #cube.trans.trs = cube.trans.trs @ util.rotate(axis= [rand.randint(0,1), rand.randint(0,1), rand.randint(0,1)], angle = rand.uniform(0,360))
         cube.trans.trs = cube.trans.trs @ util.scale(rand.uniform(0.2, 1),rand.uniform(0.2, 1),rand.uniform(0.2, 1)) 
         scene.world.addComponent(cube, AABoundingBox(name="AABoundingBox",
-                                        min_points=create_min_points_list(cube.mesh.vertex_attributes[0]), 
-                                        max_points=create_max_points_list(cube.mesh.vertex_attributes[0]),
-                                        floor= floor_bb))
+                                        vertices = cube.mesh.vertex_attributes[0],
+                                        objectCollisionList = collisionObjectList))
         
-    home1.getChild(0).trs = util.translate(0, 2, 0)
+    home1.getChild(0).trs = util.translate(0, 0, 0)
 
     
     # MAIN RENDERING LOOP
     running = True
-    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
+    scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
 
     #imGUIecss = scene.gContext
 
@@ -218,22 +232,23 @@ def main(imguiFlag = False):
     eManager._publishers[updateBackground.name] = gGUI
     
     while running:
+        running = scene.render()
+        scene.world.traverse_visit(renderUpdate, scene.world.root)
+        
+        #print(collisionObjectList)
+        displayGUI_text(example_description)
+        
         # Here we traverse with the gravity Collision System
         scene.world.traverse_visit(gravitycollisionSystem, scene.world.root)
-        
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
-        for i in range(1, 10):
+        
+        for i in range(1, number_of_cubes_in_scene + 1):
             home1.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(i).trans.l2cam, mat4=True);
             home1.getChild(i).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
         
         floor_shader.setUniformVariable(key='modelViewProj', value=floor_trans.l2cam, mat4=True);  
-        
-        # call SDLWindow/ImGUI display() and ImGUI event input process
-        running = scene.render()
-        # call the GL State render System
-        scene.world.traverse_visit(renderUpdate, scene.world.root)
         
         # ImGUI post-display calls and SDLWindow swap 
         scene.render_post()

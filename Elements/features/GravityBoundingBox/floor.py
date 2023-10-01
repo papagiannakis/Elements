@@ -16,23 +16,6 @@ from Elements.utils.terrain import generateTerrain
 from OpenGL.GL import GL_LINES
 from AABoundingBox import AABoundingBox
 
-#MYCHANGE
-# Finds minimum value of an axis in a vertice dataset (default axis = 0 (meaning x axis))
-def find_min_axis(vertices, axis=0):
-    return np.min(vertices[:, axis])
-
-# Finds maximum value of an axis in a vertice dataset (default axis = 0 (meaning x axis))
-def find_max_axis(vertices, axis=0):
-    return np.max(vertices[:, axis])
-
-# Creating a list that has the minimum points of a bounding box
-def create_min_points_list(vertices):
-    return [find_min_axis(vertices, axis=0), find_min_axis(vertices, axis=1),find_min_axis(vertices, axis=2), 1]
-
-# Creating a list that has the maximum points of a bounding box
-def create_max_points_list(vertices):
-    return [find_max_axis(vertices, axis=0), find_max_axis(vertices, axis=1), find_max_axis(vertices, axis=2), 1]
-
 # Generates a floor with a bounding box
 def generate_floor_with_bb(rootEntity, size=6,N=300,uniform_color = [0.4,0.4,0.4,0.5]):
     scene = Scene()
@@ -51,9 +34,9 @@ def generate_floor_with_bb(rootEntity, size=6,N=300,uniform_color = [0.4,0.4,0.4
     floor_mesh.vertex_index.append(indexTerrain)
         
     vertices = floor_mesh.vertex_attributes[0]
-    # create the bounding box of the floor
-    floor_bb = scene.world.addComponent(floor, AABoundingBox(name="floor_bb", min_points=create_min_points_list(vertices), max_points=create_max_points_list(vertices)))
     
+    # create the bounding box of the floor    
+    floor_bb = scene.world.addComponent(floor, AABoundingBox(name="floor_bb", vertices=vertices, hasGravity=False))
         
     floor_shader = scene.world.addComponent(floor, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
