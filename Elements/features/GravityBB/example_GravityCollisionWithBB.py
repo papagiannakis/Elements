@@ -21,12 +21,13 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 from Elements.utils.normals import Convert
 
-from AABoundingBox import AABoundingBox
-from GravityCollisonSystem import GravityCollisionSystem
-from floor import generate_floor_with_bb
+from Elements.features.GravityBB.AABoundingBox import AABoundingBox
+from Elements.features.GravityBB.GravityCollisonSystem import GravityCollisionSystem
+from Elements.features.GravityBB.floor import generate_floor_with_bb
 
+from Elements.pyGLV.GL.Textures import Texture
+from Elements.definitions import TEXTURE_DIR
 from Elements.utils.helper_function import displayGUI_text
-
 
 
 class GameObjectEntity(Entity):
@@ -38,8 +39,7 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
-        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG));
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
         self.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();
@@ -146,27 +146,29 @@ def main(imguiFlag = False):
     # Spawn Camera
     mainCamera = SimpleCamera("Simple Camera")
     # Camera Settings
-    mainCamera.trans2.trs = util.translate(0, 0, 8) # VIEW
+    mainCamera.trans2.trs = util.translate(0, 0, 12) # VIEW
     mainCamera.trans1.trs = util.rotate((1, 0, 0), -45); 
 
     #-----------------------------------------
     # Spawn Two Homes on top of each other
-    home1 = scene.world.createEntity(Entity("Cubes"))
-    scene.world.addEntityChild(rootEntity, home1)
+    Cubes = scene.world.createEntity(Entity("Cubes"))
+    scene.world.addEntityChild(rootEntity, Cubes)
 
     trans = BasicTransform(name="trans", trs=util.identity());    
-    scene.world.addComponent(home1, trans)
+    scene.world.addComponent(Cubes, trans)
     
     # Generating floor with bounding box so that the objects can collide
     floor_trans, floor_shader, floor_bb = generate_floor_with_bb(rootEntity)
 
-    collisionObjectList = [floor_bb] # NEED TO PASS THE SAME LIST TO ALL OF THEM
-    number_of_cubes_in_scene = 125
+    # We typically add only the floor but you can add more objects if you wish so
+    collisionObjectList = [floor_bb] # NEED TO PASS THE SAME LIST TO ALL OF THEM 
     
-    # Spawning 125 cubes with random transformations with bounding boxes
+    number_of_cubes_in_scene = 100
+    
+    # Spawning x cubes with random transformations with bounding boxes
     for i in range(0, number_of_cubes_in_scene):
         cube: GameObjectEntity = CubeSpawn()
-        scene.world.addEntityChild(home1, cube)
+        scene.world.addEntityChild(Cubes, cube)
         cube.trans.trs = util.translate(rand.uniform(-5, 5), rand.uniform(2, 20), rand.uniform(-5, 5))
         #cube.trans.trs = cube.trans.trs @ util.rotate(axis= [rand.randint(0,1), rand.randint(0,1), rand.randint(0,1)], angle = rand.uniform(0,360))
         cube.trans.trs = cube.trans.trs @ util.scale(rand.uniform(0.2, 1),rand.uniform(0.2, 1),rand.uniform(0.2, 1)) 
@@ -174,7 +176,7 @@ def main(imguiFlag = False):
                                         vertices = cube.mesh.vertex_attributes[0],
                                         objectCollisionList = collisionObjectList))
         
-    home1.getChild(0).trs = util.translate(0, 0, 0)
+    Cubes.getChild(0).trs = util.translate(0, 0, 0)
 
     
     # MAIN RENDERING LOOP
@@ -227,6 +229,10 @@ def main(imguiFlag = False):
     eManager._subscribers['OnUpdateCamera'] = gWindow
     eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
     
+    # Apply dark_wood texture to floor !
+    texturePath = TEXTURE_DIR / "dark_wood_texture.jpg"
+    texture = Texture(texturePath)
+    floor_shader.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
     # Add RenderWindow to the EventManager publishers
     eManager._publishers[updateBackground.name] = gGUI
@@ -235,7 +241,6 @@ def main(imguiFlag = False):
         running = scene.render()
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         
-        #print(collisionObjectList)
         displayGUI_text(example_description)
         
         # Here we traverse with the gravity Collision System
@@ -245,10 +250,24 @@ def main(imguiFlag = False):
         scene.world.traverse_visit(camUpdate, scene.world.root)
         
         for i in range(1, number_of_cubes_in_scene + 1):
-            home1.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(i).trans.l2cam, mat4=True);
-            home1.getChild(i).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
-        
-        floor_shader.setUniformVariable(key='modelViewProj', value=floor_trans.l2cam, mat4=True);  
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='modelViewProj', value=Cubes.getChild(i).trans.l2cam, mat4=True);
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='model', value=Cubes.getChild(i).trans.trs, mat4=True)
+
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='ambientColor', value=[1, 0.5, 0.3], float3=True)
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='ambientStr', value=0.5, float1=True)
+            
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='viewPos', value=mainCamera.trans2.trs, float3=True)
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='lightPos', value=[0, 4, 0], float3=True)
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='lightColor', value=[0.5, 0.5, 0.5], float3=True)
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='lightIntensity', value=3, float1=True)
+            
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='shininess', value=0, float1=True)
+            Cubes.getChild(i).shaderDec.setUniformVariable(key='matColor', value=[0.4, 0.4, 0.4], float3=True)
+            
+        floor_shader.setUniformVariable(key='model', value=floor_trans.l2cam, mat4=True)
+        floor_shader.setUniformVariable(key='View', value=util.identity(), mat4=True)
+        floor_shader.setUniformVariable(key='Proj', value=util.identity(), mat4=True)
+    
         
         # ImGUI post-display calls and SDLWindow swap 
         scene.render_post()

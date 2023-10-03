@@ -12,8 +12,9 @@ from Elements.pyECSS.System import System
 
 '''
 Conventions:
-We assume objects can collide with only the floor not each other
+We assume objects can collide with the objects in its collisionList
 We assume the moment an object collides with the floor its gravity is not applied anymore
+We assume the moment an object collides with another it is added to the collisionList
 '''
 class GravityCollisionSystem(System):
     def __init__(self, name=None, type=None, id=None):
@@ -64,6 +65,7 @@ class GravityCollisionSystem(System):
         if(isItAlreadyColliding == False and aabb_comp.isColliding == True):
             aabb_comp.objectCollisionList.append(aabb_comp)            
     
+    ## Run through the entire list of possible collision objects
     def check_list_for_collision(self, aabb_comp: Elements.pyECSS.Component):
         for col_object in aabb_comp.objectCollisionList:
             collision_bool = self.collision_with_other_aabb(aabb_comp=aabb_comp, other_aabb_comp=col_object)
