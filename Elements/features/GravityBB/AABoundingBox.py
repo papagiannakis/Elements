@@ -5,29 +5,35 @@ Axis Alinged bounding box class
 """
 import numpy as np
 from Elements.pyECSS.Component import Component
-from GravityCollisonSystem import GravityCollisionSystem
+from Elements.features.GravityBB.GravityCollisonSystem import GravityCollisionSystem
 
 """Axis Aligned bounding boxes Class"""
 class AABoundingBox(Component):
     def __init__(self, name=None, type=None, id=None, vertices=None, objectCollisionList=None, density=0.001, hasGravity=True):
         super().__init__(name, type, id)
         
-        mins = [np.min(vertices[:, 0]), np.min(vertices[:, 1]), np.min(vertices[:, 2])]
-        maxs = [np.max(vertices[:, 0]), np.max(vertices[:, 1]), np.max(vertices[:, 2])]
+        # Calculate maximum coordinates and minimum coordinates and use them to make a cube (bounding box)
+        max_x = max(vertex[0] for vertex in vertices)
+        max_y = max(vertex[1] for vertex in vertices)
+        max_z = max(vertex[2] for vertex in vertices)
+
+        min_x = min(vertex[0] for vertex in vertices)
+        min_y = min(vertex[1] for vertex in vertices)
+        min_z = min(vertex[2] for vertex in vertices)
         
         self._vertices = [
-            [mins[0], mins[1], mins[2], 1],
-            [mins[0], mins[1], maxs[2], 1],
-            [mins[0], maxs[1], mins[2], 1],
-            [mins[0], maxs[1], maxs[2], 1],
-            [maxs[0], mins[1], mins[2], 1],
-            [maxs[0], mins[1], maxs[2], 1],
-            [maxs[0], maxs[1], mins[2], 1],
-            [maxs[0], maxs[1], maxs[2], 1],
+            [min_x, min_y, min_z, 1],
+            [min_x, min_y, max_z, 1],
+            [min_x, max_y, min_z, 1],
+            [min_x, max_y, max_z, 1],
+            [max_x, min_y, min_z, 1],
+            [max_x, min_y, max_z, 1],
+            [max_x, max_y, min_z, 1],
+            [max_x, max_y, max_z, 1],
         ]
-            
-        self._trans_max_points = mins
-        self._trans_min_points = maxs
+        
+        self._trans_max_points = [max_x, max_y, max_z]
+        self._trans_min_points = [min_x, min_y, min_z]
         
         self._objectCollisionList = objectCollisionList
         self._density = density
