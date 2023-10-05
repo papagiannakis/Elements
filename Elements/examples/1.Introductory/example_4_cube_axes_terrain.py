@@ -14,6 +14,12 @@ from Elements.utils.terrain import generateTerrain
 
 from OpenGL.GL import GL_LINES
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This is a scene with a cube, a terrain and axes. \n\
+The cube and axes are rendered with a simple shader. \n\
+You move the camera through the GUI or the camera. Hit ESC OR Close the window to quit." 
+
 winWidth = 1024
 winHeight = 768
 
@@ -43,11 +49,6 @@ scene.world.addEntityChild(rootEntity, node4)
 trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0,0.5,0))) #util.identity()
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 
-
-axes = scene.world.createEntity(Entity(name="axes"))
-scene.world.addEntityChild(rootEntity, axes)
-axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
-axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 
 # a simple triangle
 vertexData = np.array([
@@ -148,7 +149,7 @@ terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vert
 ## ADD AXES ##
 axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
-axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
+axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.001, 0.0)))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 axes_mesh.vertex_attributes.append(vertexAxes) 
 axes_mesh.vertex_attributes.append(colorAxes)
@@ -205,21 +206,24 @@ model_cube = trans4.trs
 ## OR
 # model_cube =  trans4.trs @ util.scale(0.3) @ util.translate(0.0,0.5,0.0) ## TAMPER WITH OBJECT's TRS
 
-model_terrain_axes = terrain.getChild(0).trs # notice that terrain.getChild(0) == terrain_trans
+model_terrain = terrain.getChild(0).trs # notice that terrain.getChild(0) == terrain_trans
 # OR 
-# model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
+# model_terrain = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
+model_axes = axes_trans.trs
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
 
     view =  gWindow._myCamera # updates view via the imgui
     mvp_cube = projMat @ view @ model_cube
-    mvp_terrain_axes = projMat @ view @ model_terrain_axes
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+    mvp_terrain = projMat @ view @ model_terrain
+    mvp_axes = projMat @ view @ model_axes
+    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
     scene.render_post()
     
