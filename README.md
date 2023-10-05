@@ -28,17 +28,30 @@ To dive in the details of the project check [its detailed developer documentatio
 
 
 
-## Quick Start
+## Getting Started - Installation Instructions
 
-Download (or clone) this repo (or your fork) and, in a python 3.8 environment, run ```pip install -e .```
-
-Go to the ```Elements/examples``` folder and quickstart by using/modifying one of the existing examples.
-
-Installation instructions can be found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). 
+Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). For **Computer Graphics Course students**, the instructions are [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions-for-Computer-Graphics-Course-students).
 
 > [!NOTE]
-> We strongly recommend using [Anaconda](https://www.anaconda.com/products/individual) for your python environment, as well as 
-> [Visual Studio Code](https://code.visualstudio.com) as your IDE.
+> We strongly recommend using:
+> * [Anaconda](https://www.anaconda.com/products/individual) for your python environment, 
+> * [Visual Studio Code](https://code.visualstudio.com) as your IDE, and
+> * [Fork](https://git-fork.com)/[Sourcetree](https://www.sourcetreeapp.com) for version control.
+
+The main steps summarize as follows:
+* Install Anaconda, VSCode, Git and a optionally a version control app
+* Clone (or download) this repo (or your forked repo)
+* Create a python 3.8 environment, by running 
+  ```conda create -n elements python=3.8```,
+  and activate it via
+  ```conda activate elements```
+* Install the Elements in editable mode by running
+ ```pip install -e .```
+* Start exploring the examples in the ```Elements/examples``` folder.
+
+
+
+
 
 ## Folder Structure
 
@@ -47,7 +60,7 @@ Installation instructions can be found [HERE](https://elementsproject.readthedoc
   * [examples](./Elements/examples): Example files related to pyECSS
   * [features](./Elements/features): Features extending basic functionality of Elements
     * [BasicShapes](./Elements/features/BasicShapes): Quickly add basic shapes (cubes, spheres, cones) to the scene with helper functions
-    * [GA](./Elements/features/GA): Use Geometric Algebra in the context of Elements
+    * [GA](./Elements/features/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
     * [Gizmos](./Elements/features/Gizmos): Introducing Unity-like Gizmos to the Elements, for object manipulation
     * [SkinnedMesh](./Elements/features/SkinnedMesh): Visualize skinned meshes by applying the animation equation
     * [Slicing](./Elements/features/Slicing): Visualize sliced version of a 3D object
@@ -58,20 +71,18 @@ Installation instructions can be found [HERE](https://elementsproject.readthedoc
     * [rigid_body_animation](./Elements/features/rigid_body_animation): Animate a skinned mesh (preliminary version)
     * [usd](./Elements/features/usd): Enable loading/saving using Pixar's Universal Scene Descriptor (USD) format
   * [files](./Elements/files): Static files required
-    * [atlas_files](./Elements/files/atlas_files): Required for the [atlas](./Elements/features/atlas) feature
+    * [atlas_files](./Elements/files/atlas_files): Required for the Classification and Generative AI examples/notebooks
     * [models](./Elements/files/models): Various 3D models, static or rigged
     * [scenes](./Elements/files/scenes): Scenes in USD format
     * [scv](./Elements/files/scv): Various SCV files
     * [shaders](./Elements/files/shaders): Various shader files
     * [textures](./Elements/files/textures): Various texture files
   * [pyECSS](./Elements/pyECSS): Contains all the source code for pyECSS - Entity, Component, System, Scenegraph functionality
-    * [GA](./Elements/pyECSS/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
     * [tests](./Elements/pyECSS/tests): Test files for pyECSS
   * [pyGLV](./Elements/pyGLV): Contains all the source code for pyGLV - graphics, shading, imgui functionality
     * [tests](./Elements/pyGLV/tests): Test files for pyGLV
     * [GL](./Elements/pyGLV/GL): The basic Graphics Library files (Scene, Shader, Texture, VertexArray)
     * [GUI](./Elements/pyGLV/GUI): Files related to the window and GUI instantiation.
-    * [utils](./Elements/pyGLV/utils): Utility files and functions for pyGLV.
   * [pyEEL](./Elements/pyEEL): The pyEEL learning hub
     * [notebooks](./Elements/pyEEL/notebooks): Contains all the jupyter notebooks of pyEEL  
       * [SciCom](./Elements/pyEEL/notebooks/SciCom): Scientific Computation related notebooks

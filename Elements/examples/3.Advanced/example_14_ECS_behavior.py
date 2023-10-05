@@ -17,6 +17,18 @@ from Elements.utils.objimporter.entities import ModelEntity
 from Elements.utils.terrain import generateTerrain
 from Elements.definitions import MODEL_DIR
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates how we can detect behavior patterns, i.e., \n\
+introduce some game logic in our scene. \n\n\
+If you move (via the ECSS GUI) the left cube (RemoveCube) above the \n\
+terrain, the Remove Action will be ticked. If you move the right cube \n\
+(InsertCube) towards the ground it will mark the Instert Action as complete.\n\n\
+The scene is being lit using the Blinn-Phong algorithm. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 
 #Light
 Lposition = util.vec(-1, 1.5, 1.2) #uniform lightpos
@@ -167,6 +179,7 @@ removeAction = RemoveAction("removeAction", "RemoveAction", "004", RemoveActionP
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

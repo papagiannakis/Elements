@@ -27,7 +27,16 @@ import OpenGL.GL as gl
 
 from Elements.utils.terrain import generateTerrain
 from Elements.definitions import SCENES_DIR
-import os
+
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This example demonstrates the ability to import \n\
+basic USD files. By pressing the button load scene \n\
+on a blank scene, the default usd is loaded and \n\
+3 red cubes are imported in the scene. You can choose to \n\
+import the usd file of your choice, by inputing the \n\
+appropriate filepath in the text box. Pressing \n\
+button save scene the current scene is saved in usd format file."
 
 models = []
 newShaders = []
@@ -196,6 +205,7 @@ model_terrain_axes = util.translate(0.0, 0.0, 0.0)
 White_Map = (b'\xff\xff\xff\xff', 1, 1)
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

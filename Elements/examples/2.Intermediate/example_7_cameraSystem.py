@@ -32,6 +32,15 @@ from Elements.utils.terrain import generateTerrain
 from Elements.utils.normals import Convert
 from OpenGL.GL import GL_LINES
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This is the first examples that demonstrates the usage of the Camera System \n\
+instead of the use of the lookAt function to create the view matrix. \n\
+You may move the camera using the mouse or the ECSS Graph. \n\n\
+NOTE: To change any TRS via the ECSS GUI, only this TRS must be toggled on!\n\n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
+
 
 class GameObjectEntity(Entity):
     def __init__(self, name=None, type=None, id=None) -> None:
@@ -242,9 +251,7 @@ def main(imguiFlag = False):
 
     
     while running:
-        #running = scene._gContext.event_input_process()
-        #if not running :
-           # continue
+
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
@@ -256,6 +263,7 @@ def main(imguiFlag = False):
         
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
+        displayGUI_text(example_description)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         # ImGUI post-display calls and SDLWindow swap 
