@@ -988,7 +988,9 @@ class ImGUIDecorator(RenderDecorator):
         imgui.separator()
         # END
         # simple FPS counter
-        strFrameRate = str(("Application average: ", imgui.get_io().framerate, " FPS"))
+        framerate = imgui.get_io().framerate
+        strFrameRate = "Application average: {:.2f} FPS".format(framerate)
+
         imgui.text(strFrameRate)
         #end imgui frame context
         imgui.end()
