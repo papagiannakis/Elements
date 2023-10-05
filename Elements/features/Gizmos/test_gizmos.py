@@ -20,6 +20,7 @@ from Elements.features.Gizmos.Gizmos import Gizmos
 from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
+from Elements.utils.helper_function import displayGUI_text
 
 class TestGizmos(unittest.TestCase):
     """
@@ -38,6 +39,58 @@ class TestGizmos(unittest.TestCase):
         self.camUpdate = self.scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
         self.renderUpdate = self.scene.world.createSystem(RenderGLShaderSystem())
         self.initUpdate = self.scene.world.createSystem(InitGLShaderSystem())
+
+        self.emptymsg = """
+This is an empty scene where camera movement is possible via 
+the mouse or the GUI
+When trying to change the selected entity we can see that no 
+Entity is selected and the program does not crash
+
+Instructions:
+Use the following keys to change transformation mode:
+    T: translation
+    R: Rotation
+    S: Scaling
+In Order to apply transformations on a selected 
+Entity press and hold Left-alt-key + Left-mouse-button, 
+then move the cursor anywhere to see the result
+
+Additionally, you can change the Selected Entity by pressing TAB
+                        """
+        self.singlemsg = """
+This is a scene that contains a pink cube where camera movement is possible via 
+the mouse or the GUI
+When TAB is pressed repeatedly you can see that the Gizmos always remain on 
+the cube
+
+Instructions:
+Use the following keys to change transformation mode:
+    T: translation
+    R: Rotation
+    S: Scaling
+In Order to apply transformations on a selected 
+Entity press and hold Left-alt-key + Left-mouse-button, 
+then move the cursor anywhere to see the result
+
+Additionally, you can change the Selected Entity by pressing TAB
+                         """
+        self.multiplemsg = """
+This is a scene that contains a pink and a yellow cube. Camera movement is possible 
+via the mouse or the GUI
+In this test the pink cube is parent of the yellow one. Therefore, when we apply a 
+transformation to the parent, the same transformation is applied to its child
+
+Instructions:
+Use the following keys to change transformation mode:
+    T: translation
+    R: Rotation
+    S: Scaling
+In Order to apply transformations on a selected 
+Entity press and hold Left-alt-key + Left-mouse-button, 
+then move the cursor anywhere to see the result
+
+Additionally, you can change the Selected Entity by pressing TAB
+                           """
 
         self.vertexCube = np.array([
             [-0.5, -0.5, 0.5, 1.0],
@@ -180,6 +233,7 @@ class TestGizmos(unittest.TestCase):
             running = self.scene.render()
             self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
+            displayGUI_text(self.emptymsg)
             gizmos.update_ray_start()
             gizmos.update_view(view)
             gizmos.get_Event()
@@ -254,6 +308,7 @@ class TestGizmos(unittest.TestCase):
             running = self.scene.render()
             self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
+            displayGUI_text(self.singlemsg)
             view =  gWindow._myCamera
             height = self.scene.renderWindow._windowHeight
             width = self.scene.renderWindow._windowWidth
@@ -361,6 +416,7 @@ class TestGizmos(unittest.TestCase):
             running = self.scene.render()
             self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
+            displayGUI_text(self.multiplemsg)
             view =  gWindow._myCamera
             height = self.scene.renderWindow._windowHeight
             width = self.scene.renderWindow._windowWidth
