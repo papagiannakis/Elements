@@ -463,7 +463,7 @@ class Gizmos:
             None
         """
         prev = self.mode
-        self.mode = Mode.DISAPPEAR # Temporarily so that Gizmos can disappear in case pick() did not intersect with any Entity
+        self.mode = Mode.DISAPPEAR
         self.__update_positions()
         self.mode = prev
         self.is_selected = False
@@ -532,20 +532,6 @@ class Gizmos:
         if mouse_state==1:
             if self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
                 self.raycast()
-            elif self.lmb_down==False:
-                self.lmb_down = True
-                name = self.pick()
-                if name is not None:
-                    entity: Entity
-                    entity = self.entity_dict[name]
-                    self.is_selected = True
-                    self.selected_comp = name
-                    self.selected_trans = entity.getChildByType(BasicTransform.getClassName())
-                    self.selected_mesh =  entity.getChildByType(RenderMesh.getClassName())
-                    self.__update_gizmos_trans()
-                    self.__update_positions()
-                else:
-                    self.reset_to_None()
         else:
             self.lmb_down = False
             self.selected_gizmo = ''
@@ -1378,38 +1364,3 @@ class Gizmos:
         self.gizmos_x_R_trans.trs = r_gizmos
         self.gizmos_y_R_trans.trs = r_gizmos
         self.gizmos_z_R_trans.trs = r_gizmos
-
-    def pick(self):
-        """
-        Try to pick an Entity
-        Arguments:
-            self: self
-        Returns:
-            Closest Entity's name if the raycast intersected with one, None otherwise
-        """
-        hit_entities = {}
-        entity_name : str
-        for entity_name in self.entity_dict:
-            obj : Entity
-            obj = self.entity_dict[entity_name]
-            trans: BasicTransform
-            trans = obj.getChildByType(BasicTransform.getClassName())
-            mesh:RenderMesh
-            mesh = obj.getChildByType(RenderMesh.getClassName())
-            if trans is None or mesh is None:
-                continue
-
-            model = trans.l2world
-            vertices_world = np.array(mesh.vertex_attributes[0],copy=True) @ model
-
-            minbb, maxbb = self.calculate_bounding_box(vertices_world)
-
-            ray_origin, ray_direction = self.calculate_ray()
-
-            intersects, point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,minbb,maxbb,model)
-            if intersects:
-                hit_entities[entity_name] = self.previous_distance
-        if len(hit_entities)==0:
-            return None
-            
-        return min(hit_entities, key = hit_entities.get)
