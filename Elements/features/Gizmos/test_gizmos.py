@@ -46,16 +46,17 @@ the mouse or the GUI
 When trying to change the selected entity we can see that no 
 Entity is selected and the program does not crash
 
-Instructions:
-Use the following keys to change transformation mode:
-    T: translation
-    R: Rotation
-    S: Scaling
-In Order to apply transformations on a selected 
-Entity press and hold Left-alt-key + Left-mouse-button, 
-then move the cursor anywhere to see the result
+Gizmos Instructions:
+You can change the selected Object by pressing TAB
+You can Also reset an Object by pressing '0'
 
-Additionally, you can change the Selected Entity by pressing TAB
+Use the following keys to change transformation mode:
+T: translation
+R: Rotation
+S: Scaling
+
+To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
+move the cursor to see the result
                         """
         self.singlemsg = """
 This is a scene that contains a pink cube where camera movement is possible via 
@@ -63,16 +64,17 @@ the mouse or the GUI
 When TAB is pressed repeatedly you can see that the Gizmos always remain on 
 the cube
 
-Instructions:
-Use the following keys to change transformation mode:
-    T: translation
-    R: Rotation
-    S: Scaling
-In Order to apply transformations on a selected 
-Entity press and hold Left-alt-key + Left-mouse-button, 
-then move the cursor anywhere to see the result
+Gizmos Instructions:
+You can change the selected Object by pressing TAB
+You can Also reset an Object by pressing '0'
 
-Additionally, you can change the Selected Entity by pressing TAB
+Use the following keys to change transformation mode:
+T: translation
+R: Rotation
+S: Scaling
+
+To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
+move the cursor to see the result
                          """
         self.multiplemsg = """
 This is a scene that contains a pink and a yellow cube. Camera movement is possible 
@@ -80,16 +82,17 @@ via the mouse or the GUI
 In this test the pink cube is parent of the yellow one. Therefore, when we apply a 
 transformation to the parent, the same transformation is applied to its child
 
-Instructions:
-Use the following keys to change transformation mode:
-    T: translation
-    R: Rotation
-    S: Scaling
-In Order to apply transformations on a selected 
-Entity press and hold Left-alt-key + Left-mouse-button, 
-then move the cursor anywhere to see the result
+Gizmos Instructions:
+You can change the selected Object by pressing TAB
+You can Also reset an Object by pressing '0'
 
-Additionally, you can change the Selected Entity by pressing TAB
+Use the following keys to change transformation mode:
+T: translation
+R: Rotation
+S: Scaling
+
+To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
+move the cursor to see the result
                            """
 
         self.vertexCube = np.array([
