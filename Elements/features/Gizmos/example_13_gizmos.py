@@ -17,19 +17,20 @@ from Elements.pyGLV.GL.Textures import get_single_texture_faces
 from Elements.utils.helper_function import displayGUI_text
 
 example_description = """
-This is a scene that contains a floor with a table on which there is a teapot. Camera movement is possible 
-via the mouse or the GUI
+This is a scene that contains a floor with a table on which there is a teapot. Camera movement 
+is possible via the mouse or the GUI
 
-Instructions:
+Gizmos Instructions:
+You can change the selected Object by pressing TAB
+You can Also reset an Object by pressing '0'
+
 Use the following keys to change transformation mode:
-    T: translation
-    R: Rotation
-    S: Scaling
-In Order to apply transformations on a selected 
-Entity press and hold Left-alt-key + Left-mouse-button, 
-then move the cursor anywhere to see the result
+T: translation
+R: Rotation
+S: Scaling
 
-Additionally, you can change the Selected Entity by pressing TAB
+To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
+move the cursor to see the result
 """
 
 #Light
