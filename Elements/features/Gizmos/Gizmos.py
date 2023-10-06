@@ -1432,12 +1432,23 @@ class Gizmos_XR(Gizmos):
     
     def add_ignored_item(self, item: str):
         """
-        
+        Add Entity name to be ignored inside change_target
+        Arguments:
+            self: self
+            item: entity name
+        Returns:
+            Nonw
         """
         self.gizmos_comps.add(item)
 
     def exclude_gizmos(self):
         """
+        Method used to inform the ElementsXR program about Gizmo components
+
+        Arguments:
+            self: self
+        Returns:
+            None
         """
         assert self.program is not None
 
@@ -1486,7 +1497,7 @@ class Gizmos_XR(Gizmos):
 
     def __update_positions(self):
         """
-        Uniform variables used for Model/View/Projection are updated inside Render View at graphics plugin
+        Uniform variables used for Model/View/Projection are updated when Render_View is called by the graphics plugin
         Arguments:
             self: self
         Returns:
