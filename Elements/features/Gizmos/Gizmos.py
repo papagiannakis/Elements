@@ -1318,8 +1318,10 @@ class Gizmos:
             None
         """
         selected = self.seperate_transformations[self.selected_comp]
+        translation = self.__remove_rotation(self.selected_trans.trs)
 
-        self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
+        #self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
+        self.selected_trans.trs = translation @ util.rotate(angle=_angle,axis=_axis) @ util.inverse(translation) @ self.selected_trans.trs
         selected.rotation = selected.rotation @ util.rotate(angle=_angle,axis=_axis)
 
         self.rotation = self.rotation @ util.rotate(angle=_angle,axis=_axis)
