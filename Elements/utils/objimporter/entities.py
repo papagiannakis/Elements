@@ -10,6 +10,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.utils.objimporter.material import Material, StandardMaterial
 from Elements.utils.objimporter.mesh import Mesh
 from Elements.utils.objimporter.model import Model
+from Elements.definitions import SHADER_DIR
 
 
 class ModelEntity(Entity):
@@ -86,7 +87,7 @@ class MeshEntity(Entity):
 
         self.render_mesh_component.vertex_index.append(self.mesh.indices)
         self.vertex_array_component = scene.world.addComponent(self, VertexArray())
-        self.shader_decorator_component = scene.world.addComponent(self, ShaderGLDecorator(Shader(vertex_import_file=os.path.join(os.path.dirname(__file__), "default_resources/shaders/Standard.vert"), fragment_import_file= os.path.join(os.path.dirname(__file__), "default_resources/shaders/Standard.frag"))))
+        self.shader_decorator_component = scene.world.addComponent(self, ShaderGLDecorator(Shader(vertex_import_file= SHADER_DIR / "Standard.vert", fragment_import_file= SHADER_DIR / "Standard.frag")))
 
 
     def initialize_gl(self, light_position, light_color, light_intensity):
