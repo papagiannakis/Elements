@@ -20,6 +20,14 @@ import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This is a scene with the famous Newell teapot. This example demonstrates the \n\
+ability to load complex objects instead of inputing them manually. \n\
+The scene is being lit using the Blinn-Phong algorithm. \n\
+You may move the camera using the mouse or the GUI. \n\
+You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
+various information about them. Hit ESC OR Close the window to quit." 
 
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
@@ -112,9 +120,9 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 ## object load 
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-obj_to_import = os.path.join(MODEL_DIR, "teapot.obj")
-# obj_to_import = os.path.join(models_dirname, "cow.obj")
-# obj_to_import = os.path.join(models_dirname, "teddy.obj")
+obj_to_import = MODEL_DIR / "teapot.obj"
+# obj_to_import = MODEL_DIR / "cow.obj"
+# obj_to_import = MODEL_DIR / "teddy.obj"
 
 obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
@@ -202,6 +210,7 @@ model_cube = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)

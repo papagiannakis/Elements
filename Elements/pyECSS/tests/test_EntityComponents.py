@@ -276,7 +276,7 @@ class TestBasicTransform(unittest.TestCase):
             [0.0,1.0,0.0,2.0],
             [0.0,0.0,1.0,3.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertEqual(myComponent.name, "myComponent")
         self.assertEqual(myComponent.type,"BasicTransform")

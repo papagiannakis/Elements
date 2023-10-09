@@ -113,7 +113,7 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 dirname = os.path.dirname(__file__)
 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-obj_to_import = os.path.join(MODEL_DIR, "astroBoy_walk.dae")
+obj_to_import = MODEL_DIR / "astroBoy_walk.dae"
 
 ## ADD FIRST SKINNED MESH ##
 # attach a simple skinned mesh in a RenderMesh so that VertexArray can pick it up
@@ -139,7 +139,7 @@ scene.world.addEntityChild(rootEntity, node5)
 trans5 = scene.world.addComponent(node5, BasicTransform(name="trans5"))
 mesh5 = scene.world.addComponent(node5, RenderMesh(name="mesh5"))
 
-obj_to_import2 = os.path.join(MODEL_DIR, "astroBoy_walk.dae")
+obj_to_import2 = MODEL_DIR / "astroBoy_walk.dae"
 b = Skinned_mesh(3,obj_to_import2,"dae",True)
 b.coloringvert()
 
