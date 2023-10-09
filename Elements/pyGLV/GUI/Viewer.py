@@ -209,12 +209,13 @@ class SDL2Window(RenderWindow):
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MINOR_VERSION, 1)
 
                      
-            
-        # Linux doesn't like SDL_GL_MULTISAMPLESAMPLES
-        if platform == "linux" or platform == "linux2":
-            pass
-        else:
-            sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_MULTISAMPLESAMPLES, 16)        
+        # SDL_GL_MULTISAMPLESAMPLES does not work on VMs and some Linux systems, 
+        # therefore we depracate it for now
+    
+        # if platform == "linux" or platform == "linux2":
+        #     pass
+        # else:
+        #     sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_MULTISAMPLESAMPLES, 16)        
         
         sdl2.SDL_SetHint(sdl2.SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK, b"1")
         sdl2.SDL_SetHint(sdl2.SDL_HINT_VIDEO_HIGHDPI_DISABLED, b"1")
@@ -987,7 +988,9 @@ class ImGUIDecorator(RenderDecorator):
         imgui.separator()
         # END
         # simple FPS counter
-        strFrameRate = str(("Application average: ", imgui.get_io().framerate, " FPS"))
+        framerate = imgui.get_io().framerate
+        strFrameRate = "Application average: {:.2f} FPS".format(framerate)
+
         imgui.text(strFrameRate)
         #end imgui frame context
         imgui.end()

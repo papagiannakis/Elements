@@ -8,6 +8,11 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
+from Elements.utils.helper_function import displayGUI_text
+example_description = \
+"This is a scene with some simple geometry, i.e., a colored cube. \n\
+The cube and axes are rendered with a simple shader. \n\
+You cannot move the camera through the GUI. Hit ESC OR Close the window to quit." 
 
 winWidth = 1024
 winHeight = 768
@@ -101,7 +106,7 @@ scene.world.print()
 
 running = True
 # MAIN RENDERING LOOP
-scene.init(imgui=False, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "A Cube Scene via ECSS")
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "A Cube Scene via ECSS")
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -109,6 +114,7 @@ scene.world.traverse_visit(initUpdate, scene.world.root)
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     

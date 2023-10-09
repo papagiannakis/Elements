@@ -166,7 +166,7 @@ vertexground, indexground, _ = norm.generateUniqueVertices(VertexTerrain,indexCu
 verticesTableTop, indicesTableTop, _ = norm.generateUniqueVertices(VertexTableTop,indexCube)
 verticesTableLeg, indicesTableLeg, _ = norm.generateUniqueVertices(VertexTableLeg,indexCube)
 
-teapot_obj = os.path.join(MODEL_DIR, "teapot.obj")
+teapot_obj = MODEL_DIR / "teapot.obj"
 
 #Import Teapot
 obj_color = [168/255, 168/255 , 210/255, 1.0]
@@ -260,13 +260,13 @@ eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
-skybox_texture_locations = os.path.join(TEXTURE_DIR, "Skyboxes", "Sea")
-front_img = os.path.join(skybox_texture_locations, "front.jpg")
-right_img = os.path.join(skybox_texture_locations,"right.jpg")
-left_img = os.path.join(skybox_texture_locations,"left.jpg")
-back_img = os.path.join(skybox_texture_locations,"back.jpg")
-bottom_img = os.path.join(skybox_texture_locations,"bottom.jpg")
-top_img = os.path.join(skybox_texture_locations,"top.jpg")
+skybox_texture_locations = TEXTURE_DIR /  "Skyboxes" / "Sea"
+front_img = skybox_texture_locations /  "front.jpg"
+right_img = skybox_texture_locations / "right.jpg"
+left_img = skybox_texture_locations / "left.jpg"
+back_img = skybox_texture_locations / "back.jpg"
+bottom_img = skybox_texture_locations / "bottom.jpg"
+top_img = skybox_texture_locations / "top.jpg"
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 

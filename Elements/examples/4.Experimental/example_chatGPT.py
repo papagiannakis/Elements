@@ -94,7 +94,7 @@ def main(imguiFlag=False):
     initUpdate = scene.world.createSystem(InitGLShaderSystem())
     shaders = []
     # --------ToolsTable--------
-    obj_to_import = os.path.join(MODEL_DIR, "ToolsTable", "ToolsTable.obj")
+    obj_to_import = MODEL_DIR / "ToolsTable" / "ToolsTable.obj"
     shadertoolstable = GameObject.Spawn(scene, obj_to_import, "ToolsTable", rootEntity,
                                         util.rotate((0.0, 1.0, 0.0), 0),
                                         )
@@ -103,7 +103,7 @@ def main(imguiFlag=False):
                                      "rotation": [0, 0, 0]}
     shaders.append(shadertoolstable)
     # -------Cauterizer-------------
-    obj_to_import = os.path.join(MODEL_DIR, "Scalpel", "Scalpel.obj")
+    obj_to_import = MODEL_DIR / "Scalpel" / "Scalpel.obj"
     shaderscalp = GameObject.Spawn(scene, obj_to_import, "Scalpel", rootEntity, util.translate(0, 0, 0.0))
     width, height, depth = calc_size(obj_to_import)
     bot.scenegraph["scalpel"] = {'width': width, 'height': height, 'depth': depth, "position": [0, 0, 0],

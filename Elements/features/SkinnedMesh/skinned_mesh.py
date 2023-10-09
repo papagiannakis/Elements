@@ -3,7 +3,7 @@
 from re import M
 from Elements.features.SkinnedMesh.gate_module import *
 from Elements.features.SkinnedMesh.System_skinning import System_skinning
-
+import pathlib
 
 
 
@@ -31,6 +31,9 @@ class Skinned_mesh :
         else:
             self._file_type = file_type
         
+        if (isinstance(self._filename, pathlib.Path )):
+            self._filename = str(self._filename)
+
         self.model = load(self._filename,self._file_type)
         # print("1:",self.model)
         # print("2:",self.model.animations[0].channels[0].positionkeys[0].value)

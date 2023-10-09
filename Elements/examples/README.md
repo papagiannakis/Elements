@@ -5,6 +5,8 @@ you may move the camera using the mouse. Check [Mouse Controls](#mouse-controls)
 
 ## 1.Introductory examples
 
+These examples are suitable for introduction to Computer Graphics and Elements.
+
   * [Example 0](./1.Introductory/example_0_ComponentSystem.py): A plain example of a component and a system, without any rendering
   * [Example 1](./1.Introductory/example_1_empty_window.py): A plain empty window rendered. Demonstrates the basic setup of a window and a renderer.
   * [Example 2](./1.Introductory/example_2_empty_window_with_GUI.py): A plain empty window rendered with GUI enabled. You may change the background color via the GUI and check the FPS, as well as information on the openGL version and the renderer.
@@ -18,12 +20,16 @@ you may move the camera using the mouse. Check [Mouse Controls](#mouse-controls)
   
 ## 2.Intermediate examples
 
+Intermediate examples of textures (2D and Cubemaps), lights, and complete ECS.
+
   * [Example 7](./2.Intermediate/example_7_cameraSystem.py): A scene using the camera system. The camera can be altered via the mouse or via the respective components of the ECSS graph, shown in a separate GUI. All components with a TRS component can be altered via this GUI, as long as *ONLY ONE* TRS component is toggled at a time.
   * [Example 8](./2.Intermediate/example_8_textures.py) A scene with a textured cube. The camera can be altered via the mouse or the GUI. A read-only GUI shows the ECSS graph.
   * [Example 9](./2.Intermediate/example_9_textures_with_lights.py) A scene with a textured cube and lights. The camera can be altered via the mouse or the main GUI. The ECSS graph allows manipulation of one TRS component at a time (not the camera's though); if line 230 is commented out instead of line 232, manipulating the cube via the GUI will also be enabled.
   * [Example 10](./2.Intermediate/example_10_cube_mapping.py) A scene with textured cube and a cubemap texture. The camera can be altered via the mouse or the main GUI.  
 
 ## 3.Advanced examples
+
+Advanced examples for USD scenes, obj-importer and more.
 
   * [Example 11](./3.Advanced/example_11_universal_importer_advanced_lighting.py) A scene with a complex model 
   imported. Demonstrates the ability to load complex `.obj` files.
@@ -34,6 +40,8 @@ you may move the camera using the mouse. Check [Mouse Controls](#mouse-controls)
 
 
 ## 4.Experimental examples
+
+Cutting-edge examples demonstrating advanced functionality.
 
 Note that some of the Experimental examples may require the installation of additional packages, especially the ones
 involving Machine/Deep learning (e.g. PyTorch, PyTorch Geometric, etc.). The following commands may be used to install them
