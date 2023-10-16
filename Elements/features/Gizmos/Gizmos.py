@@ -248,7 +248,8 @@ class Gizmos:
         self.selected_trans = None
         self.selected_mesh = None
         self.selected_comp = "None"
-        self.mode = Mode.TRANSLATE
+        self.mode = Mode.DISAPPEAR
+        
         #a set of node names that are ignored in change_target
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
                                 "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
@@ -532,6 +533,8 @@ class Gizmos:
         if mouse_state==1:
             if self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
                 self.raycast()
+            else:
+                self.raycastForSelection()
         else:
             self.lmb_down = False
             self.selected_gizmo = ''
@@ -592,6 +595,9 @@ class Gizmos:
         if self.key_states[sdl.SDL_SCANCODE_S]:
             self.mode = Mode.SCALE
             self.__update_gizmos()
+        if self.key_states[sdl.SDL_SCANCODE_D]:
+            self.mode = Mode.DISAPPEAR
+            self.reset_to_None()
     
     def __update_gizmos(self):
         """
@@ -877,6 +883,38 @@ class Gizmos:
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
 
         return ray_origin, ray_direction
+
+    def raycastForSelection(self):
+        """
+        Raycast from mouse position to an object in the scenegraph to select it
+        Arguments:
+            self: self
+        Returns:
+            None
+        """
+        ray_origin, ray_direction = self.calculate_ray()
+        obj_intersects, obj_in_point = False, util.vec(0.0)
+
+        count=0
+        for component in self.scene.world.root:
+            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("Skybox")==-1:
+                count = count + 1
+                bb = component.parent.getChildByType("AABoundingBox")
+                if (bb is not None):
+                    model = component.parent.getChildByType("BasicTransform")
+                    mesh = component.parent.getChildByType("RenderMesh")
+                    mmin, mmax = self.calculate_bounding_box(mesh.vertex_attributes[0])
+                    obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
+                                                ray_direction,
+                                                #bb._trans_min_points,
+                                                #bb._trans_max_points,
+                                                mmin, 
+                                                mmax,
+                                                model.trs)    
+                    if (obj_intersects):
+                        self.selected = count
+                        #annotateSelectedObject(component)
+                        return
 
     def raycast(self):
         """

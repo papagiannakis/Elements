@@ -15,6 +15,7 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 from Elements.utils.helper_function import displayGUI_text
+from Elements.features.Gizmos.AABoundingBox import AABoundingBox
 
 example_description = """
 This is a scene that contains a floor with a table on which there is a teapot. Camera movement 
@@ -181,7 +182,9 @@ teapot_mesh.vertex_attributes.append(normals)
 teapot_mesh.vertex_index.append(indices)
 vArray_teapot = scene.world.addComponent(teapot, VertexArray())
 ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-
+scene.world.addComponent(teapot, AABoundingBox(name="AABoundingBox",
+                                        vertices = teapot_mesh.vertex_attributes[0]))
+                                        #objectCollisionList = collisionObjectList))
 
 # Add ground
 ground_mesh.vertex_attributes.append(vertexground)
