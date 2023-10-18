@@ -16,7 +16,7 @@ import enum
 
 def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
     """
-    Generates and returns data for a circle
+    Generates and returns data for a circle, used to create part of the rotation gizmo
     Arguments:
         axis: where the circle is on
         points: number of total points corresponding to the circle
@@ -75,6 +75,11 @@ def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
 
     return ver, ind, col
 
+RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',color=[1.0,0.0,0.0,1.0])
+RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',color=[0.0,1.0,0.0,1.0])
+RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',color=[0.0,0.0,1.0,1.0])
+
+# Vertex data for the translate gizmos
 VERTEX_GIZMOS_X = np.array([[0.1, 0.1, -0.1, 1.0],
                           [0.1, -0.1, -0.1, 1.0],
                           [0.1, 0.1, 0.1, 1.0],
@@ -139,14 +144,7 @@ COLOR_Z = np.array([
     [0.0, 0.0, 1.0, 1.0]
     ], dtype=np.float32)
 
-#scale
-ARROW_INDEX = np.array((0,1,3, 2,0,3, 
-                            5,4,0, 1,0,4,
-                            7,2,6, 6,2,3,
-                            4,5,7, 4,7,6,
-                            7,5,2, 5,0,2,
-                            4,3,1, 4,6,3), np.int32)
-#translate
+#translate cubes indices
 ARROW_INDEX2 = np.array((0,1,3, 2,0,3, 
                             5,4,0, 1,0,4,
                             7,2,6, 6,2,3,
@@ -154,32 +152,31 @@ ARROW_INDEX2 = np.array((0,1,3, 2,0,3,
                             7,5,2, 5,0,2,
                             4,3,1, 4,6,3), np.int32)
 
-XS_LINE = np.array([[0.0,0.0,0.0,1.0],
-                        [1.0,0.0,0.0,1.0]],dtype=np.float32)
-    
-YS_LINE = np.array([[0.0,0.0,0.0,1.0],
-                        [0.0,1.0,0.0,1.0]],dtype=np.float32)
-    
-ZS_LINE = np.array([[0.0,0.0,0.0,1.0],
-                        [0.0,0.0,1.0,1.0]],dtype=np.float32)
-    
-XS_LINE_COLOR = np.array([
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0]
-    ], dtype=np.float32)
 
-YS_LINE_COLOR = np.array([
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0]
-    ], dtype=np.float32)
+# SCALE VERTICES, INDICES, COLORS, NORMALS
 
-ZS_LINE_COLOR = np.array([
-    [0.0, 0.0, 1.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-    ], dtype=np.float32)
+# cubes indices for the scale cube at the end of the scale gizmo
+ARROW_INDEX = np.array((0,1,3, 2,0,3, 
+                            5,4,0, 1,0,4,
+                            7,2,6, 6,2,3,
+                            4,5,7, 4,7,6,
+                            7,5,2, 5,0,2,
+                            4,3,1, 4,6,3), np.int32)
 
+# regarding the lines coordinates of the scale gizmo
+XS_LINE = np.array([[0.0,0.0,0.0,1.0], [1.0,0.0,0.0,1.0]],dtype=np.float32)    
+YS_LINE = np.array([[0.0,0.0,0.0,1.0], [0.0,1.0,0.0,1.0]],dtype=np.float32)
+ZS_LINE = np.array([[0.0,0.0,0.0,1.0], [0.0,0.0,1.0,1.0]],dtype=np.float32)
+    
+# regarding the lines colors of the scale gizmo
+XS_LINE_COLOR = np.array([ [1.0, 0.0, 0.0, 1.0], [1.0, 0.0, 0.0, 1.0] ], dtype=np.float32)
+YS_LINE_COLOR = np.array([ [0.0, 1.0, 0.0, 1.0], [0.0, 1.0, 0.0, 1.0] ], dtype=np.float32)
+ZS_LINE_COLOR = np.array([ [0.0, 0.0, 1.0, 1.0], [0.0, 0.0, 1.0, 1.0] ], dtype=np.float32)
+
+# regarding the lines indices of the scale gizmo
 LINE_INDEX = np.array((0,1),dtype=np.int32)
 
+# regarding the cube coordinates of the scale gizmo
 XS_GIZMOS = np.array([[1.0, 0.1, -0.1, 1.0],
                           [1.0, -0.1, -0.1, 1.0],
                           [1.0, 0.1, 0.1, 1.0],
@@ -188,7 +185,7 @@ XS_GIZMOS = np.array([[1.0, 0.1, -0.1, 1.0],
                           [1.2, 0.1, -0.1, 1.0],
                           [1.2, -0.1, 0.1, 1.0],
                           [1.2, 0.1, 0.1, 1.0]],dtype=np.float32)
-    
+
 YS_GIZMOS = np.array([[0.1, 1.0, -0.1, 1.0],
                           [-0.1, 1.0, -0.1, 1.0],
                           [0.1, 1.0, 0.1, 1.0],
@@ -207,15 +204,15 @@ ZS_GIZMOS = np.array([[-0.1, 0.1, 1.0, 1.0],
                           [0.1, -0.1, 1.2, 1.0],
                           [0.1, 0.1, 1.2, 1.0]],dtype=np.float32)
 
+# generates the scale gizmo's cube's colors, indices and normals
 XS_GIZMOS, INDEX_XS, COLOR_XS, NORMALS_XS = norm.generateFlatNormalsMesh(XS_GIZMOS,ARROW_INDEX,COLOR_X)
 YS_GIZMOS, INDEX_YS, COLOR_YS, NORMALS_YS = norm.generateFlatNormalsMesh(YS_GIZMOS,ARROW_INDEX,COLOR_Y)
 ZS_GIZMOS, INDEX_ZS, COLOR_ZS, NORMALS_ZS = norm.generateFlatNormalsMesh(ZS_GIZMOS,ARROW_INDEX,COLOR_Z)
     
-RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',color=[1.0,0.0,0.0,1.0])
-RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',color=[0.0,1.0,0.0,1.0])
-RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',color=[0.0,0.0,1.0,1.0])
+
 
 class Mode(enum.Enum):
+    # Enum class for the gizmos' modes
     TRANSLATE="Translate"
     ROTATE="Rotate"
     SCALE="Scale"
@@ -234,21 +231,22 @@ class Gizmos:
 
     def __init__(self,rootEntity: Entity):
         sdl.ext.init()
-        self.scene = Scene()
-        self.selected = 0
-        self.total = 0
-        self.mouse_x, self.mouse_y = c_int(0), c_int(0)
-        self.key_states = sdl.SDL_GetKeyboardState(None)
-        self.tab_down = False
-        self.lmb_down = False
-        self.projection = np.array([4,4],dtype=np.float32)
-        self.view = np.array([4,4],dtype=np.float32)
+        self.scene = Scene() # Scene object
+        self.selected = 0 # Selected entity
+        self.total = 0 # Total number of entities on the scene
+        self.mouse_x, self.mouse_y = c_int(0), c_int(0) # Mouse coordinates
+        self.key_states = sdl.SDL_GetKeyboardState(None) # Keyboard state
+        self.tab_down = False # Tab key state
+        self.lmb_down = False # Left mouse button state
+        self.projection = np.array([4,4],dtype=np.float32) # Projection matrix
+        self.view = np.array([4,4],dtype=np.float32) # View matrix
 
-        self.is_selected = False
-        self.selected_trans = None
-        self.selected_mesh = None
-        self.selected_comp = "None"
-        self.mode = Mode.TRANSLATE
+        self.is_selected = False # Is an entity selected
+        self.selected_trans = None # Transform component of the selected entity
+        self.selected_mesh = None # Mesh component of the selected entity
+        self.selected_comp = "None" # Component of the selected entity
+        self.mode = Mode.TRANSLATE # Current mode of the gizmos
+        
         #a set of node names that are ignored in change_target
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
                                 "Gizmos_Y","Gizmos_Y_trans","Gizmos_Y_mesh",
@@ -263,23 +261,23 @@ class Gizmos:
                                 "Gizmos_y_R","Gizmos_y_R_trans","Gizmos_y_R_mesh",
                                 "Gizmos_z_R","Gizmos_z_R_trans","Gizmos_z_R_mesh"])
         
-        self.seperate_transformations = {}
-        self.initial_transformations = {}
-        self.entity_dict = {}
+        self.seperate_transformations = {} # Dictionary for storing each entity's unique transformations seperately
+        self.initial_transformations = {} # Dictionary for storing each entity's initial transformations seperately
+        self.entity_dict = {} # Dictionary for storing each entity's name and id seperately
 
-        self.cameraInUse = ""
+        self.cameraInUse = "" # Camera in use - in order to ignore it
         self.screen_width = 1024.0
         self.screen_height = 768.0
-        self.picked = False
-        self.selected_gizmo = ''
-        self.previous_distance = 0.0
-        self.rotation_distance = 0.0
-        self.previous_x = 0.0
-        self.previous_y = 0.0
-        self.previous_z = 0.0
+        self.picked = False # Is an entity picked
+        self.selected_gizmo = '' # Selected gizmo, X, Y or Z
+        self.previous_distance = 0.0 # Previous distance between the mouse and the gizmo
+        self.rotation_distance = 0.0 # Distance between the mouse and the gizmo for rotation
+        self.previous_x = 0.0 # Previous x coordinate of the mouse
+        self.previous_y = 0.0 # Previous y coordinate of the mouse
+        self.previous_z = 0.0 # Previous z coordinate of the mouse
 
-        self.rotation = util.identity()
-        self.rotation_modifier = 45
+        self.rotation = util.identity() # Rotation matrix for rotation mode - stores the previous rotation until you release the mouse button
+        self.rotation_modifier = 45 # Rotation modifier for rotation mode: greater value = faster rotation
 
         #Light parameters for scale cubes
         self.Lambientcolor = util.vec(1.0, 1.0, 1.0)
@@ -434,16 +432,16 @@ class Gizmos:
         self.yrot_min_bb, self.yrot_max_bb = self.calculate_bounding_box(self.gizmos_y_R_mesh.vertex_attributes[0])
         self.zrot_min_bb, self.zrot_max_bb = self.calculate_bounding_box(self.gizmos_z_R_mesh.vertex_attributes[0])
 
-        self.count_components()
+        self.count_components() # Count Basic transform components in the scene, besides the Gizmos
 
-    def __remove_rotation(self,model):
+    def __remove_rotation__(self,model):
         """
-        Creates and returns a copy of a given model matrix after removing its rotation
+        Creates and returns a copy of a given TRS model matrix after removing its rotation
         Arguments:
             self: self
-            model: a matrix
+            model: a TRS matrix
         Returns:
-            The model matrix without rotation and scaling
+            The TRS matrix without rotation and scaling
         """
         M = np.array(model,copy=True)
         for i in range(3):
@@ -456,7 +454,7 @@ class Gizmos:
 
     def reset_to_None(self):
         """
-        Resets Gizmos to initial state
+        Resets Gizmos to initial state if someone tries to unsuccessfully pick something
         Arguments:
             self: self
         Returns:
@@ -473,7 +471,7 @@ class Gizmos:
 
     def reset_to_default(self):
         """
-        Resets selected Entity's transformations to identity
+        Resets selected Entity's transformations to inital state (when clicking 0)
         Arguments:
             self: self
         Returns:
@@ -487,7 +485,7 @@ class Gizmos:
 
     def change_target(self):
         """
-        Change selected entity
+        Change selected entity (when clicking TAB)
         Arguments:
             self: self
         Returns:
@@ -521,25 +519,25 @@ class Gizmos:
 
     def update_ray_start(self):
         """
-        Update mouse position and mouse state. Additionally Raycast or try to pick an Entity
+        Update mouse position and mouse state. Additionally Raycast (or try to pick an Entity)
         Arguments:
             self: self
         Returns:
             None
         """
-        mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y))
+        mouse_state = sdl.mouse.SDL_GetMouseState(byref(self.mouse_x), byref(self.mouse_y)) # Mouse state = 1 if Left Mouse Button is pressed or 0 if not
         #Raycast only when LMB is pressed
         if mouse_state==1:
             if self.key_states[sdl.SDL_SCANCODE_LALT] and self.selected_trans is not None:
                 self.raycast()
-        else:
+        else: # assume that you have picked a gizmo and you manipulated it, what happens when you release the mouse button
             self.lmb_down = False
             self.selected_gizmo = ''
             self.picked = False
-            self.rotation = util.identity()
+            self.rotation = util.identity() # the gizmos are reset to their initial state
             if self.is_selected:
-                self.__update_gizmos_trans()
-                self.__update_positions()
+                self.__update_gizmos_trans() # update gizmos' positions matrices
+                self.__update_positions() # update gizmos' positions shaders
         
     def count_components(self):
         """
@@ -595,14 +593,14 @@ class Gizmos:
     
     def __update_gizmos(self):
         """
-        Update Gizmos uniform variables
+        Update Gizmos uniform variables 
         Arguments:
             self: self
         Returns:
             None
         """
         if self.is_selected:
-            self.__update_lights()
+            self.__update_lights() 
             self.__update_positions()
     
     def __update_lights(self):
@@ -655,7 +653,7 @@ class Gizmos:
 
     def __update_positions(self):
         """
-        Update model matrices of all Gizmo components
+        Update model matrices of all Gizmo components and update their shaders
         Arguments:
             self: self
         Returns:
@@ -718,7 +716,8 @@ class Gizmos:
         model_ry = self.gizmos_y_R_trans.trs
         model_rz = self.gizmos_z_R_trans.trs
 
-        mvp_rx = 0.0
+        # if rotate is not used, then the gizmos are not visible
+        mvp_rx = 0.0 
         mvp_ry = 0.0
         mvp_rz = 0.0
         if self.mode==Mode.ROTATE:
@@ -788,6 +787,7 @@ class Gizmos:
     def update_screen_dimensions(self,window_width,window_height):
         """
         update saved window width  height and field of view
+        Used to help raycasting
         Arguments:
             self: self
             window_width: window's current width
@@ -840,7 +840,7 @@ class Gizmos:
         Arguments:
             self: self
         Returns:
-            a ray's starting position and direction
+            a ray's starting position and direction in world space
 
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
@@ -951,7 +951,10 @@ class Gizmos:
             previous_distance = self.previous_distance
 
             #divide the Gizmos' meshes in smaller bounding boxes and test each one of them during the first iteration
-            if self.selected_gizmo=='':
+            if self.selected_gizmo=='': # could be X, Y or Z
+
+                # evaluate the distance from the ray origin to the gizmo's mesh for both X, Y and Z and determine which one is the closest
+                # therefore, which one the user meant to pick
                 x_intersects, x_in_point = self.testRayCircleIntersection(ray_origin,
                                                     ray_direction,
                                                     mesh_x,
@@ -978,9 +981,10 @@ class Gizmos:
                     z_distance = self.previous_distance
                 else:
                     z_distance = 1000000.0
-                
 
-            else: #Use the whole mesh for the other iterations
+
+            # we are here, AFTER clicking and WHILE holding the mouse button
+            elif self.selected_gizmo=='X':
                 x_intersects, x_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
                                                                               self.xrot_min_bb,
                                                                               self.xrot_max_bb,
@@ -988,26 +992,36 @@ class Gizmos:
 
                 if x_intersects:
                     x_distance = self.previous_distance
+                    y_distance = 1000000.0
+                    z_distance = 1000000.0
                 else:
                     x_distance = 1000000.0
-            
+
+            elif self.selected_gizmo=='Y':
                 y_intersects, y_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
                                                                               self.yrot_min_bb,
                                                                               self.yrot_max_bb,
                                                                               model_y)
                 if y_intersects:
                     y_distance = self.previous_distance
+                    x_distance = 1000000.0
+                    z_distance = 1000000.0
                 else:
                     y_distance = 1000000.0
-            
+
+            elif self.selected_gizmo=='Z':
                 z_intersects, z_in_point = self.testRayBoundingBoxIntesection(ray_origin,ray_direction,
                                                                               self.zrot_min_bb,
                                                                               self.zrot_max_bb,
                                                                               model_z)
                 if z_intersects:
                     z_distance = self.previous_distance
+                    x_distance = 1000000.0
+                    y_distance = 1000000.0
                 else:
                     z_distance = 1000000.0
+
+            
 
             #When the ray intersects with more than one gizmo apply rotation to the one closest to the ray origin
             if x_intersects and (x_distance > y_distance or x_distance > z_distance):
@@ -1139,7 +1153,7 @@ class Gizmos:
             model: the element's model matrix
         Returns:
             True if there is an intersection, False otherwise. Additionally it returns the intersection point on the bounding box
-            
+            Sets seld.previous_distance to the distance between the ray's origin and the intersection point
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
         tmin = 0.0
@@ -1295,7 +1309,7 @@ class Gizmos:
  
     def __rotate_selected(self,_angle=0.0,_axis=(1.0,0.0,0.0)):
         """
-        Rotate Selected Element
+        Rotate Selected Element around a given axis on local space
         Arguments:
             self: self
             _angle: Rotation Angle
@@ -1304,7 +1318,7 @@ class Gizmos:
             None
         """
         selected = self.seperate_transformations[self.selected_comp]
-        translation = self.__remove_rotation(self.selected_trans.trs)
+        translation = self.__remove_rotation__(self.selected_trans.trs)
 
         #self.selected_trans.trs = self.selected_trans.trs @ util.rotate(angle=_angle,axis=_axis)
         self.selected_trans.trs = translation @ util.rotate(angle=_angle,axis=_axis) @ util.inverse(translation) @ self.selected_trans.trs
@@ -1316,7 +1330,7 @@ class Gizmos:
 
     def __scale_selected(self,x=1.0,y=1.0,z=1.0):
         """
-        Scale Selected Element
+        Scale Selected Element on local space
         Arguments:
             self: self
             x: Scaling on x-axis
@@ -1341,7 +1355,7 @@ class Gizmos:
 
         #selected Entity's local-2-world without rotation or scaling
         #Used for Translation and Scaling Gizmos
-        no_rotation = self.__remove_rotation(self.selected_trans.l2world)
+        no_rotation = self.__remove_rotation__(self.selected_trans.l2world)
 
         self.gizmos_x_trans.trs = no_rotation
         self.gizmos_y_trans.trs = no_rotation
