@@ -117,8 +117,14 @@ example_description = \
 "This example shows the application of gravity on objects with \n\
 axis aligned bounding boxes. As well as the collision between \n\
 the bounding boxes of the cubes and the floor. The moment a cube hits \n\
-the floor it is considered as part of it and more cubes can land on it \n\
-You may move the camera using the mouse or the GUI. \n\
+the floor it is considered as part of it and more cubes can land on it \n\n\
+You may move the camera using the mouse: \n\
+* Move holding Right Click: Change camera angle \n\
+* Move holding Right Click and Shift: Move camera target\n\
+* Scroll holding Ctrl: Zoom In/Out\n\
+or the ECSS Graph (not the Elements ImGUI window) by  \n\
+* Changing Translation, Rotation or Scale of  \n\
+the trans component of either EntityCam2 (or EntityCam1)\n\n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
 various information about them. Hit ESC OR Close the window to quit." 
 
