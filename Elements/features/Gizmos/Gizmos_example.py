@@ -14,6 +14,24 @@ import Elements.utils.normals as norm
 from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
+from Elements.utils.helper_function import displayGUI_text
+
+example_description = """
+This is a scene that contains a floor with a table on which there is a teapot. Camera movement 
+is possible via the mouse or the GUI
+
+Gizmos Instructions:
+You can change the selected Object by pressing TAB
+You can Also reset an Object by pressing '0'
+
+Use the following keys to change transformation mode:
+T: translation
+R: Rotation
+S: Scaling
+
+To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
+move the cursor to see the result
+"""
 
 #Light
 Lposition = util.vec(0.0, 2.5, 1.2) #uniform lightpos
@@ -135,8 +153,8 @@ trans_TableLeg4 = scene.world.addComponent(TableLeg4, BasicTransform(name="trans
 mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_TableLeg4"))
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
-scene.world.addEntityChild(rootEntity, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.3) @ util.scale(0.1, 0.1, 0.1) ))
+scene.world.addEntityChild(TableTop, teapot)
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.1, 0.1, 0.1) ))
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 # Systems
@@ -254,11 +272,11 @@ top_img = skybox_texture_locations / "top.jpg"
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
 
-texturePath_Ground = TEXTURE_DIR /  "Texture_Grass.png"
+texturePath_Ground = TEXTURE_DIR /  "black_stones_floor.jpg"
 texture = Texture(texturePath_Ground)
 ground_shader.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
-texturePath_Wood_Material = TEXTURE_DIR /  "dark_wood_texture.jpg"
+texturePath_Wood_Material = TEXTURE_DIR /  "Black_Wooden_Floor.png"
 texture_Wood = Texture(texturePath_Wood_Material)
 
 shaderDec_TableTop.setUniformVariable(key='ImageTexture', value=texture_Wood, texture=True)
@@ -281,6 +299,7 @@ while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root) 
     scene.world.traverse_visit(renderUpdate, scene.world.root)
+    displayGUI_text(example_description)
     view =  gWindow._myCamera # updates view via the imgui
     height = scene.renderWindow._windowHeight
     width = scene.renderWindow._windowWidth
@@ -298,7 +317,7 @@ while running:
     model_TableLeg3 = trans_TableLeg3.l2world
     model_TableLeg4 = trans_TableLeg4.l2world
 
-    mvp_teapot = projMat @ view @ trans_teapot.trs
+    mvp_teapot = projMat @ view @ trans_teapot.l2world
 
     #Update Ground Variables
     ground_shader.setUniformVariable(key='Proj', value=projMat, mat4=True)
