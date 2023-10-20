@@ -32,7 +32,7 @@ from Elements.utils.terrain import generateTerrain
 from Elements.utils.normals import Convert
 from OpenGL.GL import GL_LINES
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is the first examples that demonstrates the usage of the Camera System \n\
 instead of the use of the lookAt function to create the view matrix. \n\

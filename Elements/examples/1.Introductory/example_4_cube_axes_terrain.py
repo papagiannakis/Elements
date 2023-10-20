@@ -14,7 +14,7 @@ from Elements.utils.terrain import generateTerrain
 
 from OpenGL.GL import GL_LINES
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene with a cube, a terrain and axes. \n\
 The cube and axes are rendered with a simple shader. \n\

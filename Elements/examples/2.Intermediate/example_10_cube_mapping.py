@@ -15,7 +15,7 @@ from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
 from Elements.definitions import TEXTURE_DIR
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the cube map texture, i.e., \n\
 we encapsulate the scene into a huge cube and apply texture to them\n\
