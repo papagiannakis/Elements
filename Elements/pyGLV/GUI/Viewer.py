@@ -1023,10 +1023,10 @@ class ImGUIDecorator(RenderDecorator):
 
         # Create the "File" dropdown menu
         if imgui.begin_menu("File", True):
-            imgui.menu_item("Save")
-            imgui.separator()
-            imgui.menu_item("Save as")
-            imgui.separator()
+            # imgui.menu_item("Save")
+            # imgui.separator()
+            # imgui.menu_item("Save as")
+            # imgui.separator()
             if imgui.menu_item("Minimize")[1]:
                 sdl2.SDL_MinimizeWindow(self.wrapeeWindow._gWindow)
             imgui.separator()
