@@ -1039,10 +1039,11 @@ class ImGUIDecorator(RenderDecorator):
         if imgui.begin_menu("View"):
             # Add a "Shortcuts" submenu
             if imgui.menu_item("Shortcuts")[1]:
-                Shortcuts.show_shortcuts_window = True   
-                Shortcuts.displayShortcutsGUI()
+                Shortcuts.show_shortcuts_window = not Shortcuts.show_shortcuts_window   
+                if Shortcuts.show_shortcuts_window: 
+                    Shortcuts.displayShortcutsGUI()
             if imgui.menu_item("Elements ImGUI Window")[1]:
-                self.showElementsWindow = True           
+                self.showElementsWindow = not self.showElementsWindow           
             if imgui.menu_item("Collapse Windows")[1]:
                 self.collapseElementsWindow = False
                 Shortcuts.collapseShortcutsWindow = False
@@ -1056,7 +1057,7 @@ class ImGUIDecorator(RenderDecorator):
         if imgui.begin_menu("Help"):
             # Add a "Shortcuts" submenu
             if imgui.menu_item("Example Description")[1]:
-                Shortcuts.showGUI_text = True   
+                Shortcuts.showGUI_text = not Shortcuts.showGUI_text   
             if imgui.menu_item("FAQ")[1]:
                 pass
             imgui.end_menu()
