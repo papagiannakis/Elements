@@ -28,7 +28,7 @@ import OpenGL.GL as gl
 from Elements.utils.terrain import generateTerrain
 from Elements.definitions import SCENES_DIR
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the ability to import \n\
 basic USD files. By pressing the button load scene \n\

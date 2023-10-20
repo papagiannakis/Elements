@@ -21,7 +21,7 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.definitions import TEXTURE_DIR
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the ability to apply image textures to geometry. \n\
 The scene is being lit using the Blinn-Phong algorithm. \n\n\

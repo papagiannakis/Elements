@@ -19,7 +19,7 @@ import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene with a cube, a terrain and axes. The scene is being lit using \n\
 the Blinn-Phong algorithm. You may move the camera using the mouse or the GUI. \n\
