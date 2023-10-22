@@ -18,7 +18,7 @@ from Elements.definitions import TEXTURE_DIR
 
 from OpenGL.GL import GL_LINES
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the ability to apply image textures to geometry. \n\
 You may move the camera using the mouse or the GUI. \n\
