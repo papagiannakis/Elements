@@ -32,6 +32,7 @@ import Elements.pyECSS.Event
 from Elements.pyECSS.System import System  
 from Elements.pyECSS.Component import BasicTransform
 import numpy as np
+# from Elements.pyGLV.GL.Scene import Scene
 
 import Elements.utils.Shortcuts as Shortcuts
 
@@ -572,7 +573,8 @@ class RenderDecorator(RenderWindow):
                     self.toggle_Wireframe()
                 
                 ########## shortcuts for selected node from the tree ###########
-                if self.selected:
+                if self._wrapeeWindow._scene._gContext.__class__.__name__ == "ImGUIecssDecorator" and self.selected:
+                    # we must first check if the ImGUIecssDecorator is active otherwise we will get an error on click
                     ################# - translate on x axis when node is selected using W+alt ###########################
                     if(event.key.keysym.sym == sdl2.SDLK_w and (sdl2.SDL_GetModState() & shortcut_HotKey)):
                         self.translation["x"] -= 0.1
