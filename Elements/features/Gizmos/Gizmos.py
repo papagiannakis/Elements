@@ -820,8 +820,8 @@ class Gizmos:
         for i in  range(len(vertices)):
             vertices[i] = vertices[i]/vertices[i][3]
 
-        minbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
-        maxbb = util.vec(vertices[0][0],vertices[0][0],vertices[0][2],1.0)
+        minbb = util.vec(vertices[0][0],vertices[0][1],vertices[0][2],1.0)
+        maxbb = util.vec(vertices[0][0],vertices[0][1],vertices[0][2],1.0)
         for i in range(1,len(vertices)):
             #min coordinates
             if vertices[i][0]<minbb[0]:
@@ -903,16 +903,21 @@ class Gizmos:
                 if (bb is not None):
                     model = component.parent.getChildByType("BasicTransform")
                     mesh = component.parent.getChildByType("RenderMesh")
-                    mmin, mmax = self.calculate_bounding_box(mesh.vertex_attributes[0])
+                    #mmin, mmax = self.calculate_bounding_box(mesh.vertex_attributes[0])
                     obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
-                                                #bb._trans_min_points,
-                                                #bb._trans_max_points,
-                                                mmin, 
-                                                mmax,
+                                                bb._trans_min_points,
+                                                bb._trans_max_points,
+                                                #mmin, 
+                                                #mmax,
                                                 model.trs)    
                     if (obj_intersects):
-                        self.selected = count
+                        self.selected = count-2
+                        self.change_target()
+                        if self.total>0:
+                            self.is_selected = True
+                            self.__update_gizmos_trans()
+                            self.__update_gizmos()
                         #annotateSelectedObject(component)
                         return
 

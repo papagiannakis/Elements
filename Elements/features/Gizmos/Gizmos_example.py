@@ -198,30 +198,47 @@ mesh_TableTop.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableTop.vertex_index.append(indicesTableTop)
 vArray_TableTop = scene.world.addComponent(TableTop, VertexArray())
 shaderDec_TableTop = scene.world.addComponent(TableTop, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+scene.world.addComponent(TableTop, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh_TableTop.vertex_attributes[0]))
+                                        #objectCollisionList = collisionObjectList))
+
+
 
 mesh_TableLeg1.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg1.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg1.vertex_index.append(indicesTableLeg)
 vArray_TableLeg1 = scene.world.addComponent(TableLeg1, VertexArray())
 shaderDec_TableLeg1 = scene.world.addComponent(TableLeg1, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+scene.world.addComponent(TableLeg1, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh_TableLeg1.vertex_attributes[0]))
+                                        #objectCollisionList = collisionObjectList))
 
 mesh_TableLeg2.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg2.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg2.vertex_index.append(indicesTableLeg)
 vArray_TableLeg2 = scene.world.addComponent(TableLeg2, VertexArray())
 shaderDec_TableLeg2 = scene.world.addComponent(TableLeg2, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+scene.world.addComponent(TableLeg2, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh_TableLeg2.vertex_attributes[0]))
+                                        #objectCollisionList = collisionObjectList))
 
 mesh_TableLeg3.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg3.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg3.vertex_index.append(indicesTableLeg)
 vArray_TableLeg3 = scene.world.addComponent(TableLeg3, VertexArray())
 shaderDec_TableLeg3 = scene.world.addComponent(TableLeg3, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+scene.world.addComponent(TableLeg3, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh_TableLeg3.vertex_attributes[0]))
+                                        #objectCollisionList = collisionObjectList))
 
 mesh_TableLeg4.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg4.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg4.vertex_index.append(indicesTableLeg)
 vArray_TableLeg4 = scene.world.addComponent(TableLeg4, VertexArray())
 shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+scene.world.addComponent(TableLeg4, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh_TableLeg4.vertex_attributes[0]))
+                                        #objectCollisionList = collisionObjectList))
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
