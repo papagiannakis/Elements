@@ -245,7 +245,7 @@ class Gizmos:
         self.selected_trans = None # Transform component of the selected entity
         self.selected_mesh = None # Mesh component of the selected entity
         self.selected_comp = "None" # Component of the selected entity
-        self.mode = Mode.TRANSLATE # Current mode of the gizmos
+        self.mode = Mode.DISAPPEAR # Current mode of the gizmos
         
         #a set of node names that are ignored in change_target
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
@@ -901,14 +901,14 @@ class Gizmos:
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
                     model = component.parent.getChildByType("BasicTransform")
-                    mesh = component.parent.getChildByType("RenderMesh")
+                    #mesh = component.parent.getChildByType("RenderMesh")
                     #mmin, mmax = self.calculate_bounding_box(mesh.vertex_attributes[0])
+                    mmin = bb._trans_min_points @ model.trs
+                    mmax =bb._trans_max_points @ model.trs
                     obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
-                                                bb._trans_min_points,
-                                                bb._trans_max_points,
-                                                #mmin, 
-                                                #mmax,
+                                                mmin,
+                                                mmax,
                                                 model.trs)    
                     if (obj_intersects):
                         self.selected = count-2
