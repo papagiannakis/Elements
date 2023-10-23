@@ -251,7 +251,7 @@ move the cursor to see the result
         """
         node4_pink = self.scene.world.createEntity(Entity(name="node4_pink"))
         self.scene.world.addEntityChild(self.rootEntity, node4_pink)
-        trans4_pink = self.scene.world.addComponent(node4_pink, BasicTransform(name="trans4_pink", trs=util.translate(-1.5,0.0,-1.5)))
+        trans4_pink = self.scene.world.addComponent(node4_pink, BasicTransform(name="trans4_pink", trs=util.translate(-1.5,0.5,0.0)))
         mesh4_pink = self.scene.world.addComponent(node4_pink, RenderMesh(name="mesh4_pink"))
 
         mesh4_pink.vertex_attributes.append(self.vertex_pink)

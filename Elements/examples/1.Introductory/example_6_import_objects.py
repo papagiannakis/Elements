@@ -20,7 +20,7 @@ import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene with the famous Newell teapot. This example demonstrates the \n\
 ability to load complex objects instead of inputing them manually. \n\

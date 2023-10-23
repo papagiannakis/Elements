@@ -154,8 +154,8 @@ trans_TableLeg4 = scene.world.addComponent(TableLeg4, BasicTransform(name="trans
 mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_TableLeg4"))
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
-scene.world.addEntityChild(rootEntity, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.3) @ util.scale(0.1, 0.1, 0.1) ))
+scene.world.addEntityChild(TableTop, teapot)
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.1, 0.1, 0.1) ))
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 # Systems
@@ -337,7 +337,7 @@ while running:
     model_TableLeg3 = trans_TableLeg3.l2world
     model_TableLeg4 = trans_TableLeg4.l2world
 
-    mvp_teapot = projMat @ view @ trans_teapot.trs
+    mvp_teapot = projMat @ view @ trans_teapot.l2world
 
     #Update Ground Variables
     ground_shader.setUniformVariable(key='Proj', value=projMat, mat4=True)

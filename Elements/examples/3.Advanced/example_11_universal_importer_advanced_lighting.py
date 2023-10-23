@@ -15,7 +15,7 @@ import OpenGL.GL as gl
 from Elements.utils.terrain import generateTerrain
 from Elements.definitions import MODEL_DIR
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the ability to import \n\
 really complex objects along with their textures. \n\
