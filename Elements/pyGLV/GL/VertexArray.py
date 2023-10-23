@@ -22,7 +22,7 @@ import numpy as np
 
 import Elements.pyECSS.System
 from Elements.pyECSS.Component import Component, CompNullIterator
-
+import atexit
 
 class VertexArray(Component):
     """
@@ -45,6 +45,7 @@ class VertexArray(Component):
         self._index = index
         self._usage = usage
         self._primitive = primitive #e.g. GL.GL_TRIANGLES
+        atexit.register(self.__del__)
         #self.init(attributes, index, usage) #init after a valid GL context is active
     
     @property
@@ -85,6 +86,8 @@ class VertexArray(Component):
         self._primitive = value
     
     def __del__(self):
+        # using atexit to ensure correct destruction order and to avoid yielding errors and exceptions
+        # see https://stackoverflow.com/questions/72238460/python-importerror-sys-meta-path-is-none-python-is-likely-shutting-down
         gl.glDeleteVertexArrays(1, [self._glid])
         gl.glDeleteBuffers(len(self._buffers), self._buffers)
     
