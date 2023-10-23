@@ -706,7 +706,7 @@ class ImGUIDecorator(RenderDecorator):
         self._colorEditor = wrapee._colorEditor
 
         ### Bool variables for Scenegraph Visualizer imgui ###
-        self.collapseElementsWindow = True
+        self.collapseElementsWindow = False
         self.collapseScenegraphVisualizer = True
 
         self.collapseScenegraphVisualizer = True
@@ -717,8 +717,8 @@ class ImGUIDecorator(RenderDecorator):
         self.elements_y = 30        
 
         #TODO:add comment for these vars
-        self.graph_x = 560
-        self.graph_y = 30
+        self.graph_x = 10
+        self.graph_y = 100
 
     def init(self):
         """
@@ -908,14 +908,15 @@ class ImGUIDecorator(RenderDecorator):
         ########## Added bool variable to enable to close the imgui window ###############
         if  self.showElementsWindow:
             # new custom imgui window
-            imgui.core.set_next_window_collapsed(not self.collapseElementsWindow)
+            imgui.core.set_next_window_collapsed(not self.collapseElementsWindow, imgui.FIRST_USE_EVER)
             self.collapseElementsWindow, self.showElementsWindow = imgui.begin("Elements ImGUI window", True)
             ###### do this so we can be able to move the window after it was collapsed #########
             #######                         and we re open it                           #########
             if self.collapseElementsWindow:
-                imgui.set_window_position(self.elements_x,self.elements_y,imgui.ONCE)
+                imgui.set_window_position(self.elements_x,self.elements_y,imgui.FIRST_USE_EVER)
+                imgui.set_window_collapsed_labeled("Elements ImGUI window", True, imgui.FIRST_USE_EVER)
             else:
-                imgui.set_window_position(self.elements_x,self.elements_y)
+                imgui.set_window_position(self.elements_x,self.elements_y, imgui.FIRST_USE_EVER)
 
             
             # labels inside the window
@@ -1016,7 +1017,7 @@ class ImGUIDecorator(RenderDecorator):
             Shortcuts.GUItext_y = starting_y
             starting_y += 20
         self.graph_x = 10
-        self.graph_y = starting_y
+        # self.graph_y = starting_y + 20
 
     ######  MENU BAR #########
     def menuBar(self):
@@ -1087,11 +1088,11 @@ class ImGUIecssDecorator(ImGUIDecorator):
         
         twoColumn = False
 
-        imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer)
+        imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer, imgui.FIRST_USE_EVER)
 
         if twoColumn:
             # 2 Column Version
-            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph")
+            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph", True)
             imgui.columns(2, "Properties")
             if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
                 self.drawNode(self.wrapeeWindow.scene.world.root)
@@ -1100,7 +1101,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
         else:
-            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph")
+            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph", True)
             imgui.columns(1, "Properties")
             # below is a recursive call to build-up the whole scenegraph as ImGUI tree
             # if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
@@ -1113,9 +1114,9 @@ class ImGUIecssDecorator(ImGUIDecorator):
         ###### do this so we can be able to move the window after it was collapsed #########
         #######                         and we re open it                           #########
         if self.collapseScenegraphVisualizer:
-            imgui.set_window_position(self.graph_x,self.graph_y,imgui.ONCE)
+            imgui.set_window_position(self.graph_x,self.graph_y,imgui.FIRST_USE_EVER)
         else:
-            imgui.set_window_position(self.graph_x,self.graph_y)
+            imgui.set_window_position(self.graph_x,self.graph_y, imgui.FIRST_USE_EVER)
         
         # smallerTRSgui = True
         #TRS sample
