@@ -6,7 +6,7 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.features.Gizmos.Gizmos import Gizmos
+from Elements.features.ObjectPicker.Gizmos import Gizmos
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -15,7 +15,7 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 from Elements.utils.helper_function import displayGUI_text
-from Elements.features.Gizmos.AABoundingBox import AABoundingBox
+from Elements.features.ObjectPicker.AABoundingBox import AABoundingBox
 
 example_description = """
 This is a scene that contains a floor with a table on which there is a teapot. Camera movement 

@@ -245,7 +245,7 @@ class Gizmos:
         self.selected_trans = None # Transform component of the selected entity
         self.selected_mesh = None # Mesh component of the selected entity
         self.selected_comp = "None" # Component of the selected entity
-        self.mode = Mode.DISAPPEAR # Current mode of the gizmos
+        self.mode = Mode.TRANSLATE # Current mode of the gizmos
         
         #a set of node names that are ignored in change_target
         self.gizmos_comps = set(["Gizmos_X","Gizmos_X_trans","Gizmos_X_mesh",
