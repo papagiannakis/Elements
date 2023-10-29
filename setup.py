@@ -45,7 +45,11 @@ setup(
         'bezier',
         'clifford',
         'trimesh',
-        'pyganja'
+        'pyganja',
+        'openai',
+        'open3d',
+        'torch',
+        'torch_geometric'
     ],
     
 

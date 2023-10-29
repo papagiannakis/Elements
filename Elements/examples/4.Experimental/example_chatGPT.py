@@ -46,7 +46,6 @@ def displayGUI():
     imgui.text("This is what you last typed: " + str(latest.upper()))
     imgui.end()
 
-
 def main(imguiFlag=False):
     import os
     import numpy as np
@@ -93,19 +92,20 @@ def main(imguiFlag=False):
     renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
     initUpdate = scene.world.createSystem(InitGLShaderSystem())
     shaders = []
+
     # --------ToolsTable--------
     obj_to_import = MODEL_DIR / "ToolsTable" / "ToolsTable.obj"
     shadertoolstable = GameObject.Spawn(scene, obj_to_import, "ToolsTable", rootEntity,
-                                        util.rotate((0.0, 1.0, 0.0), 0),
-                                        )
-    width, height, depth = calc_size(obj_to_import)
+                                        util.translate(0, 0, 0))
+    width, height, depth = calc_size(obj_to_import.__str__())
     bot.scenegraph["tools_table"] = {'width': width, 'height': height, 'depth': depth, "position": [0, 0, 0],
                                      "rotation": [0, 0, 0]}
     shaders.append(shadertoolstable)
-    # -------Cauterizer-------------
+
+    # -------Scalpel-------------
     obj_to_import = MODEL_DIR / "Scalpel" / "Scalpel.obj"
-    shaderscalp = GameObject.Spawn(scene, obj_to_import, "Scalpel", rootEntity, util.translate(0, 0, 0.0))
-    width, height, depth = calc_size(obj_to_import)
+    shaderscalp = GameObject.Spawn(scene, obj_to_import, "Scalpel", rootEntity, util.translate(0, 0.4, 0.0))
+    width, height, depth = calc_size(obj_to_import.__str__())
     bot.scenegraph["scalpel"] = {'width': width, 'height': height, 'depth': depth, "position": [0, 0, 0],
                                     "rotation": [0, 0, 0]}
     shaders.append(shaderscalp)
@@ -167,6 +167,8 @@ def main(imguiFlag=False):
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
         scene.world.traverse_visit(camUpdate, scene.world.root)
+        scene.world.traverse_visit(transUpdate, scene.world.root)
+
         view = gWindow._myCamera  # updates view via the imgui
         # mvp_table = projMat @ view @ medicaltabletrs  # @ util.scale(0.1, 0.1, 0.1)
         # mvp_cauterizer = projMat @ view @ cauterizertrs
@@ -176,17 +178,18 @@ def main(imguiFlag=False):
         mvp_terrain = projMat @ view @ terrain_trans.trs
         terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
         for shader in shaders:
-            model_cube = shader.transform_component.trs
-            # model_cube = util.translate(0, 0, 0)
-            shader.mesh_entities[0].shader_decorator_component.setUniformVariable(key='model', value=model_cube, mat4=True)
-            shader.mesh_entities[0].shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
-            shader.mesh_entities[0].shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
-            normalMatrix = np.transpose(util.inverse(model_cube))
-            shader.mesh_entities[0].shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
-            shader.mesh_entities[0].shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
+            for mesh_entity in shader.mesh_entities:
+                model_cube = shader.transform_component.trs
+                # model_cube = util.translate(0, 0, 0)
+                mesh_entity.shader_decorator_component.setUniformVariable(key='model', value=model_cube, mat4=True)
+                mesh_entity.shader_decorator_component.setUniformVariable(key='view', value=view, mat4=True)
+                mesh_entity.shader_decorator_component.setUniformVariable(key='projection', value=projMat, mat4=True)
+                normalMatrix = np.transpose(util.inverse(model_cube))
+                mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
+                mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
+
         scene.render_post()
         if changed:
-
             if "tools_table" in bot.scenegraph:
                 r = Rotation.from_euler("xyz", bot.scenegraph['tools_table']['rotation'], degrees=True)
                 newr = np.zeros((4, 4))
