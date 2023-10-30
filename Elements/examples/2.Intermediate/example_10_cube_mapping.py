@@ -50,7 +50,7 @@ orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","5
 
 skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
-transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
+transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) #util.identity()
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 node4 = scene.world.createEntity(Entity(name="node4"))
