@@ -705,11 +705,14 @@ class ImGUIDecorator(RenderDecorator):
         self._checkbox = False 
         self._colorEditor = wrapee._colorEditor
 
-        ### Bool variables for Scenegraph Visualizer imgui ###
+        ### Bool variables for Scenegraph Visualizer imgui 
         self.collapseElementsWindow = False
         self.collapseScenegraphVisualizer = True
 
+        ### Bool variables to collapse and close the ECSS graph
+        self.showScenegraphVisualizer = True
         self.collapseScenegraphVisualizer = True
+
         
         ### Bool variables for Elements imgui ###
         self.showElementsWindow = True
@@ -1041,12 +1044,14 @@ class ImGUIDecorator(RenderDecorator):
         # Create the "View" dropdown menu
         if imgui.begin_menu("View"):
             # Add a "Shortcuts" submenu
+            if imgui.menu_item("Elements ImGUI Window")[1]:
+                self.showElementsWindow = not self.showElementsWindow           
+            if imgui.menu_item("ECSS Graph")[1]:
+                 self.showScenegraphVisualizer = True
             if imgui.menu_item("Shortcuts")[1]:
                 Shortcuts.show_shortcuts_window = not Shortcuts.show_shortcuts_window   
                 if Shortcuts.show_shortcuts_window: 
                     Shortcuts.displayShortcutsGUI()
-            if imgui.menu_item("Elements ImGUI Window")[1]:
-                self.showElementsWindow = not self.showElementsWindow           
             if imgui.menu_item("Collapse Windows")[1]:
                 self.collapseElementsWindow = False
                 Shortcuts.collapseShortcutsWindow = False
@@ -1088,84 +1093,63 @@ class ImGUIecssDecorator(ImGUIDecorator):
         
         twoColumn = False
 
-        imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer, imgui.FIRST_USE_EVER)
+        ########## Added bool variable to enable to close the graph window ###############
+        if  self.showScenegraphVisualizer:
+            imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer, imgui.FIRST_USE_EVER)
 
-        if twoColumn:
-            # 2 Column Version
-            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph", True)
-            imgui.columns(2, "Properties")
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
-            imgui.next_column()
-            imgui.text("Properties")
-            imgui.separator()
-        else:
-            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph", True)
-            imgui.columns(1, "Properties")
-            # below is a recursive call to build-up the whole scenegraph as ImGUI tree
-            # if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                # self.drawNode(self.wrapeeWindow.scene.world.root)
-                # imgui.tree_pop()
-            # imgui.next_column()
-            imgui.text("Properties")
-            imgui.separator()
+            if twoColumn:
+                # 2 Column Version
+                self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
+                imgui.columns(2, "Properties")
+                if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                    self.drawNode(self.wrapeeWindow.scene.world.root)
+                    imgui.tree_pop()
+                imgui.next_column()
+                imgui.text("Properties")
+                imgui.separator()
+            else:
+                self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
+                imgui.columns(1, "Properties")
+                imgui.text("Properties")
+                imgui.separator()
 
-        ###### do this so we can be able to move the window after it was collapsed #########
-        #######                         and we re open it                           #########
-        if self.collapseScenegraphVisualizer:
-            imgui.set_window_position(self.graph_x,self.graph_y,imgui.FIRST_USE_EVER)
-        else:
-            imgui.set_window_position(self.graph_x,self.graph_y, imgui.FIRST_USE_EVER)
-        
-        # smallerTRSgui = True
-        #TRS sample
-        # if(isinstance(self.selected, BasicTransform)):
+            ###### do this so we can be able to move the window after it was collapsed #########
+            #######                         and we re open it                           #########
+            if self.collapseScenegraphVisualizer:
+                imgui.set_window_position(self.graph_x,self.graph_y,imgui.FIRST_USE_EVER)
+            else:
+                imgui.set_window_position(self.graph_x,self.graph_y, imgui.FIRST_USE_EVER)
+            
+            # smallerTRSgui = True
+            #TRS sample
+            # if(isinstance(self.selected, BasicTransform)):
 
-        if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
-            imgui.same_line() 
-            # changed, value = imgui.slider_float("X", self.translation["x"], -3, 3, "%.01f", 1);
-            # self.translation["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.translation["y"], -3, 3, "%.01f", 1);
-            # self.translation["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.translation["z"], -3, 3, "%.01f", 1);
-            # self.translation["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
-            self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
-        if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
-            imgui.same_line() 
-            # changed, value = imgui.slider_float("X", self.rotation["x"], -90, 90, "%.1f", 1);
-            # self.rotation["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.rotation["y"], -90, 90, "%.1f", 1);
-            # self.rotation["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.rotation["z"], -90, 90, "%.1f", 1);
-            # self.rotation["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
-            self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
-        if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
-            imgui.same_line() 
-            # changed, value = imgui.slider_float("X", self.scale["x"], 0, 3, "%.01f", 1);
-            # self.scale["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.scale["y"], 0, 3, "%.01f", 1);
-            # self.scale["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.scale["z"], 0, 3, "%.01f", 1);
-            # self.scale["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
-            self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
+            if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
+                imgui.same_line() 
+                changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
+                self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
+                imgui.tree_pop();
+            if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
+                imgui.same_line() 
+                changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
+                self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
+                imgui.tree_pop();
+            if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
+                imgui.same_line() 
+                changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
+                imgui.tree_pop();
 
-        
-        if twoColumn:
-            pass
-        else:
-            imgui.separator()
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
+            
+            if twoColumn:
+                pass
+            else:
+                imgui.separator()
+                if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                    self.drawNode(self.wrapeeWindow.scene.world.root)
+                    imgui.tree_pop()
 
-        imgui.end()
+            imgui.end()
 
     def drawNode(self, component):
         #create a local iterator of Entity's children
