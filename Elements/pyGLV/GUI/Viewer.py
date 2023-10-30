@@ -639,7 +639,7 @@ class RenderDecorator(RenderWindow):
                     elif(event.key.keysym.sym == sdl2.SDLK_p ):
                         self.scale["z"] += 0.1
 
-                elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
+                if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
             elif event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
                 self.lctrl = False
