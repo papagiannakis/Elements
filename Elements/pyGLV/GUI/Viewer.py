@@ -560,14 +560,6 @@ class RenderDecorator(RenderWindow):
             
             #keyboard events
             elif event.type == sdl2.SDL_KEYDOWN:
-                # if event.key.keysym.sym == sdl2.SDLK_UP or event.key.keysym.sym == sdl2.SDLK_w :
-                #     pass
-                # if event.key.keysym.sym == sdl2.SDLK_DOWN or event.key.keysym.sym == sdl2.SDLK_s :
-                #     pass
-                # if event.key.keysym.sym == sdl2.SDLK_LEFT or event.key.keysym.sym == sdl2.SDLK_a :
-                #     pass
-                # if event.key.keysym.sym == sdl2.SDLK_RIGHT or event.key.keysym.sym == sdl2.SDLK_d :
-                #     pass
                 ##################  toggle the wireframe using the alt+F buttons  #############################
                 if (event.key.keysym.sym == sdl2.SDLK_f and (sdl2.SDL_GetModState() & shortcut_HotKey)):
                     self.toggle_Wireframe()
@@ -769,7 +761,6 @@ class ImGUIDecorator(RenderDecorator):
         # draw scenegraph tree widget
         self.scenegraphVisualiser()
         self.menuBar()
-        # print(f'{self.getClassName()}: display()')
 
 
     def moveEye(self, value, direction):
@@ -1106,28 +1097,15 @@ class ImGUIecssDecorator(ImGUIDecorator):
         sceneRoot = self.wrapeeWindow.scene.world.root.name
         if sceneRoot is None:
             sceneRoot = "ECSS Root Entity"
-        
-        twoColumn = False
+    
 
         ########## Added bool variable to enable to close the graph window ###############
         if  self.showScenegraphVisualizer:
             imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer, imgui.FIRST_USE_EVER)
 
-            if twoColumn:
-                # 2 Column Version
-                self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
-                imgui.columns(2, "Properties")
-                if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                    self.drawNode(self.wrapeeWindow.scene.world.root)
-                    imgui.tree_pop()
-                imgui.next_column()
-                imgui.text("Properties")
-                imgui.separator()
-            else:
-                self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
-                imgui.columns(1, "Properties")
-                imgui.text("Properties")
-                imgui.separator()
+
+            self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
+            imgui.columns(1, "Properties")
 
             ###### do this so we can be able to move the window after it was collapsed #########
             #######                         and we re open it                           #########
@@ -1140,35 +1118,40 @@ class ImGUIecssDecorator(ImGUIDecorator):
             #TRS sample
             # if(isinstance(self.selected, BasicTransform)):
 
+            imgui.text("Edit TRS Properties")
+            imgui.separator()
             if self.countOpened == 1:
-                if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
+                if imgui.tree_node("Translation:", imgui.TREE_NODE_LEAF):
                     imgui.same_line() 
-                    changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
+                    changed, value = imgui.drag_float3("",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
                     self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
-                if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
+                if imgui.tree_node("Rotation   :", imgui.TREE_NODE_LEAF):
                     imgui.same_line() 
-                    changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
+                    changed, value = imgui.drag_float3(" ",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
                     self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
-                if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
+                if imgui.tree_node("Scale      :", imgui.TREE_NODE_LEAF):
                     imgui.same_line() 
-                    changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                    changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
                     self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
+            else: 
+                imgui.tree_node("Translation: Not Editable", imgui.TREE_NODE_LEAF)
+                imgui.tree_pop()
+                imgui.tree_node("Rotation   : Not Editable", imgui.TREE_NODE_LEAF)
+                imgui.tree_pop()
+                imgui.tree_node("Scale      : Not Editable", imgui.TREE_NODE_LEAF)
+                imgui.tree_pop()
 
-            
-            if twoColumn:
-                pass
-            else:
-                imgui.separator()
-                if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                    self.countOpened = 0
-                    self.drawNode(self.wrapeeWindow.scene.world.root)
-                    imgui.tree_pop()
+            imgui.separator()
+            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                self.countOpened = 0
+                self.drawNode(self.wrapeeWindow.scene.world.root)
+                imgui.tree_pop()
 
             imgui.end()
-            print("countOpened: ", self.countOpened)
+            # print("countOpened: ", self.countOpened)
 
     def drawNode(self, component):
         #create a local iterator of Entity's children
@@ -1209,6 +1192,26 @@ class ImGUIecssDecorator(ImGUIDecorator):
                             else:                       # Set GUI values to trs;
                                 if isinstance(comp, BasicTransform):
                                     self.countOpened += 1
+                                    changedT, value = imgui.drag_float3("T",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
+                                    if changedT: self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
+                                    changedR, value = imgui.drag_float3("R",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
+                                    if changedR: self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
+                                    changedS, value = imgui.drag_float3("S",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                                    if changedS: self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
+                                    if imgui.tree_node("Translation:", imgui.TREE_NODE_LEAF):
+                                        changed, value = imgui.drag_float3("",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
+                                        self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
+                                        imgui.tree_pop();
+                                    if imgui.tree_node("Rotation   :", imgui.TREE_NODE_LEAF):
+                                        # imgui.same_line() 
+                                        changed, value = imgui.drag_float3(" ",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
+                                        self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
+                                        imgui.tree_pop();
+                                    if imgui.tree_node("Scale      :", imgui.TREE_NODE_LEAF):
+                                        # imgui.same_line() 
+                                        changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                                        self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
+                                        imgui.tree_pop();
                                     transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"]);
                                     rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
                                     rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
