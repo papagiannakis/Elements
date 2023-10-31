@@ -1097,6 +1097,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
     def __init__(self, wrapee: RenderWindow, imguiContext = None):
         super().__init__(wrapee, imguiContext)
         self.selected = None; # Selected should be a component
+        self.countOpened = 0
 
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
@@ -1139,21 +1140,22 @@ class ImGUIecssDecorator(ImGUIDecorator):
             #TRS sample
             # if(isinstance(self.selected, BasicTransform)):
 
-            if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
-                imgui.same_line() 
-                changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
-                self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
-                imgui.tree_pop();
-            if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
-                imgui.same_line() 
-                changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
-                self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
-                imgui.tree_pop();
-            if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
-                imgui.same_line() 
-                changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
-                self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
-                imgui.tree_pop();
+            if self.countOpened == 1:
+                if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
+                    imgui.same_line() 
+                    changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
+                    self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
+                    imgui.tree_pop();
+                if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
+                    imgui.same_line() 
+                    changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
+                    self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
+                    imgui.tree_pop();
+                if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
+                    imgui.same_line() 
+                    changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                    self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
+                    imgui.tree_pop();
 
             
             if twoColumn:
@@ -1161,10 +1163,12 @@ class ImGUIecssDecorator(ImGUIDecorator):
             else:
                 imgui.separator()
                 if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                    self.countOpened = 0
                     self.drawNode(self.wrapeeWindow.scene.world.root)
                     imgui.tree_pop()
 
             imgui.end()
+            print("countOpened: ", self.countOpened)
 
     def drawNode(self, component):
         #create a local iterator of Entity's children
@@ -1204,6 +1208,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
                                     # self.color = comp.color.copy();
                             else:                       # Set GUI values to trs;
                                 if isinstance(comp, BasicTransform):
+                                    self.countOpened += 1
                                     transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"]);
                                     rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
                                     rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
