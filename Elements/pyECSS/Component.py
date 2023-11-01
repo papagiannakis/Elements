@@ -419,7 +419,7 @@ class BasicTransform(Component):
 
     def __str__(self):
         np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)}) # print only one 3 decimals
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, \nl2world: \n{self.l2world}, \nl2cam: \n{self.l2cam}, \ntrs: \n{self.trs}"
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}, \nl2world: \n{self.l2world}, \nl2cam: \n{self.l2cam}, \ntrs: \n{self.trs}"
     
     def __iter__(self) ->CompNullIterator:
         """ A concrete component does not have children to iterate, thus a NULL iterator
@@ -491,7 +491,7 @@ class Camera(Component):
         pass
     
     def __str__(self):
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, \n projMat: \n{self.projMat},\n root2cam: \n{self.root2cam}"    
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}, \nprojMat: \n{self.projMat},\nroot2cam: \n{self.root2cam}"    
 
     def __iter__(self) ->CompNullIterator:
         """ A component does not have children to iterate, thus a NULL iterator
@@ -571,7 +571,7 @@ class RenderMesh(Component):
     
     
     def __str__(self):
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, vertex_attributes: \n{self._vertex_attributes}"
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}, \nvertex_attributes: \n{self._vertex_attributes}"
 
     
     def __iter__(self) ->CompNullIterator:
