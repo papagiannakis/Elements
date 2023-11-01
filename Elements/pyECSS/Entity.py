@@ -174,9 +174,9 @@ class Entity(Component):
     
     def __str__(self):
         if (self._parent is not None): #in case this is not the root node
-            return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}"
+            return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}"
         else:
-            return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: None (root node)"
+            return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: None (root node)"
 
         
     
