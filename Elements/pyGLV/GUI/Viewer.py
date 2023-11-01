@@ -1147,7 +1147,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     imgui.tree_pop();
                 if imgui.tree_node("Scale      :", imgui.TREE_NODE_LEAF):
                     # imgui.same_line() 
-                    changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                    changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, -4, 4, "%.01f", 1);
                     self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
 
