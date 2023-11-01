@@ -913,8 +913,8 @@ class Gizmos:
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
                     model = component 
-                    mmin = bb._trans_min_points @ model.trs
-                    mmax = bb._trans_max_points @ model.trs
+                    mmin = bb._trans_min_points #@ model.trs
+                    mmax = bb._trans_max_points #@ model.trs
                     obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
                                                 mmin,

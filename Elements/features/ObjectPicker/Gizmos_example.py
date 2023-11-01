@@ -383,8 +383,7 @@ while running:
     model_TableLeg4 = trans_TableLeg4.l2world
     
     mvp_BB = projMat @ view @ trans_BoundingBox.l2world
-    #model_BB = trans_BoundingBox.l2world
-
+    
     mvp_teapot = projMat @ view @ trans_teapot.l2world
 
     #Update Ground Variables
@@ -403,9 +402,6 @@ while running:
 
     if gizmos.isSelected:
         shaderDec_BoundingBox.setUniformVariable(key='modelViewProj', value=mvp_BB, mat4=True)
-    # shaderDec_BoundingBox.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    # shaderDec_BoundingBox.setUniformVariable(key='View', value=view, mat4=True)
-    # shaderDec_BoundingBox.setUniformVariable(key='model', value=model_BB, mat4=True)
 
     shaderDec_TableLeg2.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderDec_TableLeg2.setUniformVariable(key='View', value=view, mat4=True)
@@ -421,7 +417,7 @@ while running:
 
     #Update Teapot Uniform Variables
     ShaderTeapot.setUniformVariable(key='modelViewProj', value=mvp_teapot, mat4=True)
-    ShaderTeapot.setUniformVariable(key='model',value=trans_teapot.trs,mat4=True)
+    #ShaderTeapot.setUniformVariable(key='model',value=trans_teapot.trs,mat4=True)
 
     scene.render_post()
     
