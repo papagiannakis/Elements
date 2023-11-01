@@ -6,6 +6,7 @@ Axis Alinged bounding box class
 import numpy as np
 from Elements.pyECSS.Component import Component
 from Elements.features.GravityBB.GravityCollisonSystem import GravityCollisionSystem
+import Elements.pyECSS.math_utilities as util
 
 """Axis Aligned bounding boxes Class"""
 class AABoundingBox(Component):
@@ -44,12 +45,7 @@ class AABoundingBox(Component):
         sy = max_y - min_y
         sz = max_z - min_z
 
-        self._scaleMatrix = [
-                [sx, 0, 0, 0],
-                [0, sy, 0, 0],
-                [0, 0, sz, 0],
-                [0, 0, 0, 1]
-        ]
+        self._scaleMatrix =  util.scale(sx, sy, sz)
         
     @property
     def scaleMatrix(self):

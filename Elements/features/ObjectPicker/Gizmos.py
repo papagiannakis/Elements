@@ -507,7 +507,7 @@ class Gizmos:
             if component is not None:
                 parentname = component.parent.name
                 #next BasicTransform component that is not one of the gizmos components and is not child of the camera in use
-                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse and parentname.find("Skybox")==-1:
+                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse and parentname.find("ground")==-1 and parentname.find("BoundingBox")==-1 and parentname.find("Skybox")==-1:
                     count = count-1
                     if(count==0):
                         self.selected_trans = component
@@ -556,7 +556,7 @@ class Gizmos:
             None
         """
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("Skybox")==-1:
+            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("ground")==-1 and component.parent.name.find("BoundingBox")==-1 and component.parent.name.find("Skybox")==-1:
                 entity_name = component.parent.name
                 self.seperate_transformations[entity_name] = entity_transformations()
                 self.initial_transformations[entity_name] = component.trs
@@ -908,7 +908,7 @@ class Gizmos:
 
         count=0
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("Skybox")==-1:
+            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("ground")==-1 and component.parent.name.find("BoundingBox")==-1 and component.parent.name.find("Skybox")==-1:
                 count = count + 1
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
