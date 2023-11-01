@@ -26,6 +26,7 @@ import Elements.pyECSS.System
 import uuid  
 import Elements.pyECSS.math_utilities as util
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 class Component(ABC, Iterable):
@@ -344,20 +345,31 @@ class BasicTransform(Component):
     def rotationEulerAngles(self):
         # First get rotation matrix from trs. Divide by scale
         rotationMatrix = self.trs.copy();
-        rotationMatrix[:][0] /= self.scale[0];
-        rotationMatrix[:][1] /= self.scale[1];
-        rotationMatrix[:][2] /= self.scale[2];
-        # Now, extract euler angles from rotation matrix
-        x = atan2(rotationMatrix[1][2], rotationMatrix[2][2]);
-        y = 0;
-        z = 0;
-        return [x, y, z];
+        sc = self.scale;
+        rotationMatrix = rotationMatrix @ util.scale(1/sc[0], 1/sc[1], 1/sc[2])
+        myR = rotationMatrix[:3,:3]
+        if myR[2,0] not in [-1,1]:
+            y = -np.arcsin(myR[2,0]);
+            x = np.arctan2(myR[2,1]/np.cos(y), myR[2,2]/np.cos(y));
+            z = np.arctan2(myR[1,0]/np.cos(y), myR[0,0]/np.cos(y));
+        else:
+            z = 0;
+            if myR[2,0] == -1:
+                y = np.pi/2;
+                x = z + np.arctan2(myR[0,1], myR[0,2]);
+            else:
+                y = -np.pi/2;
+                x = -z + np.arctan2(-myR[0,1], -myR[0,2]);
+        return np.array([x,y,z])*180/np.pi;
     @property #scale vector
     def scale(self):
-        x = self.trs[0, 0];
-        y = self.trs[1, 1];
-        z = self.trs[2, 2];
-        return [x, y, z];
+        m = self.trs.copy()[:3,:3];
+        A = m.transpose() @ m
+        # if m = R @ S then A = m^T @ m = S^T @ R^T @ R @ S = S^T @ S = S^2
+        sx = np.sqrt(A[0,0])
+        sy = np.sqrt(A[1,1])
+        sz = np.sqrt(A[2,2])
+        return sx, sy, sz
 
     def update(self, **kwargs):
         """ Local 2 world transformation calculation
