@@ -434,6 +434,10 @@ class Gizmos:
 
         self.count_components() # Count Basic transform components in the scene, besides the Gizmos
 
+    @property
+    def isSelected(self):
+        return self.is_selected
+    
     def __remove_rotation__(self,model):
         """
         Creates and returns a copy of a given TRS model matrix after removing its rotation
@@ -516,6 +520,8 @@ class Gizmos:
                                 self.selected_mesh = child
                                 break
                         break
+        if component is not None:
+            self.showSelectedBB(component.parent.getChildByType("AABoundingBox"))
 
     def update_ray_start(self):
         """
@@ -883,6 +889,12 @@ class Gizmos:
 
         return ray_origin, ray_direction
 
+    def showSelectedBB(self, compBB):
+        for comp in self.scene.world.root:
+            if comp is not None and comp.getClassName()=="RenderMesh" and comp.name == "mesh_BoundingBox":
+                comp.parent.getChildByType("BasicTransform").trs = compBB.parent.getChildByType("BasicTransform").l2world @ compBB.scaleMatrix 
+                return
+            
     def raycastForSelection(self):
         """
         Raycast from mouse position to an object in the scenegraph to select it
@@ -900,11 +912,9 @@ class Gizmos:
                 count = count + 1
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
-                    model = component.parent.getChildByType("BasicTransform")
-                    #mesh = component.parent.getChildByType("RenderMesh")
-                    #mmin, mmax = self.calculate_bounding_box(mesh.vertex_attributes[0])
+                    model = component 
                     mmin = bb._trans_min_points @ model.trs
-                    mmax =bb._trans_max_points @ model.trs
+                    mmax = bb._trans_max_points @ model.trs
                     obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
                                                 mmin,
@@ -917,7 +927,6 @@ class Gizmos:
                             self.is_selected = True
                             self.__update_gizmos_trans()
                             self.__update_gizmos()
-                        #annotateSelectedObject(component)
                         return
 
     def raycast(self):
@@ -1089,6 +1098,9 @@ class Gizmos:
         elif self.selected_gizmo=='Z' or (self.selected_gizmo==''and z_intersects):
             self.selected_gizmo = 'Z'
             self.__transform_selected_entity(z_in_point)
+        
+        if self.selected_trans is not None:
+            self.showSelectedBB(self.selected_trans.parent.getChildByType("AABoundingBox"))
 
     def __transform_selected_entity(self,inter_point):
         """
