@@ -1075,6 +1075,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
         super().__init__(wrapee, imguiContext)
         self.selected = None; # Selected should be a component
         self.countTRSOpened = 0
+        self.countOpened = 0
 
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
@@ -1102,8 +1103,9 @@ class ImGUIecssDecorator(ImGUIDecorator):
         
             ## DRAW THE ECSS GRAPH
             # imgui.next_column()
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_LEAF):
                 self.countTRSOpened = 0
+                self.countOpened = 0
                 self.drawNode(self.wrapeeWindow.scene.world.root)
                 imgui.tree_pop()
 
@@ -1112,7 +1114,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             # imgui.tree_pop()
             imgui.separator()
 
-            if self.selected is not None:
+            if self.selected is not None and self.countOpened > 0:
                 imgui.selectable(self.selected.__str__(), True)
                 if hasattr(self.selected, "drawSelfGui"):
                     self.selected.drawSelfGui(imgui);
@@ -1135,10 +1137,11 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     imgui.tree_pop();
 
             imgui.end()
-            # print("countTRSOpened: ", self.countTRSOpened)
+            print("countTRSOpened: ", self.countTRSOpened)
+            print("countOpened: ", self.countOpened)
 
     def drawNode(self, component):
-        #create a local iterator of Entity's children
+
         if component._children is not None:
             debugIterator = iter(component._children)
             #call print() on all children (Concrete Components or Entities) while there are more children to traverse
@@ -1155,7 +1158,10 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     if imgui.tree_node(comp.name + "##" + str(comp.id), imgui.TREE_NODE_OPEN_ON_ARROW):
                         # imgui.text(comp.name)
                         # _, selected = imgui.selectable(comp.__str__(), True)
-                        _, selected = imgui.selectable('Info for ' + comp.name + " -> ", True)
+                        closed , selected = imgui.selectable('Info for ' + comp.name + " -> ", True)
+                        if not closed: # if the node is closed, reset the count of opened nodes
+                            self.countOpened +=1
+                            # self.countTRSOpened = 0
                         if selected:
                             if ( comp != self.selected ):  # First time selecting it. Set trs values to GUI;
                                 self.selected = comp
@@ -1243,16 +1249,4 @@ class RenderGLStateSystem(System):
 
 
 if __name__ == "__main__":
-    # The client code.    
-    gWindow = SDL2Window(openGLversion=3) 
-    # uses openGL version 3.2 instead of the default 4.1    
-    gWindow.init()    
-    gWindow.init_post()    
-    running = True    
-    # MAIN RENDERING LOOP    
-    while running:        
-      gWindow.display()        
-      running = gWindow.event_input_process(running)        
-      gWindow.display_post()    
-    
-    gWindow.shutdown()
+    # The client code.        gWindow = SDL2Window(openGLversion=3)     # uses openGL version 3.2 instead of the default 4.1        gWindow.init()        gWindow.init_post()        running = True        # MAIN RENDERING LOOP        while running:              gWindow.display()              running = gWindow.event_input_process(running)              gWindow.display_post()            gWindow.shutdown()
