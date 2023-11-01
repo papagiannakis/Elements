@@ -1152,8 +1152,6 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     imgui.tree_pop();
 
             imgui.end()
-            print("countTRSOpened: ", self.countTRSOpened)
-            print("countOpened: ", self.countOpened)
 
     def drawNode(self, component):
 
