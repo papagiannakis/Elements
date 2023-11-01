@@ -32,6 +32,7 @@ import Elements.pyECSS.Event
 from Elements.pyECSS.System import System  
 from Elements.pyECSS.Component import BasicTransform
 import numpy as np
+from scipy.spatial.transform import Rotation
 # from Elements.pyGLV.GL.Scene import Scene
 
 import Elements.utils.Shortcuts as Shortcuts
@@ -1073,7 +1074,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
     def __init__(self, wrapee: RenderWindow, imguiContext = None):
         super().__init__(wrapee, imguiContext)
         self.selected = None; # Selected should be a component
-        self.countOpened = 0
+        self.countTRSOpened = 0
 
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
@@ -1090,7 +1091,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
 
 
             self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
-            imgui.columns(1, "Properties")
+            imgui.columns(2, "Properties")
 
             ###### do this so we can be able to move the window after it was collapsed #########
             #######                         and we re open it                           #########
@@ -1098,45 +1099,54 @@ class ImGUIecssDecorator(ImGUIDecorator):
                 imgui.set_window_position(self.graph_x,self.graph_y,imgui.FIRST_USE_EVER)
             else:
                 imgui.set_window_position(self.graph_x,self.graph_y, imgui.FIRST_USE_EVER)
-            
-            # smallerTRSgui = True
-            #TRS sample
-            # if(isinstance(self.selected, BasicTransform)):
+        
 
-            imgui.text("Edit TRS Properties")
+            ## DRAW THE ECSS GRAPH
+            # imgui.next_column()
+            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                self.countTRSOpened = 0
+                self.drawNode(self.wrapeeWindow.scene.world.root)
+                imgui.tree_pop()
+
+            imgui.next_column()
+            imgui.tree_node("Properties", imgui.TREE_NODE_LEAF)
+            imgui.tree_pop()
             imgui.separator()
-            if self.countOpened == 1:
+
+            if self.selected is not None:
+                imgui.selectable(self.selected.__str__(), True)
+                if hasattr(self.selected, "drawSelfGui"):
+                    self.selected.drawSelfGui(imgui);
+                              
+            if self.countTRSOpened == 1:
                 if imgui.tree_node("Translation:", imgui.TREE_NODE_LEAF):
-                    imgui.same_line() 
+                    # imgui.same_line() 
                     changed, value = imgui.drag_float3("",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
                     self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
                 if imgui.tree_node("Rotation   :", imgui.TREE_NODE_LEAF):
-                    imgui.same_line() 
+                    # imgui.same_line() 
                     changed, value = imgui.drag_float3(" ",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
                     self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
                 if imgui.tree_node("Scale      :", imgui.TREE_NODE_LEAF):
-                    imgui.same_line() 
+                    # imgui.same_line() 
                     changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
                     self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
-            else: 
-                imgui.tree_node("Translation: Not Editable", imgui.TREE_NODE_LEAF)
-                imgui.tree_pop()
-                imgui.tree_node("Rotation   : Not Editable", imgui.TREE_NODE_LEAF)
-                imgui.tree_pop()
-                imgui.tree_node("Scale      : Not Editable", imgui.TREE_NODE_LEAF)
-                imgui.tree_pop()
+            # else: 
+                # imgui.tree_node("Translation: Not Editable", imgui.TREE_NODE_LEAF)
+                # imgui.tree_pop()
+                # imgui.tree_node("Rotation   : Not Editable", imgui.TREE_NODE_LEAF)
+                # imgui.tree_pop()
+                # imgui.tree_node("Scale      : Not Editable", imgui.TREE_NODE_LEAF)
+                # imgui.tree_pop()
+            # if self.selected is not None:
 
-            imgui.separator()
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                self.countOpened = 0
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
+
 
             imgui.end()
-            # print("countOpened: ", self.countOpened)
+            # print("countTRSOpened: ", self.countTRSOpened)
 
     def drawNode(self, component):
         #create a local iterator of Entity's children
@@ -1154,11 +1164,13 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     # using ## creates unique labels, without showing anything after ##
                     # see: https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-widgets-with-the-same-label
                     if imgui.tree_node(comp.name + "##" + str(comp.id), imgui.TREE_NODE_OPEN_ON_ARROW):
-                        imgui.text(comp.name)
+                        # imgui.text(comp.name)
                         _, selected = imgui.selectable(comp.__str__(), True)
+                        # _, selected = imgui.selectable(comp.name, True)
                         if selected:
                             if ( comp != self.selected ):  # First time selecting it. Set trs values to GUI;
                                 self.selected = comp
+                                # print("selected: ", self.selected.name)
                                 if isinstance(comp, BasicTransform):
                                     [x, y, z] = comp.translation;
                                     self.translation["x"] = x;
@@ -1176,37 +1188,17 @@ class ImGUIecssDecorator(ImGUIDecorator):
                                     # self.color = comp.color.copy();
                             else:                       # Set GUI values to trs;
                                 if isinstance(comp, BasicTransform):
-                                    self.countOpened += 1
-                                    changedT, value = imgui.drag_float3("T",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
-                                    if changedT: self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
-                                    changedR, value = imgui.drag_float3("R",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
-                                    if changedR: self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
-                                    changedS, value = imgui.drag_float3("S",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
-                                    if changedS: self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
-                                    if imgui.tree_node("Translation:", imgui.TREE_NODE_LEAF):
-                                        changed, value = imgui.drag_float3("",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
-                                        self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
-                                        imgui.tree_pop();
-                                    if imgui.tree_node("Rotation   :", imgui.TREE_NODE_LEAF):
-                                        # imgui.same_line() 
-                                        changed, value = imgui.drag_float3(" ",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
-                                        self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
-                                        imgui.tree_pop();
-                                    if imgui.tree_node("Scale      :", imgui.TREE_NODE_LEAF):
-                                        # imgui.same_line() 
-                                        changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
-                                        self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
-                                        imgui.tree_pop();
+                                    self.countTRSOpened += 1
                                     transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"]);
                                     rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
                                     rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
                                     rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
                                     scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
 
-                                    comp.trs = util.identity() @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat;
-                                    # comp.trs = scaleMat @ rotMatZ @ rotMatY @ rotMatX @ transMat;
-                                elif hasattr(comp, "drawSelfGui"):
-                                    comp.drawSelfGui(imgui);
+                                    comp.trs = util.identity() @ transMat @ rotMatZ @ rotMatY @ rotMatX @ scaleMat;
+                                # elif hasattr(comp, "drawSelfGui"):
+                                    # comp.drawSelfGui(imgui);
+
 
                         imgui.tree_pop()
 
@@ -1262,14 +1254,4 @@ class RenderGLStateSystem(System):
 
 
 if __name__ == "__main__":
-    # # The client code.
-    gWindow = SDL2Window(openGLversion=3) # uses openGL version 3.2 instead of the default 4.1
-    gWindow.init()
-    gWindow.init_post()
-    running = True
-    # MAIN RENDERING LOOP
-    while running:
-        gWindow.display()
-        running = gWindow.event_input_process(running)
-        gWindow.display_post()
-    gWindow.shutdown()
+    # # The client code.    gWindow = SDL2Window(openGLversion=3) # uses openGL version 3.2 instead of the default 4.1    gWindow.init()    gWindow.init_post()    running = True    # MAIN RENDERING LOOP    while running:        gWindow.display()        running = gWindow.event_input_process(running)        gWindow.display_post()    gWindow.shutdown()
