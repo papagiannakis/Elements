@@ -232,7 +232,7 @@ class Component(ABC, Iterable):
         Returns:
         - str: A string representation of this Component.
         """
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}"
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}"
 
 
 class ComponentDecorator(Component):
