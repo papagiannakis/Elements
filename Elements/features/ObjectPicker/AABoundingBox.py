@@ -40,6 +40,21 @@ class AABoundingBox(Component):
         self._hasGravity = hasGravity
         self._isColliding = False
 
+        sx = max_x - min_x
+        sy = max_y - min_y
+        sz = max_z - min_z
+
+        self._scaleMatrix = [
+                [sx, 0, 0, 0],
+                [0, sy, 0, 0],
+                [0, 0, sz, 0],
+                [0, 0, 0, 1]
+        ]
+        
+    @property
+    def scaleMatrix(self):
+        return self._scaleMatrix
+
     @property
     def vertices(self):
         return self._vertices
