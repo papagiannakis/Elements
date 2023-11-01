@@ -699,8 +699,8 @@ class ImGUIDecorator(RenderDecorator):
         self._colorEditor = wrapee._colorEditor
 
         ### Bool variables for Scenegraph Visualizer imgui 
-        self.collapseElementsWindow = False
-        self.collapseScenegraphVisualizer = True
+        self.showElementsWindow = True
+        self.collapseElementsWindow = True
 
         ### Bool variables to collapse and close the ECSS graph
         self.showScenegraphVisualizer = True
@@ -1100,7 +1100,6 @@ class ImGUIecssDecorator(ImGUIDecorator):
             else:
                 imgui.set_window_position(self.graph_x,self.graph_y, imgui.FIRST_USE_EVER)
         
-
             ## DRAW THE ECSS GRAPH
             # imgui.next_column()
             if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
@@ -1109,8 +1108,8 @@ class ImGUIecssDecorator(ImGUIDecorator):
                 imgui.tree_pop()
 
             imgui.next_column()
-            imgui.tree_node("Properties", imgui.TREE_NODE_LEAF)
-            imgui.tree_pop()
+            imgui.text("Properties")
+            # imgui.tree_pop()
             imgui.separator()
 
             if self.selected is not None:
@@ -1134,16 +1133,6 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     changed, value = imgui.drag_float3("",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
                     self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
                     imgui.tree_pop();
-            # else: 
-                # imgui.tree_node("Translation: Not Editable", imgui.TREE_NODE_LEAF)
-                # imgui.tree_pop()
-                # imgui.tree_node("Rotation   : Not Editable", imgui.TREE_NODE_LEAF)
-                # imgui.tree_pop()
-                # imgui.tree_node("Scale      : Not Editable", imgui.TREE_NODE_LEAF)
-                # imgui.tree_pop()
-            # if self.selected is not None:
-
-
 
             imgui.end()
             # print("countTRSOpened: ", self.countTRSOpened)
@@ -1165,8 +1154,8 @@ class ImGUIecssDecorator(ImGUIDecorator):
                     # see: https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-widgets-with-the-same-label
                     if imgui.tree_node(comp.name + "##" + str(comp.id), imgui.TREE_NODE_OPEN_ON_ARROW):
                         # imgui.text(comp.name)
-                        _, selected = imgui.selectable(comp.__str__(), True)
-                        # _, selected = imgui.selectable(comp.name, True)
+                        # _, selected = imgui.selectable(comp.__str__(), True)
+                        _, selected = imgui.selectable('Info for ' + comp.name + " -> ", True)
                         if selected:
                             if ( comp != self.selected ):  # First time selecting it. Set trs values to GUI;
                                 self.selected = comp
