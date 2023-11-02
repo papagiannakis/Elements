@@ -45,7 +45,8 @@ setup(
         'bezier',
         'clifford',
         'trimesh',
-        'pyganja'
+        'pyganja',
+        'open3d',
     ],
     
 
