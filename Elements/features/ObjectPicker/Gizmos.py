@@ -887,14 +887,14 @@ class Gizmos:
         ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2],0.0)
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
 
-        return ray_origin, ray_direction
+        return ray_origin, ray_direction, ray_end_world
 
     def showSelectedBB(self, compBB):
         for comp in self.scene.world.root:
             if comp is not None and comp.getClassName()=="RenderMesh" and comp.name == "mesh_BoundingBox":
                 comp.parent.getChildByType("BasicTransform").trs = compBB.parent.getChildByType("BasicTransform").l2world @ compBB.scaleMatrix 
                 return
-            
+
     def raycastForSelection(self):
         """
         Raycast from mouse position to an object in the scenegraph to select it
@@ -903,24 +903,34 @@ class Gizmos:
         Returns:
             None
         """
-        ray_origin, ray_direction = self.calculate_ray()
+        ray_origin, ray_direction, ray_destination = self.calculate_ray()
         obj_intersects, obj_in_point = False, util.vec(0.0)
-
+        hitObjects = []
         count=0
         for component in self.scene.world.root:
             if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("ground")==-1 and component.parent.name.find("BoundingBox")==-1 and component.parent.name.find("Skybox")==-1:
                 count = count + 1
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
-                    model = component 
                     mmin = bb._trans_min_points #@ model.trs
                     mmax = bb._trans_max_points #@ model.trs
                     obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
                                                 mmin,
                                                 mmax,
-                                                model.trs)    
+                                                component.l2world)    
                     if (obj_intersects):
+        #                 hitObjects.append([count, util.distance(ray_destination, obj_in_point)])
+        
+        # mint = hitObjects[0][1]
+        # minPosition = 0
+        
+        # for i in range(len(hitObjects)):
+        #     if hitObjects[i][1] < mint:
+        #         mint = hitObjects[i][1]
+        #         minPosition = i
+        
+        # count = hitObjects[minPosition][0]
                         self.selected = count-2
                         self.change_target()
                         if self.total>0:
@@ -940,7 +950,7 @@ class Gizmos:
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
-        ray_origin, ray_direction = self.calculate_ray()
+        ray_origin, ray_direction, ray_destination = self.calculate_ray()
 
         x_intersects, x_in_point = False, util.vec(0.0)
         y_intersects, y_in_point = False, util.vec(0.0)
