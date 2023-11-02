@@ -1247,4 +1247,15 @@ class RenderGLStateSystem(System):
 
 
 if __name__ == "__main__":
-    # The client code.        gWindow = SDL2Window(openGLversion=3)     # uses openGL version 3.2 instead of the default 4.1        gWindow.init()        gWindow.init_post()        running = True        # MAIN RENDERING LOOP        while running:              gWindow.display()              running = gWindow.event_input_process(running)              gWindow.display_post()            gWindow.shutdown()
+    # The client code.        
+    gWindow = SDL2Window(openGLversion=3)     
+    # uses openGL version 3.2 instead of the default 4.1        
+    gWindow.init()        
+    gWindow.init_post()        
+    running = True        
+    # MAIN RENDERING LOOP        
+    while running:              
+        gWindow.display()              
+        running = gWindow.event_input_process(running)              
+        gWindow.display_post()            
+    gWindow.shutdown()
