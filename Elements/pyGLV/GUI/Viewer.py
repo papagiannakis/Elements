@@ -395,7 +395,7 @@ class RenderDecorator(RenderWindow):
                     except StopIteration:
                         done_traversing = True
                     else:
-                        if "Camera" in comp.name: # just put the "Camera" string in the Entity that holds the camera
+                        if "camera" in comp.name.lower(): # just put the "Camera" string in the Entity that holds the camera
                             self.cam = comp
                             found = True
                         
@@ -722,6 +722,7 @@ class ImGUIDecorator(RenderDecorator):
         #TODO:add comment for these vars
         self.graph_x = 10
         self.graph_y = 100
+        
 
     def init(self):
         """
@@ -954,6 +955,10 @@ class ImGUIDecorator(RenderDecorator):
             #
             # START
             # simple slider for eye - IMPORTANT PART HERE
+
+            self.traverseCamera()
+            if self.cam is not None:
+                imgui.text("If your camera is not defined via the lookAt function, \nthe sliders below will not work")    
             self._changed, self._eye = imgui.drag_float3( "Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
             if self._changed:
                 self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
