@@ -912,32 +912,33 @@ class Gizmos:
                 count = count + 1
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
-                    mmin = bb._trans_min_points #@ model.trs
-                    mmax = bb._trans_max_points #@ model.trs
+                    mmin = bb._trans_min_points 
+                    mmax = bb._trans_max_points
                     obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
                                                 ray_direction,
                                                 mmin,
                                                 mmax,
                                                 component.l2world)    
                     if (obj_intersects):
-        #                 hitObjects.append([count, util.distance(ray_destination, obj_in_point)])
+                         hitObjects.append([count, self.previous_distance])
         
-        # mint = hitObjects[0][1]
-        # minPosition = 0
+        if len(hitObjects) > 0:
+            minDist = hitObjects[0][1]
+            minListPosition = 0
         
-        # for i in range(len(hitObjects)):
-        #     if hitObjects[i][1] < mint:
-        #         mint = hitObjects[i][1]
-        #         minPosition = i
-        
-        # count = hitObjects[minPosition][0]
-                        self.selected = count-2
-                        self.change_target()
-                        if self.total>0:
-                            self.is_selected = True
-                            self.__update_gizmos_trans()
-                            self.__update_gizmos()
-                        return
+            for i in range(len(hitObjects)):
+                if hitObjects[i][1] < minDist:
+                    minDist = hitObjects[i][1]
+                    minListPosition = i
+            
+            count = hitObjects[minListPosition][0]
+            self.selected = count-2
+            self.change_target()
+            if self.total>0:
+                self.is_selected = True
+                self.__update_gizmos_trans()
+                self.__update_gizmos()
+            return
 
     def raycast(self):
         """
