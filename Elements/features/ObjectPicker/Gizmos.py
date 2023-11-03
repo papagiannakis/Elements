@@ -14,7 +14,7 @@ import Elements.utils.normals as norm
 import imgui
 import enum
 
-def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
+def generateCircle(radius=1.0, axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
     """
     Generates and returns data for a circle, used to create part of the rotation gizmo
     Arguments:
@@ -25,30 +25,30 @@ def generateCircle(axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
         The vertex, index and color arrays of a circle
     
     """
-
+    
     _angle = 360.0/(points-2)
     init_indices = np.array([0,3,4,4,3,7,7,6,3,3,6,2,5,6,1,5,2,1,0,4,1,1,4,5],dtype=np.int32)
     curr_indices = np.array(init_indices,copy=True)
     inc = 4
 
     # x-axis gizmos
-    p1 = util.vec(1.0,0.0,-0.02,1.0)
-    p2 = util.vec(1.0,0.0,0.02,1.0)
-    p3 = util.vec(1.01,0.0,-0.02,1.0)
-    p4 = util.vec(1.01,0.0,0.02,1.0)
+    p1 = util.vec(radius,0.0,-0.02,1.0)
+    p2 = util.vec(radius,0.0,0.02,1.0)
+    p3 = util.vec(radius+0.01,0.0,-0.02,1.0)
+    p4 = util.vec(radius+0.01,0.0,0.02,1.0)
 
     if axis=='Y':
         # y-axis gizmos
-        p1 = util.vec(1.0,-0.02,0.0,1.0)
-        p2 = util.vec(1.0,0.02,0.0,1.0)
-        p3 = util.vec(1.01,0.02,0.0,1.0)
-        p4 = util.vec(1.01,-0.02,0.0,1.0)
+        p1 = util.vec(radius,-0.02,0.0,1.0)
+        p2 = util.vec(radius,0.02,0.0,1.0)
+        p3 = util.vec(radius+0.01,0.02,0.0,1.0)
+        p4 = util.vec(radius+0.01,-0.02,0.0,1.0)
     elif axis=='Z':
         # z-axis gizmo
-        p1 = util.vec(-0.02,0.0,1.0,1.0)
-        p2 = util.vec(0.02,0.0,1.0,1.0)
-        p3 = util.vec(0.02,0.0,1.01,1.0)
-        p4 = util.vec(-0.02,0.0,1.01,1.0)
+        p1 = util.vec(-0.02,0.0,radius,1.0)
+        p2 = util.vec(0.02,0.0,radius,1.0)
+        p3 = util.vec(0.02,0.0,radius+0.01,1.0)
+        p4 = util.vec(-0.02,0.0,radius+0.01,1.0)
     
 
     ver = np.array([p1,p2,p3,p4],dtype=np.float32)
@@ -209,7 +209,37 @@ XS_GIZMOS, INDEX_XS, COLOR_XS, NORMALS_XS = norm.generateFlatNormalsMesh(XS_GIZM
 YS_GIZMOS, INDEX_YS, COLOR_YS, NORMALS_YS = norm.generateFlatNormalsMesh(YS_GIZMOS,ARROW_INDEX,COLOR_Y)
 ZS_GIZMOS, INDEX_ZS, COLOR_ZS, NORMALS_ZS = norm.generateFlatNormalsMesh(ZS_GIZMOS,ARROW_INDEX,COLOR_Z)
     
+vertBB = np.array([
+    [-0.5, -0.5, -0.5, 1.0],
+    [-0.5, -0.5, 0.5, 1.0],
+    [0.5, -0.5, -0.5, 1.0],
+    [0.5, -0.5, 0.5, 1.0],
+    [-0.5, 0.5, -0.5, 1.0],
+    [-0.5, 0.5, 0.5, 1.0],
+    [0.5, 0.5, -0.5, 1.0],
+    [0.5, 0.5, 0.5, 1.0]
+], dtype=np.float32)
 
+#colors for bounding box
+colorBB = np.array([
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0]
+], dtype=np.float32)
+
+#index array for bounding box quads
+# indexBB = np.array((6,4,5,1, 
+#                     2,6,7,3,
+#                     0,2,3,1,
+#                     4,6,7,5), np.uint32)
+indexBB = np.array((0,4,  4,5,  5,1,  1,0,
+                    2,6,  6,7,  7,3,  3,2,
+                    0,2,  4,6,  5,7,  1,3), np.uint32)
 
 class Mode(enum.Enum):
     # Enum class for the gizmos' modes
@@ -431,6 +461,19 @@ class Gizmos:
         self.xrot_min_bb, self.xrot_max_bb = self.calculate_bounding_box(self.gizmos_x_R_mesh.vertex_attributes[0])
         self.yrot_min_bb, self.yrot_max_bb = self.calculate_bounding_box(self.gizmos_y_R_mesh.vertex_attributes[0])
         self.zrot_min_bb, self.zrot_max_bb = self.calculate_bounding_box(self.gizmos_z_R_mesh.vertex_attributes[0])
+
+        #add an entity under Root to display the selected bounding box
+        self.BoundingBox = self.scene.world.createEntity(Entity(name="BoundingBox"))
+        self.scene.world.addEntityChild(rootEntity, self.BoundingBox)
+        self.trans_BoundingBox = self.scene.world.addComponent(self.BoundingBox, BasicTransform(name="trans_BoundingBox", trs=util.identity())) 
+        self.mesh_BoundingBox = self.scene.world.addComponent(self.BoundingBox, RenderMesh(name="mesh_BoundingBox"))
+        #associate a default box which is going to be scaled and translated each time a different entity is selected
+        self.mesh_BoundingBox.vertex_attributes.append(vertBB) 
+        self.mesh_BoundingBox.vertex_attributes.append(colorBB)
+        self.mesh_BoundingBox.vertex_index.append(indexBB)
+        self.vArray_BoundingBox = self.scene.world.addComponent(self.BoundingBox, VertexArray(primitive=GL_LINES)) 
+        self.shaderDec_BoundingBox = self.scene.world.addComponent(self.BoundingBox, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+
 
         self.count_components() # Count Basic transform components in the scene, besides the Gizmos
 
@@ -739,6 +782,11 @@ class Gizmos:
         self.gizmos_x_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rx, mat4=True)
         self.gizmos_y_R_shader.setUniformVariable(key='modelViewProj', value=mvp_ry, mat4=True)
         self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
+
+        if self.isSelected:
+            mvp_BB = self.projection @ self.view @ self.trans_BoundingBox.l2world
+            self.shaderDec_BoundingBox.setUniformVariable(key='modelViewProj', value=mvp_BB, mat4=True)
+
 
     def update_imgui(self):
         """

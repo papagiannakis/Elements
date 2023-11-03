@@ -18,37 +18,6 @@ from Elements.utils.helper_function import displayGUI_text
 from Elements.features.ObjectPicker.AABoundingBox import AABoundingBox
 from OpenGL.GL import GL_LINES
 
-#colors for bounding box
-colorBB = np.array([
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0]
-], dtype=np.float32)
-
-#index array for bounding box quads
-# indexBB = np.array((6,4,5,1, 
-#                     2,6,7,3,
-#                     0,2,3,1,
-#                     4,6,7,5), np.uint32)
-indexBB = np.array((0,4,  4,5,  5,1,  1,0,
-                    2,6,  6,7,  7,3,  3,2,
-                    0,2,  4,6,  5,7,  1,3), np.uint32)
-
-vertBB = np.array([
-    [-0.5, -0.5, -0.5, 1.0],
-    [-0.5, -0.5, 0.5, 1.0],
-    [0.5, -0.5, -0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0],
-    [-0.5, 0.5, -0.5, 1.0],
-    [-0.5, 0.5, 0.5, 1.0],
-    [0.5, 0.5, -0.5, 1.0],
-    [0.5, 0.5, 0.5, 1.0]
-], dtype=np.float32)
 
 example_description = """
 This is a scene that contains a floor with a table on which there is a teapot. Camera movement 
@@ -191,11 +160,6 @@ scene.world.addEntityChild(TableTop, teapot)
 trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.1, 0.1, 0.1) ))
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
-#add an entity under Root to display the selected bounding box
-BoundingBox = scene.world.createEntity(Entity(name="BoundingBox"))
-scene.world.addEntityChild(rootEntity, BoundingBox)
-trans_BoundingBox = scene.world.addComponent(BoundingBox, BasicTransform(name="trans_BoundingBox", trs=util.identity())) 
-mesh_BoundingBox = scene.world.addComponent(BoundingBox, RenderMesh(name="mesh_BoundingBox"))
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -219,8 +183,12 @@ teapot_mesh.vertex_attributes.append(vertices)
 teapot_mesh.vertex_attributes.append(colors)
 teapot_mesh.vertex_attributes.append(normals)
 teapot_mesh.vertex_index.append(indices)
+#teapot_mesh.vertex_attributes.append(verticesTableLeg)
+#teapot_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
+#teapot_mesh.vertex_index.append(indicesTableLeg)
 vArray_teapot = scene.world.addComponent(teapot, VertexArray())
 ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+#ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 scene.world.addComponent(teapot, AABoundingBox(name="AABoundingBox",
                                         vertices = teapot_mesh.vertex_attributes[0]))
                                         #objectCollisionList = collisionObjectList))
@@ -279,12 +247,6 @@ scene.world.addComponent(TableLeg4, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh_TableLeg4.vertex_attributes[0]))
                                         #objectCollisionList = collisionObjectList))
 
-#associate a default box which is going to be scaled and translated each time a different entity is selected
-mesh_BoundingBox.vertex_attributes.append(vertBB) 
-mesh_BoundingBox.vertex_attributes.append(colorBB)
-mesh_BoundingBox.vertex_index.append(indexBB)
-vArray_BoundingBox = scene.world.addComponent(BoundingBox, VertexArray(primitive=GL_LINES)) 
-shaderDec_BoundingBox = scene.world.addComponent(BoundingBox, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
@@ -381,9 +343,8 @@ while running:
     model_TableLeg2 = trans_TableLeg2.l2world
     model_TableLeg3 = trans_TableLeg3.l2world
     model_TableLeg4 = trans_TableLeg4.l2world
-    
-    mvp_BB = projMat @ view @ trans_BoundingBox.l2world
-    
+
+    #model_Teapot = trans_teapot.l2world
     mvp_teapot = projMat @ view @ trans_teapot.l2world
 
     #Update Ground Variables
@@ -400,9 +361,6 @@ while running:
     shaderDec_TableLeg1.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec_TableLeg1.setUniformVariable(key='model', value=model_TableLeg1, mat4=True)
 
-    if gizmos.isSelected:
-        shaderDec_BoundingBox.setUniformVariable(key='modelViewProj', value=mvp_BB, mat4=True)
-
     shaderDec_TableLeg2.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderDec_TableLeg2.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec_TableLeg2.setUniformVariable(key='model', value=model_TableLeg2, mat4=True)
@@ -417,7 +375,9 @@ while running:
 
     #Update Teapot Uniform Variables
     ShaderTeapot.setUniformVariable(key='modelViewProj', value=mvp_teapot, mat4=True)
-    #ShaderTeapot.setUniformVariable(key='model',value=trans_teapot.trs,mat4=True)
+    #ShaderTeapot.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    #ShaderTeapot.setUniformVariable(key='View', value=view, mat4=True)
+    #ShaderTeapot.setUniformVariable(key='model', value=model_Teapot, mat4=True)
 
     scene.render_post()
     
