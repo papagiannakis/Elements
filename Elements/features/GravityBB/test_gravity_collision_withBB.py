@@ -19,7 +19,7 @@ from Elements.features.GravityBB.GravityCollisonSystem import GravityCollisionSy
 from Elements.features.GravityBB.example_GravityCollisionWithBB import GameObjectEntity
 from Elements.features.GravityBB.example_GravityCollisionWithBB import CubeSpawn
 from Elements.features.GravityBB.floor import generate_floor_with_bb
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.definitions import TEXTURE_DIR
