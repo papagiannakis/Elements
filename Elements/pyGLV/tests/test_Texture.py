@@ -27,7 +27,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import TEXTURE_DIR
 
 from OpenGL.GL import GL_LINES

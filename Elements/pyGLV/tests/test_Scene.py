@@ -31,7 +31,7 @@ from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 import imgui
 
 
