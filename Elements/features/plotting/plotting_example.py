@@ -14,6 +14,9 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 
 from Elements.features.plotting.plotting_base import FunctionPlotting
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This is a scene where you can plot a function either in 2D or 3D \n"
 
 scene = Scene()
 
@@ -159,6 +162,7 @@ while running:
     for shader in shader_2d:
         shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
 
+    displayGUI_text(example_description)
     # set uniform variables for all phong shaders
     for shader in shader_3d:
         Lposition = util.vec(1,3,2)
