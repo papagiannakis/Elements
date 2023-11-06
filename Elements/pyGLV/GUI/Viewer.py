@@ -1049,28 +1049,38 @@ class ImGUIDecorator(RenderDecorator):
         # Create the "View" dropdown menu
         if imgui.begin_menu("View"):
             # Add a "Shortcuts" submenu
-            if imgui.menu_item("Elements ImGUI Window")[1]:
+            if imgui.menu_item("Toggle Elements ImGUI Window")[1]:
                 self.showElementsWindow = not self.showElementsWindow           
-            if imgui.menu_item("ECSS Graph")[1]:
-                 self.showScenegraphVisualizer = True
-            if imgui.menu_item("Shortcuts")[1]:
+            if imgui.menu_item("Toggle ECSS Graph")[1]:
+                 self.showScenegraphVisualizer = not self.showScenegraphVisualizer
+            if imgui.menu_item("Toggle Shortcuts")[1]:
                 Shortcuts.show_shortcuts_window = not Shortcuts.show_shortcuts_window   
                 if Shortcuts.show_shortcuts_window: 
                     Shortcuts.displayShortcutsGUI()
+            if imgui.menu_item("Example Description")[1]:
+                Shortcuts.showGUI_text = not Shortcuts.showGUI_text
+            if imgui.menu_item("Show All")[1]:   
+                self.showElementsWindow = True
+                self.showScenegraphVisualizer = True
+                Shortcuts.show_shortcuts_window = True
+                Shortcuts.showGUI_text = True
+            if imgui.menu_item("Hide All")[1]:   
+                self.showElementsWindow = False
+                self.showScenegraphVisualizer = False
+                Shortcuts.show_shortcuts_window = False
+                Shortcuts.showGUI_text = False
             if imgui.menu_item("Collapse Windows")[1]:
-                self.collapseElementsWindow = False
-                Shortcuts.collapseShortcutsWindow = False
-                Shortcuts.displayShortcutsGUI()
-                Shortcuts.collapseGUI_text = False
-                self.collapseScenegraphVisualizer = False
-                self.align_windows_top_left()
+                # self.collapseElementsWindow = False
+                imgui.set_window_collapsed_labeled("Elements ImGUI window", True)
+                imgui.set_window_collapsed_labeled("ECSS graph", True)
+                imgui.set_window_collapsed_labeled("Shortcuts", True)
+                imgui.set_window_collapsed_labeled("Example Description", True)
+                # self.align_windows_top_left()
             imgui.end_menu()
 
         # Create the "Help" dropdown menu
         if imgui.begin_menu("Help"):
             # Add a "Shortcuts" submenu
-            if imgui.menu_item("Example Description")[1]:
-                Shortcuts.showGUI_text = not Shortcuts.showGUI_text   
             if imgui.menu_item("FAQ")[1]:
                 pass
             imgui.end_menu()
