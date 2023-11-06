@@ -977,11 +977,12 @@ class Gizmos:
                 if (bb is not None):
                     mmin = bb._trans_min_points 
                     mmax = bb._trans_max_points
-                    obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
-                                                ray_direction,
-                                                mmin,
-                                                mmax,
-                                                component.l2world)    
+                    # obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection(ray_origin,
+                    #                             ray_direction,
+                    #                             mmin,
+                    #                             mmax,
+                    #                             component.l2world)    
+                    obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection_2(ray_origin,ray_direction,mmin,mmax,component.l2world)
                     if (obj_intersects):
                          hitObjects.append([count, self.previous_distance])
         
@@ -1269,6 +1270,28 @@ class Gizmos:
                     self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
 
+    def testRayBoundingBoxIntesection_2(self, rayOrigin, rayDirection, minb, maxb, model):
+        
+        minbb = model @ minb
+        maxbb = model @ maxb
+
+        t1 = (minbb[0] - rayOrigin[0]) / rayDirection[0]
+        t2 = (maxbb[0] - rayOrigin[0]) / rayDirection[0]
+
+        tmin = min(t1, t2)
+        tmax = max(t1, t2)
+
+        for i in range(3):
+            t1 = (minbb[i] - rayOrigin[0]) / rayDirection[i]
+            t2 = (maxbb[i] - rayOrigin[0]) / rayDirection[i]
+
+            tmin = max(tmin, min(min(t1, t2), tmax))
+            tmax = min(tmax, max(max(t1, t2), tmin))
+
+        self.previous_distance = tmin
+
+        return tmax > max(tmin, 0.0), self.intersection_point(tmin,rayOrigin,rayDirection)
+    
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
         """
         A method that tests if a ray starting from the mouse position is intersecting with a given bounding box
