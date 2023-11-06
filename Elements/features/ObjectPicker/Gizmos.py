@@ -79,6 +79,8 @@ RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',color=[1.0,0.0,0.0,1.0])
 RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',color=[0.0,1.0,0.0,1.0])
 RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',color=[0.0,0.0,1.0,1.0])
 
+rayCircle_verts, rayCircle_index, rayCircle_color = generateCircle(radius=0.01, axis='Z',color=[0.0,1.0,1.0,1.0])
+
 # Vertex data for the translate gizmos
 VERTEX_GIZMOS_X = np.array([[0.1, 0.1, -0.1, 1.0],
                           [0.1, -0.1, -0.1, 1.0],
@@ -474,6 +476,16 @@ class Gizmos:
         self.vArray_BoundingBox = self.scene.world.addComponent(self.BoundingBox, VertexArray(primitive=GL_LINES)) 
         self.shaderDec_BoundingBox = self.scene.world.addComponent(self.BoundingBox, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
+        #Ray circle
+        self.rayCircle = self.scene.world.createEntity(Entity(name="rayCircle"))
+        self.scene.world.addEntityChild(rootEntity, self.rayCircle)
+        self.rayCircle_trans = self.scene.world.addComponent(self.rayCircle, BasicTransform(name="rayCircle_trans", trs=util.identity()))
+        self.rayCircle_mesh = self.scene.world.addComponent(self.rayCircle, RenderMesh(name="rayCircle_mesh"))
+        self.rayCircle_mesh.vertex_attributes.append(rayCircle_verts)
+        self.rayCircle_mesh.vertex_attributes.append(rayCircle_color)
+        self.rayCircle_mesh.vertex_index.append(rayCircle_index)
+        self.rayCircle_vArray = self.scene.world.addComponent(self.rayCircle, VertexArray())
+        self.rayCircle_shader = self.scene.world.addComponent(self.rayCircle, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         self.count_components() # Count Basic transform components in the scene, besides the Gizmos
 
@@ -564,7 +576,7 @@ class Gizmos:
                                 break
                         break
         if component is not None:
-            self.showSelectedBB(component.parent.getChildByType("AABoundingBox"))
+            self.showSelectedBB()#component.parent.getChildByType("AABoundingBox"))
 
     def update_ray_start(self):
         """
@@ -631,6 +643,7 @@ class Gizmos:
 
         if self.key_states[sdl.SDL_SCANCODE_0]:
             self.reset_to_default()
+            self.showSelectedBB()
 
         if self.key_states[sdl.SDL_SCANCODE_T]:
             self.mode = Mode.TRANSLATE
@@ -786,7 +799,9 @@ class Gizmos:
         if self.isSelected:
             mvp_BB = self.projection @ self.view @ self.trans_BoundingBox.l2world
             self.shaderDec_BoundingBox.setUniformVariable(key='modelViewProj', value=mvp_BB, mat4=True)
-
+        
+        mvp_rc = self.projection @ self.view @ self.rayCircle_trans.l2world
+        self.rayCircle_shader.setUniformVariable(key='modelViewProj', value=mvp_rc, mat4=True)
 
     def update_imgui(self):
         """
@@ -932,15 +947,15 @@ class Gizmos:
                                  ray_end_world[1] - ray_start_World[1],
                                  ray_end_world[2] - ray_start_World[2])
         ray_dir_world = util.normalise(ray_dir_world)
-        ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2],0.0)
-        ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2],0.0)
+        ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2])
+        ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2])
 
         return ray_origin, ray_direction, ray_end_world
 
-    def showSelectedBB(self, compBB):
+    def showSelectedBB(self):
         for comp in self.scene.world.root:
             if comp is not None and comp.getClassName()=="RenderMesh" and comp.name == "mesh_BoundingBox":
-                comp.parent.getChildByType("BasicTransform").trs = compBB.parent.getChildByType("BasicTransform").l2world @ compBB.scaleMatrix 
+                comp.parent.getChildByType("BasicTransform").trs = self.selected_trans.l2world @ self.selected_trans.parent.getChildByType("AABoundingBox").scaleMatrix
                 return
 
     def raycastForSelection(self):
@@ -1159,7 +1174,7 @@ class Gizmos:
             self.__transform_selected_entity(z_in_point)
         
         if self.selected_trans is not None:
-            self.showSelectedBB(self.selected_trans.parent.getChildByType("AABoundingBox"))
+            self.showSelectedBB() #self.selected_trans.parent.getChildByType("AABoundingBox"))
 
     def __transform_selected_entity(self,inter_point):
         """
@@ -1272,13 +1287,16 @@ class Gizmos:
         tmin = 0.0
         tmax = 100000.0
 
-        bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2],model[3][3])
+        #bb_pos_world = util.vec(model[3][0],model[3][1],model[3][2],model[3][3])
+        bb_pos_world = util.vec(model[0][3],model[1][3],model[2][3])
         delta = bb_pos_world - ray_origin
 
-        x_axis = util.vec(model[0][0],model[0][1],model[0][2],model[0][3])
-        y_axis = util.vec(model[1][0],model[1][1],model[1][2],model[1][3])
-        z_axis = util.vec(model[2][0],model[2][1],model[2][2],model[2][3])
-
+        # x_axis = util.vec(model[0][0],model[0][1],model[0][2])#,model[0][3])
+        # y_axis = util.vec(model[1][0],model[1][1],model[1][2])#,model[1][3])
+        # z_axis = util.vec(model[2][0],model[2][1],model[2][2])#,model[2][3])
+        x_axis = util.vec(model[0][0],model[1][0],model[2][0])
+        y_axis = util.vec(model[0][1],model[1][1],model[2][1])
+        z_axis = util.vec(model[0][2],model[1][2],model[2][2])
         # Test intersection with the 2 planes perpendicular to the bounding box's X axis
 
         e = np.dot(x_axis,delta)
