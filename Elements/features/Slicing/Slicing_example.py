@@ -22,6 +22,10 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 #Task code
 from Elements.features.Slicing import Slicing
 from Elements.definitions import MODEL_DIR
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This is a scene with two cow models. The cow model is either properly imported\n"
+"or is being sliced by multiple planes and the intersection countour are then displayed." 
 
 
 #Light
@@ -232,6 +236,7 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
+    displayGUI_text(example_description)
     view =  gWindow._myCamera # updates view via the imgui
     # mvp_cube = projMat @ view @ model_cube
     mvp_cube = projMat @ view @ trans4.trs
