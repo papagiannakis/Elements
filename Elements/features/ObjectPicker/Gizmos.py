@@ -79,7 +79,6 @@ RX_GIZMOS, rindex_x, rcolor_x = generateCircle(axis='X',color=[1.0,0.0,0.0,1.0])
 RY_GIZMOS, rindex_y, rcolor_y = generateCircle(axis='Y',color=[0.0,1.0,0.0,1.0])
 RZ_GIZMOS, rindex_z, rcolor_z = generateCircle(axis='Z',color=[0.0,0.0,1.0,1.0])
 
-rayCircle_verts, rayCircle_index, rayCircle_color = generateCircle(radius=0.01, axis='Z',color=[0.0,1.0,1.0,1.0])
 
 # Vertex data for the translate gizmos
 VERTEX_GIZMOS_X = np.array([[0.1, 0.1, -0.1, 1.0],
@@ -242,6 +241,19 @@ colorBB = np.array([
 indexBB = np.array((0,4,  4,5,  5,1,  1,0,
                     2,6,  6,7,  7,3,  3,2,
                     0,2,  4,6,  5,7,  1,3), np.uint32)
+
+#Colored Axes
+vertexRay = np.array([
+    [0.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0]
+],dtype=np.float32) 
+
+colorRay = np.array([
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0]
+], dtype=np.float32)
+
+indexRay = np.array((0,1), np.uint32) # a simple colored line segment as R,G,B lines
 
 class Mode(enum.Enum):
     # Enum class for the gizmos' modes
@@ -476,16 +488,16 @@ class Gizmos:
         self.vArray_BoundingBox = self.scene.world.addComponent(self.BoundingBox, VertexArray(primitive=GL_LINES)) 
         self.shaderDec_BoundingBox = self.scene.world.addComponent(self.BoundingBox, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
-        #Ray circle
-        self.rayCircle = self.scene.world.createEntity(Entity(name="rayCircle"))
-        self.scene.world.addEntityChild(rootEntity, self.rayCircle)
-        self.rayCircle_trans = self.scene.world.addComponent(self.rayCircle, BasicTransform(name="rayCircle_trans", trs=util.identity()))
-        self.rayCircle_mesh = self.scene.world.addComponent(self.rayCircle, RenderMesh(name="rayCircle_mesh"))
-        self.rayCircle_mesh.vertex_attributes.append(rayCircle_verts)
-        self.rayCircle_mesh.vertex_attributes.append(rayCircle_color)
-        self.rayCircle_mesh.vertex_index.append(rayCircle_index)
-        self.rayCircle_vArray = self.scene.world.addComponent(self.rayCircle, VertexArray())
-        self.rayCircle_shader = self.scene.world.addComponent(self.rayCircle, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        #add an entity under root to display the Ray from the camera to point clicked by the user
+        self.ray = self.scene.world.createEntity(Entity(name="Ray"))
+        self.scene.world.addEntityChild(rootEntity, self.ray)
+        self.ray_trans = self.scene.world.addComponent(self.ray, BasicTransform(name="ray_trans", trs=util.identity()))
+        self.ray_mesh = self.scene.world.addComponent(self.ray, RenderMesh(name="ray_mesh"))
+        self.ray_mesh.vertex_attributes.append(vertexRay)
+        self.ray_mesh.vertex_attributes.append(colorRay)
+        self.ray_mesh.vertex_index.append(indexRay)
+        self.ray_vArray = self.scene.world.addComponent(self.ray, VertexArray(primitive=GL_LINES))
+        self.ray_shader = self.scene.world.addComponent(self.ray, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
         self.count_components() # Count Basic transform components in the scene, besides the Gizmos
 
@@ -523,10 +535,10 @@ class Gizmos:
         self.mode = Mode.DISAPPEAR
         self.__update_positions()
         self.mode = prev
-        self.is_selected = False
-        self.selected_trans = None
-        self.selected_mesh = None
-        self.selected_comp = "None"
+        #self.is_selected = False
+        #self.selected_trans = None
+        #self.selected_mesh = None
+        #self.selected_comp = "None"
 
     def reset_to_default(self):
         """
@@ -562,7 +574,7 @@ class Gizmos:
             if component is not None:
                 parentname = component.parent.name
                 #next BasicTransform component that is not one of the gizmos components and is not child of the camera in use
-                if component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and parentname!=self.cameraInUse and parentname.find("ground")==-1 and parentname.find("BoundingBox")==-1 and parentname.find("Skybox")==-1:
+                if component.getClassName()=="BasicTransform" and parentname!=self.cameraInUse and not self.assistingComponent(component):
                     count = count-1
                     if(count==0):
                         self.selected_trans = component
@@ -611,7 +623,7 @@ class Gizmos:
             None
         """
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("ground")==-1 and component.parent.name.find("BoundingBox")==-1 and component.parent.name.find("Skybox")==-1:
+            if component is not None and component.getClassName()=="BasicTransform" and not self.assistingComponent(component):
                 entity_name = component.parent.name
                 self.seperate_transformations[entity_name] = entity_transformations()
                 self.initial_transformations[entity_name] = component.trs
@@ -797,11 +809,11 @@ class Gizmos:
         self.gizmos_z_R_shader.setUniformVariable(key='modelViewProj', value=mvp_rz, mat4=True)
 
         if self.isSelected:
-            mvp_BB = self.projection @ self.view @ self.trans_BoundingBox.l2world
+            mvp_BB = vp @ self.trans_BoundingBox.l2world
             self.shaderDec_BoundingBox.setUniformVariable(key='modelViewProj', value=mvp_BB, mat4=True)
         
-        mvp_rc = self.projection @ self.view @ self.rayCircle_trans.l2world
-        self.rayCircle_shader.setUniformVariable(key='modelViewProj', value=mvp_rc, mat4=True)
+        mvp_ray = vp @ self.ray_trans.trs
+        self.ray_shader.setUniformVariable(key='modelViewProj', value=mvp_ray, mat4=True)
 
     def update_imgui(self):
         """
@@ -918,22 +930,27 @@ class Gizmos:
 
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
+        #get camera location
+        eyex = self.inv_view[0][3]
+        eyey = self.inv_view[1][3]
+        eyez = self.inv_view[2][3]
 
         #mouse position in normalized device coordinates
         x = 2.0 * (self.mouse_x.value/self.screen_width - 0.5)
         y = -2.0 * (self.mouse_y.value/self.screen_height - 0.5)
         
         #ray start and ray end in normalized devive coordinates
-        ray_start = util.vec(x,y,-1.0,1.0)
+        #ray_start = util.vec(x,y,-1.0,1.0)
         ray_end = util.vec(x,y,0.0,1.0)
 
         # normalized device to Camera space
-        ray_start_Camera = self.inv_projection @ ray_start
-        ray_start_Camera = ray_start_Camera/ray_start_Camera[3]
+        #ray_start_Camera = self.inv_projection @ ray_start
+        #ray_start_Camera = ray_start_Camera/ray_start_Camera[3]
         # Camera space to world space
-        ray_start_World = self.inv_view @ ray_start_Camera
-        ray_start_World = ray_start_World/ray_start_World[3]
-
+        #ray_start_World = self.inv_view @ ray_start_Camera
+        #ray_start_World = ray_start_World/ray_start_World[3]
+        ray_start_World = util.vec(eyex,eyey,eyez,1.0)
+        
         #normalized device to Camera space
         ray_end_Camera = self.inv_projection @ ray_end
         ray_end_Camera = ray_end_Camera/ray_end_Camera[3]
@@ -950,14 +967,54 @@ class Gizmos:
         ray_origin = util.vec(ray_start_World[0],ray_start_World[1],ray_start_World[2])
         ray_direction = util.vec(ray_dir_world[0],ray_dir_world[1],ray_dir_world[2])
 
+        #return ray_origin, ray_direction
         return ray_origin, ray_direction, ray_end_world
 
     def showSelectedBB(self):
-        for comp in self.scene.world.root:
-            if comp is not None and comp.getClassName()=="RenderMesh" and comp.name == "mesh_BoundingBox":
-                comp.parent.getChildByType("BasicTransform").trs = self.selected_trans.l2world @ self.selected_trans.parent.getChildByType("AABoundingBox").scaleMatrix
-                return
+        # for comp in self.scene.world.root:
+        #     if comp is not None and comp.getClassName()=="RenderMesh" and comp.name == "mesh_BoundingBox":
+        #         comp.parent.getChildByType("BasicTransform").trs = self.selected_trans.l2world @ self.selected_trans.parent.getChildByType("AABoundingBox").scaleMatrix
+        #         return
+        self.trans_BoundingBox.trs = self.selected_trans.l2world @ self.selected_trans.parent.getChildByType("AABoundingBox").scaleMatrix
 
+    def calculateRayTransformation(self, v1, vdir):
+        w1 = vertexRay[0]
+        w2 = vertexRay[1]
+
+        # Calculate direction of line w
+        wdir = np.array([w2[0] - w1[0], w2[1] - w1[1], w2[2] - w1[2]]) 
+        wdir = wdir / np.linalg.norm(wdir)
+        
+        # Translation to Origin ('T1')
+        T1 = util.translate(-w1[0], -w1[1], -w1[2])
+
+        # Calculate the rotation axis ('rotation_axis') using cross product
+        rot_axis = np.cross(wdir, vdir)
+
+        # Calculate the rotation angle ('theta') using dot product
+        rot_angle = np.arccos(np.dot(wdir, vdir))
+        
+        #Rotation around rot_axis by rot_angle
+        R = util.rotate(rot_axis, rot_angle)
+
+        # Scaling by sfx (scaling factor) to match the length of w
+        sf = vdir / wdir
+        S = util.scale(sf[0])
+
+        # Translation to the starting point of w 
+        T2 = util.translate(v1[0], v1[1], v1[2])
+
+        # Combine the transformations to obtain the final transformation matrix 'M'
+        M = T2 @ S @ R @ T1
+        return M
+
+    def showRay(self, ray_origin, ray_direction):
+        self.ray_trans.trs = self.calculateRayTransformation(ray_origin, ray_direction)
+    
+    def assistingComponent(self, component):
+        self.assist_comps = set(["ground","BoundingBox","Skybox","Ray"])
+        return component.name in self.gizmos_comps or component.parent.name in self.assist_comps
+        
     def raycastForSelection(self):
         """
         Raycast from mouse position to an object in the scenegraph to select it
@@ -966,12 +1023,13 @@ class Gizmos:
         Returns:
             None
         """
-        ray_origin, ray_direction, ray_destination = self.calculate_ray()
+        ray_origin, ray_direction, ray_end = self.calculate_ray()
+        self.showRay(ray_end, ray_direction)
         obj_intersects, obj_in_point = False, util.vec(0.0)
         hitObjects = []
         count=0
         for component in self.scene.world.root:
-            if component is not None and component.getClassName()=="BasicTransform" and component.name not in self.gizmos_comps and component.parent.name.find("ground")==-1 and component.parent.name.find("BoundingBox")==-1 and component.parent.name.find("Skybox")==-1:
+            if component is not None and component.getClassName()=="BasicTransform" and not self.assistingComponent(component):
                 count = count + 1
                 bb = component.parent.getChildByType("AABoundingBox")
                 if (bb is not None):
@@ -982,7 +1040,7 @@ class Gizmos:
                     #                             mmin,
                     #                             mmax,
                     #                             component.l2world)    
-                    obj_intersects, obj_in_point = self.testRayBoundingBoxIntesection_2(ray_origin,ray_direction,mmin,mmax,component.l2world)
+                    obj_intersects, obj_in_point = self.testRayBoundingBoxIntesectionSelection(ray_origin,ray_direction,mmin,mmax,component.l2world)
                     if (obj_intersects):
                          hitObjects.append([count, self.previous_distance])
         
@@ -1015,7 +1073,7 @@ class Gizmos:
         Source: http://www.opengl-tutorial.org/miscellaneous/clicking-on-objects/picking-with-custom-ray-obb-function/
         """
 
-        ray_origin, ray_direction, ray_destination = self.calculate_ray()
+        ray_origin, ray_direction, ray_end = self.calculate_ray()
 
         x_intersects, x_in_point = False, util.vec(0.0)
         y_intersects, y_in_point = False, util.vec(0.0)
@@ -1270,7 +1328,7 @@ class Gizmos:
                     self.__rotate_selected(_angle = diff, _axis = (1.0,0.0,0.0))
         self.__update_gizmos()
 
-    def testRayBoundingBoxIntesection_2(self, rayOrigin, rayDirection, minb, maxb, model):
+    def testRayBoundingBoxIntesectionSelection(self, rayOrigin, rayDirection, minb, maxb, model):
         
         minbb = model @ minb
         maxbb = model @ maxb
@@ -1282,15 +1340,15 @@ class Gizmos:
         tmax = max(t1, t2)
 
         for i in range(3):
-            t1 = (minbb[i] - rayOrigin[0]) / rayDirection[i]
-            t2 = (maxbb[i] - rayOrigin[0]) / rayDirection[i]
+            t1 = (minbb[i] - rayOrigin[i]) / rayDirection[i]
+            t2 = (maxbb[i] - rayOrigin[i]) / rayDirection[i]
 
             tmin = max(tmin, min(min(t1, t2), tmax))
             tmax = min(tmax, max(max(t1, t2), tmin))
 
         self.previous_distance = tmin
 
-        return tmax > max(tmin, 0.0), self.intersection_point(tmin,rayOrigin,rayDirection)
+        return tmax > max(tmin, 0.0), self.intersection_point(tmin, rayOrigin, rayDirection)
     
     def testRayBoundingBoxIntesection(self,ray_origin,ray_direction,minbb,maxbb,model):
         """
