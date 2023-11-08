@@ -170,6 +170,10 @@ class System(ABC):
     def apply2ImGUIDecorator(self, imGUIDecorator, event = None):
         pass 
     
+    def applyRotation2BasicTransform(self, basicTransformComponent, event = None):
+        pass
+
+
 class SystemDecorator(System):
     """Basic System Decorator, based on the Decorator design pattern
 
