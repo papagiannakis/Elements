@@ -985,26 +985,26 @@ class Gizmos:
         wdir = np.array([w2[0] - w1[0], w2[1] - w1[1], w2[2] - w1[2]]) 
         wdir = wdir / np.linalg.norm(wdir)
         
-        # Translation to Origin ('T1')
+        # Translation to origin
         T1 = util.translate(-w1[0], -w1[1], -w1[2])
 
-        # Calculate the rotation axis ('rotation_axis') using cross product
+        # Calculate the rotation axis 
         rot_axis = np.cross(wdir, vdir)
 
-        # Calculate the rotation angle ('theta') using dot product
+        # Calculate the rotation angle 
         rot_angle = np.arccos(np.dot(wdir, vdir))
         
         #Rotation around rot_axis by rot_angle
         R = util.rotate(rot_axis, rot_angle)
 
-        # Scaling by sfx (scaling factor) to match the length of w
+        # Scaling by sf_x (scaling factor) to match the length of w
         sf = vdir / wdir
         S = util.scale(sf[0])
 
         # Translation to the starting point of w 
         T2 = util.translate(v1[0], v1[1], v1[2])
 
-        # Combine the transformations to obtain the final transformation matrix 'M'
+        # Compute the combined transformation matrix M
         M = T2 @ S @ R @ T1
         return M
 
