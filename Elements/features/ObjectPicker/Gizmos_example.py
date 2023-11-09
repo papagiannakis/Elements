@@ -157,8 +157,8 @@ mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_Table
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(TableTop, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.5, 0.5, 0.5) )) 
-#trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.1, 0.1, 0.1) ))
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.1, 0.1, 0.1) ))
+#trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.5, 0.5, 0.5) )) 
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
 
@@ -180,16 +180,16 @@ obj_color = [168/255, 168/255 , 210/255, 1.0]
 vert , ind, col = obj_to_mesh(teapot_obj, color=obj_color)
 vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
 
-# teapot_mesh.vertex_attributes.append(vertices)
-# teapot_mesh.vertex_attributes.append(colors)
-# teapot_mesh.vertex_attributes.append(normals)
-# teapot_mesh.vertex_index.append(indices)
-teapot_mesh.vertex_attributes.append(verticesTableLeg)
-teapot_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
-teapot_mesh.vertex_index.append(indicesTableLeg)
+teapot_mesh.vertex_attributes.append(vertices)
+teapot_mesh.vertex_attributes.append(colors)
+teapot_mesh.vertex_attributes.append(normals)
+teapot_mesh.vertex_index.append(indices)
+# teapot_mesh.vertex_attributes.append(verticesTableLeg)
+# teapot_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
+# teapot_mesh.vertex_index.append(indicesTableLeg)
 vArray_teapot = scene.world.addComponent(teapot, VertexArray())
-#ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+#ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 scene.world.addComponent(teapot, AABoundingBox(name="AABoundingBox",
                                         vertices = teapot_mesh.vertex_attributes[0]))
                                         #objectCollisionList = collisionObjectList))
@@ -345,8 +345,8 @@ while running:
     model_TableLeg3 = trans_TableLeg3.l2world
     model_TableLeg4 = trans_TableLeg4.l2world
 
-    model_Teapot = trans_teapot.l2world
-    #mvp_teapot = projMat @ view @ trans_teapot.l2world
+    #model_Teapot = trans_teapot.l2world
+    mvp_teapot = projMat @ view @ trans_teapot.l2world
 
     #Update Ground Variables
     ground_shader.setUniformVariable(key='Proj', value=projMat, mat4=True)
@@ -375,10 +375,10 @@ while running:
     shaderDec_TableLeg4.setUniformVariable(key='model', value=model_TableLeg4, mat4=True)
 
     #Update Teapot Uniform Variables
-    #ShaderTeapot.setUniformVariable(key='modelViewProj', value=mvp_teapot, mat4=True)
-    ShaderTeapot.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    ShaderTeapot.setUniformVariable(key='View', value=view, mat4=True)
-    ShaderTeapot.setUniformVariable(key='model', value=model_Teapot, mat4=True)
+    ShaderTeapot.setUniformVariable(key='modelViewProj', value=mvp_teapot, mat4=True)
+    # ShaderTeapot.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    # ShaderTeapot.setUniformVariable(key='View', value=view, mat4=True)
+    # ShaderTeapot.setUniformVariable(key='model', value=model_Teapot, mat4=True)
 
     scene.render_post()
     
