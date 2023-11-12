@@ -157,7 +157,7 @@ mesh_TableLeg4 = scene.world.addComponent(TableLeg4, RenderMesh(name="mesh_Table
 
 teapot = scene.world.createEntity(Entity(name="Teapot"))
 scene.world.addEntityChild(TableTop, teapot)
-trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.1, 0.1, 0.1) ))
+trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.275) @ util.scale(0.1, 0.1, 0.1)))
 #trans_teapot = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.translate(y=0.1) @ util.scale(0.5, 0.5, 0.5) )) 
 teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
 
@@ -177,8 +177,10 @@ teapot_obj = MODEL_DIR / "teapot.obj"
 
 #Import Teapot
 obj_color = [168/255, 168/255 , 210/255, 1.0]
-vert , ind, col = obj_to_mesh(teapot_obj, color=obj_color)
+vert, ind, col = obj_to_mesh(teapot_obj, color=obj_color)
 vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
+# translate the teapot so its centroid is on local coords (0,0,0)
+vertices = np.transpose(util.translate(-0.217, -1.575, 0) @ np.transpose(vertices))
 
 teapot_mesh.vertex_attributes.append(vertices)
 teapot_mesh.vertex_attributes.append(colors)
