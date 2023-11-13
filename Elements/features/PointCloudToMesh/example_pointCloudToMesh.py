@@ -22,7 +22,7 @@ from OpenGL.GL import GL_LINES
 import imgui
 from PointCloudToMesh import generateTrianglesFromCustomList
 from PointCloudToMesh import generateBunnyExample
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 
 example_description = \
 "This example shows the conversion of a point cloud to a mesh. \n\

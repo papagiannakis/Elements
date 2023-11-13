@@ -37,7 +37,7 @@ class ECSSManager():
         :rtype: ECSSManagger
         """
         if cls._instance is None:
-            print('Creating Scene Singleton Object')
+            print('Creating ECSSManager Singleton Object')
             cls._instance = super(ECSSManager, cls).__new__(cls)
             # add further init here
         return cls._instance
