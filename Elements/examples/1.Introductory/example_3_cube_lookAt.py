@@ -11,7 +11,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene with some simple geometry, i.e., a colored cube. \n\
-The cube and axes are rendered with a simple shader. \n\
+The cube is rendered via the simplest vertex and fragment shader. \n\
 You cannot move the camera through the GUI. Hit ESC OR Close the window to quit." 
 
 winWidth = 1024
