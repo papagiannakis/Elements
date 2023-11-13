@@ -27,7 +27,7 @@ ability to load complex objects instead of inputing them manually. \n\
 The scene is being lit using the Blinn-Phong algorithm. \n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
+various information about them (read-only). Hit ESC OR Close the window to quit." 
 
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
@@ -172,7 +172,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator=ImGUIecssDecorator)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
