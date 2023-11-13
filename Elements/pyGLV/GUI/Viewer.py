@@ -32,6 +32,7 @@ import Elements.pyECSS.Event
 from Elements.pyECSS.System import System  
 from Elements.pyECSS.Component import BasicTransform
 import numpy as np
+# from Elements.pyGLV.GL.Scene import Scene
 
 import Elements.utils.Shortcuts as Shortcuts
 
@@ -394,7 +395,7 @@ class RenderDecorator(RenderWindow):
                     except StopIteration:
                         done_traversing = True
                     else:
-                        if "Camera" in comp.name: # just put the "Camera" string in the Entity that holds the camera
+                        if "camera" in comp.name.lower(): # just put the "Camera" string in the Entity that holds the camera
                             self.cam = comp
                             found = True
                         
@@ -572,7 +573,8 @@ class RenderDecorator(RenderWindow):
                     self.toggle_Wireframe()
                 
                 ########## shortcuts for selected node from the tree ###########
-                if self.selected:
+                if hasattr(self._wrapeeWindow._scene, "_gContext") and self._wrapeeWindow._scene._gContext.__class__.__name__ == "ImGUIecssDecorator" and self.selected:
+                    # we must first check if the ImGUIecssDecorator is active otherwise we will get an error on click
                     ################# - translate on x axis when node is selected using W+alt ###########################
                     if(event.key.keysym.sym == sdl2.SDLK_w and (sdl2.SDL_GetModState() & shortcut_HotKey)):
                         self.translation["x"] -= 0.1
@@ -637,7 +639,7 @@ class RenderDecorator(RenderWindow):
                     elif(event.key.keysym.sym == sdl2.SDLK_p ):
                         self.scale["z"] += 0.1
 
-                elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
+                if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
             elif event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
                 self.lctrl = False
@@ -703,11 +705,14 @@ class ImGUIDecorator(RenderDecorator):
         self._checkbox = False 
         self._colorEditor = wrapee._colorEditor
 
-        ### Bool variables for Scenegraph Visualizer imgui ###
-        self.collapseElementsWindow = True
+        ### Bool variables for Scenegraph Visualizer imgui 
+        self.collapseElementsWindow = False
         self.collapseScenegraphVisualizer = True
 
+        ### Bool variables to collapse and close the ECSS graph
+        self.showScenegraphVisualizer = True
         self.collapseScenegraphVisualizer = True
+
         
         ### Bool variables for Elements imgui ###
         self.showElementsWindow = True
@@ -715,8 +720,9 @@ class ImGUIDecorator(RenderDecorator):
         self.elements_y = 30        
 
         #TODO:add comment for these vars
-        self.graph_x = 560
-        self.graph_y = 30
+        self.graph_x = 10
+        self.graph_y = 100
+        
 
     def init(self):
         """
@@ -906,14 +912,15 @@ class ImGUIDecorator(RenderDecorator):
         ########## Added bool variable to enable to close the imgui window ###############
         if  self.showElementsWindow:
             # new custom imgui window
-            imgui.core.set_next_window_collapsed(not self.collapseElementsWindow)
+            imgui.core.set_next_window_collapsed(not self.collapseElementsWindow, imgui.FIRST_USE_EVER)
             self.collapseElementsWindow, self.showElementsWindow = imgui.begin("Elements ImGUI window", True)
             ###### do this so we can be able to move the window after it was collapsed #########
             #######                         and we re open it                           #########
             if self.collapseElementsWindow:
-                imgui.set_window_position(self.elements_x,self.elements_y,imgui.ONCE)
+                imgui.set_window_position(self.elements_x,self.elements_y,imgui.FIRST_USE_EVER)
+                imgui.set_window_collapsed_labeled("Elements ImGUI window", True, imgui.FIRST_USE_EVER)
             else:
-                imgui.set_window_position(self.elements_x,self.elements_y)
+                imgui.set_window_position(self.elements_x,self.elements_y, imgui.FIRST_USE_EVER)
 
             
             # labels inside the window
@@ -948,6 +955,10 @@ class ImGUIDecorator(RenderDecorator):
             #
             # START
             # simple slider for eye - IMPORTANT PART HERE
+
+            self.traverseCamera()
+            if self.cam is not None:
+                imgui.text("If your camera is not defined via the lookAt function, \nthe sliders below will not work")    
             self._changed, self._eye = imgui.drag_float3( "Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
             if self._changed:
                 self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
@@ -1014,7 +1025,7 @@ class ImGUIDecorator(RenderDecorator):
             Shortcuts.GUItext_y = starting_y
             starting_y += 20
         self.graph_x = 10
-        self.graph_y = starting_y
+        # self.graph_y = starting_y + 20
 
     ######  MENU BAR #########
     def menuBar(self):
@@ -1038,26 +1049,38 @@ class ImGUIDecorator(RenderDecorator):
         # Create the "View" dropdown menu
         if imgui.begin_menu("View"):
             # Add a "Shortcuts" submenu
-            if imgui.menu_item("Shortcuts")[1]:
+            if imgui.menu_item("Toggle Elements ImGUI Window")[1]:
+                self.showElementsWindow = not self.showElementsWindow           
+            if imgui.menu_item("Toggle ECSS Graph")[1]:
+                 self.showScenegraphVisualizer = not self.showScenegraphVisualizer
+            if imgui.menu_item("Toggle Shortcuts")[1]:
                 Shortcuts.show_shortcuts_window = not Shortcuts.show_shortcuts_window   
                 if Shortcuts.show_shortcuts_window: 
                     Shortcuts.displayShortcutsGUI()
-            if imgui.menu_item("Elements ImGUI Window")[1]:
-                self.showElementsWindow = not self.showElementsWindow           
+            if imgui.menu_item("Example Description")[1]:
+                Shortcuts.showGUI_text = not Shortcuts.showGUI_text
+            if imgui.menu_item("Show All")[1]:   
+                self.showElementsWindow = True
+                self.showScenegraphVisualizer = True
+                Shortcuts.show_shortcuts_window = True
+                Shortcuts.showGUI_text = True
+            if imgui.menu_item("Hide All")[1]:   
+                self.showElementsWindow = False
+                self.showScenegraphVisualizer = False
+                Shortcuts.show_shortcuts_window = False
+                Shortcuts.showGUI_text = False
             if imgui.menu_item("Collapse Windows")[1]:
-                self.collapseElementsWindow = False
-                Shortcuts.collapseShortcutsWindow = False
-                Shortcuts.displayShortcutsGUI()
-                Shortcuts.collapseGUI_text = False
-                self.collapseScenegraphVisualizer = False
-                self.align_windows_top_left()
+                # self.collapseElementsWindow = False
+                imgui.set_window_collapsed_labeled("Elements ImGUI window", True)
+                imgui.set_window_collapsed_labeled("ECSS graph", True)
+                imgui.set_window_collapsed_labeled("Shortcuts", True)
+                imgui.set_window_collapsed_labeled("Example Description", True)
+                # self.align_windows_top_left()
             imgui.end_menu()
 
         # Create the "Help" dropdown menu
         if imgui.begin_menu("Help"):
             # Add a "Shortcuts" submenu
-            if imgui.menu_item("Example Description")[1]:
-                Shortcuts.showGUI_text = not Shortcuts.showGUI_text   
             if imgui.menu_item("FAQ")[1]:
                 pass
             imgui.end_menu()
@@ -1085,84 +1108,63 @@ class ImGUIecssDecorator(ImGUIDecorator):
         
         twoColumn = False
 
-        imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer)
+        ########## Added bool variable to enable to close the graph window ###############
+        if  self.showScenegraphVisualizer:
+            imgui.core.set_next_window_collapsed(not self.collapseScenegraphVisualizer, imgui.FIRST_USE_EVER)
 
-        if twoColumn:
-            # 2 Column Version
-            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph")
-            imgui.columns(2, "Properties")
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
-            imgui.next_column()
-            imgui.text("Properties")
-            imgui.separator()
-        else:
-            self.collapseScenegraphVisualizer, _ = imgui.begin("ECSS graph")
-            imgui.columns(1, "Properties")
-            # below is a recursive call to build-up the whole scenegraph as ImGUI tree
-            # if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                # self.drawNode(self.wrapeeWindow.scene.world.root)
-                # imgui.tree_pop()
-            # imgui.next_column()
-            imgui.text("Properties")
-            imgui.separator()
+            if twoColumn:
+                # 2 Column Version
+                self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
+                imgui.columns(2, "Properties")
+                if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                    self.drawNode(self.wrapeeWindow.scene.world.root)
+                    imgui.tree_pop()
+                imgui.next_column()
+                imgui.text("Properties")
+                imgui.separator()
+            else:
+                self.collapseScenegraphVisualizer, self.showScenegraphVisualizer = imgui.begin("ECSS graph",True)
+                imgui.columns(1, "Properties")
+                imgui.text("Properties")
+                imgui.separator()
 
-        ###### do this so we can be able to move the window after it was collapsed #########
-        #######                         and we re open it                           #########
-        if self.collapseScenegraphVisualizer:
-            imgui.set_window_position(self.graph_x,self.graph_y,imgui.ONCE)
-        else:
-            imgui.set_window_position(self.graph_x,self.graph_y)
-        
-        # smallerTRSgui = True
-        #TRS sample
-        # if(isinstance(self.selected, BasicTransform)):
+            ###### do this so we can be able to move the window after it was collapsed #########
+            #######                         and we re open it                           #########
+            if self.collapseScenegraphVisualizer:
+                imgui.set_window_position(self.graph_x,self.graph_y,imgui.FIRST_USE_EVER)
+            else:
+                imgui.set_window_position(self.graph_x,self.graph_y, imgui.FIRST_USE_EVER)
+            
+            # smallerTRSgui = True
+            #TRS sample
+            # if(isinstance(self.selected, BasicTransform)):
 
-        if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
-            imgui.same_line() 
-            # changed, value = imgui.slider_float("X", self.translation["x"], -3, 3, "%.01f", 1);
-            # self.translation["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.translation["y"], -3, 3, "%.01f", 1);
-            # self.translation["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.translation["z"], -3, 3, "%.01f", 1);
-            # self.translation["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
-            self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
-        if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
-            imgui.same_line() 
-            # changed, value = imgui.slider_float("X", self.rotation["x"], -90, 90, "%.1f", 1);
-            # self.rotation["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.rotation["y"], -90, 90, "%.1f", 1);
-            # self.rotation["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.rotation["z"], -90, 90, "%.1f", 1);
-            # self.rotation["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
-            self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
-        if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
-            imgui.same_line() 
-            # changed, value = imgui.slider_float("X", self.scale["x"], 0, 3, "%.01f", 1);
-            # self.scale["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.scale["y"], 0, 3, "%.01f", 1);
-            # self.scale["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.scale["z"], 0, 3, "%.01f", 1);
-            # self.scale["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
-            self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
+            if imgui.tree_node("Translation", imgui.TREE_NODE_LEAF):
+                imgui.same_line() 
+                changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1);
+                self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
+                imgui.tree_pop();
+            if imgui.tree_node("Rotation   ", imgui.TREE_NODE_LEAF):
+                imgui.same_line() 
+                changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1);
+                self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
+                imgui.tree_pop();
+            if imgui.tree_node("Scale      ", imgui.TREE_NODE_LEAF):
+                imgui.same_line() 
+                changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1);
+                self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
+                imgui.tree_pop();
 
-        
-        if twoColumn:
-            pass
-        else:
-            imgui.separator()
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
+            
+            if twoColumn:
+                pass
+            else:
+                imgui.separator()
+                if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                    self.drawNode(self.wrapeeWindow.scene.world.root)
+                    imgui.tree_pop()
 
-        imgui.end()
+            imgui.end()
 
     def drawNode(self, component):
         #create a local iterator of Entity's children

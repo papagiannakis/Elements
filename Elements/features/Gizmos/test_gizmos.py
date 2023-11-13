@@ -20,7 +20,7 @@ from Elements.features.Gizmos.Gizmos import Gizmos
 from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 
 class TestGizmos(unittest.TestCase):
     """
