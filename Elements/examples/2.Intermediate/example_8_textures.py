@@ -18,7 +18,7 @@ from Elements.definitions import TEXTURE_DIR
 
 from OpenGL.GL import GL_LINES
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the ability to apply image textures to geometry. \n\
 You may move the camera using the mouse or the GUI. \n\
@@ -31,33 +31,18 @@ scene = Scene()
 
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
-entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.identity()))
 
 eye = util.vec(1, 0.54, 1.0)
 target = util.vec(0.02, 0.14, 0.217)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
 projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
-m = np.linalg.inv(projMat @ view)
 
-entityCam2 = scene.world.createEntity(Entity(name="entityCam2"))
-scene.world.addEntityChild(entityCam1, entityCam2)
-trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="trans2", trs=util.identity()))
-# orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
-orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
 
 node4 = scene.world.createEntity(Entity(name="node4"))
 scene.world.addEntityChild(rootEntity, node4)
 trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0,0.5,0))) #util.identity()
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
-
-
-axes = scene.world.createEntity(Entity(name="axes"))
-scene.world.addEntityChild(rootEntity, axes)
-axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
-axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 
 # a simple triangle
 vertexData = np.array([
@@ -116,7 +101,6 @@ vertices, indices, _ = norm.generateUniqueVertices(vertexCube,indexCube)
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
@@ -214,14 +198,14 @@ while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
-    scene.world.traverse_visit(camUpdate, scene.world.root)
+    scene.world.traverse_visit(transUpdate, scene.world.root)
     
     view =  gWindow._myCamera # updates view via the imgui
-    mvp_terrain_axes = projMat @ view @ model_terrain_axes
-    
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+    mvp_terrain = projMat @ view @ terrain_trans.l2world
+    mvp_axes = projMat @ view @ axes_trans.l2world
+    model_cube = trans4.l2world
+    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
     shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)

@@ -21,7 +21,7 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.definitions import MODEL_DIR
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates a window where the projection matrix\n\
 is properly reset after a window resize. \n\

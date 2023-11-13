@@ -15,7 +15,7 @@ from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
 from Elements.definitions import TEXTURE_DIR
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the cube map texture, i.e., \n\
 we encapsulate the scene into a huge cube and apply texture to them\n\
@@ -27,30 +27,20 @@ various information about them. Hit ESC OR Close the window to quit."
 
 winWidth = 1024
 winHeight = 768
-scene = Scene()    
-
-# Scenegraph with Entities, Components
-rootEntity = scene.world.createEntity(Entity(name="RooT"))
-entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.identity()))
 
 eye = util.vec(1, 0.54, 1.0)
 target = util.vec(0.02, 0.14, 0.217)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
 projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
-m = np.linalg.inv(projMat @ view)
 
-entityCam2 = scene.world.createEntity(Entity(name="entityCam2"))
-scene.world.addEntityChild(entityCam1, entityCam2)
-trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="trans2", trs=util.identity()))
-# orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
-orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
+# Scenegraph with Entities, Components
+scene = Scene()    
+rootEntity = scene.world.createEntity(Entity(name="RooT"))
 
 skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
-transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity)) #util.identity()
+transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) #util.identity()
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 node4 = scene.world.createEntity(Entity(name="node4"))
@@ -102,7 +92,6 @@ indexCube = np.array((1,0,3, 1,3,2,
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
@@ -172,24 +161,22 @@ face_data_2 = get_single_texture_faces(mat_img)
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
-model_cube = util.translate(0.0,0.5,0.0)
 
 while running:
     running = scene.render()
     displayGUI_text(example_description)
-    scene.world.traverse_visit(renderUpdate, scene.world.root)
-    scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
-    scene.world.traverse_visit(camUpdate, scene.world.root)
+    scene.world.traverse_visit(transUpdate, scene.world.root)
     
     view =  gWindow._myCamera # updates view via the imgui
 
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
-    shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
+    shaderDec4.setUniformVariable(key='model', value=trans4.l2world, mat4=True)
 
     shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
 
+    scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     
 scene.shutdown()

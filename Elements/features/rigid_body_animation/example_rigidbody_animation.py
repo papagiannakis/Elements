@@ -15,6 +15,10 @@ from OpenGL.GL import GL_LINES
 
 from Elements.features.rigid_body_animation.animationCS import *
 import imgui
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This is a scene where you can animate a simple cube. The cube can either move linearly or \n"
+"following a bezier curve. You can define the speed and toggle anymation on/off.\n"
 
 #Simple Cube
 vertexCube = np.array([ [-0.5, -0.5, 0.5, 1.0], [-0.5, 0.5, 0.5, 1.0], [0.5, 0.5, 0.5, 1.0], [0.5, -0.5, 0.5, 1.0], [-0.5, -0.5, -0.5, 1.0], [-0.5, 0.5, -0.5, 1.0], [0.5, 0.5, -0.5, 1.0], [0.5, -0.5, -0.5, 1.0] ],dtype=np.float32) 
@@ -172,6 +176,7 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
     mvp_cube = projMat @ view @ util.scale(0.2) @ trans4.trs
+    displayGUI_text(example_description)
     # if trans4._current_frame <99:
     #     trans4.update_frame(1)
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
