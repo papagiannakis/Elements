@@ -58,14 +58,6 @@ view = util.lookat(eye, target, up)
 # projMat = util.perspective(90.0, 1.33, 0.1, 100)  
 projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
 
-m = np.linalg.inv(projMat @ view)
-
-
-entityCam2 = scene.world.createEntity(Entity(name="Entity_Camera"))
-scene.world.addEntityChild(entityCam1, entityCam2)
-trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="Camera_TRS", trs=util.identity()))
-# orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
-orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
 
 node4 = scene.world.createEntity(Entity(name="Object"))
 scene.world.addEntityChild(rootEntity, node4)
@@ -111,7 +103,6 @@ indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B l
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
@@ -204,26 +195,24 @@ projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
 model_terrain_axes = util.translate(0.0,0.0,0.0)
-model_cube = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
+model_teapot = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
 
 
 
 while running:
     running = scene.render()
     displayGUI_text(example_description)
-    scene.world.traverse_visit(renderUpdate, scene.world.root)
-    scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
-    scene.world.traverse_visit(camUpdate, scene.world.root)
+    scene.world.traverse_visit(transUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
-    #mvp_cube = projMat @ view @ model_cube
-    mvp_object = projMat @ view @ trans4.trs
-    mvp_terrain = projMat @ view @ terrain_trans.trs
-    mvp_axes = projMat @ view @ axes_trans.trs
+
+    mvp_object = projMat @ view @ trans4.l2world
+    mvp_terrain = projMat @ view @ terrain_trans.l2world
+    mvp_axes = projMat @ view @ axes_trans.l2world
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_object, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
+    shaderDec4.setUniformVariable(key='model',value=trans4.l2world,mat4=True)
     shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
     shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
     shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
@@ -234,6 +223,7 @@ while running:
     shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
 
+    scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     
 scene.shutdown()
