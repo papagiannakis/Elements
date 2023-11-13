@@ -14,7 +14,7 @@ import Elements.utils.normals as norm
 from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 
 example_description = """
 This is a scene that contains a floor with a table on which there is a teapot. Camera movement 
