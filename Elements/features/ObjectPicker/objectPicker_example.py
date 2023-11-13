@@ -24,13 +24,16 @@ This is a scene that contains a floor with a table on which there is a teapot. C
 is possible via the mouse or the GUI
 
 Gizmos Instructions:
-You can change the selected Object by pressing TAB
-You can Also reset an Object by pressing '0'
+Click on the scene to select an object. You can then manipulate
+it by alt+clicking on the gizmos that appear, by pressing the 
+respective key:
 
-Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Make the Gizmo Disappear
+
+You can reset an object to its original position by pressing '0'
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
@@ -62,27 +65,6 @@ vertexCube = np.array([
 
 VertexTerrain = np.array(vertexCube,copy=True) @ util.scale(6.0,0.05,6.0)
 
-colorCube = np.array([
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
-colorCube2 = np.array([
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0]
-], dtype=np.float32)
-
 VertexTableTop = np.array(vertexCube,copy=True) @ util.scale(1.5,0.2,1.5)
 
 VertexTableLeg = np.array(vertexCube,copy=True) @ util.scale(0.2,1.2,0.2)
@@ -95,27 +77,8 @@ indexCube = np.array((1,0,3, 1,3,2,
                   4,5,6, 4,6,7,
                   5,4,0, 5,0,1), np.uint32)
 
-#Skybox
-minbox = -30
-maxbox = 30
-vertexSkybox = np.array([
-    [minbox, minbox, maxbox, 1.0],
-    [minbox, maxbox, maxbox, 1.0],
-    [maxbox, maxbox, maxbox, 1.0],
-    [maxbox, minbox, maxbox, 1.0], 
-    [minbox, minbox, minbox, 1.0], 
-    [minbox, maxbox, minbox, 1.0], 
-    [maxbox, maxbox, minbox, 1.0], 
-    [maxbox, minbox, minbox, 1.0]
-],dtype=np.float32)
 
-#index array for Skybox
-indexSkybox = np.array((1,0,3, 1,3,2, 
-                  2,3,7, 2,7,6,
-                  3,0,4, 3,4,7,
-                  6,5,1, 6,1,2,
-                  4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) 
+
 
 scene = Scene()    
 
@@ -186,15 +149,13 @@ teapot_mesh.vertex_attributes.append(vertices)
 teapot_mesh.vertex_attributes.append(colors)
 teapot_mesh.vertex_attributes.append(normals)
 teapot_mesh.vertex_index.append(indices)
-# teapot_mesh.vertex_attributes.append(verticesTableLeg)
-# teapot_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
-# teapot_mesh.vertex_index.append(indicesTableLeg)
+
 vArray_teapot = scene.world.addComponent(teapot, VertexArray())
 ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 #ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 scene.world.addComponent(teapot, AABoundingBox(name="AABoundingBox",
                                         vertices = teapot_mesh.vertex_attributes[0]))
-                                        #objectCollisionList = collisionObjectList))
+
 
 # Add ground
 ground_mesh.vertex_attributes.append(vertexground)
@@ -210,7 +171,7 @@ vArray_TableTop = scene.world.addComponent(TableTop, VertexArray())
 shaderDec_TableTop = scene.world.addComponent(TableTop, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 bb_TableTop = scene.world.addComponent(TableTop, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh_TableTop.vertex_attributes[0]))
-                                        #objectCollisionList = collisionObjectList))
+
 
 
 
@@ -221,34 +182,32 @@ vArray_TableLeg1 = scene.world.addComponent(TableLeg1, VertexArray())
 shaderDec_TableLeg1 = scene.world.addComponent(TableLeg1, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
 scene.world.addComponent(TableLeg1, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh_TableLeg1.vertex_attributes[0]))
-                                        #objectCollisionList = collisionObjectList))
+
 
 mesh_TableLeg2.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg2.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg2.vertex_index.append(indicesTableLeg)
 vArray_TableLeg2 = scene.world.addComponent(TableLeg2, VertexArray())
 shaderDec_TableLeg2 = scene.world.addComponent(TableLeg2, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
-scene.world.addComponent(TableLeg2, AABoundingBox(name="AABoundingBox",
-                                        vertices = mesh_TableLeg2.vertex_attributes[0]))
-                                        #objectCollisionList = collisionObjectList))
+scene.world.addComponent(TableLeg2, AABoundingBox(name="AABoundingBox", vertices = mesh_TableLeg2.vertex_attributes[0]))
+
 
 mesh_TableLeg3.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg3.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg3.vertex_index.append(indicesTableLeg)
 vArray_TableLeg3 = scene.world.addComponent(TableLeg3, VertexArray())
 shaderDec_TableLeg3 = scene.world.addComponent(TableLeg3, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
-scene.world.addComponent(TableLeg3, AABoundingBox(name="AABoundingBox",
-                                        vertices = mesh_TableLeg3.vertex_attributes[0]))
-                                        #objectCollisionList = collisionObjectList))
+scene.world.addComponent(TableLeg3, AABoundingBox(name="AABoundingBox", vertices = mesh_TableLeg3.vertex_attributes[0]))
+
 
 mesh_TableLeg4.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg4.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg4.vertex_index.append(indicesTableLeg)
 vArray_TableLeg4 = scene.world.addComponent(TableLeg4, VertexArray())
 shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
-scene.world.addComponent(TableLeg4, AABoundingBox(name="AABoundingBox",
-                                        vertices = mesh_TableLeg4.vertex_attributes[0]))
-                                        #objectCollisionList = collisionObjectList))
+scene.world.addComponent(TableLeg4, AABoundingBox(name="AABoundingBox", vertices = mesh_TableLeg4.vertex_attributes[0]))
+
+
 
 
 eye = util.vec(2.5, 2.5, 2.5)
@@ -378,9 +337,7 @@ while running:
 
     #Update Teapot Uniform Variables
     ShaderTeapot.setUniformVariable(key='modelViewProj', value=mvp_teapot, mat4=True)
-    # ShaderTeapot.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    # ShaderTeapot.setUniformVariable(key='View', value=view, mat4=True)
-    # ShaderTeapot.setUniformVariable(key='model', value=model_Teapot, mat4=True)
+
 
     scene.render_post()
     
