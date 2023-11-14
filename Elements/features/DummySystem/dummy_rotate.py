@@ -45,23 +45,39 @@ class Rotate(Component):
         
         super().__init__(name, type, id)
         if angles is None:
-          self._eulerAngles = np.array([0,0.1,0])
+          self._angles = np.array([0,0.1,0])
         else:
           if isinstance(angles, list):
-            self._eulerAngles = np.array(angles)
+            self._angles = np.array(angles)
           else:
-            self._eulerAngles = angles
+            self._angles = angles
 
         if speed is None:
           self._speed = 1
         else:
           self._speed = speed
 
+    @property
+    def angles (self):
+        return self._angles
+    
+    @angles.setter
+    def angles(self, angles):
+        self._angles = angles
+
+    @property
+    def speed (self):
+        return self._speed
+    
+    @speed.setter
+    def speed(self, speed):
+        self._speed = speed
+
     def show(self):
         if (isinstance(self.parent,Entity)) == False:
-            print('This is a rotation component. Euler Angles: ' + str(self._eulerAngles) + ', Speed: ' + str(self._speed) )
+            print('This is a rotation component. Euler Angles: ' + str(self._angles) + ', Speed: ' + str(self._speed) )
         else:
-            print('This is a rotation component, attached to entity'  + self.parent.name + ': Euler Angles: ' + str(self._eulerAngles) + ', Speed: ' + str(self._speed)  )
+            print('This is a rotation component, attached to entity'  + self.parent.name + ': Euler Angles: ' + str(self._angles) + ', Speed: ' + str(self._speed)  )
         # print("----------------------------")
 
 
@@ -89,7 +105,7 @@ class RotateSystem(System):
             return #in Python due to duck typing we need to check this!
         print(self.getClassName(), ": applyRotation2BasicTransform is called on component: ", component.name)
         
-        rot = util.eulerAnglesToRotationMatrix(component._speed * component._eulerAngles)
+        rot = util.eulerAnglesToRotationMatrix(component._speed * component._angles)
         transformComponent = component.parent.getChildByType("BasicTransform")
         transformComponent.trs = rot @ transformComponent.trs
         print("rot", rot)
