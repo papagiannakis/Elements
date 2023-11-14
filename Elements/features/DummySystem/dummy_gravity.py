@@ -18,7 +18,7 @@ class RigidBody(Component):
         if (isinstance(self.parent,Entity)) == False:
             print('This is a gravity component. Gravity: ' + str(self.gravity) + ', Drag: ' + str(self.drag) + ', Mass: ' + str(self.mass))
         else:
-            print('This is a gravity component, attached to entity'  + self.parent.name + '. Gravity: ' + str(self.gravity) + ', Drag: ' + str(self.drag) + ', Mass: ' + str(self.mass) )
+            print('This is a gravity component, attached to entity '  + self.parent.name + '. Gravity: ' + str(self.gravity) + ', Drag: ' + str(self.drag) + ', Mass: ' + str(self.mass) )
         # print("----------------------------")
 
 
@@ -46,9 +46,16 @@ class GravitySystem(System):
             print("Error: The visitor visits a node ", component.name,  " that it should not")
             return #in Python due to duck typing we need to check this!
         
+        # Note that the applyGravity() method is called by the accept() method of the component. 
+        # If the applyGravity() method is not listed in the accept() method of the component,
+        # the system will simply ignore the component. For example add the line
+        # system.applyGravity(self) 
+        # within the accept() method of the BasicTransform  component (line ~393 in Component.py) 
+        # and see what happens when you run the main again.
+        
         component.mass = 0
 
-        print('Visited:', component.parent.name, '. New mass is: ', str(component.mass))
+        print('Visited a', component.name, 'component, attached to entity', component.parent.name, ': New mass is', str(component.mass))
 
 
 if __name__ == "__main__":
