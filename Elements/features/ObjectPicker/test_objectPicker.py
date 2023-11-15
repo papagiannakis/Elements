@@ -59,6 +59,7 @@ Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Remove Gizmos
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
@@ -81,6 +82,7 @@ Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Remove Gizmos
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
@@ -103,6 +105,7 @@ Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Remove Gizmos
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
