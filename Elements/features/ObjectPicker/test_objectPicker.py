@@ -47,6 +47,10 @@ the mouse or the GUI
 When trying to change the selected entity we can see that no 
 Entity is selected and the program does not crash
 
+ObjectPicker Instructions:
+You can pick an object left-clicking the mouse on the object. You may also use the gizmos commands below 
+to also pick an object
+
 Gizmos Instructions:
 You can change the selected Object by pressing TAB
 You can Also reset an Object by pressing '0'
@@ -65,6 +69,10 @@ the mouse or the GUI
 When TAB is pressed repeatedly you can see that the Gizmos always remain on 
 the cube
 
+ObjectPicker Instructions:
+You can pick an object left-clicking the mouse on the object. You may also use the gizmos commands below 
+to also pick an object
+
 Gizmos Instructions:
 You can change the selected Object by pressing TAB
 You can Also reset an Object by pressing '0'
@@ -82,6 +90,10 @@ This is a scene that contains a pink and a yellow cube. Camera movement is possi
 via the mouse or the GUI
 In this test the pink cube is parent of the yellow one. Therefore, when we apply a 
 transformation to the parent, the same transformation is applied to its child
+
+ObjectPicker Instructions:
+You can pick an object left-clicking the mouse on the object. You may also use the gizmos commands below 
+to also pick an object
 
 Gizmos Instructions:
 You can change the selected Object by pressing TAB
@@ -208,7 +220,7 @@ move the cursor to see the result
     
     def testEmpty(self):
         """
-        Test Gizmos on an empty scene
+        Test ObjectPicker on an empty scene
         """
         eye = util.vec(2.5, 2.5, 2.5)
         target = util.vec(0,0,0)
@@ -249,7 +261,7 @@ move the cursor to see the result
 
     def testSingle(self):
         """
-        Test gizmos on a scene with a single element
+        Test objectPicker on a scene with a single element
         """
         node4_pink = self.scene.world.createEntity(Entity(name="node4_pink"))
         self.scene.world.addEntityChild(self.rootEntity, node4_pink)
@@ -337,7 +349,7 @@ move the cursor to see the result
 
     def testMultiple(self):
         """
-        Test gizmos on a scene with multiple elements, where one element is child of another
+        Test objectPicker on a scene with multiple elements, where one element is child of another
         """
         node4_pink = self.scene.world.createEntity(Entity(name="node4_pink"))
         self.scene.world.addEntityChild(self.rootEntity, node4_pink)
