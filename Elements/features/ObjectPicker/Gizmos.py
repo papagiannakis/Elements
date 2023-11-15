@@ -998,8 +998,8 @@ class Gizmos:
         R = util.rotate(rot_axis, rot_angle)
 
         # Scaling by sf_x (scaling factor) to match the length of w
-        sf = vdir / wdir
-        S = util.scale(sf[0])
+        sf_x = vdir[0] / wdir[0]
+        S = util.scale(sf_x)
 
         # Translation to the starting point of w 
         T2 = util.translate(v1[0], v1[1], v1[2])
