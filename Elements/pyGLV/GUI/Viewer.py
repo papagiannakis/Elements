@@ -34,6 +34,7 @@ from Elements.pyECSS.Component import BasicTransform
 import numpy as np
 from scipy.spatial.transform import Rotation
 # from Elements.pyGLV.GL.Scene import Scene
+# from Elements.pyGLV.GL.Scene import Scene
 
 import Elements.utils.Shortcuts as Shortcuts
 
