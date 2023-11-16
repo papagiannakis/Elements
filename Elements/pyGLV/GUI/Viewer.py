@@ -33,6 +33,7 @@ from Elements.pyECSS.System import System
 from Elements.pyECSS.Component import BasicTransform
 import numpy as np
 # from Elements.pyGLV.GL.Scene import Scene
+# from Elements.pyGLV.GL.Scene import Scene
 
 import Elements.utils.Shortcuts as Shortcuts
 
