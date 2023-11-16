@@ -14,7 +14,7 @@ import Elements.utils.normals as norm
 from Elements.utils.obj_to_mesh import obj_to_mesh
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 from Elements.features.ObjectPicker.AABoundingBox import AABoundingBox
 from OpenGL.GL import GL_LINES
 
