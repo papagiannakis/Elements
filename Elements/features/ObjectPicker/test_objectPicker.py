@@ -23,10 +23,7 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 from Elements.utils.helper_function import displayGUI_text
 
-class TestGizmos(unittest.TestCase):
-    """
-    ...
-    """
+class Test_ObjectPicker(unittest.TestCase):
 
     def setUp(self):
 
@@ -245,7 +242,7 @@ move the cursor to see the result
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_gizmos_Empty_Scene")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_objectPicker_Empty_Scene")
 
         self.scene.world.traverse_visit(self.initUpdate,self.scene.world.root)
 
