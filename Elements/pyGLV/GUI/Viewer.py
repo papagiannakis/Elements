@@ -34,6 +34,7 @@ from Elements.pyECSS.Component import BasicTransform
 import numpy as np
 from scipy.spatial.transform import Rotation
 # from Elements.pyGLV.GL.Scene import Scene
+# from Elements.pyGLV.GL.Scene import Scene
 
 import Elements.utils.Shortcuts as Shortcuts
 
@@ -396,7 +397,7 @@ class RenderDecorator(RenderWindow):
                     except StopIteration:
                         done_traversing = True
                     else:
-                        if "Camera" in comp.name: # just put the "Camera" string in the Entity that holds the camera
+                        if "camera" in comp.name.lower(): # just put the "Camera" string in the Entity that holds the camera
                             self.cam = comp
                             found = True
                         
@@ -715,6 +716,7 @@ class ImGUIDecorator(RenderDecorator):
         #TODO:add comment for these vars
         self.graph_x = 10
         self.graph_y = 100
+        
 
     def init(self):
         """
@@ -946,6 +948,10 @@ class ImGUIDecorator(RenderDecorator):
             #
             # START
             # simple slider for eye - IMPORTANT PART HERE
+
+            self.traverseCamera()
+            if self.cam is not None:
+                imgui.text("If your camera is not defined via the lookAt function, \nthe sliders below will not work")    
             self._changed, self._eye = imgui.drag_float3( "Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
             if self._changed:
                 self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
@@ -1036,28 +1042,38 @@ class ImGUIDecorator(RenderDecorator):
         # Create the "View" dropdown menu
         if imgui.begin_menu("View"):
             # Add a "Shortcuts" submenu
-            if imgui.menu_item("Elements ImGUI Window")[1]:
+            if imgui.menu_item("Toggle Elements ImGUI Window")[1]:
                 self.showElementsWindow = not self.showElementsWindow           
-            if imgui.menu_item("ECSS Graph")[1]:
-                 self.showScenegraphVisualizer = True
-            if imgui.menu_item("Shortcuts")[1]:
+            if imgui.menu_item("Toggle ECSS Graph")[1]:
+                 self.showScenegraphVisualizer = not self.showScenegraphVisualizer
+            if imgui.menu_item("Toggle Shortcuts")[1]:
                 Shortcuts.show_shortcuts_window = not Shortcuts.show_shortcuts_window   
                 if Shortcuts.show_shortcuts_window: 
                     Shortcuts.displayShortcutsGUI()
+            if imgui.menu_item("Example Description")[1]:
+                Shortcuts.showGUI_text = not Shortcuts.showGUI_text
+            if imgui.menu_item("Show All")[1]:   
+                self.showElementsWindow = True
+                self.showScenegraphVisualizer = True
+                Shortcuts.show_shortcuts_window = True
+                Shortcuts.showGUI_text = True
+            if imgui.menu_item("Hide All")[1]:   
+                self.showElementsWindow = False
+                self.showScenegraphVisualizer = False
+                Shortcuts.show_shortcuts_window = False
+                Shortcuts.showGUI_text = False
             if imgui.menu_item("Collapse Windows")[1]:
-                self.collapseElementsWindow = False
-                Shortcuts.collapseShortcutsWindow = False
-                Shortcuts.displayShortcutsGUI()
-                Shortcuts.collapseGUI_text = False
-                self.collapseScenegraphVisualizer = False
-                self.align_windows_top_left()
+                # self.collapseElementsWindow = False
+                imgui.set_window_collapsed_labeled("Elements ImGUI window", True)
+                imgui.set_window_collapsed_labeled("ECSS graph", True)
+                imgui.set_window_collapsed_labeled("Shortcuts", True)
+                imgui.set_window_collapsed_labeled("Example Description", True)
+                # self.align_windows_top_left()
             imgui.end_menu()
 
         # Create the "Help" dropdown menu
         if imgui.begin_menu("Help"):
             # Add a "Shortcuts" submenu
-            if imgui.menu_item("Example Description")[1]:
-                Shortcuts.showGUI_text = not Shortcuts.showGUI_text   
             if imgui.menu_item("FAQ")[1]:
                 pass
             imgui.end_menu()
@@ -1248,7 +1264,7 @@ class RenderGLStateSystem(System):
 
 if __name__ == "__main__":
     # The client code.        
-    gWindow = SDL2Window(openGLversion=3)     
+    gWindow = SDL2Window(openGLversion=3)    
     # uses openGL version 3.2 instead of the default 4.1        
     gWindow.init()        
     gWindow.init_post()        
