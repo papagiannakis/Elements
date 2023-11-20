@@ -47,7 +47,8 @@ setup(
         'trimesh',
         'pyganja',
         'open3d',
-        'pyassimp==4.1.3'
+        'pyassimp==4.1.3',
+        'meshplot'
     ],
     
 
