@@ -159,6 +159,49 @@ class Shader(Component):
             outputColor = vec4(result, 1);
         }
     """
+    VERT_ANIMATION = """
+        #version 410
+
+        layout (location=0) in vec4 vPosition;
+        layout (location=1) in vec4 vColor;
+        layout (location=2) in vec4 vNormal;
+        layout (location=3) in vec4 vWeight;
+        layout (location=4) in vec4 vWID;
+
+        const int MAX_BONES = 100;
+        const int MAX_BONES_INF = 4;
+
+        uniform mat4 BB[MAX_BONES];
+        uniform mat4 MM[MAX_BONES];
+
+        uniform mat4 modelViewProj;
+        uniform mat4 model;
+
+        out     vec4 pos;
+        out     vec4 color;
+        out     vec3 normal;
+
+        void main()
+        {         
+            vec4 newv = vec4(0.0f);
+
+            for (int i = 0; i < MAX_BONES_INF; i++) 
+            {
+                if(int(vWID[i]) >= 0) 
+                {   
+                    mat4 mat = BB[int(vWID[i])] * MM[int(vWID[i])] ;
+                    vec4 temp = vPosition * mat;
+                    newv += vWeight[i] * temp;
+                    //normal = mat3(transpose(inverse(model*mat))) * vNormal.xyz;
+                    normal = mat3(transpose(inverse(model)))*mat3(mat) * vNormal.xyz;
+                }
+            }
+
+            gl_Position = modelViewProj * newv;
+            pos = model * newv;
+            color = vColor;
+        }
+    """
     FRAG_PHONG = """
         #version 410
 
@@ -309,6 +352,50 @@ class Shader(Component):
             normal = mat3(transpose(inverse(model))) * vNormal.xyz;
         }
     """
+    ANIMATION_SIMPLE_TEXTURE_PHONG_VERT = """
+        #version 410
+
+        layout (location=0) in vec4 vPosition;
+        layout (location=2) in vec2 vTexCoord;
+        layout (location=2) in vec4 vNormal;
+        layout (location=3) in vec4 vWeight;
+        layout (location=4) in vec4 vWID;
+
+        const int MAX_BONES = 100;
+        const int MAX_BONES_INF = 4;
+
+        uniform mat4 BB[MAX_BONES];
+        uniform mat4 MM[MAX_BONES];
+
+        uniform mat4 modelViewProj;
+        uniform mat4 model;
+
+        out     vec4 pos;
+        out     vec2 fragmentTexCoord;
+        out     vec3 normal;
+
+        void main()
+        {         
+            vec4 newv = vec4(0.0f);
+
+            for (int i = 0; i < MAX_BONES_INF; i++) 
+            {
+                if(int(vWID[i]) >= 0) 
+                {   
+                    mat4 mat = BB[int(vWID[i])] * MM[int(vWID[i])] ;
+                    vec4 temp = vPosition * mat;
+                    newv += vWeight[i] * temp;
+                    //normal = mat3(transpose(inverse(model*mat))) * vNormal.xyz;
+                    normal = mat3(transpose(inverse(model)))*mat3(mat) * vNormal.xyz;
+                }
+            }
+
+            gl_Position = modelViewProj * newv;
+            pos = model * newv;
+            fragmentTexCoord = vTexCoord;
+        }
+    """
+
     SIMPLE_TEXTURE_PHONG_FRAG = """
         #version 410
         
@@ -444,6 +531,7 @@ class Shader(Component):
         self._texture3D = None
         
         self._glid = None
+        self._arraymat4fDict = {}
         self._mat4fDict = {}
         self._mat3fDict = {}
         self._float1fDict = {}
@@ -505,6 +593,13 @@ class Shader(Component):
         self._fragment_source = value
         
     @property
+    def arraymat4fDict(self):
+        return self._arraymat4fDict
+    @arraymat4fDict.setter
+    def arraymat4fDict(self, value):
+        self._arraymat4fDict = value
+
+    @property
     def mat4fDict(self):
         return self._mat4fDict
     @mat4fDict.setter
@@ -563,6 +658,10 @@ class Shader(Component):
     
     def enableShader(self):
         gl.glUseProgram(self._glid)
+        if self._arraymat4fDict is not None:
+            for key, value in self._arraymat4fDict.items():
+                loc = gl.glGetUniformLocation(self._glid, key)
+                gl.glUniformMatrix4fv(loc, len(value), False, value) 
         if self._mat4fDict is not None:
             for key, value in self._mat4fDict.items():
                 loc = gl.glGetUniformLocation(self._glid, key)
@@ -674,7 +773,9 @@ class ShaderGLDecorator(ComponentDecorator):
         # e.g.  loc = GL.glGetUniformLocation(shid, 'projection')
         #       GL.glUniformMatrix4fv(loc, 1, True, projection)
         
-    def setUniformVariable(self,key, value, mat4=False, mat3=False, float1=False, float3=False, float4=False,texture=False,texture3D=False):
+    def setUniformVariable(self,key, value, arraymat4=False, mat4=False, mat3=False, float1=False, float3=False, float4=False,texture=False,texture3D=False):
+        if arraymat4:
+            self.component.arraymat4fDict[key]=value
         if mat4:
             self.component.mat4fDict[key]=value
         if mat3:
