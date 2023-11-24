@@ -13,7 +13,7 @@ import unittest
 import time
 import numpy as np
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera
@@ -62,21 +62,21 @@ class TestTransformSystem(unittest.TestCase):
             [0.0,1.0,0.0,2.0],
             [0.0,0.0,1.0,3.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         mT2 = np.array([
             [1.0,0.0,0.0,2.0],
             [0.0,1.0,0.0,3.0],
             [0.0,0.0,1.0,4.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         mTf = np.array([
             [1.0,0.0,0.0,3.0],
             [0.0,1.0,0.0,5.0],
             [0.0,0.0,1.0,7.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         myComponent.l2world = mT
         

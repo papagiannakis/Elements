@@ -14,12 +14,13 @@ import time
 import numpy as np
 
 from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
+
 class TestSDL2Window(unittest.TestCase):
     
     def setUp(self):
         """[summary]
         """
-        self.gWindow = SDL2Window()
+        self.gWindow = SDL2Window(windowTitle="Sample SDL WINDOW: Hit ESC OR Close the window to quit")
         self.gGUI = ImGUIDecorator(self.gWindow)
     
     #@unittest.skip("test_initSDL2Decorator or test_initSDL2Decorator, skipping the test")
@@ -37,7 +38,7 @@ class TestSDL2Window(unittest.TestCase):
         # MAIN RENDERING LOOP
         while running:
             self.gWindow.display()
-            running = self.gWindow.event_input_process(running)
+            running = self.gWindow.event_input_process()
             self.gWindow.display_post()
         self.gWindow.shutdown()
         
@@ -59,7 +60,7 @@ class TestSDL2Window(unittest.TestCase):
         # MAIN RENDERING LOOP
         while running:
             self.gGUI.display()
-            running = self.gGUI.event_input_process(running)
+            running = self.gGUI.event_input_process()
             self.gGUI.display_post()
         self.gGUI.shutdown()
         

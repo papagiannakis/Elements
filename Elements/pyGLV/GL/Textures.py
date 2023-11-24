@@ -4,6 +4,7 @@ Texture classes
 """
 
 
+from typing import Tuple
 import OpenGL.GL as gl
 from PIL import Image
 
@@ -21,23 +22,31 @@ class Texture:
     [0.0, 1.0]]*6
 
 
-    def __init__(self,filepath):
+    def __init__(self, filepath:str=None, img_data:Tuple[bytes, int, int]=None, texture_channel:int=0):
         """
         Used to initialize a 2D texture
-        """
-        angle = -90
 
-        img = Image.open(filepath)
-        img = img.transpose(Image.FLIP_TOP_BOTTOM)
-        img = img.rotate(angle) #need to rotate by 90 degrees
-        image_data = img.convert("RGBA").tobytes()
+        Params
+        ------
+        filepath: str
+            The filepath to import the texture image from.
+        img_data: Tuple[bytes, int, int], default None
+            If filepath is not specified, these bytes will be used as texture. The format is (image bytes: bytes, image width: int, image height: int)
+        texture_channel: int, default 0
+            A texture channel from 0 to 31
+        """
+        img_bytes = img_data[0] if img_data is not None else None
+        img = None
+        if filepath is not None:
+            img = Image.open(filepath)
+            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
 
         self._texture = gl.glGenTextures(1)
         
-        gl.glBindTexture(gl.GL_TEXTURE_2D,self._texture)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._texture)
         
-        #gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_S,gl.GL_MIRRORED_REPEAT)
-        #gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_T,gl.GL_MIRRORED_REPEAT)
+        # gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_S,gl.GL_MIRRORED_REPEAT)
+        # gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_T,gl.GL_MIRRORED_REPEAT)
         gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_S,gl.GL_REPEAT)
         gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_T,gl.GL_REPEAT)
 
@@ -47,28 +56,29 @@ class Texture:
         gl.glTexImage2D(gl.GL_TEXTURE_2D, #Target
                         0, # Level
                         gl.GL_RGBA, # Internal Format
-                        img.width, # Width
-                        img.height, # Height
+                        img.width if img is not None else img_data[1], # Width
+                        img.height if img is not None else img_data[2], # Height
                         0, # Border
                         gl.GL_RGBA, # Format
                         gl.GL_UNSIGNED_BYTE, # Type
-                        image_data # Data
+                        img_bytes # Data
                         )
         gl.glGenerateMipmap(gl.GL_TEXTURE_2D)
-    
+
+        self._texure_channel = texture_channel
     
     def bind(self):
         """
     Bind and Activate texture
     """
-        gl.glActiveTexture(gl.GL_TEXTURE0)
-        gl.glBindTexture(gl.GL_TEXTURE_2D,self._texture)
+        gl.glActiveTexture(gl.GL_TEXTURE0 + self._texure_channel)
+        gl.glBindTexture(gl.GL_TEXTURE_2D, self._texture)
 
     """
         unbind texture
     """
     def unbind(self):
-        gl.glDeleteTextures(1,self._texture)
+        gl.glDeleteTextures(1, self._texture)
 
 
 class texture_data:

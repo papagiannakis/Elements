@@ -1,4 +1,4 @@
-﻿Elements.pyECSS.Event.Event
+Elements.pyECSS.Event.Event
 ===========================
 
 .. currentmodule:: Elements.pyECSS.Event

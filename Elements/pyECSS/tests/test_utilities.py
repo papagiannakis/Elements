@@ -13,7 +13,7 @@ import numpy as np
 from scipy.spatial.transform import Rotation as R
 from scipy.spatial.transform import Slerp
 
-from Elements.pyECSS.utilities import *
+from Elements.pyECSS.math_utilities import *
 
 class TestUtilities(unittest.TestCase):
     """ main class to test CG utilities and convenience functions """
@@ -25,7 +25,7 @@ class TestUtilities(unittest.TestCase):
         print("\nTestUtilities:test_vec() START")
         a = [1.0,0.0,0.0,1.0]
         vec_a = vec(a)  
-        np_a = np.array([1.0,0.0,0.0,1.0],dtype=np.float,order='F')
+        np_a = np.array([1.0,0.0,0.0,1.0],dtype=np.float32,order='F')
         
         self.assertEqual(vec_a.tolist(), np_a.tolist())
         np.testing.assert_array_equal(vec_a,np_a)
@@ -43,8 +43,8 @@ class TestUtilities(unittest.TestCase):
         vec_a = vec(a)  
         norm_vec = normalise(vec_a)
         norm_a = normalise(a) # in this case the simple list will be converted to numpy array first implicitly
-        np_a = np.array([2.0,2.0,0.0,1.0],dtype=np.float,order='F')
-        norm_np = np.array([0.666667,0.666667,0.0,0.333333],dtype=np.float,order='F')
+        np_a = np.array([2.0,2.0,0.0,1.0],dtype=np.float32,order='F')
+        norm_np = np.array([0.666667,0.666667,0.0,0.333333],dtype=np.float32,order='F')
         
         self.assertAlmostEqual(norm_vec.all(), norm_np.all())
         self.assertAlmostEqual(norm_a.all(), norm_np.all())
@@ -87,7 +87,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,1.0,0.0,0.0],
             [0.0,0.0,1.0,0.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertEqual(matI.tolist(), np_i4.tolist())
         self.assertEqual(matI.tolist(), np_i.tolist())
@@ -110,14 +110,14 @@ class TestUtilities(unittest.TestCase):
             [0,1,0,2],
             [0,0,1,3],
             [0,0,0,1]
-        ],dtype=np.float,order='F') 
+        ],dtype=np.float32,order='F') 
         
         mLatInv = np.array([
             [1,0,0,-1],
             [0,1,0,-2],
             [0,0,1,-3],
             [0,0,0,1]
-        ],dtype=np.float,order='F') 
+        ],dtype=np.float32,order='F') 
         
         utilmLatInv = inverse(mLat)
         np.testing.assert_array_almost_equal(utilmLatInv,mLatInv,decimal=5)
@@ -140,7 +140,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,0.01,0.0,0.0],
             [0.0,0.0,-0.020202,-1.0202],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertAlmostEqual(matOrtho.all(), np_Ortho.all())
        
@@ -161,7 +161,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,1.0,0.0,0.0],
             [0.0,0.0,-1.002,-0.2002],
             [0.0,0.0,-1.0,0.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         matPersp2 = perspective(45.0, 1.33, 0.1, 100)
         np_Persp2 = np.array([
@@ -169,7 +169,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,2.414,0.0,0.0],
             [0.0,0.0,-1.002,-0.2002],
             [0.0,0.0,-1.0,0.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         #self.assertAlmostEqual(matPersp.all(), np_Persp.all())
         np.testing.assert_array_almost_equal(matPersp,np_Persp,decimal=5)
@@ -192,7 +192,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,0.01,0.0,0.0],
             [0.0,0.0,-1.002,-0.2002],
             [0.0,0.0,-1.0,0.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertAlmostEqual(matPersp.all(), np_Persp.all())
        
@@ -214,7 +214,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,1.0,0.0,2.0],
             [0.0,0.0,1.0,3.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertEqual(matTrans.tolist(), mT.tolist())
         self.assertEqual(matTrans2.tolist(), mT.tolist())
@@ -242,13 +242,13 @@ class TestUtilities(unittest.TestCase):
             [0.0,2.0,0.0,0.0],
             [0.0,0.0,3.0,0.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         mT3 = np.array([
             [10.0,0.0,0.0,0.0],
             [0.0,10.0,0.0,0.0],
             [0.0,0.0,10.0,0.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertEqual(matTrans.tolist(), mT.tolist())
         self.assertEqual(matTrans2.tolist(), mT.tolist())
@@ -315,7 +315,7 @@ class TestUtilities(unittest.TestCase):
             [0.910684,0.333333,-0.244017,0.0],
             [-0.244017,0.910684,0.333333,0.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         #self.assertAlmostEquals(matRot.all(), mR.all(),6)
         np.testing.assert_array_almost_equal(matRot,mR,decimal=6)
@@ -344,7 +344,7 @@ class TestUtilities(unittest.TestCase):
                          [-0.408248,   0.816497,  -0.408248,  -0.0       ],
                          [ -0.57735,    -0.57735,   -0.577353,  1.73205081],
                          [ 0.0,        0.0,        0.0,        1.0       ]],
-                         dtype=np.float,order='F') #glm.lookAtRH
+                         dtype=np.float32,order='F') #glm.lookAtRH
 
         ## 
         matLookat2 = lookat((0.0, 0.0, -1.0), (0.0, 0.0, 0.0), (0.0, 1.0, 0.0))
@@ -353,7 +353,7 @@ class TestUtilities(unittest.TestCase):
             [0.0,1.0,0.0,-0.0],
             [0.0,0.0,-1.0,-1.0],
             [0.0,0.0,0.0,1.0]],
-            dtype=np.float,order='F') #glm.lookAtRH
+            dtype=np.float32,order='F') #glm.lookAtRH
         
         ##
         matLookat3 = lookat((1.0, 2.0, 3.0), (3.0, 2.0, 1.0), (0.0, 1.0, 0.0))
@@ -361,7 +361,7 @@ class TestUtilities(unittest.TestCase):
                           [ 0.0,         1.0,          0.0,         -2.        ],
                           [ -0.70710678,  0.0,         0.70710678,  -1.41421356 ],
                           [ 0.0,         0.0,          0.0,          1.        ]],
-                          dtype=np.float,order='F')
+                          dtype=np.float32,order='F')
         
         
        
@@ -386,7 +386,7 @@ class TestUtilities(unittest.TestCase):
         quat_a_vec = quaternion(vec_a, 1.0)
         quat_a_vec_norm = normalise(quat_a_vec)
         
-        quat_np_a = np.array([1.0,1.0,1.0,1.0],dtype=np.float,order='F')
+        quat_np_a = np.array([1.0,1.0,1.0,1.0],dtype=np.float32,order='F')
         rot = R.from_quat(quat_np_a)
         
         quat_b = quaternion(1.0,2.0,3.0,4.0)

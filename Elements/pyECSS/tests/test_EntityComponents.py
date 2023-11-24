@@ -15,7 +15,7 @@ from typing import List
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import Component, BasicTransform, Camera, RenderMesh, CompNullIterator, BasicTransformDecorator
 
-import Elements.pyECSS.utilities as util
+import Elements.pyECSS.math_utilities as util
 
 class TestEntity(unittest.TestCase):
     
@@ -276,7 +276,7 @@ class TestBasicTransform(unittest.TestCase):
             [0.0,1.0,0.0,2.0],
             [0.0,0.0,1.0,3.0],
             [0.0,0.0,0.0,1.0],
-        ],dtype=np.float,order='F')
+        ],dtype=np.float32,order='F')
         
         self.assertEqual(myComponent.name, "myComponent")
         self.assertEqual(myComponent.type,"BasicTransform")
@@ -286,6 +286,47 @@ class TestBasicTransform(unittest.TestCase):
         myComponent.print()
         print("TestBasicTransform:test_init() END") 
     
+    def test_extract_TRS_atributes(self):
+        #default constructor of Component class
+        print("\TestBasicTransform:test_init() START")
+        
+        rot = util.rotate([0,0,1], 70) @ util.rotate([0,1,0], 20) @ util.rotate([1,0,0], 90 )
+        trans = util.translate(3,2,4)
+        sc = util.scale( 2,3,4 )
+
+        myComponent = BasicTransform( trs =  trans )
+        np.testing.assert_array_almost_equal(myComponent.translation, [3,2,4])
+
+        myComponent = BasicTransform( trs = rot  )
+        np.testing.assert_array_almost_equal(myComponent.rotationEulerAngles, [90, 20, 70])
+
+        myComponent = BasicTransform( trs =  sc )
+        np.testing.assert_array_almost_equal(myComponent.scale, [2, 3, 4])
+
+        myComponent = BasicTransform( trs =  trans @ sc )
+        np.testing.assert_array_almost_equal(myComponent.translation, [3,2,4])
+        np.testing.assert_array_almost_equal(myComponent.scale, [2, 3, 4])
+
+        myComponent = BasicTransform( trs =  rot @ sc)
+        np.testing.assert_array_almost_equal(myComponent.rotationEulerAngles, [90, 20, 70])
+        np.testing.assert_array_almost_equal(myComponent.scale, [2, 3, 4])
+
+        myComponent = BasicTransform( trs =  trans @ rot )
+        np.testing.assert_array_almost_equal(myComponent.translation, [3,2,4])
+        np.testing.assert_array_almost_equal(myComponent.rotationEulerAngles, [90, 20, 70])
+        
+        myComponent = BasicTransform( trs =  trans @ rot @ sc)
+        np.testing.assert_array_almost_equal(myComponent.translation, [3,2,4])
+        np.testing.assert_array_almost_equal(myComponent.rotationEulerAngles, [90, 20, 70])
+        np.testing.assert_array_almost_equal(myComponent.scale, [2, 3, 4])
+
+
+
+
+
+        
+
+        print("TestBasicTransform:test_extract_TRS_atributes() END") 
     
     def test_BasicTransform_compNullIterator(self):
         #test null iterator

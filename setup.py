@@ -30,7 +30,6 @@ setup(
         'pip',
         'setuptools>=61',
         'wheel',
-        'clifford',
         'numpy',
         'scipy',
         'imgui',
@@ -39,7 +38,16 @@ setup(
         'PyOpenGL_accelerate',
         'pysdl2',
         'pysdl2-dll',
-        'ipykernel'
+        'ipykernel',
+        'usd-core',
+        'jupyter',
+        'scikit-spatial',
+        'bezier',
+        'clifford',
+        'trimesh',
+        'pyganja',
+        'open3d',
+        'pyassimp==4.1.3'
     ],
     
 
@@ -61,4 +69,5 @@ setup(
     },
 
     python_requires=">=3.8,<3.10",
+
 )
