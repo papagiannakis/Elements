@@ -9,7 +9,11 @@ import Elements.pyECSS.Component
 from Elements.pyECSS.Component import Component
 from Elements.pyECSS.Component import CompNullIterator
 import numpy as np
-        
+import math
+
+theta_x = 0.0 
+theta_y = 0.0 
+theta_z = 0.0 
 
 class Keyframe(Component):
 
@@ -78,13 +82,10 @@ class Keyframe(Component):
 
 class AnimationComponents(Component):
 
-    def __init__(self, name=None, type=None, id=None, key1=None, key2=None, key3=None, bones=None, MM=None, alpha=0, tempo=2, time_add=0, animation_start = True, anim_keys = 2, time = [0, 100, 200], flag = True, inter = 'SLERP'):
+    def __init__(self, name=None, type=None, id=None, keyframe=None, bones=None, MM=None, alpha=0, tempo=2, time_add=0, animation_start = True, anim_keys = 2, time = [0, 100, 200], flag = True, inter = 'SLERP'):
         super().__init__(name, type, id)
         self._parent = self
 
-        self.key1 = key1
-        self.key2 = key2
-        self.key3 = key3
         self.alpha = alpha
         self.tempo = tempo
         self.time_add = time_add
@@ -95,6 +96,11 @@ class AnimationComponents(Component):
         self.flag = flag
 
         self.MM = []
+
+        if not keyframe:
+            self._keyframe = [] 
+        else:
+            self._keyframe = keyframe
 
         if not bones:
             self._bones = [] 
@@ -112,18 +118,18 @@ class AnimationComponents(Component):
     #Animation loop
     def animation_loop(self):
         #Filling MM1 with 4x4 identity matrices
-        self.MM = [np.eye(4) for _ in self.key1]
+        self.MM = [np.eye(4) for _ in self.keyframe[0]]
 
-        if (self.time_add >= self.time[1] and self.key3 is None) or (self.time_add >= self.time[2]):
+        if (self.time_add >= self.time[1] and self.keyframe[2] is None) or (self.time_add >= self.time[2]):
             self.flag = False
         elif self.time_add <= self.time[0]:
             self.flag = True
 
 
         if self.time_add >= self.time[0] and self.time_add <= self.time[1]:
-            self.animation_for_loop(self.key1,self.key2, self.time[0], self.time[1])
-        elif self.time_add > self.time[1] and self.time_add <= self.time[2] and self.key3 is not None:
-            self.animation_for_loop(self.key2, self.key3, self.time[1], self.time[2])
+            self.animation_for_loop(self.keyframe[0],self.keyframe[1], self.time[0], self.time[1])
+        elif self.time_add > self.time[1] and self.time_add <= self.time[2] and self.keyframe[2] is not None:
+            self.animation_for_loop(self.keyframe[1], self.keyframe[2], self.time[1], self.time[2])
         
         
         #So we can have repeating animation
@@ -163,10 +169,56 @@ class AnimationComponents(Component):
         return (1 - t) * a + t * b
      
     def drawSelfGui(self, imgui):
-        _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 1, 0, self.time[-1])
-
+        global theta_x
+        global theta_y
+        global theta_z
+        
+        imgui.begin("Animation", True)
+        # _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 1, 0, self.time[-1])
+        _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 0.01, 0, 5)
         _, self.anition_start = imgui.checkbox("Animation", self.anition_start)
-        None;
+        
+        i = 0
+        for k in self.keyframe:
+            if imgui.tree_node("Keyframe " + str(i)):
+                j = 0
+                for mm in k:
+                    if imgui.tree_node("Joint " + str(j)):
+
+                        imgui.text("My Value: {}".format(mm))
+                        _, mm[0][3] = imgui.drag_float("Translate X", mm[0][3], 0.5, mm[0][3] - 10, mm[0][3] + 10)
+                        _, mm[1][3] = imgui.drag_float("Translate Y", mm[1][3], 0.5, mm[1][3] - 10, mm[1][3] + 10)
+                        _, mm[2][3] = imgui.drag_float("Translate Z", mm[2][3], 0.5, mm[2][3] - 10, mm[2][3] + 10)
+
+                        changed_x, theta_x    = imgui.drag_float("Rotate X", theta_x, 0.1, 0, 2 * math.pi)
+                        changed_y, theta_y    = imgui.drag_float("Rotate Y", theta_y, 0.1, 0, 2 * math.pi)
+                        changed_z, theta_z    = imgui.drag_float("Rotate Z", theta_z, 0.1, 0, 2 * math.pi)
+
+                        if changed_x:
+                            mm[1][1] = mm[1][1] * math.cos(theta_x)
+                            mm[1][2] = -mm[1][2] * math.sin(theta_x)
+                            mm[2][1] = mm[1][2] * math.sin(theta_x)
+                            mm[2][2] = mm[2][2] * math.cos(theta_x)
+                        if changed_y:
+                            mm[0][0] = mm[0][0] * math.cos(theta_y)
+                            mm[0][2] = mm[0][2] * math.sin(theta_y)
+                            mm[2][0] = -mm[2][0] * math.sin(theta_y)
+                            mm[2][2] = mm[2][2] * math.cos(theta_y)
+                        if changed_z:
+                            mm[0][0] = mm[0][0] * math.cos(theta_z)
+                            mm[0][1] = -mm[0][1] * math.sin(theta_z)
+                            mm[1][0] = mm[1][0] * math.sin(theta_z)
+                            mm[1][1] = mm[1][1] * math.cos(theta_z)
+
+                        _, mm[0][0]     = imgui.drag_float("Scale X", mm[0][0], 0.5, mm[0][0] - 0.2, mm[0][0] + 1)
+                        _, mm[1][1]     = imgui.drag_float("Scale Y", mm[1][1], 0.5, mm[1][1] - 0.2, mm[1][1] + 1)
+                        _, mm[2][2]     = imgui.drag_float("Scale Z", mm[2][2], 0.5, mm[2][2] - 0.2, mm[2][2] + 1)
+                        imgui.tree_pop()
+                    j += 1
+                imgui.tree_pop()
+            i += 1
+        imgui.end()
+
 
     def update(self):
         pass
