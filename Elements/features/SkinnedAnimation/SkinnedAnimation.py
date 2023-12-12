@@ -8,12 +8,20 @@ from Elements.features.SkinnedMesh.gate_module import *
 import Elements.pyECSS.Component
 from Elements.pyECSS.Component import Component
 from Elements.pyECSS.Component import CompNullIterator
+import Elements.pyECSS.math_utilities as util
 import numpy as np
 import math
 
 theta_x = 0.0 
 theta_y = 0.0 
 theta_z = 0.0 
+
+scale_x = 0.1
+scale_y = 0.1 
+scale_z = 0.1
+
+
+temp = []
 
 class Keyframe(Component):
 
@@ -82,7 +90,23 @@ class Keyframe(Component):
 
 class AnimationComponents(Component):
 
-    def __init__(self, name=None, type=None, id=None, keyframe=None, bones=None, MM=None, alpha=0, tempo=2, time_add=0, animation_start = True, anim_keys = 2, time = [0, 100, 200], flag = True, inter = 'SLERP'):
+    def __init__(
+                self,
+                name=None,
+                type=None,
+                id=None, 
+                keyframe=None, 
+                bones=None, 
+                MM=None, 
+                alpha=0, 
+                tempo=2, 
+                time_add=0, 
+                animation_start = True, 
+                anim_keys = 2, 
+                time = [0, 100, 200], 
+                flag = True, 
+                inter = 'SLERP'):
+        
         super().__init__(name, type, id)
         self._parent = self
 
@@ -172,6 +196,12 @@ class AnimationComponents(Component):
         global theta_x
         global theta_y
         global theta_z
+
+        global scale_x
+        global scale_y
+        global scale_z
+
+        global temp
         
         imgui.begin("Animation", True)
         # _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 1, 0, self.time[-1])
@@ -186,33 +216,33 @@ class AnimationComponents(Component):
                     if imgui.tree_node("Joint " + str(j)):
 
                         imgui.text("My Value: {}".format(mm))
+
                         _, mm[0][3] = imgui.drag_float("Translate X", mm[0][3], 0.5, mm[0][3] - 10, mm[0][3] + 10)
                         _, mm[1][3] = imgui.drag_float("Translate Y", mm[1][3], 0.5, mm[1][3] - 10, mm[1][3] + 10)
                         _, mm[2][3] = imgui.drag_float("Translate Z", mm[2][3], 0.5, mm[2][3] - 10, mm[2][3] + 10)
 
-                        changed_x, theta_x    = imgui.drag_float("Rotate X", theta_x, 0.1, 0, 2 * math.pi)
-                        changed_y, theta_y    = imgui.drag_float("Rotate Y", theta_y, 0.1, 0, 2 * math.pi)
-                        changed_z, theta_z    = imgui.drag_float("Rotate Z", theta_z, 0.1, 0, 2 * math.pi)
+                        rot_x, theta_x    = imgui.drag_float("Rotate X", theta_x, 0.1, 0, 2 * math.pi)
+                        rot_y, theta_y    = imgui.drag_float("Rotate Y", theta_y, 0.1, 0, 2 * math.pi)
+                        rot_z, theta_z    = imgui.drag_float("Rotate Z", theta_z, 0.1, 0, 2 * math.pi)
 
-                        if changed_x:
-                            mm[1][1] = mm[1][1] * math.cos(theta_x)
-                            mm[1][2] = -mm[1][2] * math.sin(theta_x)
-                            mm[2][1] = mm[1][2] * math.sin(theta_x)
-                            mm[2][2] = mm[2][2] * math.cos(theta_x)
-                        if changed_y:
-                            mm[0][0] = mm[0][0] * math.cos(theta_y)
-                            mm[0][2] = mm[0][2] * math.sin(theta_y)
-                            mm[2][0] = -mm[2][0] * math.sin(theta_y)
-                            mm[2][2] = mm[2][2] * math.cos(theta_y)
-                        if changed_z:
-                            mm[0][0] = mm[0][0] * math.cos(theta_z)
-                            mm[0][1] = -mm[0][1] * math.sin(theta_z)
-                            mm[1][0] = mm[1][0] * math.sin(theta_z)
-                            mm[1][1] = mm[1][1] * math.cos(theta_z)
+                        if rot_x or rot_y or rot_z:
+                            mm[0:3,0:3] = eulerAnglesToRotationMatrix([theta_x, theta_y, theta_z])
 
-                        _, mm[0][0]     = imgui.drag_float("Scale X", mm[0][0], 0.5, mm[0][0] - 0.2, mm[0][0] + 1)
-                        _, mm[1][1]     = imgui.drag_float("Scale Y", mm[1][1], 0.5, mm[1][1] - 0.2, mm[1][1] + 1)
-                        _, mm[2][2]     = imgui.drag_float("Scale Z", mm[2][2], 0.5, mm[2][2] - 0.2, mm[2][2] + 1)
+                        sc_x, scale_x     = imgui.drag_float("Scale X", scale_x, 0.01, 0.1, 1)
+                        sc_y, scale_y     = imgui.drag_float("Scale Y", scale_y, 0.01, 0.1, 1)
+                        sc_z, scale_z     = imgui.drag_float("Scale Z", scale_z, 0.01, 0.1, 1)
+
+                        if sc_x or sc_y or sc_z:
+                            
+                            # scaling_matrix[0, 0] = scale_x
+                            # scaling_matrix[1, 1] = scale_y
+                            # scaling_matrix[2, 2] = scale_z
+
+                            # temp = 
+                            mm[0:3,0:3] = scaleToMatrix([scale_x, scale_y, scale_z])
+                            # mm.dot(scaling_matrix, out=mm)
+
+                        imgui.text("My Value: {}".format(temp))
                         imgui.tree_pop()
                     j += 1
                 imgui.tree_pop()
@@ -232,6 +262,39 @@ class AnimationComponents(Component):
 
 def lerp(a, b, t):
     return (1 - t) * a + t * b
+
+
+def scaleToMatrix(scale):
+    # S_x = np.array([[scale[0], 0, 0, 0],
+    #                 [0, 1, 0, 0],
+    #                 [0, 0, 1, 0],
+    #                 [0, 0, 0, 1]])
+
+    # S_y = np.array([[1, 0, 0, 0],
+    #                 [0, scale[1], 0, 0],
+    #                 [0, 0, 1, 0],
+    #                 [0, 0, 0, 1]])
+
+    # S_z = np.array([[1, 0, 0, 0],
+    #                 [0, 1, 0, 0],
+    #                 [0, 0, scale[2], 0],
+    #                 [0, 0, 0, 1]])
+    S = np.array([[scale[0], 0, 0],
+                    [0, scale[1], 0],
+                    [0, 0, scale[2]]])
+
+    # S_y = np.array([[1, 0, 0],
+    #                 [0, scale[1], 0],
+    #                 [0, 0, 1]])
+
+    # S_z = np.array([[1, 0, 0],
+    #                 [0, 1, 0],
+    #                 [0, 0, scale[2]]])
+
+    # S = np.dot(S_x, np.dot(S_y, S_z))
+    # S = (S_x + S_y + S_z) / 3
+    return S
+
 
 #need to add 2 M arrays, one for Keyframe1 and and one for Keyframe2 
 def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):

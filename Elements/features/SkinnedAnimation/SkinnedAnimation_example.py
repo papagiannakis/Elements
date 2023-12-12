@@ -192,9 +192,6 @@ def main(imguiFlag = False):
 
     testAnim = SkinnedAnimationSystem()
 
-    # ac.key1 = key1.array_MM[0]
-    # ac.key2 = key2.array_MM[0]
-    # ac.key3 = key3.array_MM[0]
     ac.keyframe = [key1.array_MM[0], key2.array_MM[0], key3.array_MM[0]]
 
     # print(ac.key2)
