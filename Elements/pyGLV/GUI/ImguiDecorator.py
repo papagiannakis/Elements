@@ -563,7 +563,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
     def hierarchyVisualizer(self, sceneRoot):
         imgui.begin("ECSS Hierarchy")
         imgui.columns(1,"Hierarchy")
-        self.drawNodes(sceneRoot, True)
+        self.drawNodes(sceneRoot, True)  # True for onHierarchyFlag
         imgui.end()
 
     def inspectorVisualizer(self):
@@ -571,46 +571,12 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         imgui.columns(1,"Components")
             
         if self.selected_node is not None:
-            imgui.text(self.selected_node.name + " Components")
+            imgui.text("Components for Entity: " + self.selected_node.name)
             imgui.separator()
-
-        #if imgui.tree_node("Translation", imgui.TREE_NODE_OPEN_ON_ARROW):
-            # changed, value = imgui.slider_float("X", self.translation["x"], -3, 3, "%.01f", 1);
-            # self.translation["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.translation["y"], -3, 3, "%.01f", 1);
-            # self.translation["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.translation["z"], -3, 3, "%.01f", 1);
-            # self.translation["z"] = value;
-            imgui.text("Translation")
-            changed, value = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1)
-            self.translation["x"],self.translation["y"],self.translation["z"] = value[0],value[1], value[2]
-        #imgui.tree_pop()
-        #if imgui.tree_node("Rotation", imgui.TREE_NODE_OPEN_ON_ARROW):
-            # changed, value = imgui.slider_float("X", self.rotation["x"], -90, 90, "%.1f", 1);
-            # self.rotation["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.rotation["y"], -90, 90, "%.1f", 1);
-            # self.rotation["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.rotation["z"], -90, 90, "%.1f", 1);
-            # self.rotation["z"] = value;
-            imgui.text("Rotation")
-            changed, value = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1)
-            self.rotation["x"],self.rotation["y"],self.rotation["z"] = value[0],value[1], value[2]
-    #    imgui.tree_pop()
-        #if imgui.tree_node("Scale", imgui.TREE_NODE_OPEN_ON_ARROW):
-            # changed, value = imgui.slider_float("X", self.scale["x"], 0, 3, "%.01f", 1);
-            # self.scale["x"] = value;
-            # changed, value = imgui.slider_float("Y", self.scale["y"], 0, 3, "%.01f", 1);
-            # self.scale["y"] = value;
-            # changed, value = imgui.slider_float("Z", self.scale["z"], 0, 3, "%.01f", 1);
-            # self.scale["z"] = value;
-            imgui.text("Scale")
-            changed, value = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1)
-            self.scale["x"],self.scale["y"],self.scale["z"] = value[0],value[1], value[2]
+            self.drawNodes(self.selected_node, False)   # false for onHierarchyFlag
         else: 
-            imgui.text("Components")
-        
-        if self.selected_node is not None:
-            self.drawNodes(self.selected_node, False)
+            pass #imgui.text("Components")
+         
         imgui.end()
 
 
@@ -625,7 +591,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         self.hierarchyVisualizer(self.wrapeeWindow.scene.world.root)
         self.inspectorVisualizer()
         
-    def drawNodes(self, component, checkEntityFlag=True):
+    def drawNodes(self, component, onHierarchyFlag=True):
         DEFAULT_FLAGS = imgui.TREE_NODE_BULLET
         SELECTED_FLAGS = imgui.TREE_NODE_BULLET | imgui.TREE_NODE_SELECTED
 
@@ -641,18 +607,52 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                 except StopIteration:
                     done_traversing = True
                 else: 
-                    if (checkEntityFlag == True and comp.type == "Entity") or (not checkEntityFlag and comp.type != "Entity"): 
-                        #imgui.indent(10)
+                    if (onHierarchyFlag == True and comp.type == "Entity") or (not onHierarchyFlag and comp.type != "Entity"): 
                         clicked = False
                         flags = SELECTED_FLAGS if self.selected_node == comp else DEFAULT_FLAGS
-                        if imgui.tree_node(comp.name + "##" + str(comp.id), flags):
-                            clicked = self.drawNodes(comp, checkEntityFlag) # recursive call of this method to traverse hierarchy
+                        if imgui.tree_node(comp.name + "##" + str(comp.id), flags):                        
+                            if isinstance(comp, BasicTransform):
+                                if comp != self.selected: # First time selecting it. Set trs values to GUI;
+                                    self.selected = comp
+
+                                    self.translation["x"], self.translation["y"], self.translation["z"] = comp.translation[0], comp.translation[1], comp.translation[2]
+                                    self.rotation["x"], self.rotation["y"], self.rotation["z"] = comp.rotationEulerAngles[0], comp.rotationEulerAngles[1], comp.rotationEulerAngles[2]
+                                    self.scale["x"], self.scale["y"], self.scale["z"] = comp.scale[0], comp.scale[1], comp.scale[2]
+
+                                imgui.text("Translation")
+                                changedT, valueT = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1)
+                                if changedT:
+                                    self.translation["x"],self.translation["y"],self.translation["z"] = valueT
+                                
+                                imgui.text("Rotation")
+                                changedR, valueR = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1)
+                                if changedR:
+                                    self.rotation["x"],self.rotation["y"],self.rotation["z"] = valueR
+                                
+                                imgui.text("Scale")
+                                changedS, valueS = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1)
+                                if changedS:
+                                    self.scale["x"],self.scale["y"],self.scale["z"] = valueS
+                                
+                                if changedT or changedR or changedS:
+                                    transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"])
+                                    rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
+                                    rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
+                                    rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
+                                    scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
+
+                                    comp.trs = util.identity() @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat 
+
+                            clicked = self.drawNodes(comp, onHierarchyFlag) # recursive call of this method to traverse hierarchy
                             imgui.tree_pop()
-                        
+                            _, selected = imgui.selectable(comp.__str__(), True)
+                            
+                            if hasattr(comp, "drawSelfGui"):
+                                comp.drawSelfGui(imgui)
+
                         if comp.type == "Entity" and not clicked and imgui.is_item_clicked():
                             self.selected_node = comp
                             ret = True
-                        #imgui.unindent(10) # Corrent placement of unindent
         return ret
 
     def event_input_process(self):
@@ -664,35 +664,4 @@ class ImGUIecssDecorator2(ImGUIDecorator):
 
 
         #imgui.text(comp.name)
-                        #_, selected = imgui.selectable(comp.__str__(), True)
-                        #     if selected:
-
-                        #         if comp != self.selected: # First time selecting it. Set trs values to GUI;
-                        #             self.selected = comp;
-                        #             if isinstance(comp, BasicTransform):
-                        #                 [x, y, z] = comp.translation;
-                        #                 self.translation["x"] = x;
-                        #                 self.translation["y"] = y;
-                        #                 self.translation["z"] = z;
-                        #                 [x, y, z] = comp.scale;
-                        #                 self.scale["x"] = x;
-                        #                 self.scale["y"] = y;
-                        #                 self.scale["z"] = z;
-                        #                 [x, y, z] = comp.rotationEulerAngles;
-                        #                 self.rotation["x"] = x;
-                        #                 self.rotation["y"] = y;
-                        #                 self.rotation["z"] = z;
-                        #             # elif isinstance(comp, GameObjectEntity):
-                        #                 # self.color = comp.color.copy();
-                        #         else:                       # Set GUI values to trs;
-                        #             if isinstance(comp, BasicTransform):
-                        #                 transMat = util.translate(self.translation["x"], self.translation["y"], self.translation["z"]);
-                        #                 rotMatX = util.rotate((1, 0, 0), self.rotation["x"])
-                        #                 rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
-                        #                 rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
-                        #                 scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-
-                        #                 comp.trs = util.identity() @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat;
-                        #                 # comp.trs = scaleMat @ rotMatZ @ rotMatY @ rotMatX @ transMat;
-                        #             elif hasattr(comp, "drawSelfGui"):
-                        #                 comp.drawSelfGui(imgui);
+                        
