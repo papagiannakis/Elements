@@ -607,7 +607,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                 except StopIteration:
                     done_traversing = True
                 else: 
-                    if (onHierarchyFlag == True and comp.type == "Entity") or (not onHierarchyFlag and comp.type != "Entity"): 
+                    if (onHierarchyFlag == True and (comp.type == "Entity" or comp.type == "GameObjectEntity")) or (not onHierarchyFlag and comp.type != "Entity" and comp.type != "GameObjectEntity"): 
                         clicked = False
                         flags = SELECTED_FLAGS if self.selected_node == comp else DEFAULT_FLAGS
                         if imgui.tree_node(comp.name + "##" + str(comp.id), flags):                        
@@ -620,17 +620,17 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                                     self.scale["x"], self.scale["y"], self.scale["z"] = comp.scale[0], comp.scale[1], comp.scale[2]
 
                                 imgui.text("Translation")
-                                changedT, valueT = imgui.drag_float3("X,Y,Z",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1)
+                                changedT, valueT = imgui.drag_float3("Xt,Yt,Zt",self.translation["x"],self.translation["y"],self.translation["z"], 0.01, -30, 30, "%.001f", 1)
                                 if changedT:
                                     self.translation["x"],self.translation["y"],self.translation["z"] = valueT
-                                
+                                 
                                 imgui.text("Rotation")
-                                changedR, valueR = imgui.drag_float3("X,Y,Z",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1)
+                                changedR, valueR = imgui.drag_float3("Xr,Yr,Zr",self.rotation["x"],self.rotation["y"],self.rotation["z"], 1, -180, 180, "%.1f", 1)
                                 if changedR:
                                     self.rotation["x"],self.rotation["y"],self.rotation["z"] = valueR
                                 
                                 imgui.text("Scale")
-                                changedS, valueS = imgui.drag_float3("X,Y,Z",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1)
+                                changedS, valueS = imgui.drag_float3("Xs,Ys,Zs",self.scale["x"],self.scale["y"],self.scale["z"], 0.01, 0, 4, "%.01f", 1)
                                 if changedS:
                                     self.scale["x"],self.scale["y"],self.scale["z"] = valueS
                                 
@@ -640,17 +640,18 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                                     rotMatY = util.rotate((0, 1, 0), self.rotation["y"])
                                     rotMatZ = util.rotate((0, 0, 1), self.rotation["z"])
                                     scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-
                                     comp.trs = util.identity() @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat 
 
                             clicked = self.drawNodes(comp, onHierarchyFlag) # recursive call of this method to traverse hierarchy
-                            imgui.tree_pop()
-                            _, selected = imgui.selectable(comp.__str__(), True)
                             
-                            if hasattr(comp, "drawSelfGui"):
-                                comp.drawSelfGui(imgui)
+                            
+                            if comp.type != "Entity" and comp.type != "GameObjectEntity": 
+                                _, selected = imgui.selectable(comp.__str__(), True)
+                                if hasattr(comp, "drawSelfGui"):
+                                    comp.drawSelfGui(imgui)
+                            imgui.tree_pop()
 
-                        if comp.type == "Entity" and not clicked and imgui.is_item_clicked():
+                        if (comp.type == "Entity" or comp.type == "GameObjectEntity" ) and not clicked and imgui.is_item_clicked():
                             self.selected_node = comp
                             ret = True
         return ret
