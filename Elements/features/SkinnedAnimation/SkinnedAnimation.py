@@ -42,25 +42,24 @@ class Keyframe(Component):
     def array_MM(self, value):
         self._array_MM = value 
 
-    @property #translation vector
-    def translate(self):
-        tempMatrix = self.array_MM.copy();
-        translateMatrix = [];
-        for i in range(len(tempMatrix)):
-            for j in range(len(tempMatrix[i])):
-                translateMatrix.append(tempMatrix[i][j][:3,3])
-        return translateMatrix
+    # @property #translation vector
+    # def translate(self):
+    #     tempMatrix = self.array_MM.copy();
+    #     translateMatrix = [];
+    #     for i in range(len(tempMatrix)):
+    #         for j in range(len(tempMatrix[i])):
+    #             translateMatrix.append(tempMatrix[i][j][:3,3])
+    #     return translateMatrix
 
-    @property #rotation vector
-    def rotate(self):
-        # First get rotation matrix from trs. Divide by scale
-        tempMatrix = self.array_MM.copy();
-        rotateMatrix = [];
-        for i in range(len(tempMatrix)):
-            for j in range(len(tempMatrix[i])):
-                rotateMatrix.append(quat.Quaternion.from_rotation_matrix(tempMatrix[i][j]))
-        return rotateMatrix
-
+    # @property #rotation vector
+    # def rotate(self):
+    #     # First get rotation matrix from trs. Divide by scale
+    #     tempMatrix = self.array_MM.copy();
+    #     rotateMatrix = [];
+    #     for i in range(len(tempMatrix)):
+    #         for j in range(len(tempMatrix[i])):
+    #             rotateMatrix.append(quat.Quaternion.from_rotation_matrix(tempMatrix[i][j]))
+    #     return rotateMatrix
 
     def update(self):
         pass
@@ -169,9 +168,9 @@ class AnimationComponents(Component):
                 self.time_add = self.time_add
 
         # Flattening MM1 array to pass as uniform variable
-        MM1Data =  np.array(self.MM, dtype=np.float32).reshape((len(self.MM), 16))
+        self.MM =  np.array(self.MM, dtype=np.float32).reshape((len(self.MM), 16))
 
-        return MM1Data
+        return self.MM
     
     def animation_for_loop(self, k_1, k_2, t0, t1):
         self.alpha = (self.time_add - t0) / abs(t1 - t0)
@@ -179,15 +178,33 @@ class AnimationComponents(Component):
         keyframe1 = Keyframe(array_MM=[k_1])
         keyframe2 = Keyframe(array_MM=[k_2])
 
+        # print(keyframe1.array_MM[0][1])
         for i in range(len(k_1)):
+
+            translation_1 = translation(keyframe1.array_MM[0][i])
+            translation_2 = translation(keyframe2.array_MM[0][i])
+
+            rotation_1 = rotationEulerAngles(keyframe1.array_MM[0][i])
+            rotation_2 = rotationEulerAngles(keyframe2.array_MM[0][i])
+
+            rq1 = quat.Quaternion.euler_to_quaternion(math.radians(rotation_1[0]), math.radians(rotation_1[1]), math.radians(rotation_1[2]))
+            rq2 = quat.Quaternion.euler_to_quaternion(math.radians(rotation_2[0]), math.radians(rotation_2[1]), math.radians(rotation_2[2]))
+            rq1 = rq1 / rq1.norm()
+            rq2 = rq2 / rq2.norm()
+
+            scale_1 = scale(keyframe1.array_MM[0][i])
+            scale_2 = scale(keyframe2.array_MM[0][i])
+
+
             if(self.inter == "LERP"):
-                self.MM[i][:3, :3] = quat.Quaternion.to_rotation_matrix(quat.quaternion_lerp(keyframe1.rotate[i], keyframe2.rotate[i], self.alpha))
-                self.MM[i][:3, 3] = self.lerp(keyframe1.translate[i], keyframe2.translate[i], self.alpha)
+                rl = quat.quaternion_lerp(rq1, rq2, self.alpha)
             else:
-                #SLERP
-                self.MM[i][:3, :3] = quat.Quaternion.to_rotation_matrix(quat.quaternion_slerp(keyframe1.rotate[i], keyframe2.rotate[i], self.alpha))
-                #LERP
-                self.MM[i][:3, 3] = self.lerp(keyframe1.translate[i], keyframe2.translate[i], self.alpha)
+                rl = quat.quaternion_slerp(rq1, rq2, self.alpha)
+            
+            sl = self.lerp(scale_1, scale_2, self.alpha)
+            sc = util.scale(sl[0],sl[1],sl[2])
+            self.MM[i][:3, :3] = sc[:3, :3] @ quat.Quaternion.to_rotation_matrix(rl)
+            self.MM[i][:3, 3] = self.lerp(translation_1, translation_2, self.alpha)
 
     def lerp(self,a, b, t):
         return (1 - t) * a + t * b
@@ -201,8 +218,7 @@ class AnimationComponents(Component):
         global scale_y
         global scale_z
 
-        global temp
-        
+        temp = []
         imgui.begin("Animation", True)
         # _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 1, 0, self.time[-1])
         _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 0.01, 0, 5)
@@ -226,7 +242,11 @@ class AnimationComponents(Component):
                         rot_z, theta_z    = imgui.drag_float("Rotate Z", theta_z, 0.1, 0, 2 * math.pi)
 
                         if rot_x or rot_y or rot_z:
-                            mm[0:3,0:3] = eulerAnglesToRotationMatrix([theta_x, theta_y, theta_z])
+                           # temp = rotationEulerAngles(mm)
+                           sc = scale(mm)
+                           temp = util.scale(sc)
+                           mm[0:3,0:3] = eulerAnglesToRotationMatrix([theta_x, theta_y, theta_z]) @ temp[0:3,0:3]
+                           temp = []
 
                         sc_x, scale_x     = imgui.drag_float("Scale X", scale_x, 0.01, 0.1, 1)
                         sc_y, scale_y     = imgui.drag_float("Scale Y", scale_y, 0.01, 0.1, 1)
@@ -234,15 +254,13 @@ class AnimationComponents(Component):
 
                         if sc_x or sc_y or sc_z:
                             
-                            # scaling_matrix[0, 0] = scale_x
-                            # scaling_matrix[1, 1] = scale_y
-                            # scaling_matrix[2, 2] = scale_z
+                            sc = scale(mm)
+                            temp = mm @ util.scale(1/sc[0], 1/sc[1], 1/sc[2])
+                            scale_temp = util.scale(scale_x, scale_y, scale_z)
+                            mm[0:3,0:3] = temp[0:3,0:3] @ scale_temp[0:3,0:3]
+                            temp = []
 
-                            # temp = 
-                            mm[0:3,0:3] = scaleToMatrix([scale_x, scale_y, scale_z])
-                            # mm.dot(scaling_matrix, out=mm)
-
-                        imgui.text("My Value: {}".format(temp))
+                        #imgui.text("My Value: {}".format(temp))
                         imgui.tree_pop()
                     j += 1
                 imgui.tree_pop()
@@ -264,37 +282,39 @@ def lerp(a, b, t):
     return (1 - t) * a + t * b
 
 
-def scaleToMatrix(scale):
-    # S_x = np.array([[scale[0], 0, 0, 0],
-    #                 [0, 1, 0, 0],
-    #                 [0, 0, 1, 0],
-    #                 [0, 0, 0, 1]])
+def translation(matrix):
+    return matrix[:3,3];
 
-    # S_y = np.array([[1, 0, 0, 0],
-    #                 [0, scale[1], 0, 0],
-    #                 [0, 0, 1, 0],
-    #                 [0, 0, 0, 1]])
 
-    # S_z = np.array([[1, 0, 0, 0],
-    #                 [0, 1, 0, 0],
-    #                 [0, 0, scale[2], 0],
-    #                 [0, 0, 0, 1]])
-    S = np.array([[scale[0], 0, 0],
-                    [0, scale[1], 0],
-                    [0, 0, scale[2]]])
+def rotationEulerAngles(matrix):
+    # First get rotation matrix from trs. Divide by scale
+    rotationMatrix = matrix.copy();
+    sc = scale(matrix);
+    rotationMatrix = rotationMatrix @ util.scale(1/sc[0], 1/sc[1], 1/sc[2])
+    myR = rotationMatrix[:3,:3]
+    if myR[2,0] not in [-1,1]:
+        y = -np.arcsin(myR[2,0]);
+        x = np.arctan2(myR[2,1]/np.cos(y), myR[2,2]/np.cos(y));
+        z = np.arctan2(myR[1,0]/np.cos(y), myR[0,0]/np.cos(y));
+    else:
+        z = 0;
+        if myR[2,0] == -1:
+            y = np.pi/2;
+            x = z + np.arctan2(myR[0,1], myR[0,2]);
+        else:
+            y = -np.pi/2;
+            x = -z + np.arctan2(-myR[0,1], -myR[0,2]);
+    return np.array([x,y,z])*180/np.pi;
 
-    # S_y = np.array([[1, 0, 0],
-    #                 [0, scale[1], 0],
-    #                 [0, 0, 1]])
 
-    # S_z = np.array([[1, 0, 0],
-    #                 [0, 1, 0],
-    #                 [0, 0, scale[2]]])
-
-    # S = np.dot(S_x, np.dot(S_y, S_z))
-    # S = (S_x + S_y + S_z) / 3
-    return S
-
+def scale(matrix):
+    m = matrix.copy()[:3,:3];
+    A = m.transpose() @ m
+    # if m = R @ S then A = m^T @ m = S^T @ R^T @ R @ S = S^T @ S = S^2
+    sx = np.sqrt(A[0,0])
+    sy = np.sqrt(A[1,1])
+    sz = np.sqrt(A[2,2])
+    return numpy.array([sx, sy, sz])
 
 #need to add 2 M arrays, one for Keyframe1 and and one for Keyframe2 
 def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):

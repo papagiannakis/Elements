@@ -1,5 +1,5 @@
 from numbers import Number
-
+import math
 import numpy as np
 import random
 
@@ -111,6 +111,31 @@ class Quaternion(object):
     y = (rotation_matrix[0, 2] - rotation_matrix[2, 0]) / w4
     z = (rotation_matrix[1, 0] - rotation_matrix[0, 1]) / w4
     return cls(x, y, z, w)
+  
+  @classmethod
+  def euler_to_quaternion(cls, roll, pitch, yaw):
+    # Convert Euler angles to quaternions
+    # x = math.cos(phi/2) * math.cos(theta/2) * math.cos(psi/2) + math.sin(phi/2) * math.sin(theta/2) * math.sin(psi/2)
+    # y = math.sin(phi / 2) * math.cos(theta / 2) * math.cos(psi / 2) - math.cos(phi / 2) * math.sin(theta / 2) * math.sin(psi / 2)
+    # z = math.cos(phi / 2) * math.sin(theta / 2) * math.cos(psi / 2) + math.sin(phi / 2) * math.cos(theta / 2) * math.sin(psi / 2)
+    # w = math.cos(phi / 2) * math.cos(theta / 2) * math.sin(psi / 2) - math.sin(phi / 2) * math.sin(theta / 2) * math.cos(psi / 2)
+
+    roll /= 2.0
+    pitch /= 2.0
+    yaw /= 2.0
+
+    cy = np.cos(yaw)
+    sy = np.sin(yaw)
+    cp = np.cos(pitch)
+    sp = np.sin(pitch)
+    cr = np.cos(roll)
+    sr = np.sin(roll)
+    qw = cr * cp * cy + sr * sp * sy
+    qx = sr * cp * cy - cr * sp * sy
+    qy = cr * sp * cy + sr * cp * sy
+    qz = cr * cp * sy - sr * sp * cy
+
+    return cls(qx, qy, qz, qw)
 
   @classmethod
   def from_angle_axis(cls, angle, axis):
