@@ -20,7 +20,11 @@ scale_x = 0.1
 scale_y = 0.1 
 scale_z = 0.1
 
+t_x = 0.0
+t_y = 0.0
+t_z = 0.0
 
+figure = None
 temp = []
 
 class Keyframe(Component):
@@ -218,6 +222,10 @@ class AnimationComponents(Component):
         global scale_y
         global scale_z
 
+        global t_x
+        global t_y
+        global t_z
+
         temp = []
         imgui.begin("Animation", True)
         # _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 1, 0, self.time[-1])
@@ -227,22 +235,27 @@ class AnimationComponents(Component):
         i = 0
         for k in self.keyframe:
             if imgui.tree_node("Keyframe " + str(i)):
+                ZZ = k.copy()
                 j = 0
-                for mm in k:
+                for mm in ZZ:
                     if imgui.tree_node("Joint " + str(j)):
 
                         imgui.text("My Value: {}".format(mm))
 
-                        _, mm[0][3] = imgui.drag_float("Translate X", mm[0][3], 0.5, mm[0][3] - 10, mm[0][3] + 10)
-                        _, mm[1][3] = imgui.drag_float("Translate Y", mm[1][3], 0.5, mm[1][3] - 10, mm[1][3] + 10)
-                        _, mm[2][3] = imgui.drag_float("Translate Z", mm[2][3], 0.5, mm[2][3] - 10, mm[2][3] + 10)
+                        tran_x, t_x = imgui.drag_float("Translate X", t_x, 0.5, -10, 10)
+                        tran_y, t_y = imgui.drag_float("Translate Y", t_y, 0.5, -10, 10)
+                        tran_z, t_z = imgui.drag_float("Translate Z", t_z, 0.5, -10, 10)
+
+                        if tran_x or tran_y or tran_z:
+                            mm[0][3] = t_x
+                            mm[1][3] = t_y
+                            mm[2][3] = t_z
 
                         rot_x, theta_x    = imgui.drag_float("Rotate X", theta_x, 0.1, 0, 2 * math.pi)
                         rot_y, theta_y    = imgui.drag_float("Rotate Y", theta_y, 0.1, 0, 2 * math.pi)
                         rot_z, theta_z    = imgui.drag_float("Rotate Z", theta_z, 0.1, 0, 2 * math.pi)
 
                         if rot_x or rot_y or rot_z:
-                           # temp = rotationEulerAngles(mm)
                            sc = scale(mm)
                            temp = util.scale(sc)
                            mm[0:3,0:3] = eulerAnglesToRotationMatrix([theta_x, theta_y, theta_z]) @ temp[0:3,0:3]
@@ -260,7 +273,11 @@ class AnimationComponents(Component):
                             mm[0:3,0:3] = temp[0:3,0:3] @ scale_temp[0:3,0:3]
                             temp = []
 
-                        #imgui.text("My Value: {}".format(temp))
+                        if tran_x or tran_y or tran_z or rot_x or rot_y or rot_z or sc_x or sc_y or sc_z:
+                            WW = [np.eye(4) for _ in self.keyframe[0]]
+                            WW[j] = mm
+                            self.keyframe[i] = read_tree(figure,3,WW,True)
+
                         imgui.tree_pop()
                     j += 1
                 imgui.tree_pop()
@@ -318,7 +335,9 @@ def scale(matrix):
 
 #need to add 2 M arrays, one for Keyframe1 and and one for Keyframe2 
 def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
+    global figure 
     figure = load(str(file))
+
     mesh_id = 3
 
     #Vertices, Incdices/Faces, Bones from the scene we loaded with pyassimp
@@ -327,6 +346,14 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
     f = mesh.faces
     b = mesh.bones
 
+    # variables = figure.rootnode.parent__dict__
+    # for key, value in variables.items():
+    #     print(f"{key}: {value}")
+
+    # for bone in b:
+    #     print(f"Bone Name: {bone.name}")
+        # print(f"Parent Index: {bone.parentindex}")
+        # print(f"Offset Matrix: {bone.offsetmatrix}")
     #Populating vw with the bone weight and id
     vw = vertex_weight(len(v))
     vw.populate(b)
@@ -349,7 +376,7 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
 
     #Initialising M array
     M = initialize_M(b)
-
+    print(M)
     #Initialising first keyframe
     M[1] = np.dot(np.diag([1,1,1,1]),M[1])
     keyframe1.array_MM.append(read_tree(figure,mesh_id,M,transform))
@@ -363,6 +390,7 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
         M[1][0:3,0:3] = eulerAnglesToRotationMatrix([-0.5,0.3,0.4])
         M[1][0:3,3] = [0.5,0.5,0.5]
         keyframe3.array_MM.append(read_tree(figure,mesh_id,M,transform))
+    
     #Initialising BB array
     BB = [b[i].offsetmatrix for i in range(len(b))]
 
