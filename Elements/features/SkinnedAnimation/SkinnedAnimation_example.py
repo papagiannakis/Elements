@@ -193,7 +193,7 @@ def main(imguiFlag = False):
     testAnim = SkinnedAnimationSystem()
 
     ac.keyframe = [key1.array_MM[0], key2.array_MM[0], key3.array_MM[0]]
-
+    
     # print(ac.key2)
     #print(np.array(key1.rotate, np.dtype(float)))
     #Generating normals
@@ -278,8 +278,9 @@ def main(imguiFlag = False):
     # Add RenderWindow to the EventManager publishers
     eManager._publishers[updateBackground.name] = gGUI
     
-    #texturePath = TEXTURE_DIR / "dark_wood_texture.jpg"
-    #shaderDec4.setUniformVariable(key='ImageTexture', value=str(texturePath), texture=True)
+    # texturePath = TEXTURE_DIR / "dark_wood_texture.jpg"
+    # texture = Texture(texturePath)
+    # shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 
     shaderDec4.setUniformVariable(key='BB', value=ac.bones[0], arraymat4=True)

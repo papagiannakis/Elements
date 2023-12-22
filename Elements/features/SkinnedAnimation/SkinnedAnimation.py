@@ -12,20 +12,9 @@ import Elements.pyECSS.math_utilities as util
 import numpy as np
 import math
 
-theta_x = 0.0 
-theta_y = 0.0 
-theta_z = 0.0 
-
-scale_x = 0.1
-scale_y = 0.1 
-scale_z = 0.1
-
-t_x = 0.0
-t_y = 0.0
-t_z = 0.0
-
+WW = None
+WW_9 = None
 figure = None
-temp = []
 
 class Keyframe(Component):
 
@@ -45,25 +34,6 @@ class Keyframe(Component):
     @array_MM.setter
     def array_MM(self, value):
         self._array_MM = value 
-
-    # @property #translation vector
-    # def translate(self):
-    #     tempMatrix = self.array_MM.copy();
-    #     translateMatrix = [];
-    #     for i in range(len(tempMatrix)):
-    #         for j in range(len(tempMatrix[i])):
-    #             translateMatrix.append(tempMatrix[i][j][:3,3])
-    #     return translateMatrix
-
-    # @property #rotation vector
-    # def rotate(self):
-    #     # First get rotation matrix from trs. Divide by scale
-    #     tempMatrix = self.array_MM.copy();
-    #     rotateMatrix = [];
-    #     for i in range(len(tempMatrix)):
-    #         for j in range(len(tempMatrix[i])):
-    #             rotateMatrix.append(quat.Quaternion.from_rotation_matrix(tempMatrix[i][j]))
-    #     return rotateMatrix
 
     def update(self):
         pass
@@ -175,7 +145,7 @@ class AnimationComponents(Component):
         self.MM =  np.array(self.MM, dtype=np.float32).reshape((len(self.MM), 16))
 
         return self.MM
-    
+
     def animation_for_loop(self, k_1, k_2, t0, t1):
         self.alpha = (self.time_add - t0) / abs(t1 - t0)
 
@@ -214,76 +184,48 @@ class AnimationComponents(Component):
         return (1 - t) * a + t * b
      
     def drawSelfGui(self, imgui):
-        global theta_x
-        global theta_y
-        global theta_z
+        global WW
+        global WW_9
 
-        global scale_x
-        global scale_y
-        global scale_z
-
-        global t_x
-        global t_y
-        global t_z
-
-        temp = []
         imgui.begin("Animation", True)
-        # _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 1, 0, self.time[-1])
         _, self.tempo = imgui.drag_float("Alpha Tempo", self.tempo, 0.01, 0, 5)
         _, self.anition_start = imgui.checkbox("Animation", self.anition_start)
         
         i = 0
         for k in self.keyframe:
             if imgui.tree_node("Keyframe " + str(i)):
-                ZZ = k.copy()
                 j = 0
-                for mm in ZZ:
+                for mm in k:
                     if imgui.tree_node("Joint " + str(j)):
 
                         imgui.text("My Value: {}".format(mm))
 
-                        tran_x, t_x = imgui.drag_float("Translate X", t_x, 0.5, -10, 10)
-                        tran_y, t_y = imgui.drag_float("Translate Y", t_y, 0.5, -10, 10)
-                        tran_z, t_z = imgui.drag_float("Translate Z", t_z, 0.5, -10, 10)
+                        tran_x, WW_9[i][j][0] = imgui.drag_float("Translate X", WW_9[i][j][0], 0.1, -10, 10)
+                        tran_y, WW_9[i][j][1] = imgui.drag_float("Translate Y", WW_9[i][j][1], 0.1, -10, 10)
+                        tran_z, WW_9[i][j][2] = imgui.drag_float("Translate Z", WW_9[i][j][2], 0.1, -10, 10)
 
-                        if tran_x or tran_y or tran_z:
-                            mm[0][3] = t_x
-                            mm[1][3] = t_y
-                            mm[2][3] = t_z
+                        rot_x,  WW_9[i][j][3]    = imgui.drag_float("Rotate X", WW_9[i][j][3], 0.1, -3, 3)
+                        rot_y,  WW_9[i][j][4]    = imgui.drag_float("Rotate Y", WW_9[i][j][4], 0.1, -3, 3)
+                        rot_z,  WW_9[i][j][5]    = imgui.drag_float("Rotate Z", WW_9[i][j][5], 0.1, -3, 3)
 
-                        rot_x, theta_x    = imgui.drag_float("Rotate X", theta_x, 0.1, 0, 2 * math.pi)
-                        rot_y, theta_y    = imgui.drag_float("Rotate Y", theta_y, 0.1, 0, 2 * math.pi)
-                        rot_z, theta_z    = imgui.drag_float("Rotate Z", theta_z, 0.1, 0, 2 * math.pi)
-
-                        if rot_x or rot_y or rot_z:
-                           sc = scale(mm)
-                           temp = util.scale(sc)
-                           mm[0:3,0:3] = eulerAnglesToRotationMatrix([theta_x, theta_y, theta_z]) @ temp[0:3,0:3]
-                           temp = []
-
-                        sc_x, scale_x     = imgui.drag_float("Scale X", scale_x, 0.01, 0.1, 1)
-                        sc_y, scale_y     = imgui.drag_float("Scale Y", scale_y, 0.01, 0.1, 1)
-                        sc_z, scale_z     = imgui.drag_float("Scale Z", scale_z, 0.01, 0.1, 1)
-
-                        if sc_x or sc_y or sc_z:
-                            
-                            sc = scale(mm)
-                            temp = mm @ util.scale(1/sc[0], 1/sc[1], 1/sc[2])
-                            scale_temp = util.scale(scale_x, scale_y, scale_z)
-                            mm[0:3,0:3] = temp[0:3,0:3] @ scale_temp[0:3,0:3]
-                            temp = []
+                        sc_x,  WW_9[i][j][6]     = imgui.drag_float("Scale X", WW_9[i][j][6], 0.01, 0.1, 1)
+                        sc_y,  WW_9[i][j][7]     = imgui.drag_float("Scale Y", WW_9[i][j][7], 0.01, 0.1, 1)
+                        sc_z,  WW_9[i][j][8]     = imgui.drag_float("Scale Z", WW_9[i][j][8], 0.01, 0.1, 1)
 
                         if tran_x or tran_y or tran_z or rot_x or rot_y or rot_z or sc_x or sc_y or sc_z:
-                            WW = [np.eye(4) for _ in self.keyframe[0]]
-                            WW[j] = mm
-                            self.keyframe[i] = read_tree(figure,3,WW,True)
+                            temp = util.scale(WW_9[i][j][6], WW_9[i][j][7], WW_9[i][j][8]) @ eulerAnglesToRotationMatrix4(WW_9[i][j][3], WW_9[i][j][4], WW_9[i][j][5])
+                            temp[0][3] = WW_9[i][j][0]
+                            temp[1][3] = WW_9[i][j][1]
+                            temp[2][3] = WW_9[i][j][2]
+
+                            WW[i][j] = temp
+                            self.keyframe[i] = read_tree(figure,3,WW[i],True)
 
                         imgui.tree_pop()
                     j += 1
                 imgui.tree_pop()
             i += 1
         imgui.end()
-
 
     def update(self):
         pass
@@ -297,6 +239,26 @@ class AnimationComponents(Component):
 
 def lerp(a, b, t):
     return (1 - t) * a + t * b
+
+
+def eulerAnglesToRotationMatrix4(x, y, z) :  
+    R_x = np.array([[1,            0,             0,            0],
+                    [0,            math.cos(x),   -math.sin(x), 0],
+                    [0,            math.sin(x),   math.cos(x),  0],
+                    [0,            0,             0,            1]
+                    ])                    
+    R_y = np.array([[math.cos(y),  0,             math.sin(y),  0],
+                    [0,            1,             0,            0],
+                    [-math.sin(y), 0,             math.cos(y),  0],
+                    [0,            0,             0,            1]
+                    ])            
+    R_z = np.array([[math.cos(z),  -math.sin(z),  0,            0],
+                    [math.sin(z),  math.cos(z),   0,            0],
+                    [0,            0,             1,            0],
+                    [0,            0,             0,            1]
+                    ])                  
+    R = np.dot(R_z, np.dot( R_y, R_x ))
+    return R
 
 
 def translation(matrix):
@@ -333,9 +295,12 @@ def scale(matrix):
     sz = np.sqrt(A[2,2])
     return numpy.array([sx, sy, sz])
 
+
 #need to add 2 M arrays, one for Keyframe1 and and one for Keyframe2 
 def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
     global figure 
+    global WW
+    global WW_9
     figure = load(str(file))
 
     mesh_id = 3
@@ -354,6 +319,7 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
     #     print(f"Bone Name: {bone.name}")
         # print(f"Parent Index: {bone.parentindex}")
         # print(f"Offset Matrix: {bone.offsetmatrix}")
+    
     #Populating vw with the bone weight and id
     vw = vertex_weight(len(v))
     vw.populate(b)
@@ -376,21 +342,42 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
 
     #Initialising M array
     M = initialize_M(b)
-    print(M)
+
+    WW = np.array([[np.eye(4) for _ in range(len(M))] for _ in range(3)])
+
+    WW_9 = [[[0] * 6 + [1, 1, 1] for _ in range(len(M))] for _ in range(3)]
+
+    #print(M)
     #Initialising first keyframe
     M[1] = np.dot(np.diag([1,1,1,1]),M[1])
+    
     keyframe1.array_MM.append(read_tree(figure,mesh_id,M,transform))
+    for i in range(0,len(WW_9[0])):
+        WW_9[0][i][:3] = translation(keyframe1.array_MM[0][i])
+        WW_9[0][i][3:6] = (rotationEulerAngles(keyframe1.array_MM[0][i])/180)*np.pi
+        WW_9[0][i][6:9] = scale(keyframe1.array_MM[0][i])
 
     #Initialising second keyframe
     M[1][0:3,0:3] = eulerAnglesToRotationMatrix([0.3,0.3,0.4])
     M[1][0:3,3] = [0.5,0.5,0.5]
+
     keyframe2.array_MM.append(read_tree(figure,mesh_id,M,transform))
+    for i in range(0,len(WW_9[0])):
+        WW_9[1][i][:3] = translation(keyframe2.array_MM[0][i])
+        WW_9[1][i][3:6] = (rotationEulerAngles(keyframe2.array_MM[0][i])/180)*np.pi
+        WW_9[1][i][6:9] = scale(keyframe2.array_MM[0][i])
+
 
     if keyframe3 != None:
         M[1][0:3,0:3] = eulerAnglesToRotationMatrix([-0.5,0.3,0.4])
         M[1][0:3,3] = [0.5,0.5,0.5]
         keyframe3.array_MM.append(read_tree(figure,mesh_id,M,transform))
-    
+        
+        for i in range(0,len(WW_9[0])):
+            WW_9[2][i][:3] = translation(keyframe3.array_MM[0][i])
+            WW_9[2][i][3:6] = (rotationEulerAngles(keyframe3.array_MM[0][i])/180)*np.pi
+            WW_9[2][i][6:9] = scale(keyframe3.array_MM[0][i])
+
     #Initialising BB array
     BB = [b[i].offsetmatrix for i in range(len(b))]
 
