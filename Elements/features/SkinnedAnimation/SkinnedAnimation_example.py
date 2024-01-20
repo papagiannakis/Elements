@@ -178,7 +178,7 @@ def main(imguiFlag = False):
     #Spawn Animated AstroBoy
     node4 = scene.world.createEntity(Entity(name="Object"))
     scene.world.addEntityChild(rootEntity, node4)
-    trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.5)@util.translate(0,0,0) ))
+    trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.5) @ util.rotate((1,0,0), -90) @util.translate(0,0,0) ))
     mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
     key1 = scene.world.addComponent(node4, Keyframe(name="Object_key_1"))
     key2 = scene.world.addComponent(node4, Keyframe(name="Object_key_2"))
