@@ -178,7 +178,7 @@ def main(imguiFlag = False):
     #Spawn Animated AstroBoy
     node4 = scene.world.createEntity(Entity(name="Object"))
     scene.world.addEntityChild(rootEntity, node4)
-    trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.1)@util.translate(0,0,0) ))
+    trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.5)@util.translate(0,0,0) ))
     mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
     key1 = scene.world.addComponent(node4, Keyframe(name="Object_key_1"))
     key2 = scene.world.addComponent(node4, Keyframe(name="Object_key_2"))
@@ -186,7 +186,7 @@ def main(imguiFlag = False):
 
     ac = scene.world.addComponent(node4, AnimationComponents(name="Animation_Components"))
     # key1=key1.array_MM[0], key2=key2.array_MM[0], key3=key3.array_MM[0]
-    obj_to_import = MODEL_DIR / "astroBoy_walk.dae"
+    obj_to_import = MODEL_DIR / "robot_arm_v3.dae"
     #print(str(obj_to_import))
     vertices, colors, boneWeight, boneID, faces = animation_initialize(obj_to_import, ac, key1, key2, key3)
 

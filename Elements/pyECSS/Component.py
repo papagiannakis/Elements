@@ -23,7 +23,6 @@ from typing             import List
 from collections.abc    import Iterable, Iterator
 
 import Elements.pyECSS.System
-import Elements.pyECSS.GA.quaternion as quat
 import uuid  
 import Elements.pyECSS.math_utilities as util
 import numpy as np
@@ -426,8 +425,6 @@ class BasicTransform(Component):
         """ A concrete component does not have children to iterate, thus a NULL iterator
         """
         return CompNullIterator(self) 
-    
-
 class Camera(Component):
     """
     An example of a concrete Component Camera class
@@ -524,7 +521,7 @@ class RenderMesh(Component):
             self._vertex_attributes = vertex_attributes
             
         if not vertex_index:
-            self.vertex_index = [] #list of vertex attribute lists 
+                self.vertex_index = [] #list of vertex attribute lists 
         else:
             self._vertex_index = vertex_index
     
@@ -599,67 +596,3 @@ class BasicTransformDecorator(ComponentDecorator):
     
     def accept(self, system: Elements.pyECSS.System, event = None):
         pass # we want the decorator first to accept the visitor and only if needed the wrappe to accept it too
-    
-class Keyframe(Component):
-
-    def __init__(self, name=None, type=None, id=None, array_MM=None):
-        super().__init__(name, type, id)
-            
-        self._parent = self
-        if not array_MM:
-            self._array_MM = [] 
-        else:
-            self._array_MM = array_MM
-    
-    @property
-    def array_MM(self):
-        return self._array_MM
-    
-    @array_MM.setter
-    def array_MM(self, value):
-        self._array_MM = value 
-
-    @property #translation vector
-    def translate(self):
-        tempMatrix = self.array_MM.copy();
-        translateMatrix = [];
-        for i in range(len(tempMatrix)):
-            for j in range(len(tempMatrix[i])):
-                translateMatrix.append(tempMatrix[i][j][:3,3])
-        return translateMatrix
-
-    @property #rotation vector
-    def rotate(self):
-        # First get rotation matrix from trs. Divide by scale
-        tempMatrix = self.array_MM.copy();
-        rotateMatrix = [];
-        for i in range(len(tempMatrix)):
-            for j in range(len(tempMatrix[i])):
-                rotateMatrix.append(quat.Quaternion.from_rotation_matrix(tempMatrix[i][j]))
-        return rotateMatrix
-
-
-    def update(self):
-        pass
-   
-    def accept(self, system: Elements.pyECSS.System, event = None):
-        #system.apply2Keyframe(self)
-        pass
-    
-    def init(self):
-        pass
-    
-    def print(self):
-        """
-        prints out name, type, id, parent of this Component
-        """
-        print(f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, array_MM: \n{self._array_MM}")
-        print(f" ______________________________________________________________")
-    
-    def __str__(self):
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, array_MM: \n{self._array_MM}"
-
-    def __iter__(self) ->CompNullIterator:
-        """ A component does not have children to iterate, thus a NULL iterator
-        """
-        return CompNullIterator(self) 

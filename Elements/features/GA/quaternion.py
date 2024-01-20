@@ -115,10 +115,6 @@ class Quaternion(object):
   @classmethod
   def euler_to_quaternion(cls, roll, pitch, yaw):
     # Convert Euler angles to quaternions
-    # x = math.cos(phi/2) * math.cos(theta/2) * math.cos(psi/2) + math.sin(phi/2) * math.sin(theta/2) * math.sin(psi/2)
-    # y = math.sin(phi / 2) * math.cos(theta / 2) * math.cos(psi / 2) - math.cos(phi / 2) * math.sin(theta / 2) * math.sin(psi / 2)
-    # z = math.cos(phi / 2) * math.sin(theta / 2) * math.cos(psi / 2) + math.sin(phi / 2) * math.cos(theta / 2) * math.sin(psi / 2)
-    # w = math.cos(phi / 2) * math.cos(theta / 2) * math.sin(psi / 2) - math.sin(phi / 2) * math.sin(theta / 2) * math.cos(psi / 2)
 
     roll /= 2.0
     pitch /= 2.0

@@ -69,8 +69,7 @@ class AnimationComponents(Component):
                 type=None,
                 id=None, 
                 keyframe=None, 
-                bones=None, 
-                MM=None, 
+                bones=None,
                 alpha=0, 
                 tempo=2, 
                 time_add=0, 
@@ -219,7 +218,7 @@ class AnimationComponents(Component):
                             temp[2][3] = WW_9[i][j][2]
 
                             WW[i][j] = temp
-                            self.keyframe[i] = read_tree(figure,3,WW[i],True)
+                            self.keyframe[i] = read_tree(figure,0,WW[i],True)
 
                         imgui.tree_pop()
                     j += 1
@@ -302,8 +301,10 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
     global WW
     global WW_9
     figure = load(str(file))
+    
+    # print(figure.rootnode)
 
-    mesh_id = 3
+    mesh_id = 0
 
     #Vertices, Incdices/Faces, Bones from the scene we loaded with pyassimp
     mesh = figure.meshes[mesh_id]
@@ -311,9 +312,13 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
     f = mesh.faces
     b = mesh.bones
 
-    # variables = figure.rootnode.parent__dict__
+    # variables = figure.rootnode
     # for key, value in variables.items():
     #     print(f"{key}: {value}")
+    print("Mesh", mesh)
+    print("vertices", v)
+    print("faces", f)
+    print("bones", b)
 
     # for bone in b:
     #     print(f"Bone Name: {bone.name}")
@@ -349,7 +354,7 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
 
     #print(M)
     #Initialising first keyframe
-    M[1] = np.dot(np.diag([1,1,1,1]),M[1])
+    # M[1] = np.dot(np.diag([1,1,1,1]),M[1])
     
     keyframe1.array_MM.append(read_tree(figure,mesh_id,M,transform))
     for i in range(0,len(WW_9[0])):
@@ -358,8 +363,8 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
         WW_9[0][i][6:9] = scale(keyframe1.array_MM[0][i])
 
     #Initialising second keyframe
-    M[1][0:3,0:3] = eulerAnglesToRotationMatrix([0.3,0.3,0.4])
-    M[1][0:3,3] = [0.5,0.5,0.5]
+    # M[1][0:3,0:3] = eulerAnglesToRotationMatrix([0.3,0.3,0.4])
+    # M[1][0:3,3] = [0.5,0.5,0.5]
 
     keyframe2.array_MM.append(read_tree(figure,mesh_id,M,transform))
     for i in range(0,len(WW_9[0])):
@@ -369,8 +374,8 @@ def animation_initialize(file, ac, keyframe1, keyframe2, keyframe3 = None):
 
 
     if keyframe3 != None:
-        M[1][0:3,0:3] = eulerAnglesToRotationMatrix([-0.5,0.3,0.4])
-        M[1][0:3,3] = [0.5,0.5,0.5]
+        # M[1][0:3,0:3] = eulerAnglesToRotationMatrix([-0.5,0.3,0.4])
+        # M[1][0:3,3] = [0.5,0.5,0.5]
         keyframe3.array_MM.append(read_tree(figure,mesh_id,M,transform))
         
         for i in range(0,len(WW_9[0])):
