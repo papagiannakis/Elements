@@ -15,17 +15,15 @@ from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator, RenderGLStateS
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from Elements.features.Gizmos.Gizmos import Gizmos
+from Elements.features.ObjectPicker.Gizmos import Gizmos
+from Elements.features.ObjectPicker.AABoundingBox import AABoundingBox
 
 from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
-from Elements.utils.Shortcuts import displayGUI_text
+from Elements.utils.helper_function import displayGUI_text
 
-class TestGizmos(unittest.TestCase):
-    """
-    ...
-    """
+class Test_ObjectPicker(unittest.TestCase):
 
     def setUp(self):
 
@@ -46,6 +44,10 @@ the mouse or the GUI
 When trying to change the selected entity we can see that no 
 Entity is selected and the program does not crash
 
+ObjectPicker Instructions:
+You can pick an object left-clicking the mouse on the object. You may also use the gizmos commands below 
+to also pick an object
+
 Gizmos Instructions:
 You can change the selected Object by pressing TAB
 You can Also reset an Object by pressing '0'
@@ -54,6 +56,7 @@ Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Remove Gizmos
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
@@ -64,6 +67,10 @@ the mouse or the GUI
 When TAB is pressed repeatedly you can see that the Gizmos always remain on 
 the cube
 
+ObjectPicker Instructions:
+You can pick an object left-clicking the mouse on the object. You may also use the gizmos commands below 
+to also pick an object
+
 Gizmos Instructions:
 You can change the selected Object by pressing TAB
 You can Also reset an Object by pressing '0'
@@ -72,6 +79,7 @@ Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Remove Gizmos
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
@@ -82,6 +90,10 @@ via the mouse or the GUI
 In this test the pink cube is parent of the yellow one. Therefore, when we apply a 
 transformation to the parent, the same transformation is applied to its child
 
+ObjectPicker Instructions:
+You can pick an object left-clicking the mouse on the object. You may also use the gizmos commands below 
+to also pick an object
+
 Gizmos Instructions:
 You can change the selected Object by pressing TAB
 You can Also reset an Object by pressing '0'
@@ -90,6 +102,7 @@ Use the following keys to change transformation mode:
 T: translation
 R: Rotation
 S: Scaling
+D: Remove Gizmos
 
 To use the Gizmos hover over them, press and hold the Left-alt-key + Left-mouse-button and 
 move the cursor to see the result
@@ -171,7 +184,8 @@ move the cursor to see the result
                                 "Gizmos_z_S_line","Gizmos_z_S_line_trans","Gizmos_z_S_line_mesh",
                                 "Gizmos_x_S_cube","Gizmos_x_S_cube_trans","Gizmos_x_S_cube_mesh",
                                 "Gizmos_y_S_cube","Gizmos_y_S_cube_trans","Gizmos_y_S_cube_mesh",
-                                "Gizmos_z_S_cube","Gizmos_z_S_cube_trans","Gizmos_z_S_cube_mesh"]
+                                "Gizmos_z_S_cube","Gizmos_z_S_cube_trans","Gizmos_z_S_cube_mesh",
+                                "BoundingBox", "Ray"]
 
         for element in self.scene.world.root:
             if element is not None and element.name in gizmos_entities:
@@ -201,12 +215,12 @@ move the cursor to see the result
         maxbb = util.vec(1.0,1.0,1.0,1.0)
         model = util.identity()
 
-        res, intersection_point = gizmos.testRayBoundingBoxIntesection(start,direction,minbb,maxbb,model)
+        res, intersection_point = gizmos.testRayBoundingBoxIntesectionSelection(start,direction,minbb,maxbb,model)
         self.assertTrue(res)
     
     def testEmpty(self):
         """
-        Test Gizmos on an empty scene
+        Test ObjectPicker on an empty scene
         """
         eye = util.vec(2.5, 2.5, 2.5)
         target = util.vec(0,0,0)
@@ -228,7 +242,7 @@ move the cursor to see the result
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_gizmos_Empty_Scene")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_objectPicker_Empty_Scene")
 
         self.scene.world.traverse_visit(self.initUpdate,self.scene.world.root)
 
@@ -247,7 +261,7 @@ move the cursor to see the result
 
     def testSingle(self):
         """
-        Test gizmos on a scene with a single element
+        Test objectPicker on a scene with a single element
         """
         node4_pink = self.scene.world.createEntity(Entity(name="node4_pink"))
         self.scene.world.addEntityChild(self.rootEntity, node4_pink)
@@ -260,7 +274,9 @@ move the cursor to see the result
         mesh4_pink.vertex_index.append(self.Index_pink)
         vArray4 = self.scene.world.addComponent(node4_pink, VertexArray())
         shaderDec4_pink = self.scene.world.addComponent(node4_pink, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-        
+        self.scene.world.addComponent(node4_pink, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh4_pink.vertex_attributes[0]))
+
         eye = util.vec(2.5, 2.5, 2.5)
         target = util.vec(0,0,0)
         up = util.vec(0.0, 1.0, 0.0)
@@ -279,7 +295,7 @@ move the cursor to see the result
         gizmos.update_screen_dimensions(window_width=1024,window_height=768)
 
         running = True
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_gizmos_Single_Element")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_objectPicker_Single_Element")
 
         self.scene.world.traverse_visit(self.initUpdate,self.scene.world.root)
 
@@ -326,15 +342,14 @@ move the cursor to see the result
             mvp_cube = projMat @ view @ model_cube
 
             shaderDec4_pink.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-            shaderDec4_pink.setUniformVariable(key='model', value=model_cube, mat4=True)
-
+            
             self.scene.render_post()
             
         self.scene.shutdown()
 
     def testMultiple(self):
         """
-        Test gizmos on a scene with multiple elements, where one element is child of another
+        Test objectPicker on a scene with multiple elements, where one element is child of another
         """
         node4_pink = self.scene.world.createEntity(Entity(name="node4_pink"))
         self.scene.world.addEntityChild(self.rootEntity, node4_pink)
@@ -352,6 +367,8 @@ move the cursor to see the result
         mesh4_pink.vertex_index.append(self.Index_pink)
         vArray_pink = self.scene.world.addComponent(node4_pink, VertexArray())
         shaderDec4_pink = self.scene.world.addComponent(node4_pink, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        self.scene.world.addComponent(node4_pink, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh4_pink.vertex_attributes[0]))
         
         mesh4_yellow.vertex_attributes.append(self.vertex_yellow)
         mesh4_yellow.vertex_attributes.append(self.color_yellow)
@@ -359,6 +376,8 @@ move the cursor to see the result
         mesh4_yellow.vertex_index.append(self.Index_yellow)
         vArray4_yellow = self.scene.world.addComponent(node4_yellow, VertexArray())
         shaderDec4_yellow = self.scene.world.addComponent(node4_yellow, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        self.scene.world.addComponent(node4_yellow, AABoundingBox(name="AABoundingBox",
+                                        vertices = mesh4_yellow.vertex_attributes[0]))
 
         eye = util.vec(2.5, 2.5, 2.5)
         target = util.vec(0,0,0)
@@ -437,10 +456,10 @@ move the cursor to see the result
             mvp_cube2 = projMat @ view @ model_cube2
 
             shaderDec4_pink.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-            shaderDec4_pink.setUniformVariable(key='model', value=model_cube, mat4=True)
+            #shaderDec4_pink.setUniformVariable(key='model', value=model_cube, mat4=True)
 
             shaderDec4_yellow.setUniformVariable(key='modelViewProj', value=mvp_cube2, mat4=True)
-            shaderDec4_yellow.setUniformVariable(key='model', value=model_cube2, mat4=True)
+            #shaderDec4_yellow.setUniformVariable(key='model', value=model_cube2, mat4=True)
 
             self.scene.render_post()
             
