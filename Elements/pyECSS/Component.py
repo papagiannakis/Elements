@@ -26,6 +26,7 @@ import Elements.pyECSS.System
 import uuid  
 import Elements.pyECSS.math_utilities as util
 import numpy as np
+from scipy.spatial.transform import Rotation as R
 
 
 class Component(ABC, Iterable):
@@ -231,7 +232,7 @@ class Component(ABC, Iterable):
         Returns:
         - str: A string representation of this Component.
         """
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}"
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}"
 
 
 class ComponentDecorator(Component):
@@ -340,7 +341,7 @@ class BasicTransform(Component):
     @property #translation vector
     def translation(self):
         return self.trs[:3,3];
-    @property #rotation vector
+    #@property #rotation vector
     # def rotationEulerAngles(self):
     #     # First get rotation matrix from trs. Divide by scale
     #     rotationMatrix = self.trs.copy();
@@ -387,7 +388,6 @@ class BasicTransform(Component):
         sy = np.sqrt(A[1,1])
         sz = np.sqrt(A[2,2])
         return sx, sy, sz
-    
     def update(self, **kwargs):
         """ Local 2 world transformation calculation
         Traverses upwards whole scenegraph and multiply all transformations along this path
@@ -436,7 +436,7 @@ class BasicTransform(Component):
 
     def __str__(self):
         np.set_printoptions(formatter={'float': lambda x: "{0:0.3f}".format(x)}) # print only one 3 decimals
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, \nl2world: \n{self.l2world}, \nl2cam: \n{self.l2cam}, \ntrs: \n{self.trs}"
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}, \nl2world: \n{self.l2world}, \nl2cam: \n{self.l2cam}, \ntrs: \n{self.trs}"
     
     def __iter__(self) ->CompNullIterator:
         """ A concrete component does not have children to iterate, thus a NULL iterator
@@ -508,7 +508,7 @@ class Camera(Component):
         pass
     
     def __str__(self):
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, \n projMat: \n{self.projMat},\n root2cam: \n{self.root2cam}"    
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}, \nprojMat: \n{self.projMat},\nroot2cam: \n{self.root2cam}"    
 
     def __iter__(self) ->CompNullIterator:
         """ A component does not have children to iterate, thus a NULL iterator
@@ -588,7 +588,7 @@ class RenderMesh(Component):
     
     
     def __str__(self):
-        return f"\n {self.getClassName()} name: {self._name}, type: {self._type}, id: {self._id}, parent: {self._parent._name}, vertex_attributes: \n{self._vertex_attributes}"
+        return f"\n{self.getClassName()} \nname: {self._name}, \ntype: {self._type}, \nid: {self._id}, \nparent: {self._parent._name}, \nvertex_attributes: \n{self._vertex_attributes}"
 
     
     def __iter__(self) ->CompNullIterator:

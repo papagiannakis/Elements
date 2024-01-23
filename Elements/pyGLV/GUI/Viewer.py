@@ -11,36 +11,40 @@ Basic design principles are based on the Decorator Design pattern:
 	• https://github.com/faif/python-patterns/blob/master/patterns/structural/decorator.py
 """
 
-from __future__         import annotations
-from abc                import ABC, abstractmethod
-from typing             import List, Dict, Any
-from collections.abc    import Iterable, Iterator
+from __future__ import annotations
+from abc import ABC, abstractmethod
+from typing import List, Dict, Any
+from collections.abc import Iterable, Iterator
 from sys import platform
 
 import sdl2
 import sdl2.ext
-from sdl2.keycode import SDLK_ESCAPE
+from sdl2.keycode import SDLK_ESCAPE,SDLK_w
 from sdl2.video import SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI
 import OpenGL.GL as gl
 from OpenGL.GL import shaders
 import imgui
 from imgui.integrations.sdl2 import SDL2Renderer
 
-import Elements.pyECSS.System  
+import Elements.pyECSS.System    
 import Elements.pyECSS.math_utilities as util
 import Elements.pyECSS.Event
-from Elements.pyECSS.System import System 
+from Elements.pyECSS.System import System  
 from Elements.pyECSS.Component import BasicTransform
 import numpy as np
+from scipy.spatial.transform import Rotation
+# from Elements.pyGLV.GL.Scene import Scene
+# from Elements.pyGLV.GL.Scene import Scene
 
+import Elements.utils.Shortcuts as Shortcuts
 
 class RenderWindow(ABC):
     """
     The Abstract base class of the Viewer GUI/Display sub-system of pyglGA
     based on the Decorator Pattern, this class is "wrapped" by decorators
-    in order to provide extra cpapabilities e.g. SDL2 window, context and ImGUI widgets    
-    """     
-    
+    in order to provide extra cpapabilities e.g. SDL2 window, context and ImGUI widgets        
+    """          
+        
     def __init__(self):
         self._eventManager = None
         self._scene = None
@@ -48,7 +52,7 @@ class RenderWindow(ABC):
     #define properties for EventManager, Scene objects
     @property #name
     def eventManager(self):
-        """ Get RenderWindow's eventManager """
+        """  Get RenderWindow's eventManager  """
         return self._eventManager
     @eventManager.setter
     def eventManager(self, value):
@@ -56,36 +60,36 @@ class RenderWindow(ABC):
         
     @property #name
     def scene(self):
-        """ Get RenderWindow's Scene reference """
+        """  Get RenderWindow's Scene reference  """
         return self._scene
     @scene.setter
     def scene(self, value):
         self._scene = value
-    
+        
     @abstractmethod
     def init(self):
         raise NotImplementedError
-    
+        
     abstractmethod
     def init_post(self):
         raise NotImplementedError
-    
+        
     @abstractmethod
     def display(self):
         raise NotImplementedError
-    
+        
     @abstractmethod
     def display_post(self):
         raise NotImplementedError
-    
+        
     @abstractmethod
     def shutdown(self):
         raise NotImplementedError
-    
+        
     @abstractmethod
     def event_input_process(self, running = True):
         raise NotImplementedError
-    
+        
     @abstractmethod
     def accept(self, system: Elements.pyECSS.System, event = None):
         """
@@ -95,7 +99,7 @@ class RenderWindow(ABC):
         :type system: [System]
         """
         raise NotImplementedError
-    
+        
     @classmethod
     def getClassName(cls):
         return cls.__name__
@@ -119,7 +123,7 @@ class SDL2Window(RenderWindow):
         :type windowTitle: [type], optional
         """
         super().__init__()
-        
+                
         self._gWindow = None
         self._gContext = None
         self._gVersionLabel = "None"
@@ -135,16 +139,16 @@ class SDL2Window(RenderWindow):
             self._windowHeight = 768
         else:
             self._windowHeight = windowHeight
-            
+
         if windowTitle is None:
             self._windowTitle = "SDL2Window"
         else:
             self._windowTitle = windowTitle
-        
+                
         if eventManager is not None and scene is None:
             # in case we are testing without a Scene and just an EventManager
             self.eventManager = eventManager
-        
+                
         if scene is not None:
             # set the reference of parent RenderWindow to Scene
             # get the reference to EventManager from Scene.ECSSManager
@@ -155,17 +159,15 @@ class SDL2Window(RenderWindow):
         self._wireframeMode = False
         self._colorEditor = 0.0, 0.0, 0.0
         self._myCamera = np.identity(4)
-             
+                          
     @property
     def gWindow(self):
         return self._gWindow
-    
-    
+
     @property
     def gContext(self):
         return self._gContext
-    
-    
+
     def init(self):
         """
         Initialise an SDL2 RenderWindow, not directly but via the SDL2Decorator
@@ -186,17 +188,15 @@ class SDL2Window(RenderWindow):
                                  sdl2.SDL_GL_CONTEXT_PROFILE_CORE
                                  )
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_DOUBLEBUFFER, 1)
-        
+                
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_ACCELERATED_VISUAL, 1)
-        
 
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_DEPTH_SIZE, 24)
-        sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_STENCIL_SIZE, 8)   
+        sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_STENCIL_SIZE, 8)      
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_MULTISAMPLEBUFFERS, 1)
 
-        
-        if self.openGLversion==3:
-            print("="*24)
+        if self.openGLversion == 3:
+            print("=" * 24)
             print("Using OpenGL version 3.2")
             print("="*24)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MAJOR_VERSION, 3)
@@ -216,7 +216,7 @@ class SDL2Window(RenderWindow):
         #     pass
         # else:
         #     sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_MULTISAMPLESAMPLES, 16)        
-        
+
         sdl2.SDL_SetHint(sdl2.SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK, b"1")
         sdl2.SDL_SetHint(sdl2.SDL_HINT_VIDEO_HIGHDPI_DISABLED, b"1")
         
@@ -245,56 +245,48 @@ class SDL2Window(RenderWindow):
         #obtain the GL versioning system info
         self._gVersionLabel = f'OpenGL {gl.glGetString(gl.GL_VERSION).decode()} GLSL {gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION).decode()} Renderer {gl.glGetString(gl.GL_RENDERER).decode()}'
         print(self._gVersionLabel)
-    
-    
+
     def init_post(self):
         """
         Post init method for SDL2
         this should be ctypiically alled AFTER all other GL contexts have been created
         """
         pass
-    
-    
+
     def display(self):
         """
         Main display window method to be called standalone or from within a concrete Decorator
         """
-        #GPTODO make background clear color as parameter at class level
+        # GPTODO make background clear color as parameter at class level
 
-            
         gl.glClearColor(*self._colorEditor, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glDisable(gl.GL_CULL_FACE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LESS)
         # gl.glDepthFunc(gl.GL_LEQUAL);
-        
-        
-        
-        # gl.glDepthMask(gl.GL_FALSE);  
-    
-    
-        #gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-        
-        #setup some extra GL state flags
+
+        # gl.glDepthMask(gl.GL_FALSE);
+
+        # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+
+        # setup some extra GL state flags
         if self._wireframeMode:
             gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
             #print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
         else:
             gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-            #print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
-            
-        #print(f'{self.getClassName()}: display()')
-    
-    
+            # print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
+
+        # print(f'{self.getClassName()}: display()')
+
     def display_post(self):
         """
         To be called at the end of each drawn frame to swap double buffers
         """
         sdl2.SDL_GL_SwapWindow(self._gWindow)
-        #print(f'{self.getClassName()}: display_post()')       
-    
-    
+        # print(f'{self.getClassName()}: display_post()')
+
     def shutdown(self):
         """
         Shutdown and cleanup SDL2 operations
@@ -303,15 +295,12 @@ class SDL2Window(RenderWindow):
         if (self._gContext and self._gWindow is not None):
             sdl2.SDL_GL_DeleteContext(self._gContext)
             sdl2.SDL_DestroyWindow(self._gWindow)
-            sdl2.SDL_Quit()   
+            sdl2.SDL_Quit()      
 
-
-    def event_input_process(self):
-    #def event_input_process(self, running = True):
+    def event_input_process(self, running=True):
         """
         process SDL2 basic events and input
         """
-        running = True
         events = sdl2.ext.get_events()
         for event in events:
             if event.type == sdl2.SDL_KEYDOWN:
@@ -366,8 +355,7 @@ class RenderDecorator(RenderWindow):
         self.lctrl = False
         
         self.traverseCamera()
-    
-    
+
     @property
     def wrapeeWindow(self):
         return self._wrapeeWindow
@@ -409,7 +397,7 @@ class RenderDecorator(RenderWindow):
                     except StopIteration:
                         done_traversing = True
                     else:
-                        if "Camera" in comp.name: # just put the "Camera" string in the Entity that holds the camera
+                        if "camera" in comp.name.lower(): # just put the "Camera" string in the Entity that holds the camera
                             self.cam = comp
                             found = True
                         
@@ -548,8 +536,16 @@ class RenderDecorator(RenderWindow):
         events = sdl2.ext.get_events()
         width = self.wrapeeWindow._windowWidth
         height = self.wrapeeWindow._windowHeight
+
+        ### set up a hot key to easily switch between common keys like shift,ctrl etc
+        ### default at left alt
+        alt_Key = sdl2.KMOD_ALT
+        leftShift_Key = sdl2.KMOD_LSHIFT
+        rightShift_Key = sdl2.KMOD_RSHIFT
+        ctrl_Key = sdl2.KMOD_CTRL
+
+        shortcut_HotKey = alt_Key
         
-        #if not imgui.is_window_focused():
         for event in events:
             if event.type == sdl2.SDL_MOUSEWHEEL:
                 x = event.wheel.x
@@ -563,25 +559,87 @@ class RenderDecorator(RenderWindow):
                     x = -event.motion.xrel  
                     y = event.motion.yrel 
                     self.cameraHandling(x, y, height, width)               
-
+            
             #keyboard events
             elif event.type == sdl2.SDL_KEYDOWN:
-                if event.key.keysym.sym == sdl2.SDLK_UP or event.key.keysym.sym == sdl2.SDLK_w :
-                    pass
-                if event.key.keysym.sym == sdl2.SDLK_DOWN or event.key.keysym.sym == sdl2.SDLK_s :
-                    pass
-                if event.key.keysym.sym == sdl2.SDLK_LEFT or event.key.keysym.sym == sdl2.SDLK_a :
-                    pass
-                if event.key.keysym.sym == sdl2.SDLK_RIGHT or event.key.keysym.sym == sdl2.SDLK_d :
-                    pass
-                if event.key.keysym.sym == sdl2.SDLK_LCTRL:
-                    self.lctrl=True
+                ##################  toggle the wireframe using the alt+F buttons  #############################
+                if (event.key.keysym.sym == sdl2.SDLK_f and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                    self.toggle_Wireframe()
+                
+                ########## shortcuts for selected node from the tree ###########
+                if hasattr(self._wrapeeWindow._scene, "_gContext") and self._wrapeeWindow._scene._gContext.__class__.__name__ == "ImGUIecssDecorator" and self.selected:
+                    # we must first check if the ImGUIecssDecorator is active otherwise we will get an error on click
+                    ################# - translate on x axis when node is selected using W+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_w and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.translation["x"] -= 0.1
+                    ################# + translate on x axis when node is selected using W ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_w):
+                        self.translation["x"] += 0.1
+                    
+                    # ################# - translate on y axis when node is selected using E+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_e and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.translation["y"] -= 0.1
+                    ################# + translate on y axis when node is selected using E ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_e):
+                        self.translation["y"] += 0.1 
+                    
+                    # ################# - translate on z axis when node is selected using R+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_r and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.translation["z"] -= 0.1
+                    # ################# + translate on z axis when node is selected using R ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_r):
+                        self.translation["z"] += 0.1
+                    
+
+                    # ################# - rotate on x axis when node is selected using T+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_t and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.rotation["x"] -= 0.1
+                    # ################# + rotate on x axis when node is selected using T ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_t):
+                        self.rotation["x"] += 0.1
+                    
+                    # ################# - rotate on y axis when node is selected using Y+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_y and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.rotation["y"] -= 0.1
+                    # ################# + rotate on y axis when node is selected using Y ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_y):
+                        self.rotation["y"] += 0.1 
+                    
+                    # ################# - rotate on z axis when node is selected using U+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_u and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.rotation["z"] -= 0.1
+                    # ################# + rotate on z axis when node is selected using U ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_u):
+                        self.rotation["z"] += 0.1
+                    
+                    ################# scale down on x axis when node is selected using I+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_i  and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.scale["x"] -= 0.1
+                    ################# scale up on x axis when node is selected using I ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_i ):
+                        self.scale["x"] += 0.1
+                    
+                    ################# scale down on y axis when node is selected using O+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_o  and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.scale["y"] -= 0.1
+                    ################# scale up on y axis when node is selected using O ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_o ):
+                        self.scale["y"] += 0.1 
+                    
+                    ################# scale down on z axis when node is selected using P+alt ###########################
+                    if(event.key.keysym.sym == sdl2.SDLK_p  and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                        self.scale["z"] -= 0.1
+                    ################# scale up on z axis when node is selected using P ###########################
+                    elif(event.key.keysym.sym == sdl2.SDLK_p ):
+                        self.scale["z"] += 0.1
+
                 if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
-
             elif event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
                 self.lctrl = False
 
+            
+                
             elif event.type == sdl2.SDL_QUIT:
                 running = False
                 
@@ -645,12 +703,11 @@ class RenderGLStateSystem(System):
         
         """
         pass
-            
-    
-    def apply2SDLWindow(self, sdlWindow, event = None):
-        """method for  behavioral or logic computation 
-        when visits Components. 
-        
+
+    def apply2SDLWindow(self, sdlWindow, event=None):
+        """method for  behavioral or logic computation
+        when visits Components.
+
         In this case update GL State from SDLWindow
 
         :param sdlWindow: [description]
@@ -665,21 +722,18 @@ class RenderGLStateSystem(System):
         if event.name == "OnUpdateCamera":
             # print(f"OnUpdateCamera: RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
             sdlWindow._myCamera = event.value
-        
-        
 
 
 if __name__ == "__main__":
-    # # The client code.
-    gWindow = SDL2Window(openGLversion=3) # uses openGL version 3.2 instead of the default 4.1
-    gWindow.init()
-    gWindow.init_post()
-    running = True
-    # MAIN RENDERING LOOP
-    while running:
-        gWindow.display()
-        running = gWindow.event_input_process()
-        windowaspect = gWindow._windowWidth/gWindow._windowHeight
-        print("windowaspect : ", windowaspect)
-        gWindow.display_post()
+    # The client code.        
+    gWindow = SDL2Window(openGLversion=3)    
+    # uses openGL version 3.2 instead of the default 4.1        
+    gWindow.init()        
+    gWindow.init_post()        
+    running = True        
+    # MAIN RENDERING LOOP        
+    while running:              
+        gWindow.display()              
+        running = gWindow.event_input_process(running)              
+        gWindow.display_post()            
     gWindow.shutdown()

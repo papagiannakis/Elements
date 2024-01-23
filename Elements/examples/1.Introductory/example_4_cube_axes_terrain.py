@@ -14,11 +14,16 @@ from Elements.utils.terrain import generateTerrain
 
 from OpenGL.GL import GL_LINES
 
-from Elements.utils.helper_function import displayGUI_text
+from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene with a cube, a terrain and axes. \n\
 The cube and axes are rendered with a simple shader. \n\
-You move the camera through the GUI or the camera. Hit ESC OR Close the window to quit." 
+that allow camera movement too, via the Elements GUI. \n\n\
+An ECSS Graph shows the Entities and Components of the \n\
+scene, in read only way, i.e., you cannot manipulate  \n\
+any information via the ECSS Graph GUI. \n\n\
+You can move the camera through the Elements GUI \n\
+or the mouse. Hit ESC OR Close the window to quit." 
 
 winWidth = 1024
 winHeight = 768

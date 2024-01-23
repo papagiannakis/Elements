@@ -18,10 +18,12 @@ from OpenGL.GL import GL_POINTS
 import OpenGL.GL as gl
 
 import Elements.features.Voronoi2D.voronoi as voronoi
-
-import random
-#gl.glPointSize(1.)
-
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This scene demonstrates the Voronoi diagram of 2D points \n"
+"(represented as coplanar points). Distinct colors are used\n"
+"to highlight different Voronoi cells, i.e., \n" 
+"the polygons that are equidistant from each point."
 
 
 scene = Scene()    
@@ -106,6 +108,7 @@ model_terrain_axes = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
     mvp_cube = projMat @ view @ model_cube
