@@ -635,9 +635,9 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                             if isinstance(comp, BasicTransform):
                                 if comp != self.selected: # First time selecting it. Set trs values to GUI;
                                     self.selected = comp
-
+                                    rotEul  = comp.rotationEulerAngles()
                                     self.tra["x"], self.tra["y"], self.tra["z"] = comp.translation[0], comp.translation[1], comp.translation[2]
-                                    self.rot["x"], self.rot["y"], self.rot["z"] = comp.rotationEulerAngles[0], comp.rotationEulerAngles[1], comp.rotationEulerAngles[2]
+                                    self.rot["x"], self.rot["y"], self.rot["z"] = rotEul[0], rotEul[1], rotEul[2]
                                     self.sc["x"], self.sc["y"], self.sc["z"] = comp.scale[0], comp.scale[1], comp.scale[2]
 
                                 imgui.text("Translation")
