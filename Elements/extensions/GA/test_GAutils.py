@@ -1,8 +1,8 @@
-import Elements.features.GA.GAutils as GAutil
+import Elements.extensions.GA.GAutils as GAutil
 import clifford.g3c as cga
 import clifford.pga as pga
 import Elements.pyECSS.math_utilities as util  
-from Elements.features.GA.quaternion import Quaternion
+from Elements.extensions.GA.quaternion import Quaternion
 import unittest
 import numpy as np
 

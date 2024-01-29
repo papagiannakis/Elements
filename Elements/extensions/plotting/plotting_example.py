@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
 
-from Elements.features.plotting.plotting_base import FunctionPlotting
+from Elements.extensions.plotting.plotting_base import FunctionPlotting
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene where you can plot a function either in 2D or 3D \n"

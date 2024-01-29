@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
 
-from Elements.features.plane_fitting.planefitting_base import PlaneFitting
+from Elements.extensions.plane_fitting.planefitting_base import PlaneFitting
 
 scene = Scene()
 

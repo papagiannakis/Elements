@@ -6,7 +6,7 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.features.Gizmos.Gizmos import Gizmos
+from Elements.extensions.Gizmos.Gizmos import Gizmos
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray

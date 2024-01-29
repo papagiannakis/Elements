@@ -342,7 +342,7 @@ allShaders = []
 USD_input_filepath = "PathToScene.usd"
 def CreatePaperScene(visualize=False):
     import imgui
-    from Elements.pyGLV.GUI.Viewer import ImGUIecssDecorator
+    from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
     from Elements.pyGLV.GL.UsdImporter import LoadScene, SaveScene
     from Elements.utils.terrain import generateTerrain
     from Elements.pyGLV.GL.ActionSystems import InsertAction, InsertCollider, RemoveAction, RemoveComponent

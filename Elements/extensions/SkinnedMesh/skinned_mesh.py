@@ -1,8 +1,8 @@
 # import time
 
 from re import M
-from Elements.features.SkinnedMesh.gate_module import *
-from Elements.features.SkinnedMesh.System_skinning import System_skinning
+from Elements.extensions.SkinnedMesh.gate_module import *
+from Elements.extensions.SkinnedMesh.System_skinning import System_skinning
 import pathlib
 
 

@@ -5,7 +5,7 @@ Axis Alinged bounding box class
 """
 import numpy as np
 from Elements.pyECSS.Component import Component
-from Elements.features.GravityBB.GravityCollisonSystem import GravityCollisionSystem
+from Elements.extensions.GravityBB.GravityCollisonSystem import GravityCollisionSystem
 import Elements.pyECSS.math_utilities as util
 
 """Axis Aligned bounding boxes Class"""
