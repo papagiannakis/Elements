@@ -1,10 +1,10 @@
 import numpy as np
 
 from Elements.pyECSS.Component import *
-from Elements.features.GA.dual_quaternion import DualQuaternion
-from Elements.features.GA.quaternion import Quaternion
+from Elements.extensions.GA.dual_quaternion import DualQuaternion
+from Elements.extensions.GA.quaternion import Quaternion
 from clifford.g3c import *  # import GA for 3D space
-from Elements.features.GA.GAutils import t_q_to_TR, extract_t_q_from_TR
+from Elements.extensions.GA.GAutils import t_q_to_TR, extract_t_q_from_TR
 import Elements.pyECSS.math_utilities as util
 
 class GATransform(BasicTransform):
@@ -112,8 +112,8 @@ class GATransform(BasicTransform):
     
 if __name__ == "__main__":
     
-    from Elements.features.GA.GA_Component import GATransform
-    from Elements.features.GA.GATransformSystem import GATransformSystem
+    from Elements.extensions.GA.GA_Component import GATransform
+    from Elements.extensions.GA.GATransformSystem import GATransformSystem
 
     t = [1,2,3]
     q = [1,2,3,4] # x,y,z,w

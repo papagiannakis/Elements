@@ -12,7 +12,7 @@ from Elements.pyECSS.Component import BasicTransform,  RenderMesh
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.features.GravityBB.AABoundingBox import AABoundingBox
+from Elements.extensions.GravityBB.AABoundingBox import AABoundingBox
 from Elements.pyGLV.GL.Textures import Texture
 
 # Generates a floor with a bounding box WITH TEXTURE SHADER

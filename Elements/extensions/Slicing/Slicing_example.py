@@ -7,7 +7,8 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -20,7 +21,7 @@ from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
 #Task code
-from Elements.features.Slicing import Slicing
+from Elements.extensions.Slicing import Slicing
 from Elements.definitions import MODEL_DIR
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \

@@ -5,8 +5,8 @@ import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.System import System
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform
-from Elements.features.DummySystem.dummy_gravity import RigidBody, GravitySystem
-from Elements.features.DummySystem.dummy_rotate import Rotate, RotateSystem
+from Elements.extensions.DummySystem.dummy_gravity import RigidBody, GravitySystem
+from Elements.extensions.DummySystem.dummy_rotate import Rotate, RotateSystem
 
 
 class TestDummyGravityComponent(unittest.TestCase):
