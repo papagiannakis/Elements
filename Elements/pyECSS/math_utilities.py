@@ -279,6 +279,25 @@ def rotate(axis=(1.0,0.0,0.0), angle=0.0, radians=None):
                      [x*z*nc - y*s, y*z*nc + x*s, z*z*nc + c,   0],
                      [0,            0,            0,            1]], dtype=np.float32,order='F')
     
+def eulerAnglesToRotationMatrix(theta) : 
+    """Utility function to calculate a 4x4 Rotation Transformation matrix from a vector of euler angles"""
+    R_x = np.array([[1,         0,                  0                   , 0],
+                    [0,         math.cos(theta[0]), -math.sin(theta[0]) , 0],
+                    [0,         math.sin(theta[0]), math.cos(theta[0])  , 0],
+                    [0,         0,                  0                   , 1]
+                    ])                    
+    R_y = np.array([[math.cos(theta[1]),    0,      math.sin(theta[1])  , 0],
+                    [0,                     1,      0                   , 0],
+                    [-math.sin(theta[1]),   0,      math.cos(theta[1])  , 0],
+                    [0,                     0,      0,                   1]
+                    ])             
+    R_z = np.array([[math.cos(theta[2]),    -math.sin(theta[2]),    0,   0],
+                    [math.sin(theta[2]),    math.cos(theta[2]),     0,   0],
+                    [0,                     0,                      1,   0],
+                    [0,                     0,                      0,   1]
+                    ])                  
+    R = R_z @ R_y @ R_x 
+    return R
 
 def lookat(eye, target, up):
     """Utility function to calculate a 4x4 camera lookat matrix, based on the eye, target and up camera vectors:
