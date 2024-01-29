@@ -23,7 +23,9 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform,  RenderMesh
 from Elements.pyECSS.Event import Event
 
-from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem,  ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem#,  ImGUIecssDecorator
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
+
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
@@ -196,7 +198,7 @@ def main(imguiFlag = False):
     
     # MAIN RENDERING LOOP
     running = True
-    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator)
+    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator2)
 
     #imGUIecss = scene.gContext
 
