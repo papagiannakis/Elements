@@ -7,7 +7,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 import Elements.pyECSS.math_utilities as util
 import numpy as np
-from Elements.pyGLV.GUI.Viewer import ImGUIecssDecorator
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 
 
