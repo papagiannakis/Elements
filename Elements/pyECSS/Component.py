@@ -360,6 +360,7 @@ class BasicTransform(Component):
     #     z = self.trs[2, 2];
     #     return [x, y, z];
 
+    @property #rotation vector
     def rotationEulerAngles(self):
         # First get rotation matrix from trs. Divide by scale
         rotationMatrix = self.trs.copy();
@@ -379,6 +380,7 @@ class BasicTransform(Component):
                 y = -np.pi/2;
                 x = -z + np.arctan2(-myR[0,1], -myR[0,2]);
         return np.array([x,y,z])*180/np.pi;
+
     @property #scale vector
     def scale(self):
         m = self.trs.copy()[:3,:3];
