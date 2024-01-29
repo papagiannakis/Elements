@@ -5,7 +5,8 @@ from Elements.pyECSS.Event import Event
 import Elements.pyECSS.math_utilities as util
 import numpy as np
 
-from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem,  ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
