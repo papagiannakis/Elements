@@ -15,11 +15,11 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 
-from Elements.features.GravityBB.AABoundingBox import AABoundingBox
-from Elements.features.GravityBB.GravityCollisonSystem import GravityCollisionSystem
-from Elements.features.GravityBB.example_GravityCollisionWithBB import GameObjectEntity
-from Elements.features.GravityBB.example_GravityCollisionWithBB import CubeSpawn
-from Elements.features.GravityBB.floor import generate_floor_with_bb
+from Elements.extensions.GravityBB.AABoundingBox import AABoundingBox
+from Elements.extensions.GravityBB.GravityCollisonSystem import GravityCollisionSystem
+from Elements.extensions.GravityBB.example_GravityCollisionWithBB import GameObjectEntity
+from Elements.extensions.GravityBB.example_GravityCollisionWithBB import CubeSpawn
+from Elements.extensions.GravityBB.floor import generate_floor_with_bb
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.pyGLV.GL.Textures import Texture

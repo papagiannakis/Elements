@@ -11,11 +11,12 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator, RenderGLStateSystem
+from Elements.pyGLV.GUI.Viewer import SDL2Window, RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from Elements.features.Gizmos.Gizmos import Gizmos
+from Elements.extensions.Gizmos.Gizmos import Gizmos
 
 from OpenGL.GL import GL_LINES
 

@@ -6,16 +6,16 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.features.ObjectPicker.Gizmos import Gizmos
+from Elements.extensions.ObjectPicker.Gizmos import Gizmos
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 
 from Elements.utils.Shortcuts import displayGUI_text
-from Elements.features.ObjectPicker.AABoundingBox import AABoundingBox
+from Elements.extensions.ObjectPicker.AABoundingBox import AABoundingBox
 from OpenGL.GL import GL_LINES
 
-from Elements.features.BasicShapes.BasicShapes import CubeSpawn
+from Elements.extensions.BasicShapes.BasicShapes import CubeSpawn
 
 example_description = """
 This is a scene that contains multiple cubes at random places.

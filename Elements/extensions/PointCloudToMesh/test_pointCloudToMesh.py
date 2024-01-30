@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-from Elements.features.PointCloudToMesh.PointCloudToMesh import generateTrianglesFromCustomList, generateBunnyExample
+from Elements.extensions.PointCloudToMesh.PointCloudToMesh import generateTrianglesFromCustomList, generateBunnyExample
 
 class TestPointCloudToMesh(unittest.TestCase):
 

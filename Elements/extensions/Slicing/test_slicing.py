@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import Elements.features.Slicing.Slicing as Slicing
+import Elements.extensions.Slicing.Slicing as Slicing
 
 
 class TestEntity(unittest.TestCase):

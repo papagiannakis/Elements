@@ -5,7 +5,8 @@ from scipy.spatial.transform import Rotation
 
 from Elements.utils.ChatGPT import GPTBot
 from Elements.pyGLV.GL.GameObject import GameObject
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.utils.SizeCalculation import calc_size
 from Elements.definitions import MODEL_DIR
 

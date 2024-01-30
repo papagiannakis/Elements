@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import  Elements.features.plotting.plotting_base as plotting_base
+import  Elements.extensions.plotting.plotting_base as plotting_base
 
 plot_boundaries = 1, -1, 1, -1 #max X, min X, max Y, min Y
 f_x = 'x**2+x*4'

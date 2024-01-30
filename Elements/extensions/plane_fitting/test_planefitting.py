@@ -2,7 +2,7 @@ import unittest
 import numpy as np
 from skspatial.objects import Plane, Points
 
-import Elements.features.plane_fitting.planefitting_base as planefitting_base
+import Elements.extensions.plane_fitting.planefitting_base as planefitting_base
 
 
 class TestEntity(unittest.TestCase):

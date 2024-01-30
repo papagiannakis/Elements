@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import Elements.features.bezier.bezier_base as bezier_base
+import Elements.extensions.bezier.bezier_base as bezier_base
 
 
 class TestEntity(unittest.TestCase):

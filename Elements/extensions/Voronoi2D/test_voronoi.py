@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import Elements.features.Voronoi2D.voronoi as voronoi
+import Elements.extensions.Voronoi2D.voronoi as voronoi
 
 
 

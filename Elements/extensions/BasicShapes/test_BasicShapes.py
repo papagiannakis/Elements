@@ -1,7 +1,7 @@
 import unittest
 import numpy as np
 
-import Elements.features.BasicShapes.BasicShapes as BasicShapes
+import Elements.extensions.BasicShapes.BasicShapes as BasicShapes
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyECSS.Entity import Entity
 
