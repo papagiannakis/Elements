@@ -7,8 +7,8 @@ from torch_geometric.data import Data
 import Elements.pyECSS.math_utilities as util
 from torch_geometric.nn import GAE, VGAE, GCNConv
 
-from Elements.features.GA.GAutils import matrix_to_motor, matrix_to_angle_axis_translation
-from Elements.features.GA.quaternion import Quaternion
+from Elements.extensions.GA.GAutils import matrix_to_motor, matrix_to_angle_axis_translation
+from Elements.extensions.GA.quaternion import Quaternion
 
 
 class GCNEncoder(torch.nn.Module):

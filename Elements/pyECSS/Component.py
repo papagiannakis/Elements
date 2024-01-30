@@ -341,6 +341,25 @@ class BasicTransform(Component):
     @property #translation vector
     def translation(self):
         return self.trs[:3,3];
+    #@property #rotation vector
+    # def rotationEulerAngles(self):
+    #     # First get rotation matrix from trs. Divide by scale
+    #     rotationMatrix = self.trs.copy();
+    #     rotationMatrix[:][0] /= self.scale[0];
+    #     rotationMatrix[:][1] /= self.scale[1];
+    #     rotationMatrix[:][2] /= self.scale[2];
+    #     # Now, extract euler angles from rotation matrix
+    #     x = atan2(rotationMatrix[1][2], rotationMatrix[2][2]);
+    #     y = 0;
+    #     z = 0;
+    #     return [x, y, z];
+    # @property #scale vector
+    # def scale(self):
+    #     x = self.trs[0, 0];
+    #     y = self.trs[1, 1];
+    #     z = self.trs[2, 2];
+    #     return [x, y, z];
+
     @property #rotation vector
     def rotationEulerAngles(self):
         # First get rotation matrix from trs. Divide by scale
@@ -361,6 +380,7 @@ class BasicTransform(Component):
                 y = -np.pi/2;
                 x = -z + np.arctan2(-myR[0,1], -myR[0,2]);
         return np.array([x,y,z])*180/np.pi;
+
     @property #scale vector
     def scale(self):
         m = self.trs.copy()[:3,:3];
@@ -370,7 +390,6 @@ class BasicTransform(Component):
         sy = np.sqrt(A[1,1])
         sz = np.sqrt(A[2,2])
         return sx, sy, sz
-
     def update(self, **kwargs):
         """ Local 2 world transformation calculation
         Traverses upwards whole scenegraph and multiply all transformations along this path

@@ -5,9 +5,10 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 import imgui
-import Elements.features.usd.UsdImporter as SceneLoader
+import Elements.extensions.usd.UsdImporter as SceneLoader
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
