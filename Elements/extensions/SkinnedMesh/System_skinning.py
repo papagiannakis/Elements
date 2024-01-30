@@ -1,5 +1,5 @@
 from operator import mod
-from Elements.features.SkinnedMesh.gate_module import *
+from Elements.extensions.SkinnedMesh.gate_module import *
 import time
 
 class System_skinning:

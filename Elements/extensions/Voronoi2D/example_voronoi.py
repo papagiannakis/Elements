@@ -17,7 +17,7 @@ from OpenGL.GL import GL_POINTS
 
 import OpenGL.GL as gl
 
-import Elements.features.Voronoi2D.voronoi as voronoi
+import Elements.extensions.Voronoi2D.voronoi as voronoi
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This scene demonstrates the Voronoi diagram of 2D points \n"

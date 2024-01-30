@@ -1,5 +1,5 @@
 import Elements.pyECSS
-from Elements.features.GA.GA_Component import GATransform
+from Elements.extensions.GA.GA_Component import GATransform
 from Elements.pyECSS.System import System
 
 class GATransformSystem(System):
@@ -61,7 +61,7 @@ class GATransformSystem(System):
                 
         return l2worldTRS
         
-    def apply2GATransform(self, gaTransform: Elements.features.GA.GA_Component.GATransform):
+    def apply2GATransform(self, gaTransform: Elements.extensions.GA.GA_Component.GATransform):
         """
         method to be subclassed for  behavioral or logic computation 
         when visits Components. 
@@ -71,7 +71,7 @@ class GATransformSystem(System):
         """
         
         # check if the visitor visits a node that it should not
-        if (isinstance(gaTransform,Elements.features.GA.GA_Component.GATransform)) == False:
+        if (isinstance(gaTransform,Elements.extensions.GA.GA_Component.GATransform)) == False:
             return #in Python due to duck typing we need to check this!
         print(self.getClassName(), ": apply2GATransform called")
         
@@ -88,8 +88,8 @@ class GATransformSystem(System):
 
 if __name__=="__main__":
     import numpy as np
-    from Elements.features.GA.GA_Component import GATransform
-    from Elements.features.GA.quaternion import Quaternion
+    from Elements.extensions.GA.GA_Component import GATransform
+    from Elements.extensions.GA.quaternion import Quaternion
     # a = GATransform(trs=util.scale(1,2,3))
     a = GATransform(q = Quaternion(0,1,0,1))
     q = Quaternion(0,1,0,1)

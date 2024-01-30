@@ -5,7 +5,8 @@ from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem, ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -13,7 +14,7 @@ from Elements.utils.terrain import generateTerrain
 
 from OpenGL.GL import GL_LINES
 
-from Elements.features.rigid_body_animation.animationCS import *
+from Elements.extensions.rigid_body_animation.animationCS import *
 import imgui
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
