@@ -13,7 +13,8 @@ import unittest
 import time
 import numpy as np
 
-from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
+from Elements.pyGLV.GUI.Viewer import SDL2Window
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIDecorator, ImGUIecssDecorator
 
 class TestSDL2Window(unittest.TestCase):
     
