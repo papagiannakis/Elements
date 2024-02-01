@@ -605,7 +605,8 @@ def calculate_normals(rays, hit_record):
     hit_record (HitRecord): The hit record object containing information about the intersection.
 
     Returns:
-    tuple: A tuple containing the intersection point (p), the surface normal (normal), and a boolean indicating if the ray hit the front face of the sphere (front_face).
+    tuple: A tuple containing the intersection point (p), the surface normal (normal), 
+    and a boolean indicating if the ray hit the front face of the sphere (front_face).
     """
     p = rays.at(hit_record.t)
     outward_normal = (p - hit_record.center) / hit_record.radius 
@@ -736,7 +737,9 @@ class Metal(Material):
             rec (HitRecord): The hit record containing information about the intersection point.
             
         Returns:
-            ScatterResult: The result of the scattering operation, including the scattered ray, attenuation, and whether the ray is scattered or absorbed.
+            ScatterResult: 
+            The result of the scattering operation, including the scattered ray, attenuation, 
+            and whether the ray is scattered or absorbed.
         """
         reflected = reflect(unit_vector(r_in.direction), rec.normal)
         scattered = Ray(rec.p, reflected + random_in_unit_sphere(len(r_in))*self.fuzz)
@@ -1044,7 +1047,8 @@ for a in range(-11, 11):
 # The third sphere is a metal sphere with an albedo of 0.6 and a fuzziness of 0.0.
 # The spheres are placed at the following positions: (0, 1, 0), (-4, 1, 0), and (4, 1, 0).
 # The spheres have a radius of 1.0.
-# The spheres are placed in the world only if the distance between the center of the sphere and the center of the world is greater than 1.0.
+# The spheres are placed in the world only if the distance between the center of the sphere 
+# and the center of the world is greater than 1.0.
 # This ensures that the spheres are not placed inside the ground sphere.
 world.append(Sphere(Point3( 0, 1, 0), 1.0, Dielectric(1.5)))
 world.append(Sphere(Point3(-4, 1, 0), 1.0, Lambertian(Color(0.4, 0.2, 0.1))))
@@ -1058,10 +1062,10 @@ world.append(Sphere(Point3( 4, 1, 0), 1.0, Metal(Color(0.7, 0.6, 0.5), 0.0)))
 # The camera's aperture is 0.1.
 # The camera's focal distance is 10.0.
 # The camera is created using the get_camera function.
-image_width = 1200
+image_width = 120
 aspect_ratio = 16/9
 image_height = int(image_width / aspect_ratio)
-samples_per_pixel = 20
+samples_per_pixel = 20 #this affects greatly performance and quality
 max_depth = 50
 
 def get_camera():
