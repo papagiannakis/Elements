@@ -157,9 +157,26 @@ def cross(a, b):
 
 
 def convert_to_pil(v, width, height, scale = 255.999):
-    
+    """
+    Converts a numpy array to a PIL image.
+
+    Parameters:
+    v (numpy.ndarray): The input array.
+    width (int): The width of the image.
+    height (int): The height of the image.
+    scale (float, optional): The scaling factor. Defaults to 255.999.
+
+    Returns:
+    PIL.Image.Image: The converted PIL image.
+    """
+    # joins the three components (presumably representing RGB color channels) into a single 3xN array. 
+    # This array is then multiplied by scale, which could be a scalar or another array used to adjust 
+    # the intensity of the colors. The result is then converted to 8-bit unsigned integer format using astype(np.uint8). 
     img = (v.join() * scale).astype(np.uint8)
 
+    # The resulting 3xN array is then reshaped into a 2D array with dimensions (height, width, 3).
+    # This is done using the swapaxes(0,1) method, which swaps the first and second axes of the array,
+    # and the reshape method, which reshapes the array into the specified dimensions.
     if len(img.shape) == 2:
         img_rgb = img.swapaxes(0,1).reshape(height, width, 3)
     else:
