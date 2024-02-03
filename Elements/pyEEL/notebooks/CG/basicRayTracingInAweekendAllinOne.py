@@ -1079,10 +1079,10 @@ world.append(Sphere(Point3( 4, 1, 0), 1.0, Metal(Color(0.7, 0.6, 0.5), 0.0)))
 # The camera's aperture is 0.1.
 # The camera's focal distance is 10.0.
 # The camera is created using the get_camera function.
-image_width = 120
+image_width = 1200
 aspect_ratio = 16/9
 image_height = int(image_width / aspect_ratio)
-samples_per_pixel = 20 #this affects greatly performance and quality
+samples_per_pixel = 10 #this affects greatly performance and quality
 max_depth = 50
 
 def get_camera():
@@ -1115,7 +1115,7 @@ def get_camera():
 # The render function is called to render the image.
 img = render(image_width, image_height)
 # The image is saved to a file named img.ppm.
-img.save('img.ppm')
+img.save('RTinOneWeekendFinalimage.ppm')
 
 
 
