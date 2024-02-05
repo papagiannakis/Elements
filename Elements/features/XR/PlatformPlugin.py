@@ -3,6 +3,7 @@ import platform
 
 class PlatoformPlugin(object):
     "Can be used to create different implementation based on the platform"
+    # Used to define in which platform this is running, e.g., Windows, Linux
 
     @abc.abstractmethod
     def __enter__(self):
@@ -39,6 +40,7 @@ class WindowsPlugin(PlatoformPlugin):
 
     @property
     def instance_extensions(self):
+        # maybe for Linux additional libraries are needed here
         return []
 
     def update_options(self, options) -> None:

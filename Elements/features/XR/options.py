@@ -1,18 +1,22 @@
 import xr
 import enum
 
+# required for openXR
 class Form_factor(enum.Enum):
+    #  configuration on the device
     HMD="Hmd"
     HANDHELD="Handheld"
 
 class View_Configuration(enum.Enum):
+    # required for VR: 2 views
     STEREO="Stereo"
     MONO="Mono"
 
 class Blend_Mode(enum.Enum):
-    OPAQUE="Opaque"
-    ADDITIVE="Additive"
-    ALPHABLEND="AlphaBlend"
+    # Default Draw mode
+    OPAQUE="Opaque" # for VR
+    ADDITIVE="Additive" # for AR
+    ALPHABLEND="AlphaBlend" # for AR
 
 
 class options:

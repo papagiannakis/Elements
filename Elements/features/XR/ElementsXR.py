@@ -23,6 +23,15 @@ stream.setFormatter(streamformat)
 logger.addHandler(stream)
 
 class Swapchain(Structure):
+    """
+    Swapchain class:
+        - handle: Swapchain handle
+        - width: Swapchain width
+        - height: Swapchain height
+    When openXR runs a VR application, it needs to render the scene twice, once for each eye.
+    The Swapchain class is used to store the information of the swapchain, which is used to render the scene twice.
+    It store the information of the swapchain handle, width and height, transmitted from the HMD.
+    """
     _fields_ = [
         ("handle", xr.Swapchain),
         ("width", c_int32),
@@ -30,27 +39,49 @@ class Swapchain(Structure):
     ]
 
 class Side(enum.IntEnum):
+    """
+    Side class for controllers sideness:
+        - LEFT: Left controller
+        - RIGHT: Right controller
+    """
     LEFT = 0
     RIGHT = 1
 
 class InputState(Structure):
-        def __init__(self):
-            super().__init__()
-            self.hand_scale[:] = [1, 1]
+    """
+    Stores information about the input state of the controllers:
+        - action_set: Action set (may be used to remap keys on the controllers)
+        - grab_action: Grab action
+        - pose_action: Pose action
+        - vibrate_action: Vibrate action
+        - quit_action: Quit action
+        - hand_subaction_path: Hand subaction path
+        - hand_space: Hand space
+        - hand_scale: Hand scale
+        - hand_active: Hand active
+    """
+    def __init__(self):
+        super().__init__()
+        self.hand_scale[:] = [1, 1]
 
-        _fields_ = [
-            ("action_set", xr.ActionSet),
-            ("grab_action", xr.Action),
-            ("pose_action", xr.Action),
-            ("vibrate_action", xr.Action),
-            ("quit_action", xr.Action),
-            ("hand_subaction_path", xr.Path * len(Side)),
-            ("hand_space", xr.Space * len(Side)),
-            ("hand_scale", c_float * len(Side)),
-            ("hand_active", xr.Bool32 * len(Side)),
-        ]
+    _fields_ = [
+        ("action_set", xr.ActionSet),
+        ("grab_action", xr.Action),
+        ("pose_action", xr.Action),
+        ("vibrate_action", xr.Action),
+        ("quit_action", xr.Action),
+        ("hand_subaction_path", xr.Path * len(Side)),
+        ("hand_space", xr.Space * len(Side)),
+        ("hand_scale", c_float * len(Side)),
+        ("hand_active", xr.Bool32 * len(Side)),
+    ]
 
 class RayDirection:
+    """
+    RayDirection class:
+        - origin: Ray origin
+        - direction: Ray direction
+    """
     def __init__(self):
         self.origin = util.vec(0.0,0.0,0.0)
         self.direction = util.vec(0.0,0.0,0.0)
@@ -59,6 +90,14 @@ def get_xr_reference_space_create_info(reference_space_type_string: str) -> xr.R
     create_info = xr.ReferenceSpaceCreateInfo(
         pose_in_reference_space=xr.Posef(), # Identity structure for xr that contains translation and rotation
     )
+    """
+    Taken from the OpenXR examples:
+    get_xr_reference_space_create_info method:
+        - reference_space_type_string: Reference space type string
+    Returns:
+        create_info: Reference space create info
+    """
+
     space_type = reference_space_type_string.lower()
     if space_type == "View".lower():
         create_info.reference_space_type = xr.ReferenceSpaceType.VIEW
@@ -70,6 +109,7 @@ def get_xr_reference_space_create_info(reference_space_type_string: str) -> xr.R
         create_info.pose_in_reference_space = pose
         create_info.reference_space_type = xr.ReferenceSpaceType.VIEW
     elif space_type == "Local".lower():
+        # We usually print information in this space
         create_info.reference_space_type = xr.ReferenceSpaceType.LOCAL
     elif space_type == "Stage".lower():
         create_info.reference_space_type = xr.ReferenceSpaceType.STAGE
@@ -134,6 +174,17 @@ def xr_debug_callback(
             _type: xr.DebugUtilsMessageTypeFlagsEXT,
             data: POINTER(xr.DebugUtilsMessengerCallbackDataEXT),
             _user_data: c_void_p) -> bool:
+    """
+    Taken from openXR example:
+    xr_debug_callback method:
+        - severity: Severity
+        - _type: Type
+        - data: Data
+        - _user_data: User data
+    Returns:
+        True
+    """
+
     d = data.contents
     return True
 
@@ -141,67 +192,73 @@ class ElementsXR_program:
 
     def __init__(self):
         "An openXR program in Elements"
+        
+        # Options taken from options.py
         self.options = options() # Only Opaque is supported by the OpenXR runtime and/or windows platform
         self.platform_plugin = createPlatformPlugin()
         self.graphics_plugin = OpenGLPlugin(self.options)
         self.debug_callback = xr.PFN_xrDebugUtilsMessengerCallbackEXT(xr_debug_callback)
 
-        self.instance = None
-        self.session = None
-        self.app_space = None
-        self.form_factor = xr.FormFactor.HEAD_MOUNTED_DISPLAY
+        self.instance = None  # Higher level Instance class, not just ID
+        self.session = None # Higher level Session class, not just ID
+        self.app_space = None # Higher level Space class, not just ID
+        self.form_factor = xr.FormFactor.HEAD_MOUNTED_DISPLAY # Default form factor
         self.system = None  # Higher level System class, not just ID
 
-        self.config_views = []
-        self.swapchains = []
+        self.config_views = [] # type: List[xr.ViewConfigurationView]
+        self.swapchains = []    # type: List[Swapchain]
         self.swapchain_image_buffers = []  # to keep objects alive
-        self.swapchain_image_ptr_buffers = {}
-        self.views = (xr.View * 2)(xr.View(), xr.View())
-        self.color_swapchain_format = -1
+        self.swapchain_image_ptr_buffers = {} # to keep objects alive
+        self.views = (xr.View * 2)(xr.View(), xr.View()) # type: List[xr.View]
+        self.color_swapchain_format = -1 # type: xr.Format # Default color swapchain format
 
-        self.visualized_spaces = []
+        self.visualized_spaces = [] # type: List[xr.Space] 
 
         # Application's current lifecycle state according to the runtime
-        self.session_state = xr.SessionState.UNKNOWN
-        self.session_running = False
+        self.session_state = xr.SessionState.UNKNOWN # Default session state
+        self.session_running = False # Default session running state
 
-        self.event_data_buffer = xr.EventDataBuffer()
-        self.input = InputState()
-
-        self.event_data_buffer = xr.EventDataBuffer()
+        self.event_data_buffer = xr.EventDataBuffer() # type: xr.EventDataBuffer # Buffer for event data
+        self.input = InputState() # type: InputState # Input state of the controllers
 
         self.acceptable_blend_modes = [
             xr.EnvironmentBlendMode.OPAQUE,
             xr.EnvironmentBlendMode.ADDITIVE,
             xr.EnvironmentBlendMode.ALPHA_BLEND,
-        ]
+        ] # type: List[xr.EnvironmentBlendMode] # Acceptable blend modes
 
         #Head Entity
-        self.head = None
+        self.head = None  # Head Entity
 
         #Hand Entities
-        self.hands = [Entity()] * 2
+        self.hands = [Entity()] * 2  # Hand Entities
 
         #Ray Entities
-        self.rays = [Entity()] * 2
+        self.rays = [Entity()] * 2  # Ray Entities
 
         self.raycast = False
-        self.hand_dist = 0.2
+        self.hand_dist = 0.2 # Added offset Distance between the hands to not show too close in VR
 
         #shows whether the controllers trigger buttons are pressed or not
-        self.grab_values = [False, False]
+        self.grab_values = [False, False] 
 
         self.hand_trs = [util.identity(),util.identity()]
 
         self.gizmos_Mode = "Disappear"
-        self.translate_gizmos = set()
-        self.rotation_gizmos = set()
-        self.scaling_gizmos = set()
+        self.translate_gizmos = set() # used to store the gizmos that are used for translation
+        self.rotation_gizmos = set() # used to store the gizmos that are used for rotation
+        self.scaling_gizmos = set() # used to store the gizmos that are used for scaling
 
     def __enter__(self):
+        """
+        Enter method for the openXR program
+        """
         return self
     
     def __exit__(self, exc_type, exc_val, exc_tb):
+        """
+        Exit method for the openXR program
+        """
         if self.input.action_set is not None:
             for hand in Side:
                 if self.input.hand_space[hand] is not None:
@@ -239,6 +296,8 @@ class ElementsXR_program:
 
     def set_translation_gizmos(self,x: str,y: str,z: str):
         """
+        Adds the translation gizmos entities ids to the set of translation gizmos
+        and also sets the translation gizmos in the graphics plugin
         """
         self.translate_gizmos.add(x)
         self.translate_gizmos.add(y)
@@ -247,6 +306,8 @@ class ElementsXR_program:
 
     def set_rotation_gizmos(self,x: str,y: str,z: str):
         """
+        Adds the rotation gizmos entities ids to the set of rotation gizmos
+        and also sets the rotation gizmos in the graphics plugin
         """
         self.rotation_gizmos.add(x)
         self.rotation_gizmos.add(y)
@@ -255,6 +316,8 @@ class ElementsXR_program:
 
     def set_scaling_gizmos(self,x: str,y: str,z: str,line_X: str,line_y: str,line_z: str):
         """
+        Adds the scaling gizmos entities ids to the set of scaling gizmos
+        and also sets the scaling gizmos in the graphics plugin
         """
         self.scaling_gizmos.add(x)
         self.scaling_gizmos.add(y)
@@ -265,6 +328,10 @@ class ElementsXR_program:
         self.graphics_plugin.set_scaling_gizmos(x,y,z,line_X,line_y,line_z)
 
     def set_gizmos_mode(self, _mode: str):
+        """
+        Setter method for the gizmos mode
+        and sets the gizmos mode in the graphics plugin
+        """
         self.gizmos_Mode = _mode
         self.graphics_plugin.set_gizmos_mode(_mode)
 
@@ -346,7 +413,7 @@ class ElementsXR_program:
                             f"Height={vp.recommended_image_rect_height} "
                             f"SampleCount={vp.recommended_swapchain_sample_count}")
 
-            # Create the swapchain.
+            # Create the swapchain. Adapted from openXR examples. 
             swapchain_create_info = xr.SwapchainCreateInfo(
                 array_size=1,
                 format=self.color_swapchain_format,
@@ -367,7 +434,11 @@ class ElementsXR_program:
                 swapchain_create_info.height,
             )
 
+            # Keep the swapchain alive by moving it into the list of swapchains.
+            # One swapchain per view
             self.swapchains.append(swapchain)
+
+            # Use buffer to keep images alive.
             swapchain_image_buffer = xr.enumerate_swapchain_images(
                 swapchain=swapchain.handle,
                 element_type=self.graphics_plugin.swapchain_image_type,
@@ -400,6 +471,11 @@ class ElementsXR_program:
         # Create union of extensions required by platform and graphics plugins.
         extensions = []
         # Enable debug messaging
+
+        # Code below is taken as is from openXR examples
+        # It is used to create a dummy application that is empty 
+        # and runs on the HMD to keep it alive. 
+        # Images are generated via swapchains and are rendered, not here, not yet.
         discovered_extensions = xr.enumerate_instance_extension_properties()
         dumci = xr.DebugUtilsMessengerCreateInfoEXT()
         next_structure = self.platform_plugin.instance_create_extension
@@ -467,6 +543,9 @@ class ElementsXR_program:
             None
         """
         self.graphics_plugin.initialize_device(self.instance.handle,self.system.id,renderer)
+        # openGL is used to render everything, as dictated in the renderer and 
+        # based on the GraphicsPlugin class. If a different renderer is used,
+        # then the GraphicsPlugin class needs to be changed accordingly.
 
     def InitializeSession(self):
         """
@@ -495,8 +574,11 @@ class ElementsXR_program:
         )
         self.log_reference_spaces()
 
+        # Based on the HMD, we need to initialize the bindings
+        # for the controller's/headset's buttons
         self.initialize_actions()
-        
+
+    
         self.create_visualized_spaces()
         self.app_space = xr.create_reference_space(
             session=self.session,
@@ -516,6 +598,9 @@ class ElementsXR_program:
         Returns:
             None
         """
+
+        # This method is used to create the proper bindings for the various HMDs
+        # Proved to work for Mixed Reality and Quest 2
         action_set_info = xr.ActionSetCreateInfo(
             action_set_name="gameplay",
             localized_action_set_name="Gameplay",
@@ -806,6 +891,8 @@ class ElementsXR_program:
         Returns:
             None
         """
+
+        # Taken from openXR examples
         event = cast(byref(event), POINTER(xr.EventDataSessionStateChanged)).contents
         old_state = self.session_state
         self.session_state = xr.SessionState(event.state)
@@ -970,6 +1057,10 @@ class ElementsXR_program:
         Returns:
             None
         """
+
+        # openXR allows the use of mulitple primitives, e.g., GL_Triangles, GL_Quads, etc
+        # and use all of them in a single frame, using layers. We opt to use a single layer, 
+        # with GL_Triangles, as it is the most common primitive used in graphics engines.
         assert self.session is not None
         frame_state = xr.wait_frame(
             session=self.session,
@@ -1139,7 +1230,7 @@ class ElementsXR_program:
             except xr.XrException as exc:
                 print(f"Failed to create reference space {visualized_space} with error {exc}")
 
-    #Below are some logging methods for the program's configuration
+    #Below are some logging methods for the program's configuration, taken from OpenXR examples
 
     def log_action_source_name(self, action: xr.Action, action_name: str):
         paths = xr.enumerate_bound_sources_for_action(

@@ -233,7 +233,7 @@ class OpenGLPlugin(GraphicsPlugin):
             raise xr.XrException("GLFW initialization failed")
         glfw.window_hint(glfw.DOUBLEBUFFER, False)
         glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
-        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 5)
+        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 1)
         glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE)
         self.window = glfw.create_window(640, 480, "GLFW Window", None, None)
         if self.window is None:
@@ -436,6 +436,8 @@ def create_xr_projection(tan_angle_left, tan_angle_right, tan_angle_up,tan_angle
 
     result = np.empty([4,4],dtype=np.float32)
 
+    # Taken from openXR examples in C++ and translated to python
+
     if far_z <= near_z:
             # place the far plane at infinity
             result[0][0] = 2.0 / tan_angle_width
@@ -477,6 +479,10 @@ def create_xr_projection(tan_angle_left, tan_angle_right, tan_angle_up,tan_angle
     return result
 
 def create_xr_quaternion(quat):
+    """
+    Takes a quaternion and returns a 4x4 matrix
+    Original code in C++ from openXR SDK
+    """
 
     x2 = quat[0] + quat[0]
     y2 = quat[1] + quat[1]
