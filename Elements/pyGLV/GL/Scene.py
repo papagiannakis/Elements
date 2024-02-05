@@ -10,8 +10,8 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
-#from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIDecorator
-from Elements.pyGLV.GUI.Viewer import SDL2Window, ImGUIecssDecorator, ImGUIDecorator
+from Elements.pyGLV.GUI.Viewer import SDL2Window
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
 
 class Scene():
     """
