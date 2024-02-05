@@ -1,9 +1,9 @@
 import Elements.pyECSS
 import Elements.pyECSS.System
 
-import Elements.features.GA.quaternion as quat
+import Elements.extensions.GA.quaternion as quat
 from pyassimp import load
-from Elements.features.SkinnedMesh.gate_module import *
+from Elements.extensions.SkinnedMesh.gate_module import *
 
 import Elements.pyECSS.Component
 from Elements.pyECSS.Component import Component

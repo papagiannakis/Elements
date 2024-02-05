@@ -11,12 +11,13 @@ from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.Event import Event
-from Elements.features.SkinnedAnimation.SkinnedAnimation import Keyframe, AnimationComponents
-from Elements.features.SkinnedAnimation.SkinnedAnimationSystem import SkinnedAnimationSystem
+from Elements.extensions.SkinnedAnimation.SkinnedAnimation import Keyframe, AnimationComponents
+from Elements.extensions.SkinnedAnimation.SkinnedAnimationSystem import SkinnedAnimationSystem
 #from AnimationComponent import Keyframe, AnimationComponents
 from Elements.definitions import MODEL_DIR
 
-from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem,  ImGUIecssDecorator
+from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
