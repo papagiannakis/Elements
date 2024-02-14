@@ -1,5 +1,4 @@
 
-import imgui
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, SDL2Window
 from Elements.pyECSS.Component import BasicTransform
@@ -8,6 +7,12 @@ import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
 from Elements.pyECSS.System import System
 
+##________GEORGIOU ADDED_______##
+from imgui_bundle import imguizmo, hello_imgui, ImVec2, immapp
+from imgui_bundle import imgui as imgui2
+import imgui
+import numpy as np
+##_____________________________##
 class ImGUIDecorator(RenderDecorator):
     """
     ImGUI decorator
@@ -451,6 +456,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
 
+        
 
         # smallerTRSgui = True
         #TRS sample
@@ -685,4 +691,146 @@ class ImGUIecssDecorator2(ImGUIDecorator):
 
 
         #imgui.text(comp.name)
-                        
+
+class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
+
+    def __init__(self, wrapee: RenderWindow, imguiContext = None):
+        super().__init__(wrapee, imguiContext)
+        self.selected = None; # Selected should be a component
+
+        # TRS Variables 
+        self.tra = {}
+        self.tra["x"] = 0; self.tra["y"] = 0; self.tra["z"] = 0
+
+        self.rot = {}
+        self.rot["x"] = 0; self.rot["y"] = 0; self.rot["z"] = 0
+
+        self.sc = {}
+        self.sc["x"] = 0; self.sc["y"] = 0; self.sc["z"] = 0
+        
+        self.changed = None;
+        self.gizmo = imguizmo.im_guizmo;
+        self.cameraView = None;
+        self.currGizmoOperation = self.gizmo.OPERATION.translate;
+        
+        #self.gizmo.set_rect(0, 0, imgui2.get_io().display_size.x, imgui2.get_io().display_size.y);
+    
+
+    def scenegraphVisualiser(self):
+        """display the ECSS in an ImGUI tree node structure
+        Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
+        """
+        sceneRoot = self.wrapeeWindow.scene.world.root.name
+        if sceneRoot is None:
+            sceneRoot = "ECSS Root Entity"
+        
+        twoColumn = False
+
+        if twoColumn:
+            # 2 Column Version
+            imgui.begin("ECSS graph")
+            imgui.columns(2,"Properties")
+            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                self.drawNode(self.wrapeeWindow.scene.world.root)
+                imgui.tree_pop()
+            imgui.next_column()
+            imgui.text("Properties")
+            imgui.separator()
+        else:
+            imgui.begin("ECSS graph")
+            imgui.columns(1,"Properties")
+            imgui.text("Properties")
+            imgui.separator()
+        
+        #self.gizmo.set_drawlist()
+        #self.gizmo.begin_frame()
+        
+        if imgui.tree_node("Translation", imgui.TREE_NODE_OPEN_ON_ARROW):
+            self.currGizmoOperation = self.gizmo.OPERATION.translate;
+            changed, value = imgui.drag_float3("X,Y,Z",self.tra["x"],self.tra["y"],self.tra["z"], 0.01, -30, 30, "%.001f", 1);
+            self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]
+            imgui.tree_pop();
+            
+        if imgui.tree_node("Rotation", imgui.TREE_NODE_OPEN_ON_ARROW):
+            self.currGizmoOperation = self.gizmo.OPERATION.totate;
+            changed, value = imgui.drag_float3("X,Y,Z",self.rot["x"],self.rot["y"],self.rot["z"], 1, -180, 180, "%.1f", 1);
+            self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
+            imgui.tree_pop();
+            
+        if imgui.tree_node("Scale", imgui.TREE_NODE_OPEN_ON_ARROW):
+            self.currGizmoOperation = self.gizmo.OPERATION.scale;
+            changed, value = imgui.drag_float3("X,Y,Z",self.sc["x"],self.sc["y"],self.sc["z"], 0.01, 0, 4, "%.01f", 1);
+            self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
+            imgui.tree_pop();
+
+        
+        if twoColumn:
+            pass
+        else:
+            imgui.separator()
+            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                self.drawNode(self.wrapeeWindow.scene.world.root)
+                imgui.tree_pop()
+
+        imgui.end()
+        
+    def drawNode(self, component):
+        #create a local iterator of Entity's children
+        if component._children is not None:
+            debugIterator = iter(component._children)
+            #call print() on all children (Concrete Components or Entities) while there are more children to traverse
+            done_traversing = False
+            while not done_traversing:
+                try:
+                    comp = next(debugIterator)
+                    imgui.indent(10)
+                except StopIteration:
+                    done_traversing = True
+                else:
+                    # using ## creates unique labels, without showing anything after ##
+                    # see: https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-widgets-with-the-same-label
+                    if imgui.tree_node(comp.name + "##" + str(comp.id), imgui.TREE_NODE_OPEN_ON_ARROW):
+                        imgui.text(comp.name)
+                        _, selected = imgui.selectable(comp.__str__(), True)
+                        if selected:
+
+                            if comp != self.selected: # First time selecting it. Set trs values to GUI;
+                                self.selected = comp
+                                if isinstance(comp, BasicTransform):
+                                    [x, y, z] = comp.translation
+                                    self.tra["x"] = x
+                                    self.tra["y"] = y
+                                    self.tra["z"] = z
+                                    [x, y, z] = comp.scale
+                                    self.sc["x"] = x
+                                    self.sc["y"] = y
+                                    self.sc["z"] = z
+                                    [x, y, z] = comp.rotationEulerAngles
+                                    self.rot["x"] = x
+                                    self.rot["y"] = y
+                                    self.rot["z"] = z
+                                # elif isinstance(comp, GameObjectEntity):
+                                    # self.color = comp.color.copy();
+                            else:                       # Set GUI values to trs;
+                                if isinstance(comp, BasicTransform):
+                                    transMat = util.translate(self.tra["x"], self.tra["y"], self.tra["z"])
+                                    rotMatX = util.rotate((1, 0, 0), self.rot["x"])
+                                    rotMatY = util.rotate((0, 1, 0), self.rot["y"])
+                                    rotMatZ = util.rotate((0, 0, 1), self.rot["z"])
+                                    scaleMat = util.scale(self.sc["x"], self.sc["y"], self.sc["z"])
+
+                                    comp.trs = util.identity() @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+                                    # comp.trs = scaleMat @ rotMatZ @ rotMatY @ rotMatX @ transMat;
+                                elif hasattr(comp, "drawSelfGui"):
+                                    comp.drawSelfGui(imgui)
+
+                        imgui.tree_pop()
+                    
+                    self.drawNode(comp) # recursive call of this method to traverse hierarchy
+                    imgui.unindent(10) # Corrent placement of unindent
+
+    def event_input_process(self):
+        """
+        process SDL2 basic events and input
+        """
+        return super().event_input_process()

@@ -33,6 +33,7 @@ setup(
         'numpy',
         'scipy',
         'imgui',
+        'imgui-bundle',
         'PyOpenGL',
         'pillow',
         'PyOpenGL_accelerate',
@@ -68,6 +69,6 @@ setup(
         "Documentation" : "https://ElementsProject.readthedocs.io",
     },
 
-    python_requires=">=3.8,<3.10",
+    python_requires=">=3.8,<3.11",
 
 )
