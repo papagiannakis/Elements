@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window
+from Elements.pyGLV.GUI.Viewer import GLFWWindow
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
 
 class Scene():
@@ -55,7 +55,9 @@ class Scene():
         #init Viewer GUI subsystem with just SDL2 window or also an ImGUI decorators
         if sdl2 == True:
             #create a basic SDL2 RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
-            self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
+            # self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
+            # self._gContext = self._renderWindow 
+            self._renderWindow = GLFWWindow(windowHeight, windowWidth, windowTitle, self, openGLveriosn=openGLversion)
             self._gContext = self._renderWindow
         
         if imgui == True and customImGUIdecorator == None:

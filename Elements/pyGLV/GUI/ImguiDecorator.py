@@ -1,9 +1,12 @@
 
 import imgui
 import Elements.pyECSS.math_utilities as util
-from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, SDL2Window
+from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, GLFWWindow
 from Elements.pyECSS.Component import BasicTransform
-from imgui.integrations.sdl2 import SDL2Renderer
+from imgui.integrations.sdl2 import SDL2Renderer 
+
+from imgui.integrations.glfw import GlfwRenderer
+
 import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
 from Elements.pyECSS.System import System
@@ -65,8 +68,10 @@ class ImGUIDecorator(RenderDecorator):
         
         # GPTODO here is the issue: SDL2Decorator takes an SDLWindow as wrappee wheras
         # ImGUIDEcorator takes and SDL2Decorator and decorates it!
-        if isinstance(self.wrapeeWindow, SDL2Window):   
-            self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
+        # if isinstance(self.wrapeeWindow, SDL2Window):   
+        #     self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
+        if isinstance(self.wrapeeWindow, GLFWWindow):
+            self._imguiRenderer = GlfwRenderer(self.wrapeeWindow._gWindow)
             
         #
         # Setting up events that this class is publishing (if the EventManager is present in the decorated wrappee)

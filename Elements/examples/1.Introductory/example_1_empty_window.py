@@ -3,9 +3,9 @@ Running the basic RenderWindow with the concrete basic Compoment of the decorato
 patter, that is the SDL2Window, without any decorator on top
 """
 
-from Elements.pyGLV.GUI.Viewer import SDL2Window
+from Elements.pyGLV.GUI.Viewer import GLFWWindow
 
-gWindow = SDL2Window(openGLversion=4, windowTitle="A simple empty SDL WINDOW. Hit ESC OR Close the window to quit!")
+gWindow = GLFWWindow(windowTitle="A simple empty SDL WINDOW. Hit ESC OR Close the window to quit!")
 gWindow.init()
 
 
