@@ -985,17 +985,18 @@ class RenderDecorator(RenderWindow):
         self.scale["z"]= 1.0 
         
     def cameraHandling(self, x, y, height, width):
-        keystatus = sdl2.SDL_GetKeyboardState(None)
+        # keystatus = sdl2.SDL_GetKeyboardState(None)
+        keystatus = self.wrapeeWindow._key_modifiers
         self.resetAll()
 
-        if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
+        if KEY_MAP_MOD.get(glfw.KEY_LEFT_SHIFT) in keystatus:
             if abs(x) > abs(y):
                 self.translation["x"] = x/width*60 #np.sign(event.wheel.x)
                 self.updateCamera(True, False, False, False, False)
             else:
                 self.translation["y"] =  y/height*60 #np.sign(event.wheel.y)
-                self.updateCamera(False, True, False, False, False)
-        elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
+                self.updateCamera(False, True, False, False, False) 
+        elif (KEY_MAP_MOD.get(glfw.KEY_LEFT_CONTROL) in keystatus) or self.lctrl:
             self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y) 
             self.updateCamera(False, False, True, False, False)
         else:
