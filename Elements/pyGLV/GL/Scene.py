@@ -48,12 +48,12 @@ class Scene():
         return self._world
     
     
-    def init(self, sdl2 = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None, 
+    def init(self, glfw = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None, 
             customImGUIdecorator = None, openGLversion = 4):
         """call the init() of all systems attached to this Scene based on the Visitor pattern
         """
         #init Viewer GUI subsystem with just SDL2 window or also an ImGUI decorators
-        if sdl2 == True:
+        if glfw == True:
             #create a basic SDL2 RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
             # self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
             # self._gContext = self._renderWindow 

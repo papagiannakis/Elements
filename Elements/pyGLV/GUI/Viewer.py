@@ -1011,8 +1011,6 @@ class RenderDecorator(RenderWindow):
         """
         process GLSL basic events and input
         """  
-        glfw.make_context_current(self.wrapeeWindow._gWindow) 
-        
         glfw.poll_events() 
         
         events = PollEventAndFlush()

@@ -106,7 +106,7 @@ scene.world.print()
 
 running = True
 # MAIN RENDERING LOOP
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "A Cube Scene via ECSS")
+scene.init(imgui=False, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "A Cube Scene via ECSS")
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -114,7 +114,7 @@ scene.world.traverse_visit(initUpdate, scene.world.root)
 
 while running:
     running = scene.render()
-    displayGUI_text(example_description)
+    #displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     

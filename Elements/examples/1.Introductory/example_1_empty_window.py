@@ -5,7 +5,7 @@ patter, that is the SDL2Window, without any decorator on top
 
 from Elements.pyGLV.GUI.Viewer import GLFWWindow
 
-gWindow = GLFWWindow(windowTitle="A simple empty SDL WINDOW. Hit ESC OR Close the window to quit!")
+gWindow = GLFWWindow(windowTitle="A simple empty GLFW WINDOW. Hit ESC OR Close the window to quit!")
 gWindow.init()
 
 
