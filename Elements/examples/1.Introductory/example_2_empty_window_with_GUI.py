@@ -1,7 +1,6 @@
 """
 Running the basic RenderWindow (SDL2Window) with an ImGUIDecorator on top
 """
-
 from Elements.pyGLV.GUI.Viewer import GLFWWindow
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 
