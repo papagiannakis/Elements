@@ -2,18 +2,33 @@
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, SDL2Window
 from Elements.pyECSS.Component import BasicTransform
-from imgui.integrations.sdl2 import SDL2Renderer
+
 import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
 from Elements.pyECSS.System import System
+import Elements.pyGLV.GUI.NodeEditor as ed
+
+##_______OLD IMGUI_______##
+#from imgui.integrations.sdl2 import SDL2Renderer
+#import imgui
+##_______________________##
 
 ##________GEORGIOU ADDED_______##
-from imgui_bundle import imguizmo, hello_imgui, ImVec2, immapp
-from imgui_bundle import imgui as imgui2
-import imgui
+from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
+from imgui_bundle import imguizmo, imgui_node_editor as editor
+from imgui_bundle import imgui
 import numpy as np
 ##_____________________________##
-class ImGUIDecorator(RenderDecorator):
+
+def toList(arg):
+    retVal = []
+    for x in arg.values():
+        retVal.append(x);
+            
+    return retVal;
+        
+  
+class ImGUIDecorator(RenderDecorator):  
     """
     ImGUI decorator
 
@@ -26,6 +41,9 @@ class ImGUIDecorator(RenderDecorator):
             self._imguiContext = imgui.create_context()
         else:
             self._imguiContext = imguiContext
+            
+        imgui.set_current_context(self._imguiContext);
+        
         self._imguiRenderer = None
         #setup a simple Event: change to wireframe mode via the GUI
         self._updateWireframe = None
@@ -55,6 +73,7 @@ class ImGUIDecorator(RenderDecorator):
         # self.lctrl = False
         
         # self.traverseCamera()
+
        
     def init(self):
         """
@@ -70,7 +89,7 @@ class ImGUIDecorator(RenderDecorator):
         
         # GPTODO here is the issue: SDL2Decorator takes an SDLWindow as wrappee wheras
         # ImGUIDEcorator takes and SDL2Decorator and decorates it!
-        if isinstance(self.wrapeeWindow, SDL2Window):   
+        if isinstance(self.wrapeeWindow, SDL2Window): 
             self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
             
         #
@@ -103,6 +122,7 @@ class ImGUIDecorator(RenderDecorator):
         self.extra()
         #draw scenegraph tree widget
         self.scenegraphVisualiser()
+        
         #print(f'{self.getClassName()}: display()')
         
     # def traverseCamera(self):
@@ -307,9 +327,7 @@ class ImGUIDecorator(RenderDecorator):
         
         # render imgui (after 3D scene and just before the SDL double buffer swap window)
         imgui.render()
-        self._imguiRenderer.render(imgui.get_draw_data())
-
-
+        self._imguiRenderer.render(imgui.get_draw_data()) 
         # call the SDL window window swapping in the end of the scene as final render action
         self.wrapeeWindow.display_post()
         
@@ -317,12 +335,12 @@ class ImGUIDecorator(RenderDecorator):
     def extra(self):
         """sample ImGUI widgets to be rendered on a RenderWindow
         """
-        imgui.set_next_window_size(300.0, 200.0)
         
         #start new ImGUI frame context
+
         imgui.new_frame()
         #demo ImGUI window with all widgets
-        # imgui.show_test_window()
+        #imgui.show_demo_window()
         #new custom imgui window
         imgui.begin("Elements ImGUI window", True)
         #labels inside the window
@@ -350,14 +368,17 @@ class ImGUIDecorator(RenderDecorator):
                 print(f"wireframe: {self._wireframeMode}")
         #
         # simple slider for color
-        self._changed, self._colorEditor = imgui.color_edit3("Color edit", *self._colorEditor)
+        
+        #self._changed, self._colorEditor = imgui.color_edit3("Color edit", *self._colorEditor)
+        self._changed, self._colorEditor = imgui.color_edit3("Color Edit", self._colorEditor);
         if self._changed:
             print(f"_colorEditor: {self._colorEditor}")
         imgui.separator()
         #
         # START
         # simple slider for eye - IMPORTANT PART HERE
-        self._changed, self._eye = imgui.drag_float3( "Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
+        #self._changed, self._eye = imgui.drag_float3("Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f") 
+        self._changed, self._eye = imgui.drag_float3("Eye", self._eye, v_speed = 0.01, v_min = -10, v_max = 10, format = "%.3f")
         if self._changed:
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
             print ("NEW CAMERA VALUE", self._updateCamera.value)
@@ -367,7 +388,8 @@ class ImGUIDecorator(RenderDecorator):
         imgui.separator()
         #
         # simple slider for target
-        self._changed, self._target = imgui.drag_float3( "Target", *self._target, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
+        #self._changed, self._target = imgui.drag_float3( "Target", *self._target, change_speed = 0.01, min_value=-10, max_value=10, format="%.3f")
+        self._changed, self._target = imgui.drag_float3( "Target", self._target, v_speed = 0.01, v_min = -10, v_max = 10, format = "%.3f")
         if self._changed:
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
             print ("NEW CAMERA VALUE", self._updateCamera.value)
@@ -376,7 +398,8 @@ class ImGUIDecorator(RenderDecorator):
             print(f"_target: {self._target}")
         imgui.separator()
         # simple slider for up
-        self._changed, self._up = imgui.drag_float3( "Up", *self._up, change_speed = 0.01 ,min_value=-5, max_value=5,format="%.3f")
+        #self._changed, self._up = imgui.drag_float3( "Up", *self._up, change_speed = 0.01 ,min_value=-5, max_value=5,format="%.3f")
+        self._changed, self._up = imgui.drag_float3( "Up", self._up, v_speed = 0.01, v_min = -5, v_max = 5, format = "%.3f")
         if self._changed:
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
             print ("NEW CAMERA VALUE", self._updateCamera.value)
@@ -456,7 +479,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
 
-        
+       
 
         # smallerTRSgui = True
         #TRS sample
@@ -564,7 +587,6 @@ class ImGUIecssDecorator(ImGUIDecorator):
         process SDL2 basic events and input
         """
         return super().event_input_process()
-
 
 class ImGUIecssDecorator2(ImGUIDecorator):
     """custom ImGUI decorator for this example
@@ -687,10 +709,9 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         process SDL2 basic events and input
         """
         return super().event_input_process()
-        
 
 
-        #imgui.text(comp.name)
+
 
 class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
 
@@ -712,10 +733,13 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.gizmo = imguizmo.im_guizmo;
         self.cameraView = None;
         self.currGizmoOperation = self.gizmo.OPERATION.translate;
-        
+
+        self.node_editor = ed.NodeEditor()
+        self.generated = False
         #self.gizmo.set_rect(0, 0, imgui2.get_io().display_size.x, imgui2.get_io().display_size.y);
     
-
+  
+    
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
@@ -725,7 +749,6 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             sceneRoot = "ECSS Root Entity"
         
         twoColumn = False
-
         if twoColumn:
             # 2 Column Version
             imgui.begin("ECSS graph")
@@ -742,24 +765,23 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
         
-        #self.gizmo.set_drawlist()
+          
         #self.gizmo.begin_frame()
-        
-        if imgui.tree_node("Translation", imgui.TREE_NODE_OPEN_ON_ARROW):
+        if imgui.tree_node("Translation"):
             self.currGizmoOperation = self.gizmo.OPERATION.translate;
-            changed, value = imgui.drag_float3("X,Y,Z",self.tra["x"],self.tra["y"],self.tra["z"], 0.01, -30, 30, "%.001f", 1);
-            self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.tra), 0.01, -30, 30, "%.001f", 1);
+            self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]         
             imgui.tree_pop();
             
-        if imgui.tree_node("Rotation", imgui.TREE_NODE_OPEN_ON_ARROW):
+        if imgui.tree_node("Rotation"):
             self.currGizmoOperation = self.gizmo.OPERATION.totate;
-            changed, value = imgui.drag_float3("X,Y,Z",self.rot["x"],self.rot["y"],self.rot["z"], 1, -180, 180, "%.1f", 1);
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.rot), 1, -180, 180, "%.1f", 1);
             self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
             
-        if imgui.tree_node("Scale", imgui.TREE_NODE_OPEN_ON_ARROW):
+        if imgui.tree_node("Scale"):
             self.currGizmoOperation = self.gizmo.OPERATION.scale;
-            changed, value = imgui.drag_float3("X,Y,Z",self.sc["x"],self.sc["y"],self.sc["z"], 0.01, 0, 4, "%.01f", 1);
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.sc), 0.01, 0, 4, "%.01f", 1);
             self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
 
@@ -768,12 +790,21 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             pass
         else:
             imgui.separator()
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+            if imgui.tree_node(sceneRoot):
                 self.drawNode(self.wrapeeWindow.scene.world.root)
                 imgui.tree_pop()
-
+                
         imgui.end()
         
+        
+        if not self.generated:
+            self.generated = True
+            self.generate_node_editor(self.wrapeeWindow.scene.world.root)
+        
+        imgui.begin("Node Editor")
+        self.node_editor.on_frame()
+        imgui.end()
+            
     def drawNode(self, component):
         #create a local iterator of Entity's children
         if component._children is not None:
@@ -789,7 +820,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
                 else:
                     # using ## creates unique labels, without showing anything after ##
                     # see: https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-widgets-with-the-same-label
-                    if imgui.tree_node(comp.name + "##" + str(comp.id), imgui.TREE_NODE_OPEN_ON_ARROW):
+                    if imgui.tree_node(comp.name + "##" + str(comp.id)):
                         imgui.text(comp.name)
                         _, selected = imgui.selectable(comp.__str__(), True)
                         if selected:
@@ -834,3 +865,30 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         process SDL2 basic events and input
         """
         return super().event_input_process()
+      
+    def find_parent(self, name):
+        for node in self.node_editor.nodes:
+            if name == node.name:
+                return node
+        return None
+    
+    def generate_node_editor(self, component):
+        if component._children is not None:
+            debugIterator = iter(component._children)
+            done_traversing = False
+            while not done_traversing:
+                try:
+                    comp = next(debugIterator)
+                except StopIteration:
+                    done_traversing = True
+                else:
+                    tmp = ed.Node(comp.name)
+                    parent = self.find_parent(comp._parent.name)
+                    if parent is not None:
+                        tmp.parentId = parent.id
+                        self.node_editor.createLink(parent, tmp)
+                    self.node_editor.addNode(tmp)
+                    self.generate_node_editor(comp) 
+                    
+
+        

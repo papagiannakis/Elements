@@ -8,7 +8,7 @@ import math
 import munch  # type: ignore
 from numpy.typing import NDArray
 
-from imgui_bundle import imgui, imguizmo, hello_imgui, ImVec2, immapp
+from imgui_bundle import imgui, imguizmo, ImVec2, immapp
 from imgui_bundle.demos_python.demo_utils.api_demos import GuiFunction
 
 try:
@@ -175,8 +175,6 @@ def EditTransform(
     else:
         gizmo.set_rect(0, 0, io.display_size.x, io.display_size.y)
 
-    gizmo.draw_grid(cameraView, cameraProjection, identityMatrix, 100.0)
-
     gizmo.draw_cubes(cameraView, cameraProjection, gObjectMatrix[:gizmoCount])
 
     manip_result = gizmo.manipulate(
@@ -285,7 +283,7 @@ def main():
 
     immapp.run(
     gui_function=gui,
-    window_title="Hello!",
+    window_title="Example Guizmos",
     window_size_auto=True
     )
 

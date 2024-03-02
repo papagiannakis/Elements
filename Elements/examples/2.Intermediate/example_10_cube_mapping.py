@@ -6,7 +6,7 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import IMGUIecssDecorator_Georgiou
+from Elements.pyGLV.GUI.ImguiDecorator import IMGUIecssDecorator_Georgiou, ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -37,7 +37,7 @@ projMat = util.perspective(50.0, 1.0, 1.0, 10.0)
 
 # Scenegraph with Entities, Components
 scene = Scene()    
-rootEntity = scene.world.createEntity(Entity(name="RooT"))
+rootEntity = scene.world.createEntity(Entity(name="Root"))
 
 skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
@@ -165,7 +165,7 @@ shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
 while running:
     running = scene.render()
-    displayGUI_text(example_description)
+    #displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     
     view =  gWindow._myCamera # updates view via the imgui

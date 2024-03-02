@@ -111,6 +111,7 @@ class Entity(Component):
             else:
                 print(comp) #calls the component's __str__()
                 comp.print() # recursive call of this method to traverse hierarchy
+    
 
     def add(self, object: Component) ->None:
         self._children.append(object)
