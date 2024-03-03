@@ -1,4 +1,5 @@
-import imgui,sdl2
+import sdl2
+from imgui_bundle import imgui
 
 leftAlt_Key = sdl2.SDLK_LALT
 rightAlt_Key = sdl2.SDLK_RALT
@@ -19,14 +20,16 @@ def displayGUI_text(text:str):
     # imgui.set_next_window_size(100.0, 200.0)
     # imgui.new_frame()
     if  showGUI_text:
-        imgui.core.set_next_window_collapsed(collapseGUI_text, imgui.FIRST_USE_EVER)
-        collapseGUI_text,showGUI_text = imgui.begin("Example Description", True)
+        #imgui.core.set_next_window_collapsed(collapseGUI_text, imgui.FIRST_USE_EVER)
+        imgui.set_next_window_collapsed(collapseGUI_text, 4)
+        collapseGUI_text,showGUI_text = imgui.begin("Example Description", True )
         ###### do this so we can be able to move the window after it was collapsed #########
         #######                         and we re open it                           #########
         if collapseGUI_text:
-            imgui.set_window_position(GUItext_x,GUItext_y,imgui.FIRST_USE_EVER)
+            imgui.set_next_window_pos(imgui.ImVec2(GUItext_x,GUItext_y), 4)
         else:
-            imgui.set_window_position(GUItext_x,GUItext_y,imgui.FIRST_USE_EVER)
+            imgui.set_next_window_pos(imgui.ImVec2(GUItext_x,GUItext_y), 4)
+        print(collapseGUI_text);
         imgui.text(text)
         imgui.end()
 
@@ -39,15 +42,15 @@ def displayShortcutsGUI():
     
     global show_shortcuts_window,shortcuts_x,shortcuts_y,collapseShortcutsWindow
     if show_shortcuts_window:
-        imgui.core.set_next_window_collapsed(collapseShortcutsWindow, imgui.FIRST_USE_EVER)
+        imgui.set_next_window_collapsed(collapseShortcutsWindow)
         collapseShortcutsWindow, show_shortcuts_window = imgui.begin("Shortcuts", True)
       
         ###### do this so we can be able to move the window after it was collapsed #########
         #######                         and we re open it                           #########
         if collapseShortcutsWindow:
-            imgui.set_window_position(shortcuts_x,shortcuts_y,imgui.FIRST_USE_EVER)
+            imgui.set_window_pos(imgui.ImVec2(shortcuts_x,shortcuts_y))
         else:
-            imgui.set_window_position(shortcuts_x,shortcuts_y,imgui.FIRST_USE_EVER)
+            imgui.set_window_pos(imgui.ImVec2(shortcuts_x,shortcuts_y))
 
         imgui.text("List of shortcuts:")
         
