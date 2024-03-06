@@ -57,7 +57,7 @@ class Scene():
             #create a basic SDL2 RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
             # self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
             # self._gContext = self._renderWindow 
-            self._renderWindow = GLFWWindow(windowHeight, windowWidth, windowTitle, self, openGLveriosn=openGLversion)
+            self._renderWindow = GLFWWindow(windowHeight=windowHeight, windowWidth=windowWidth, windowTitle=windowTitle, scene=self, openGLveriosn=openGLversion)
             self._gContext = self._renderWindow
         
         if imgui == True and customImGUIdecorator == None:

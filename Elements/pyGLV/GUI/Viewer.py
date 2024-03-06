@@ -17,13 +17,16 @@ from typing import List, Dict, Any
 from collections.abc import Iterable, Iterator
 from sys import platform
 
-import sdl2
-import sdl2.ext
-from sdl2.keycode import SDLK_ESCAPE,SDLK_w
-from sdl2.video import SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI 
+# import sdl2
+# import sdl2.ext
+# from sdl2.keycode import SDLK_ESCAPE,SDLK_w
+# from sdl2.video import SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI 
 
+import os
 import weakref 
-import glfw 
+import glfw   
+from wgpu.gui.base import WgpuCanvasBase, WgpuAutoGui
+
 from Elements.pyGLV.GUI.windowEvents import PushEvent, PollEventAndFlush, WindowEvent, EventTypes
 
 import OpenGL.GL as gl
@@ -171,6 +174,33 @@ button_map = {
     glfw.MOUSE_BUTTON_8: 8,
 }
 
+# Make sure that glfw is new enough
+glfw_version_info = tuple(int(i) for i in glfw.__version__.split(".")[:2])
+if glfw_version_info < (1, 9):
+    raise ImportError("wgpu-py requires glfw 1.9 or higher.")
+
+# Do checks to prevent pitfalls on hybrid Xorg/Wayland systems
+is_wayland = False
+if platform.startswith("linux"):
+    is_wayland = "wayland" in os.getenv("XDG_SESSION_TYPE", "").lower()
+    if is_wayland and not hasattr(glfw, "get_wayland_window"):
+        raise RuntimeError(
+            "We're on Wayland but Wayland functions not available. "
+            + "Did you apt install libglfw3-wayland?"
+        )
+
+# Some glfw functions are not always available
+set_window_content_scale_callback = lambda *args: None  # noqa: E731
+set_window_maximize_callback = lambda *args: None  # noqa: E731
+get_window_content_scale = lambda *args: (1, 1)  # noqa: E731
+
+if hasattr(glfw, "set_window_content_scale_callback"):
+    set_window_content_scale_callback = glfw.set_window_content_scale_callback
+if hasattr(glfw, "set_window_maximize_callback"):
+    set_window_maximize_callback = glfw.set_window_maximize_callback
+if hasattr(glfw, "get_window_content_scale"):
+    get_window_content_scale = glfw.get_window_content_scale
+    
 
 def weakbind(method):
     """Replace a bound method with a callable object that stores the `self` using a weakref."""
@@ -256,14 +286,14 @@ class RenderWindow(ABC):
     
     
 
-class GLFWWindow(RenderWindow):
+class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
     """ The concrete subclass of RenderWindow for the GLFW GUI API
 
     :param RenderWindow: [description]
     :type RenderWindow: [type]
     """ 
     
-    def __init__(self, windowWidth = None, windowHeight = None, windowTitle = None, scene = None, eventManager = None, openGLveriosn = 4): 
+    def __init__(self, *, wgpu:bool = False, windowWidth = None, windowHeight = None, windowTitle = None, scene = None, eventManager = None, openGLveriosn = 4, **kwargs): 
         """Constructor GLFWWindow for basic GLFW parameters
 
         :param windowWidth: [description], defaults to None
@@ -274,7 +304,7 @@ class GLFWWindow(RenderWindow):
         :type windowTitle: [type], optional
         """ 
         
-        super().__init__() 
+        super().__init__(**kwargs) 
         
         self._running = True 
         
@@ -282,7 +312,10 @@ class GLFWWindow(RenderWindow):
         self._gContext = None
         self._gVersionLabel = "None" 
         
-        self.openGLversion = openGLveriosn 
+        self.openGLversion = openGLveriosn  
+       
+        # Enable wgpu rendering 
+        self.wgpu = wgpu
         
         if windowWidth is None: 
             self._windowWidth = 1024
@@ -312,7 +345,15 @@ class GLFWWindow(RenderWindow):
         #OpenGL state variables
         self._wireframeMode = False
         self._colorEditor = 0.0, 0.0, 0.0
-        self._myCamera = np.identity(4) 
+        self._myCamera = np.identity(4)   
+        
+        self._need_draw = False
+        self._request_draw_timer_running = False
+        self._changing_pixel_ratio = False
+        self._is_minimized = False
+        
+        self._pixel_ratio = -1
+        self._screen_size_is_logical = False
         
     @property
     def gWindow(self):
@@ -329,55 +370,69 @@ class GLFWWindow(RenderWindow):
 
         print(f'{self.getClassName()}: init()')
         glfw.init()
-          
-        glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
-        glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
-        glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE) 
-        glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE) 
-        glfw.window_hint(glfw.DOUBLEBUFFER, glfw.TRUE)
-        glfw.window_hint(glfw.SAMPLES, 4)
-        
-        #depth stencil buffer size
-        glfw.window_hint(glfw.DEPTH_BITS, 24)
-        glfw.window_hint(glfw.STENCIL_BITS, 8)  
-        
-        if self.openGLversion == 3:
-            print("=" * 24)
-            print("Using OpenGL version 3.2")
-            print("="*24)
+         
+        if not self.wgpu:
             glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
-            glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 2)
-        else: 
-            print("="*24)
-            print("Using OpenGL version 4.1")
-            print("="*24)
-            glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
-            glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 1) 
-           
-        if platform.startswith("darwin"): 
-            # Emulate right-click with Control on macOS
-            # glfw.window_hint(glfw.COCOA_CHDIR_RESOURCES, glfw.TRUE)
-            # glfw.window_hint(glfw.COCOA_MENUBAR, glfw.FALSE)
-            glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE)
+            glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
+            glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE) 
+            glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE) 
+            glfw.window_hint(glfw.DOUBLEBUFFER, glfw.TRUE)
+            glfw.window_hint(glfw.SAMPLES, 4)
+            
+            #depth stencil buffer size
+            glfw.window_hint(glfw.DEPTH_BITS, 24)
+            glfw.window_hint(glfw.STENCIL_BITS, 8)  
+            
+            if self.openGLversion == 3:
+                print("=" * 24)
+                print("Using OpenGL version 3.2")
+                print("="*24)
+                glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
+                glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 2)
+            else: 
+                print("="*24)
+                print("Using OpenGL version 4.1")
+                print("="*24)
+                glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 4)
+                glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 1) 
+            
+            # if platform.startswith("darwin"): 
+            #     # Emulate right-click with Control on macOS
+            #     # glfw.window_hint(glfw.COCOA_CHDIR_RESOURCES, glfw.TRUE)
+            #     # glfw.window_hint(glfw.COCOA_MENUBAR, glfw.FALSE)
+            #     # glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE) 
+        else:
+            glfw.window_hint(glfw.CLIENT_API, glfw.NO_API)
+            glfw.window_hint(glfw.RESIZABLE, True)  
+            
+            if platform.startswith("linux"):
+                if is_wayland:
+                    glfw.window_hint(glfw.FOCUSED, False)  # prevent Wayland focus error
+             
 
         # Disable high DPI mode
         # TODO: refactor inconify for preventing action while minimized
         glfw.window_hint(glfw.AUTO_ICONIFY, glfw.TRUE)  # This is a workaround for high DPI on some systems
         
         self._gWindow = glfw.create_window(
-            int(self._windowHeight), 
-            int(self._windowWidth),  
+            int(self._windowWidth), 
+            int(self._windowHeight),  
             self._windowTile, 
             None, 
             None
-        )  
+        )   
+        
+        glfw.set_window_close_callback(self._gWindow, weakbind(self._on_check_close)) 
+        glfw.set_framebuffer_size_callback(self._gWindow, weakbind(self._on_size_change)) 
+        glfw.set_window_refresh_callback(self._gWindow, weakbind(self._on_window_dirty))
+        glfw.set_window_focus_callback(self._gWindow, weakbind(self._on_window_dirty))
+        set_window_maximize_callback(self._gWindow, weakbind(self._on_window_dirty))
+        set_window_content_scale_callback(self._gWindow, weakbind(self._on_pixelratio_change))
         
         self._key_modifiers = [] 
         self._pointer_buttons = [] 
         self._pointer_pos = 0, 0 
         self._double_click_state = {"clicks": 0}
-        glfw.set_window_close_callback(self._gWindow, weakbind(self._on_check_close)) 
-        glfw.set_framebuffer_size_callback(self._gWindow, weakbind(self._on_size_change))  
         glfw.set_mouse_button_callback(self._gWindow, weakbind(self._on_mouse_button))
         glfw.set_cursor_pos_callback(self._gWindow, weakbind(self._on_cursor_pos))
         glfw.set_scroll_callback(self._gWindow, weakbind(self._on_scroll))
@@ -387,17 +442,20 @@ class GLFWWindow(RenderWindow):
             print("Window could not be created! GLFW Error: ", glfw.get_error())
             exit(1)       
             
-        glfw.make_context_current(self._gWindow) 
-        self._gContext = glfw.get_current_context() 
-        
-        if self._gContext is None:
-            print("OpenGL Context could not be created! GLFW Error: ", glfw.get_error())
-            exit(1)  
+        if self.wgpu:
+            self.set_logical_size(self._windowWidth, self._windowHeight)
+            self._request_draw() 
+        else:
+            glfw.make_context_current(self._gWindow) 
+            self._gContext = glfw.get_current_context() 
             
-        glfw.swap_interval(1)
+            if self._gContext is None:
+                print("OpenGL Context could not be created! GLFW Error: ", glfw.get_error())
+                exit(1)  
+            
+            self._gVersionLabel = f'OpenGL {gl.glGetString(gl.GL_VERSION).decode()} GLSL {gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION).decode()} Renderer {gl.glGetString(gl.GL_RENDERER).decode()}'
+            print(self._gVersionLabel) 
         
-        self._gVersionLabel = f'OpenGL {gl.glGetString(gl.GL_VERSION).decode()} GLSL {gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION).decode()} Renderer {gl.glGetString(gl.GL_RENDERER).decode()}'
-        print(self._gVersionLabel)
             
     def init_post(self):
         """
@@ -411,25 +469,30 @@ class GLFWWindow(RenderWindow):
         Main display window method to be called standalone or from within a concrete Decorator
         """
         # GPTODO make background clear color as parameter at class level
+        if not self.wgpu:
+            gl.glClearColor(*self._colorEditor, 1.0)
+            gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
+            gl.glDisable(gl.GL_CULL_FACE)
+            gl.glEnable(gl.GL_DEPTH_TEST)
+            gl.glDepthFunc(gl.GL_LESS)
+            # gl.glDepthFunc(gl.GL_LEQUAL);
 
-        gl.glClearColor(*self._colorEditor, 1.0)
-        gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
-        gl.glDisable(gl.GL_CULL_FACE)
-        gl.glEnable(gl.GL_DEPTH_TEST)
-        gl.glDepthFunc(gl.GL_LESS)
-        # gl.glDepthFunc(gl.GL_LEQUAL);
+            # gl.glDepthMask(gl.GL_FALSE);
 
-        # gl.glDepthMask(gl.GL_FALSE);
+            # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
-        # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-
-        # setup some extra GL state flags
-        if self._wireframeMode:
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-            #print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
-        else:
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-            # print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
+            # setup some extra GL state flags
+            if self._wireframeMode:
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+                #print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
+            else:
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
+            # print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")  
+            
+        elif self.wgpu: 
+            if self._need_draw:
+                self._need_draw = False;
+                self._draw_frame_and_present() 
 
         # print(f'{self.getClassName()}: display()')
 
@@ -454,38 +517,165 @@ class GLFWWindow(RenderWindow):
         glfw.poll_events()   
         
         events = PollEventAndFlush()
-        for event in events:
-            print(event.data)
          
         if self._running and running:
             if glfw.get_key(self._gWindow, glfw.KEY_ESCAPE) == glfw.PRESS: 
                 self._running = False 
 
-        return self._running
+        return self._running 
+    
+    def _mark_ready_for_draw(self):
+        self._request_draw_timer_running = False
+        self._need_draw = True  # The event loop looks at this flag
+        glfw.post_empty_event()  # Awake the event loop, if it's in wait-modeV
+
+    #WGPU API funtions --------------------------------------------------------------
+    def get_window_id(self):
+        if platform.startswith("win"):
+            return int(glfw.get_win32_window(self._gWindow))
+        elif platform.startswith("darwin"):
+            return int(glfw.get_cocoa_window(self._gWindow))
+        elif platform.startswith("linux"):
+            if is_wayland:
+                return int(glfw.get_wayland_window(self._gWindow))
+            else:
+                return int(glfw.get_x11_window(self._gWindow))
+        else:
+            raise RuntimeError(f"Cannot get GLFW window id on {platform}.")
+
+    def get_display_id(self):
+        if platform.startswith("linux"):
+            if is_wayland:
+                return glfw.get_wayland_display()
+            else:
+                return glfw.get_x11_display()
+        else:
+            raise RuntimeError(f"Cannot get GLFW display id on {platform}.")
+
+    def get_pixel_ratio(self):
+        return self._pixel_ratio
+
+    def get_logical_size(self):
+        return self._logical_size
+
+    def get_physical_size(self):
+        return self._physical_size
+
+    def set_logical_size(self, width, height):
+        if width < 0 or height < 0:
+            raise ValueError("Window width and height must not be negative")
+        self._set_logical_size((float(width), float(height)))
+
+    def _request_draw(self):
+        if not self._request_draw_timer_running:
+            self._request_draw_timer_running = True
+            self._mark_ready_for_draw()
+
+    def close(self):
+        if self._window is not None:
+            glfw.set_window_should_close(self._window, True)
+            self._check_close()
+
+    def is_closed(self):
+        return self._window is None  
+    #WGPU API funtions -------------------------------------------------------------- 
+    
+    
+    # Callbacks 
+    def _on_pixelratio_change(self, *args):
+        if self._changing_pixel_ratio:
+            return
+        self._changing_pixel_ratio = True  # prevent recursion (on Wayland)
+        try:
+            self._set_logical_size(self._logical_size)
+        finally:
+            self._changing_pixel_ratio = False
+        if self.wgpu:
+            self._request_draw()
+
+    def _check_close(self, *args):
+        # Follow the close flow that glfw intended.
+        # This method can be overloaded and the close-flag can be set to False
+        # using set_window_should_close() if now is not a good time to close.
+        if self._window is not None and glfw.window_should_close(self._window):
+            self._on_close()
+            
+    def _on_window_dirty(self, *args): 
+        if self.wgpu:
+            self._request_draw() 
 
     def _on_check_close(self, *args):
         # Follow the close flow that glfw intended.
         if self._gWindow is not None and glfw.window_should_close(self._gWindow): 
             self._running = False
              
+    def _determine_size(self):
+        width, height = glfw.get_framebuffer_size(self._gWindow)  
+        pixel_ratio = get_window_content_scale(self._gWindow)[0]
+        psize = width, height
+        psize = int(psize[0]), int(psize[1])
+
+        self._pixel_ratio = pixel_ratio
+        self._physical_size = psize
+        self._logical_size = psize[0] / pixel_ratio, psize[1] / pixel_ratio     
+        
+        self._windowWidth = width 
+        self._windowHeight = height 
+    
     def _on_size_change(self, *args): 
-        # simple buffer and window resizing
-        width, height = glfw.get_framebuffer_size(self._gWindow)
-        if width > 0 and height > 0: 
-            self._windowWidth = width;
-            self._windowHeight = height;
-            gl.glViewport(0, 0, self._windowWidth, self._windowHeight)
-            print(f"Window Resized to {self._windowWidth} X {self._windowHeight}")  
-            
-            ev = {
-                "width": width, 
-                "height": height
-            } 
-           
-            event = WindowEvent() 
-            event.type = EventTypes.WINDOW_SIZE
-            event.data = ev 
-            PushEvent(event)
+        # simple buffer and window resizing 
+        self._determine_size()
+        
+        if not self.wgpu:
+            gl.glViewport(0, 0, self._windowWidth, self._windowHeight) 
+        else:
+            self._request_draw()
+        
+        ev = {
+            "width": self._windowWidth, 
+            "height": self._windowHeight
+        } 
+    
+        event = WindowEvent() 
+        event.type = EventTypes.WINDOW_SIZE
+        event.data = ev 
+        PushEvent(event) 
+                
+    def _set_logical_size(self, new_logical_size):
+        if self._gWindow is None:
+            return
+        # There is unclarity about the window size in "screen pixels".
+        # It appears that on Windows and X11 its the same as the
+        # framebuffer size, and on macOS it's logical pixels.
+        # See https://github.com/glfw/glfw/issues/845
+        # Here, we simply do a quick test so we can compensate.
+
+        # The current screen size and physical size, and its ratio
+        pixel_ratio = get_window_content_scale(self._gWindow)[0]
+        ssize = glfw.get_window_size(self._gWindow)
+        psize = glfw.get_framebuffer_size(self._gWindow)
+
+        # Apply
+        if is_wayland:
+            # Not sure why, but on Wayland things work differently
+            screen_ratio = ssize[0] / new_logical_size[0]
+            glfw.set_window_size(
+                self._gWindow,
+                int(new_logical_size[0] / screen_ratio),
+                int(new_logical_size[1] / screen_ratio),
+            )
+        else:
+            screen_ratio = ssize[0] / psize[0]
+            glfw.set_window_size(
+                self._gWindow,
+                int(new_logical_size[0] * pixel_ratio * screen_ratio),
+                int(new_logical_size[1] * pixel_ratio * screen_ratio),
+            )
+        self._screen_size_is_logical = screen_ratio != 1
+        # If this causes the widget size to change, then _on_size_change will
+        # be called, but we may want force redetermining the size.
+        if pixel_ratio != self._pixel_ratio:
+            self._determine_size()
            
     def _on_mouse_button(self, window, but, action, mods):    
         button = button_map.get(but, 0) 
@@ -1021,7 +1211,7 @@ class RenderDecorator(RenderWindow):
         shortcut_HotKey = KEY_MAP.get(glfw.KEY_LEFT_ALT) 
         
         for event in events:
-            print("event: ", event.data)
+            #print("event: ", event.data)
             if event.type == EventTypes.SCROLL:
                 x = event.data["dx"]
                 y = event.data["dy"]
@@ -1029,9 +1219,9 @@ class RenderDecorator(RenderWindow):
             
             elif event.type == EventTypes.MOUSE_MOTION:
                 buttons = event.data["buttons"] 
-                if 2 in buttons:
+                if button_map[glfw.MOUSE_BUTTON_2] in buttons:
                     x = -event.data["x"]
-                    y = event.data["y"]
+                    y = event.data["y"] 
                     self.cameraHandling(x, y, height, width)
                      
             elif event.type == EventTypes.KEY_PRESS:
@@ -1124,12 +1314,12 @@ class RenderDecorator(RenderWindow):
             if glfw.get_key(self.wrapeeWindow._gWindow, glfw.KEY_ESCAPE) == glfw.PRESS: 
                 running = False 
                 
-            #imgui event 
-            # self._imguiRenderer.process_event()
+            #imgui event  
+            #self._imguiRenderer.process_event()
         # #imgui input
         self._imguiRenderer.process_inputs()
                     
-        return running #self._wrapeeWindow.event_input_process() & running   
+        return self._wrapeeWindow.event_input_process() & running   
     
     # def event_input_process(self):
     #     """
@@ -1272,8 +1462,9 @@ class RenderDecorator(RenderWindow):
     def display_post(self):
         """
         Post diplay method after all other display calls have been issued
-        """
-        self._wrapeeWindow.display_post()
+        """ 
+        if not self.wgpu:
+            self._wrapeeWindow.display_post()
     
     
     def init_post(self):
@@ -1368,12 +1559,13 @@ if __name__ == "__main__":
     #     gWindow.display_post()            
     # gWindow.shutdown() 
     
-    gWindow = GLFWWindow(windowHeight=1200, windowWidth=800, openGLveriosn=3) 
+    gWindow = GLFWWindow(windowWidth=1200, windowHeight=800, wgpu=True) 
     gWindow.init()
     gWindow.init_post() 
     running = True        
     # MAIN RENDERING LOOP        
-    while gWindow.event_input_process(running): 
-        gWindow.display()                
-        gWindow.display_post()            
+    while running:
+        running = gWindow.event_input_process()
+        # gWindow.display()                
+        # gWindow.display_post()            
     

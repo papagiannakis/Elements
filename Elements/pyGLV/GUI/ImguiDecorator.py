@@ -5,7 +5,7 @@ from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, GLFWWindow
 from Elements.pyECSS.Component import BasicTransform
 from imgui.integrations.sdl2 import SDL2Renderer 
 
-from imgui.integrations.glfw import GlfwRenderer
+from imgui.integrations.glfw import GlfwRenderer  
 
 import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
@@ -71,7 +71,7 @@ class ImGUIDecorator(RenderDecorator):
         # if isinstance(self.wrapeeWindow, SDL2Window):   
         #     self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
         if isinstance(self.wrapeeWindow, GLFWWindow):
-            self._imguiRenderer = GlfwRenderer(self.wrapeeWindow._gWindow)
+            self._imguiRenderer = GlfwRenderer(self.wrapeeWindow._gWindow, False)
             
         #
         # Setting up events that this class is publishing (if the EventManager is present in the decorated wrappee)

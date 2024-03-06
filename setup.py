@@ -39,6 +39,8 @@ setup(
         'pysdl2',
         'pysdl2-dll', 
         'glfw',
+        'wgpu', 
+        'cffi',
         'ipykernel',
         'usd-core',
         'jupyter',
