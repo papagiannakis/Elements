@@ -29,7 +29,6 @@ def displayGUI_text(text:str):
             imgui.set_next_window_pos(imgui.ImVec2(GUItext_x,GUItext_y), 4)
         else:
             imgui.set_next_window_pos(imgui.ImVec2(GUItext_x,GUItext_y), 4)
-        print(collapseGUI_text);
         imgui.text(text)
         imgui.end()
 
@@ -42,15 +41,15 @@ def displayShortcutsGUI():
     
     global show_shortcuts_window,shortcuts_x,shortcuts_y,collapseShortcutsWindow
     if show_shortcuts_window:
-        imgui.set_next_window_collapsed(collapseShortcutsWindow)
+        imgui.set_next_window_collapsed(collapseShortcutsWindow, 4)
         collapseShortcutsWindow, show_shortcuts_window = imgui.begin("Shortcuts", True)
       
         ###### do this so we can be able to move the window after it was collapsed #########
         #######                         and we re open it                           #########
         if collapseShortcutsWindow:
-            imgui.set_window_pos(imgui.ImVec2(shortcuts_x,shortcuts_y))
+            imgui.set_window_pos(imgui.ImVec2(shortcuts_x,shortcuts_y), 4)
         else:
-            imgui.set_window_pos(imgui.ImVec2(shortcuts_x,shortcuts_y))
+            imgui.set_window_pos(imgui.ImVec2(shortcuts_x,shortcuts_y), 4)
 
         imgui.text("List of shortcuts:")
         

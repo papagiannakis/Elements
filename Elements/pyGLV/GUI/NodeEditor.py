@@ -66,7 +66,6 @@ class NodeEditor:
 
     def __init__(self):
         ID.reset()
-        print("init")
         self.config = None;
         self.editor_context = ed.create_editor();
         self.imgui_context = imgui.create_context()

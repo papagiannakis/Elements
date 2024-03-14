@@ -6,7 +6,6 @@ from Elements.pyECSS.Component import BasicTransform
 import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
 from Elements.pyECSS.System import System
-import Elements.pyGLV.GUI.NodeEditor as ed
 
 ##_______OLD IMGUI_______##
 #from imgui.integrations.sdl2 import SDL2Renderer
@@ -14,10 +13,11 @@ import Elements.pyGLV.GUI.NodeEditor as ed
 ##_______________________##
 
 ##________GEORGIOU ADDED_______##
+import Elements.pyGLV.GL.FrameBuffer as buffer
+import Elements.pyGLV.GL.FrameBuffer2 as buffer2
+import Elements.pyGLV.GUI.NodeEditor as ed
 from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
-from imgui_bundle import imguizmo, imgui_node_editor as editor
-from imgui_bundle import imgui
-import numpy as np
+from imgui_bundle import imgui, imguizmo, hello_imgui
 ##_____________________________##
 
 def toList(arg):
@@ -53,26 +53,7 @@ class ImGUIDecorator(RenderDecorator):
         self._changed = False 
         self._checkbox = False 
         self._colorEditor = wrapee._colorEditor
-        # self._eye = (2.5, 2.5, 2.5)
-        # self._target = (0.0, 0.0, 0.0) 
-        # self._up = (0.0, 1.0, 0.0)
-
-        # # TRS Variables 
-        # self.translation = {};
-        # self.translation["x"] = 0; self.translation["y"] = 0; self.translation["z"] = 0; 
-
-        # self.rotation = {};
-        # self.rotation["x"] = 0; self.rotation["y"] = 0; self.rotation["z"] = 0; 
-
-        # self.scale = {};
-        # self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
-
-        # #this is not used anywhere
-        # self.color = [255, 50, 50];
-
-        # self.lctrl = False
-        
-        # self.traverseCamera()
+        self.buffer = None;
 
        
     def init(self):
@@ -122,6 +103,9 @@ class ImGUIDecorator(RenderDecorator):
         self.extra()
         #draw scenegraph tree widget
         self.scenegraphVisualiser()
+        
+        if self.buffer is not None:
+            self.buffer.initFramebuffer()
         
         #print(f'{self.getClassName()}: display()')
         
@@ -329,6 +313,7 @@ class ImGUIDecorator(RenderDecorator):
         imgui.render()
         self._imguiRenderer.render(imgui.get_draw_data()) 
         # call the SDL window window swapping in the end of the scene as final render action
+
         self.wrapeeWindow.display_post()
         
         
@@ -427,6 +412,7 @@ class ImGUIDecorator(RenderDecorator):
     def accept(self, system: System, event = None):
         system.apply2ImGUIDecorator(self, event)
 
+
 class ImGUIecssDecorator(ImGUIDecorator):
     """custom ImGUI decorator for this example
 
@@ -485,34 +471,34 @@ class ImGUIecssDecorator(ImGUIDecorator):
         #TRS sample
         # if(isinstance(self.selected, BasicTransform)):
 
-        if imgui.tree_node("Translation", imgui.TREE_NODE_OPEN_ON_ARROW):
+        if imgui.tree_node("Translation"):
             # changed, value = imgui.slider_float("X", self.translation["x"], -3, 3, "%.01f", 1);
             # self.translation["x"] = value;
             # changed, value = imgui.slider_float("Y", self.translation["y"], -3, 3, "%.01f", 1);
             # self.translation["y"] = value;
             # changed, value = imgui.slider_float("Z", self.translation["z"], -3, 3, "%.01f", 1);
             # self.translation["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.tra["x"],self.tra["y"],self.tra["z"], 0.01, -30, 30, "%.001f", 1);
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.tra), 0.01, -30, 30, "%.001f", 1);
             self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
-        if imgui.tree_node("Rotation", imgui.TREE_NODE_OPEN_ON_ARROW):
+        if imgui.tree_node("Rotation"):
             # changed, value = imgui.slider_float("X", self.rotation["x"], -90, 90, "%.1f", 1);
             # self.rotation["x"] = value;
             # changed, value = imgui.slider_float("Y", self.rotation["y"], -90, 90, "%.1f", 1);
             # self.rotation["y"] = value;
             # changed, value = imgui.slider_float("Z", self.rotation["z"], -90, 90, "%.1f", 1);
             # self.rotation["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.rot["x"],self.rot["y"],self.rot["z"], 1, -180, 180, "%.1f", 1);
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.rot), 1, -180, 180, "%.1f", 1);
             self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
-        if imgui.tree_node("Scale", imgui.TREE_NODE_OPEN_ON_ARROW):
+        if imgui.tree_node("Scale"):
             # changed, value = imgui.slider_float("X", self.scale["x"], 0, 3, "%.01f", 1);
             # self.scale["x"] = value;
             # changed, value = imgui.slider_float("Y", self.scale["y"], 0, 3, "%.01f", 1);
             # self.scale["y"] = value;
             # changed, value = imgui.slider_float("Z", self.scale["z"], 0, 3, "%.01f", 1);
             # self.scale["z"] = value;
-            changed, value = imgui.drag_float3("X,Y,Z",self.sc["x"],self.sc["y"],self.sc["z"], 0.01, 0, 4, "%.01f", 1);
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.sc), 0.01, 0, 4, "%.01f", 1);
             self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
 
@@ -521,7 +507,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             pass
         else:
             imgui.separator()
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+            if imgui.tree_node(sceneRoot):
                 self.drawNode(self.wrapeeWindow.scene.world.root)
                 imgui.tree_pop()
 
@@ -542,7 +528,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
                 else:
                     # using ## creates unique labels, without showing anything after ##
                     # see: https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-widgets-with-the-same-label
-                    if imgui.tree_node(comp.name + "##" + str(comp.id), imgui.TREE_NODE_OPEN_ON_ARROW):
+                    if imgui.tree_node(comp.name + "##" + str(comp.id)):
                         imgui.text(comp.name)
                         _, selected = imgui.selectable(comp.__str__(), True)
                         if selected:
@@ -641,8 +627,8 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         self.inspectorVisualizer()
         
     def drawNodes(self, component, onHierarchyFlag=True):
-        DEFAULT_FLAGS = imgui.TREE_NODE_BULLET
-        SELECTED_FLAGS = imgui.TREE_NODE_BULLET | imgui.TREE_NODE_SELECTED
+        #DEFAULT_FLAGS = imgui.TREE_NODE_BULLET
+        #SELECTED_FLAGS = imgui.TREE_NODE_BULLET | imgui.TREE_NODE_SELECTED
 
         #create a local iterator of Entity's children
         ret = False
@@ -658,8 +644,8 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                 else: 
                     if (onHierarchyFlag == True and (comp.type == "Entity" or comp.type == "GameObjectEntity")) or (not onHierarchyFlag and comp.type != "Entity" and comp.type != "GameObjectEntity"): 
                         clicked = False
-                        flags = SELECTED_FLAGS if self.selected_node == comp else DEFAULT_FLAGS
-                        if imgui.tree_node(comp.name + "##" + str(comp.id), flags):                        
+                        #flags = SELECTED_FLAGS if self.selected_node == comp else DEFAULT_FLAGS
+                        if imgui.tree_node(comp.name + "##" + str(comp.id)):                        
                             if isinstance(comp, BasicTransform):
                                 if comp != self.selected: # First time selecting it. Set trs values to GUI;
                                     self.selected = comp
@@ -668,17 +654,17 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                                     self.sc["x"], self.sc["y"], self.sc["z"] = comp.scale
 
                                 imgui.text("Translation")
-                                changedT, valueT = imgui.drag_float3("Xt,Yt,Zt",self.tra["x"],self.tra["y"],self.tra["z"], 0.01, -30, 30, "%.001f", 1)
+                                changedT, valueT = imgui.drag_float3("Xt,Yt,Zt",toList(self.tra), 0.01, -30, 30, "%.001f", 1)
                                 if changedT:
                                     self.tra["x"],self.tra["y"],self.tra["z"] = valueT
                                  
                                 imgui.text("Rotation")
-                                changedR, valueR = imgui.drag_float3("Xr,Yr,Zr",self.rot["x"],self.rot["y"],self.rot["z"], 1, -180, 180, "%.1f", 1)
+                                changedR, valueR = imgui.drag_float3("Xr,Yr,Zr",toList(self.rot), 1, -180, 180, "%.1f", 1)
                                 if changedR:
                                     self.rot["x"],self.rot["y"],self.rot["z"] = valueR
                                 
                                 imgui.text("Scale")
-                                changedS, valueS = imgui.drag_float3("Xs,Ys,Zs",self.sc["x"],self.sc["y"],self.sc["z"], 0.01, 0, 4, "%.01f", 1)
+                                changedS, valueS = imgui.drag_float3("Xs,Ys,Zs",toList(self.sc), 0.01, 0, 4, "%.01f", 1)
                                 if changedS:
                                     self.sc["x"],self.sc["y"],self.sc["z"] = valueS
                                 
@@ -711,8 +697,6 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         return super().event_input_process()
 
 
-
-
 class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
 
     def __init__(self, wrapee: RenderWindow, imguiContext = None):
@@ -736,10 +720,12 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
 
         self.node_editor = ed.NodeEditor()
         self.generated = False
-        #self.gizmo.set_rect(0, 0, imgui2.get_io().display_size.x, imgui2.get_io().display_size.y);
-    
-  
-    
+        
+        io = imgui.get_io()
+        io.config_flags |= imgui.ConfigFlags_.docking_enable  # Enable docking
+        
+        #self.buffer = fbuff.FrameBuffer();
+
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
@@ -751,7 +737,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         twoColumn = False
         if twoColumn:
             # 2 Column Version
-            imgui.begin("ECSS graph")
+            imgui.begin("ECSSgraph")
             imgui.columns(2,"Properties")
             if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
                 self.drawNode(self.wrapeeWindow.scene.world.root)
@@ -760,7 +746,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
         else:
-            imgui.begin("ECSS graph")
+            imgui.begin("ECSSgraph")
             imgui.columns(1,"Properties")
             imgui.text("Properties")
             imgui.separator()
@@ -798,12 +784,25 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         
         
         if not self.generated:
-            self.generated = True
+            self.generated = True;
+            self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
             self.generate_node_editor(self.wrapeeWindow.scene.world.root)
         
-        imgui.begin("Node Editor")
+        imgui.begin("NodeEditor")
         self.node_editor.on_frame()
         imgui.end()
+        
+       # hello_imgui.DockingSplit( initial_dock_="MainDockSpace",
+       #     new_dock_="ECSSDock",
+       #     direction_=imgui.Dir_.left,
+       #     ratio_=0.25,
+       # )
+        
+       # hello_imgui.DockableWindow(label_ = "ECSSgraph", dock_space_name_= "ECSSDock");
+       # hello_imgui.DockableWindow(label_ = "NodeEditor", dock_space_name_= "MainDockSpace");
+        
+       # hello_imgui.DockingLayoutCondition.application_start
+       # hello_imgui.DefaultImGuiWindowType.provide_full_screen_dock_space
             
     def drawNode(self, component):
         #create a local iterator of Entity's children
@@ -889,6 +888,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
                         self.node_editor.createLink(parent, tmp)
                     self.node_editor.addNode(tmp)
                     self.generate_node_editor(comp) 
+
                     
 
         
