@@ -11,7 +11,8 @@ https://github.com/Zuzu-Typ/PyGLM/tree/master/wiki/function-reference
 """
 
 # Python built-in modules
-import math
+import math 
+import glm
 from numbers import Number
 from numpy.linalg import inv
 
@@ -166,7 +167,7 @@ def perspective(fovy, aspect, near, far):
     return np.array([[sx, 0,  0,  0],
                      [0,  sy, 0,  0],
                      [0,  0, zz, zw],
-                     [0,  0, -1,  0]], dtype=np.float32,order='F')
+                     [0,  0, -1,  0]], dtype=np.float32,order='F')  
     
 def frustum(xmin, xmax, ymin, ymax, zmin, zmax):
     """Alternative Perspective projection matrix creation function, where 

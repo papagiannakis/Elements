@@ -1,9 +1,14 @@
 import time 
 
-import wgpu  
-import numpy as np
+import glm
 
-from Elements.pyGLV.GUI.Viewer import GLFWWindow
+import wgpu    
+import numpy as np   
+import glfw
+import Elements.definitions as definitions
+
+from Elements.pyGLV.GUI.Viewer import GLFWWindow 
+from Elements.pyGLV.GL.Shader import ShaderLoader 
 import Elements.pyECSS.math_utilities as util 
 
 """
@@ -12,10 +17,12 @@ This example renders a simple textured rotating cube.
 
 # test_example = true
 
+width = 1200
+height = 800
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
-canvas = GLFWWindow(windowHeight=800, windowWidth=1200, wgpu=True, windowTitle="Wgpu Example"); 
+canvas = GLFWWindow(windowHeight=height, windowWidth=width, wgpu=True, windowTitle="Wgpu Example"); 
 canvas.init()
 canvas.init_post()
 
@@ -29,17 +36,17 @@ render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)
 
 #Simple Cube
-vertexCube = np.array([
-    [-1, -1, 1, 1.0],
-    [-1, 1, 1, 1.0],
-    [1, 1, 1, 1.0],
-    [1, -1, 1, 1.0], 
-    [-1, -1, -1, 1.0], 
-    [-1, 1, -1, 1.0], 
-    [1, 1, -1, 1.0], 
-    [1, -1, -1, 1.0]
+vertex_data = np.array([
+    [-0.5, -0.5, 0.5, 1.0],
+    [-0.5, 0.5, 0.5, 1.0],
+    [0.5, 0.5, 0.5, 1.0],
+    [0.5, -0.5, 0.5, 1.0], 
+    [-0.5, -0.5, -0.5, 1.0], 
+    [-0.5, 0.5, -0.5, 1.0], 
+    [0.5, 0.5, -0.5, 1.0], 
+    [0.5, -0.5, -0.5, 1.0]
 ],dtype=np.float32) 
-colorCube = np.array([
+color_data = np.array([
     [0.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
     [1.0, 1.0, 0.0, 1.0],
@@ -52,7 +59,7 @@ colorCube = np.array([
 
 #index arrays for above vertex Arrays
 
-indexCube = np.array((1,0,3, 1,3,2, 
+index_data = np.array((1,0,3, 1,3,2, 
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
                   6,5,1, 6,1,2,
@@ -60,21 +67,54 @@ indexCube = np.array((1,0,3, 1,3,2,
                   5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
 
 # Use numpy to create a struct for the uniform
-uniform_dtype = [("transform", "float32", (4, 4))]
-uniform_data = np.zeros((), dtype=uniform_dtype)
+uniform_dtype = np.dtype([
+    ("proj", np.float32, (4, 4)),
+    ("view", np.float32, (4, 4)),
+    ("model", np.float32, (4, 4)),
+    ("tint", np.float32, (4,)),
+    ("time", np.float32),
+    ("padding", np.float32, (3,)),
+]) 
+
+angle = glfw.get_time()
+S = glm.scale(glm.mat4x4(1.0), glm.vec3(0.5));  
+T1 = glm.translate(glm.mat4x4(1.0), glm.vec3(0.0, 0.0, 0.0))
+R1 = glm.rotate(glm.mat4x4(1.0), angle, glm.vec3(0.0, 0.0, 1.0))
+
+model = T1 @ R1 @ S 
+
+eye = glm.vec3(1.0, 1.0, 2.0) 
+target = glm.vec3(0.0, 0.0, 0.0)
+up = glm.vec3(0.0, 1.0, 0.0)
+view = glm.transpose(glm.lookAtLH(eye, target, up))
+
+ratio = width / height 
+near = 0.001
+far = 1000.0 
+
+proj = glm.transpose(glm.perspectiveLH(glm.radians(45), ratio, near, far))
+
+uniform_data = np.array((
+    np.array(proj),
+    np.array(view),
+    np.array(model),
+    [1.0, 1.0, 1.0, 1.0],
+    1.0,
+    [1.0, 1.0, 1.0]
+), dtype=uniform_dtype)
 
 # Create vertex buffer, and upload data
 vertex_buffer = device.create_buffer_with_data(
-    data=vertexCube, usage=wgpu.BufferUsage.VERTEX
+    data=vertex_data, usage=wgpu.BufferUsage.VERTEX
 ) 
 
 color_buffer = device.create_buffer_with_data(
-    data=colorCube, usage=wgpu.BufferUsage.VERTEX
+    data=color_data, usage=wgpu.BufferUsage.VERTEX
 )
 
 # Create index buffer, and upload data
 index_buffer = device.create_buffer_with_data(
-    data=indexCube, usage=wgpu.BufferUsage.INDEX
+    data=index_data, usage=wgpu.BufferUsage.INDEX
 )
 
 # Create uniform buffer - data is uploaded each frame
@@ -82,47 +122,16 @@ uniform_buffer = device.create_buffer(
     size=uniform_data.nbytes, usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
 )
 
-# WGSL version of the shader
 
-# GLSL version of the above shader
-vertex_shader = """   
-#version 450
-
-layout (location=0) in vec4 vPosition;
-layout (location=1) in vec4 vColor;
-
-out     vec4 color; 
-
-layout (binding = 0) uniform mat4 modelViewProj;
-
-void main()
-{
-    gl_Position = modelViewProj * vPosition;
-    color = vColor;
-}
-
-"""
-
-fragment_shader = """   
-#version 450
-
-in vec4 color;
-out vec4 outputColor;
-
-void main() {
-    outputColor = color;
-}
-
-"""
-
-#shader = device.create_shader_module(code=shader_source) 
-#GLSL
-Vshader = device.create_shader_module(code=vertex_shader, label="vert"); 
-Fshader = device.create_shader_module(code=fragment_shader, label="frag"); 
+# GLSL
+# vertex_shader = ShaderLoader(definitions.SHADER_DIR / "simple_mvp_vertex.vert");
+# fragment_shader = ShaderLoader(definitions.SHADER_DIR / "simple_mvp_fragment.frag");
+# Vshader = device.create_shader_module(code=vertex_shader, label="vert"); 
+# Fshader = device.create_shader_module(code=fragment_shader, label="frag"); 
 
 #WGSL
-# Vshader = device.create_shader_module(code=vshader); 
-# Fshader = device.create_shader_module(code=fshader); 
+shader_code = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_shader.wgsl");
+shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
 # resources over these two groups in different configurations.
@@ -147,37 +156,6 @@ bind_groups_layout_entries[0].append(
     }
 )
 
-# bind_groups_entries[0].append(
-#     {
-#         "binding": 1, 
-#         "resource": texture_view
-#     }
-# ) 
-# bind_groups_layout_entries[0].append(
-#     {
-#         "binding": 1,
-#         "visibility": wgpu.ShaderStage.FRAGMENT,
-#         "texture": {
-#             "sample_type": wgpu.TextureSampleType.float,
-#             "view_dimension": wgpu.TextureViewDimension.d2,
-#         },
-#     }
-# )
-
-# bind_groups_entries[0].append(
-#     {
-#         "binding": 2, 
-#         "resource": sampler
-#     }
-# )
-# bind_groups_layout_entries[0].append(
-#     {
-#         "binding": 2,
-#         "visibility": wgpu.ShaderStage.FRAGMENT,
-#         "sampler": {"type": wgpu.SamplerBindingType.filtering},
-#     }
-# )
-
 
 # Create the wgou binding objects
 bind_group_layouts = []
@@ -198,11 +176,11 @@ pipeline_layout = device.create_pipeline_layout(bind_group_layouts=bind_group_la
 render_pipeline = device.create_render_pipeline(
     layout=pipeline_layout,
     vertex={
-        "module": Vshader,
-        "entry_point": "main", 
+        "module": shader,
+        "entry_point": "vs_main", 
         "buffers": [
             {
-                "array_stride": vertexCube.shape[1] * 4,
+                "array_stride": vertex_data.shape[1] * 4,
                 "step_mode": wgpu.VertexStepMode.vertex,
                 "attributes": [
                     {
@@ -213,7 +191,7 @@ render_pipeline = device.create_render_pipeline(
                 ],
             },
             {
-                "array_stride": colorCube.shape[1] * 4, 
+                "array_stride": color_data.shape[1] * 4, 
                 "step_mode": wgpu.VertexStepMode.vertex, 
                 "attributes": [
                     {
@@ -230,11 +208,32 @@ render_pipeline = device.create_render_pipeline(
         "front_face": wgpu.FrontFace.ccw,
         "cull_mode": wgpu.CullMode.none,
     },
-    depth_stencil=None,
+    depth_stencil={
+            "format": wgpu.TextureFormat.depth24plus,
+            "depth_write_enabled": True,
+            "depth_compare": wgpu.CompareFunction.less,
+            "stencil_front": {
+                "compare": wgpu.CompareFunction.always,
+                "fail_op": wgpu.StencilOperation.keep,
+                "depth_fail_op": wgpu.StencilOperation.keep,
+                "pass_op": wgpu.StencilOperation.keep,
+            },
+            "stencil_back": {
+                "compare": wgpu.CompareFunction.always,
+                "fail_op": wgpu.StencilOperation.keep,
+                "depth_fail_op": wgpu.StencilOperation.keep,
+                "pass_op": wgpu.StencilOperation.keep,
+            },
+            "stencil_read_mask": 0,
+            "stencil_write_mask": 0,
+            "depth_bias": 0,
+            "depth_bias_slope_scale": 0.0,
+            "depth_bias_clamp": 0.0,
+        },
     multisample=None,
     fragment={
-        "module": Fshader,
-        "entry_point": "main",
+        "module": shader,
+        "entry_point": "fs_main",
         "targets": [
             {
                 "format": render_texture_format,
@@ -255,25 +254,21 @@ render_pipeline = device.create_render_pipeline(
     },
 ) 
 
-# location = render_pipeline.get_bind_group(0).get_binding('modelViewProj')
-
-# %% Setup the render function 
-model = util.translate(0.0,0.0,0.0) @ util.scale(3, 3, 3)
-eye = util.vec(1, 1, 1)
-target = util.vec(0,0,0)
-up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-
-
-#projMat = util.perspective(50, 1.33, 0.1, 100.0)
-projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -10, 10.0)
-
-mvpMat =  projMat @ view @ model
-
-def draw_frame():
+def draw_frame(): 
+    texture = present_context.get_current_texture();
+    textureWidth = texture.width; 
+    textureHeight = texture.height;
     # Update uniform transform
     
-    uniform_data["transform"] = mvpMat
+    uniform_data = np.array((
+    np.array(proj),
+    np.array(view),
+    np.array(model),
+    [1.0, 1.0, 1.0, 1.0],
+    1.0,
+    [1.0, 1.0, 1.0]
+    ), dtype=uniform_dtype) 
+    
     # Upload the uniform struct
     tmp_buffer = device.create_buffer_with_data(
         data=uniform_data, usage=wgpu.BufferUsage.COPY_SRC
@@ -283,9 +278,30 @@ def draw_frame():
     command_encoder.copy_buffer_to_buffer(
         tmp_buffer, 0, uniform_buffer, 0, uniform_data.nbytes
     )
+    
+    depth_texture : wgpu.GPUTexture = device.create_texture(
+            label="depth_texture",
+            size=[textureWidth, textureHeight, 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.depth24plus,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT
+        )
 
-    current_texture_view = present_context.get_current_texture().create_view()
-    render_pass = command_encoder.begin_render_pass(
+    depth_texture_view : wgpu.GPUTextureView = depth_texture.create_view(
+        label="depth_texture_view",
+        format=wgpu.TextureFormat.depth24plus,
+        dimension="2d",
+        aspect=wgpu.TextureAspect.depth_only,
+        base_mip_level=0,
+        mip_level_count=1,
+        base_array_layer=0,
+        array_layer_count=1,
+    )
+
+    current_texture_view = texture.create_view()
+    render_pass = command_encoder.begin_render_pass( 
         color_attachments=[
             {
                 "view": current_texture_view,
@@ -295,6 +311,17 @@ def draw_frame():
                 "store_op": wgpu.StoreOp.store,
             }
         ],
+        depth_stencil_attachment={
+                "view": depth_texture_view,
+                "depth_clear_value": 1.0,
+                "depth_load_op": wgpu.LoadOp.clear,
+                "depth_store_op": wgpu.StoreOp.store,
+                "depth_read_only": False,
+                "stencil_clear_value": 0,
+                "stencil_load_op": wgpu.LoadOp.clear,
+                "stencil_store_op": wgpu.StoreOp.store,
+                "stencil_read_only": True,
+            },
     )
 
     render_pass.set_pipeline(render_pipeline)
@@ -303,7 +330,7 @@ def draw_frame():
     render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
-    render_pass.draw_indexed(indexCube.size, 1, 0, 0, 0)
+    render_pass.draw_indexed(index_data.size, 1, 0, 0, 0)
     render_pass.end()
 
     device.queue.submit([command_encoder.finish()])

@@ -370,6 +370,8 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
 
         print(f'{self.getClassName()}: init()')
         glfw.init()
+       
+        glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE) 
          
         if not self.wgpu:
             glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
