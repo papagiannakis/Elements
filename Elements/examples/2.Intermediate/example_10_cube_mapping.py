@@ -17,6 +17,9 @@ from Elements.pyGLV.GL.Textures import get_single_texture_faces
 from Elements.definitions import TEXTURE_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
+
+from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
+
 example_description = \
 "This example demonstrates the cube map texture, i.e., \n\
 we encapsulate the scene into a huge cube and apply texture to them\n\
@@ -117,6 +120,8 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 running = True
 scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = IMGUIecssDecorator_Georgiou, openGLversion = 4)
 
+buffer = FrameBuffer()
+buffer.createFrameBuffer()
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
@@ -167,6 +172,8 @@ while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
+
+    
     
     view =  gWindow._myCamera # updates view via the imgui
 
@@ -177,7 +184,12 @@ while running:
     shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
 
-    scene.world.traverse_visit(renderUpdate, scene.world.root)
+    buffer.bindFramebuffer();
+    scene.world.traverse_visit(renderUpdate, scene.world.root) 
+    buffer.unbindFramebuffer()
+    
+    buffer.drawFramebuffer();
+    
     scene.render_post()
     
 scene.shutdown()
