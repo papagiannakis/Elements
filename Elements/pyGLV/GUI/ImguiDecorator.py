@@ -13,8 +13,6 @@ from Elements.pyECSS.System import System
 ##_______________________##
 
 ##________GEORGIOU ADDED_______##
-import Elements.pyGLV.GL.FrameBuffer as buffer
-import Elements.pyGLV.GL.FrameBuffer2 as buffer2
 import Elements.pyGLV.GUI.NodeEditor as ed
 from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
 from imgui_bundle import imgui, imguizmo, hello_imgui

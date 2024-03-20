@@ -171,9 +171,7 @@ shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 while running:
     running = scene.render()
     displayGUI_text(example_description)
-    scene.world.traverse_visit(transUpdate, scene.world.root)
-
-    
+    scene.world.traverse_visit(transUpdate, scene.world.root)    
     
     view =  gWindow._myCamera # updates view via the imgui
 
