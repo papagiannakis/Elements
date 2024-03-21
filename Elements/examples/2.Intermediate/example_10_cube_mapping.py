@@ -168,7 +168,8 @@ while running:
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     
-    view =  gWindow._myCamera # updates view via the imgui
+    scene.world.traverse_visit(transUpdate, scene.world.root)
+    view =  gWindow._myCamera # updates view via the imgui 
 
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)

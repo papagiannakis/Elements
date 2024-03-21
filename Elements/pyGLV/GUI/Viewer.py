@@ -34,6 +34,8 @@ from OpenGL.GL import shaders
 import imgui
 from imgui.integrations.sdl2 import SDL2Renderer
 
+from Elements.pyECSS.Event import Event
+
 import Elements.pyECSS.System    
 import Elements.pyECSS.math_utilities as util
 import Elements.pyECSS.Event
@@ -345,7 +347,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         #OpenGL state variables
         self._wireframeMode = False
         self._colorEditor = 0.0, 0.0, 0.0
-        self._myCamera = np.identity(4)   
+        self._myCamera = 2 * np.identity(4)   
         
         self._need_draw = False
         self._request_draw_timer_running = False
@@ -354,6 +356,12 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         
         self._pixel_ratio = -1
         self._screen_size_is_logical = False
+        
+        self._updateCamera = Event(name="OnUpdateCamera", id=300, value=None) 
+        if self.eventManager is not None:
+            self.eventManager._events[self._updateCamera.name] = self._updateCamera
+            self.eventManager._publishers[self._updateCamera.name] = self
+        
         
     @property
     def gWindow(self):
@@ -502,8 +510,8 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         """
         To be called at the end of each drawn frame to swap double buffers
         """ 
-        
-        glfw.swap_buffers(self._gWindow)
+        if not self.wgpu:
+            glfw.swap_buffers(self._gWindow)
         # print(f'{self.getClassName()}: display_post()')
 
     def shutdown(self):
@@ -515,16 +523,31 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
             glfw.destroy_window(self._gWindow)
             glfw.terminate()
     
-    def event_input_process(self, running=True):   
+    def event_input_process(self, running = True):   
         glfw.poll_events()   
         
-        events = PollEventAndFlush()
-         
-        if self._running and running:
-            if glfw.get_key(self._gWindow, glfw.KEY_ESCAPE) == glfw.PRESS: 
-                self._running = False 
-
-        return self._running 
+        events = PollEventAndFlush()    
+        event = None
+        if events:
+            event = events.pop()  
+            # if self._running and running:
+            #         if glfw.get_key(self._gWindow, glfw.KEY_ESCAPE) == glfw.PRESS: 
+            #             self._running = False       
+            #             running = False
+                        
+            # if event.type == EventTypes.MOUSE_MOTION:
+            #         buttons = event.data["buttons"]  
+            #         speed = 10;
+            #         if button_map[glfw.MOUSE_BUTTON_2] in buttons:
+            #             # x = -np.floor(event.data["x"] - wcenter) 
+            #             # y = np.floor(event.data["y"] - hcenter) 
+            #             # self.cameraHandling(x, y, height, width) 
+            #             return running, event  
+            
+            return event; 
+        else: 
+            return None
+        
     
     def _mark_ready_for_draw(self):
         self._request_draw_timer_running = False
@@ -709,7 +732,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         PushEvent(event)
         
     def _on_cursor_pos(self, window, x, y):  
-        self._pointer_pos = x, y
+        self._pointer_pos = x, y 
         
         ev = {  
             "x": self._pointer_pos[0], 
@@ -1086,8 +1109,13 @@ class RenderDecorator(RenderWindow):
         #self._up = tuple(upVector)
         #directionVector = util.normalise(lookAt - eye) 
         #rightVector = util.normalise(np.cross(directionVector, upVector))
-        #upVector = util.normalise(np.cross(rightVector, directionVector))
-        self._updateCamera.value = util.lookat(eye, lookAt, upVector)
+        #upVector = util.normalise(np.cross(rightVector, directionVector)) 
+        #self.wrapeeWindow._updateCamera = util.lookat(eye, lookAt, upVector) 
+        
+        self._updateCamera.value = util.lookat(eye, lookAt, upVector)  
+        
+        # print("custom print\n")
+        # print(self._updateCamera.value)
     
     def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):  
         if self.cam != None:
@@ -1141,8 +1169,9 @@ class RenderDecorator(RenderWindow):
                 ttarget += zoom
             self.createViewMatrix(teye, ttarget, tup)
             
-            if self._wrapeeWindow.eventManager is not None:
+            if self._wrapeeWindow.eventManager is not None: 
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+                # self.wrapeeWindow.eventManager.notify(self, self.wrapeeWindow._updateCamera)
         
  
     def on_mouse_motion(self, event, x, y, dx, dy):
@@ -1204,100 +1233,109 @@ class RenderDecorator(RenderWindow):
         process GLSL basic events and input
         """  
         glfw.poll_events() 
-        
-        events = PollEventAndFlush()
         running = True
+        
+        events = PollEventAndFlush()    
+        event = None
+        if events:
+            event = events.pop() 
+        else:
+            return self._wrapeeWindow.event_input_process(running=running) & running; 
+        
         width = self.wrapeeWindow._windowWidth
-        height = self.wrapeeWindow._windowHeight 
+        height = self.wrapeeWindow._windowHeight  
+        wcenter = width / 2
+        hcenter = height / 2
         
         shortcut_HotKey = KEY_MAP.get(glfw.KEY_LEFT_ALT) 
         
-        for event in events:
-            #print("event: ", event.data)
-            if event.type == EventTypes.SCROLL:
-                x = event.data["dx"]
-                y = event.data["dy"]
-                self.cameraHandling(x,y,height,width)
+        #print("event: ", event.data)
+        if event.type == EventTypes.SCROLL:
+            x = event.data["dx"]
+            y = event.data["dy"]
+            self.cameraHandling(x,y,height,width)
+        
+        if event.type == EventTypes.MOUSE_MOTION:
+            buttons = event.data["buttons"]  
+            speed = 10;
             
-            elif event.type == EventTypes.MOUSE_MOTION:
-                buttons = event.data["buttons"] 
-                if button_map[glfw.MOUSE_BUTTON_2] in buttons:
-                    x = -event.data["x"]
-                    y = event.data["y"] 
-                    self.cameraHandling(x, y, height, width)
-                     
-            elif event.type == EventTypes.KEY_PRESS:
-                ##################  toggle the wireframe using the alt+F buttons  #############################
-                if event.data["key"] == KEY_MAP.get(glfw.KEY_F) and shortcut_HotKey in event.data["modifiers"]:
-                    self.toggle_Wireframe() 
+            if button_map[glfw.MOUSE_BUTTON_2] in buttons:
+                x = -np.floor(event.data["x"] - wcenter) 
+                y = np.floor(event.data["y"] - hcenter) 
+                self.cameraHandling(x, y, height, width)
+                    
+        elif event.type == EventTypes.KEY_PRESS:
+            ##################  toggle the wireframe using the alt+F buttons  #############################
+            if event.data["key"] == KEY_MAP.get(glfw.KEY_F) and shortcut_HotKey in event.data["modifiers"]:
+                self.toggle_Wireframe() 
+            
+            ########## shortcuts for selected node from the tree ###########
+            if hasattr(self._wrapeeWindow._scene, "_gContext") and self._wrapeeWindow._scene._gContext.__class__.__name__ == "ImGUIecssDecorator" and self.selected:
+                # we must first check if the ImGUIecssDecorator is active otherwise we will get an error on click
+                ################# - translate on x axis when node is selected using W+alt ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_W) and shortcut_HotKey in event.data["modifiers"]):
+                    self.translation["x"] -= 0.1
+                ################# + translate on x axis when node is selected using W ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_W)):
+                    self.translation["x"] += 0.1 
+                    
+                # ################# - translate on y axis when node is selected using E+alt ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_E) and shortcut_HotKey in event.data["modifiers"]): 
+                    self.translation["y"] -= 0.1
+                ################# + translate on y axis when node is selected using E ###########################
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_E)):
+                    self.translation["y"] += 0.1
                 
-                ########## shortcuts for selected node from the tree ###########
-                if hasattr(self._wrapeeWindow._scene, "_gContext") and self._wrapeeWindow._scene._gContext.__class__.__name__ == "ImGUIecssDecorator" and self.selected:
-                    # we must first check if the ImGUIecssDecorator is active otherwise we will get an error on click
-                    ################# - translate on x axis when node is selected using W+alt ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_W) and shortcut_HotKey in event.data["modifiers"]):
-                        self.translation["x"] -= 0.1
-                    ################# + translate on x axis when node is selected using W ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_W)):
-                        self.translation["x"] += 0.1 
-                        
-                    # ################# - translate on y axis when node is selected using E+alt ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_E) and shortcut_HotKey in event.data["modifiers"]): 
-                        self.translation["y"] -= 0.1
-                    ################# + translate on y axis when node is selected using E ###########################
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_E)):
-                        self.translation["y"] += 0.1
-                    
-                    # ################# - translate on z axis when node is selected using R+alt ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_R) and shortcut_HotKey in event.data["modifiers"]):
-                        self.translation["z"] -= 0.1
-                    # ################# + translate on z axis when node is selected using R ########################### 
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_R)):
-                        self.translation["z"] += 0.1
-                    
+                # ################# - translate on z axis when node is selected using R+alt ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_R) and shortcut_HotKey in event.data["modifiers"]):
+                    self.translation["z"] -= 0.1
+                # ################# + translate on z axis when node is selected using R ########################### 
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_R)):
+                    self.translation["z"] += 0.1
+                
 
-                    # ################# - rotate on x axis when node is selected using T+alt ########################### 
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_T) and shortcut_HotKey in event.data["modifiers"]):
-                        self.rotation["x"] -= 0.1
-                    # ################# + rotate on x axis when node is selected using T ########################### 
-                    elif (event.data["key"] == KEY_MAP.get(glfw.KEY_T)):
-                        self.rotation["x"] += 0.1
-                    
-                    # ################# - rotate on y axis when node is selected using Y+alt ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_Y) and shortcut_HotKey in event.data["modifiers"]):
-                        self.rotation["y"] -= 0.1
-                    # ################# + rotate on y axis when node is selected using Y ###########################
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_Y)):
-                        self.rotation["y"] += 0.1 
-                    
-                    # ################# - rotate on z axis when node is selected using U+alt ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_U) and shortcut_HotKey in event.data["modifiers"]):
-                        self.rotation["z"] -= 0.1
-                    # ################# + rotate on z axis when node is selected using U ###########################
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_U)):
-                        self.rotation["z"] += 0.1
-                    
-                    ################# scale down on x axis when node is selected using I+alt ###########################
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_I) and shortcut_HotKey in event.data["modifiers"]):
-                        self.scale["x"] -= 0.1
-                    ################# scale up on x axis when node is selected using I ###########################
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_I)):
-                        self.scale["x"] += 0.1
-                    
-                    ################# scale down on y axis when node is selected using O+alt ########################### 
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_O) and shortcut_HotKey in event.data["modifiers"]):
-                        self.scale["y"] -= 0.1
-                    ################# scale up on y axis when node is selected using O ###########################
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_O)):
-                        self.scale["y"] += 0.1 
-                    
-                    ################# scale down on z axis when node is selected using P+alt ########################### 
-                    # if(event.key.keysym.sym == sdl2.SDLK_p  and (sdl2.SDL_GetModState() & shortcut_HotKey)): 
-                    if (event.data["key"] == KEY_MAP.get(glfw.KEY_P) and shortcut_HotKey in event.data["modifiers"]):
-                        self.scale["z"] -= 0.1
-                    ################# scale up on z axis when node is selected using P ###########################
-                    elif(event.data["key"] == KEY_MAP.get(glfw.KEY_P)):
-                        self.scale["z"] += 0.1
+                # ################# - rotate on x axis when node is selected using T+alt ########################### 
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_T) and shortcut_HotKey in event.data["modifiers"]):
+                    self.rotation["x"] -= 0.1
+                # ################# + rotate on x axis when node is selected using T ########################### 
+                elif (event.data["key"] == KEY_MAP.get(glfw.KEY_T)):
+                    self.rotation["x"] += 0.1
+                
+                # ################# - rotate on y axis when node is selected using Y+alt ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_Y) and shortcut_HotKey in event.data["modifiers"]):
+                    self.rotation["y"] -= 0.1
+                # ################# + rotate on y axis when node is selected using Y ###########################
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_Y)):
+                    self.rotation["y"] += 0.1 
+                
+                # ################# - rotate on z axis when node is selected using U+alt ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_U) and shortcut_HotKey in event.data["modifiers"]):
+                    self.rotation["z"] -= 0.1
+                # ################# + rotate on z axis when node is selected using U ###########################
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_U)):
+                    self.rotation["z"] += 0.1
+                
+                ################# scale down on x axis when node is selected using I+alt ###########################
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_I) and shortcut_HotKey in event.data["modifiers"]):
+                    self.scale["x"] -= 0.1
+                ################# scale up on x axis when node is selected using I ###########################
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_I)):
+                    self.scale["x"] += 0.1
+                
+                ################# scale down on y axis when node is selected using O+alt ########################### 
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_O) and shortcut_HotKey in event.data["modifiers"]):
+                    self.scale["y"] -= 0.1
+                ################# scale up on y axis when node is selected using O ###########################
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_O)):
+                    self.scale["y"] += 0.1 
+                
+                ################# scale down on z axis when node is selected using P+alt ########################### 
+                # if(event.key.keysym.sym == sdl2.SDLK_p  and (sdl2.SDL_GetModState() & shortcut_HotKey)): 
+                if (event.data["key"] == KEY_MAP.get(glfw.KEY_P) and shortcut_HotKey in event.data["modifiers"]):
+                    self.scale["z"] -= 0.1
+                ################# scale up on z axis when node is selected using P ###########################
+                elif(event.data["key"] == KEY_MAP.get(glfw.KEY_P)):
+                    self.scale["z"] += 0.1
 
                 if event.data["key"] == KEY_MAP.get(glfw.KEY_ESCAPE):
                     running = False
@@ -1319,9 +1357,10 @@ class RenderDecorator(RenderWindow):
             #imgui event  
             #self._imguiRenderer.process_event()
         # #imgui input
-        self._imguiRenderer.process_inputs()
+        if hasattr(self, "_imguiRenderer"):
+            self._imguiRenderer.process_inputs()
                     
-        return self._wrapeeWindow.event_input_process() & running   
+        return running   
     
     # def event_input_process(self):
     #     """
@@ -1521,11 +1560,12 @@ class RenderGLStateSystem(System):
         """
         if event.name == "OnUpdateWireframe":
             # print(f"RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
-            GLFWWindow._wireframeMode = event.value
+            GLFWwindow._wireframeMode = event.value
 
         if event.name == "OnUpdateCamera":
             # print(f"OnUpdateCamera: RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
-            GLFWWindow._myCamera = event.value
+            GLFWwindow._myCamera = event.value 
+            
 
     # def apply2SDLWindow(self, sdlWindow, event=None):
     #     """method for  behavioral or logic computation

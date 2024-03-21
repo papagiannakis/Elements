@@ -58,7 +58,7 @@ class EventManager(EventPublisher):
     
     def notify(self, sender: Any, event: Event):
         if event is not None:
-            print(f'\n{EventManager.getClassName()}: notify() reacts from {sender} with {event}\n')
+            # print(f'\n{EventManager.getClassName()}: notify() reacts from {sender} with {event}\n')
         
             # hardcode it for now, in a refactored version search if there is a match in the dictionaries
             # i.e. no need to hardcode this in the future:
@@ -66,24 +66,24 @@ class EventManager(EventPublisher):
             # and run matchmaking here between event names and subscribers-actuators
             # all needed data are passed from the Event.value
             # and the appopriate actuator (System) will know what to do
-            if event.name == "OnUpdateBackground":
-                print(f'\n{event.name}: will be actuated from the appropriate system\n')
-            elif event.name == "OnUpdateWireframe":
-                print(f'\n{event.name}: will be actuated from the appropriate system\n')
+            # if event.name == "OnUpdateBackground":
+            #     print(f'\n{event.name}: will be actuated from the appropriate system\n')
+            # elif event.name == "OnUpdateWireframe":
+            #     print(f'\n{event.name}: will be actuated from the appropriate system\n')
 
-            elif event.name == "OnUpdateCamera":
-                print(f'\n{event.name}: will be actuated from the appropriate system - OnUpdateCamera\n')
+            # elif event.name == "OnUpdateCamera":
+            #     print(f'\n{event.name}: will be actuated from the appropriate system - OnUpdateCamera\n')
 
 
             if event.name in self._subscribers:
                 subscriber  = self._subscribers[event.name] 
-                print(f'\n{EventManager.getClassName()}: notify() subscriber: {subscriber} for {event}\n')
+                # print(f'\n{EventManager.getClassName()}: notify() subscriber: {subscriber} for {event}\n')
                 if event.name in self._actuators:
                     systemActuator = self._actuators[event.name]
-                    print(f'\n{EventManager.getClassName()}: notify() actuator: {systemActuator} for {event}\n')
+                    # print(f'\n{EventManager.getClassName()}: notify() actuator: {systemActuator} for {event}\n')
                     subscriber.accept(systemActuator, event)
         
-        print("EventManager:notify() ended")
+        # print("EventManager:notify() ended")
        
         
     '''

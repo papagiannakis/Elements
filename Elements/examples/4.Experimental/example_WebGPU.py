@@ -7,24 +7,114 @@ import numpy as np
 import glfw
 import Elements.definitions as definitions
 
-from Elements.pyGLV.GUI.Viewer import GLFWWindow 
-from Elements.pyGLV.GL.Shader import ShaderLoader 
+from Elements.pyGLV.GUI.Viewer import GLFWWindow, RenderDecorator
+from Elements.pyGLV.GL.Shader import ShaderLoader  
+from Elements.pyECSS.Event import EventManager
+from Elements.pyGLV.GUI.windowEvents import EventTypes 
+from Elements.pyGLV.GUI.Viewer import button_map 
 import Elements.pyECSS.math_utilities as util 
 
 """
-This example renders a simple textured rotating cube.
-"""
+This example renders a simple textured rotating cube. 
+""" 
+_eye = util.vec(2.5, 2.5, 2.5)
+_target = util.vec(0.0, 0.0, 0.0)
+_up = util.vec(0.0, 1.0, 0.0)
 
-# test_example = true
+camt = {};
+camt["x"] = 0; camt["y"] = 0; camt["z"] = 0; 
 
-width = 1200
-height = 800
+camr = {};
+camr["x"] = 0; camr["y"] = 0; camr["z"] = 0; 
+
+cams = {};
+cams["x"] = 0; cams["y"] = 0; cams["z"] = 0; 
+
+_updateCamera = None
+# test_example = true 
+
+def resetAll():
+    camt["x"] = 0.0
+    camt["y"] = 0.0
+    camt["z"] = 0.0
+    camr["x"] = 0.0
+    camr["y"] = 0.0
+    camr["z"] = 0.0
+    cams["x"]= 1.0
+    cams["y"]= 1.0
+    cams["z"]= 1.0
+    
+def createViewMatrix(eye, lookAt, upVector): 
+    global _eye 
+    global _target
+    global _up 
+    global _updateCamera
+    
+    _eye = util.vec(tuple(eye)) 
+    _target = util.vec(tuple(lookAt)) 
+    
+    #self._up = tuple(upVector)
+    #directionVector = util.normalise(lookAt - eye) 
+    #rightVector = util.normalise(np.cross(directionVector, upVector))
+    #upVector = util.normalise(np.cross(rightVector, directionVector)) 
+    #self.wrapeeWindow._updateCamera = util.lookat(eye, lookAt, upVector) 
+
+    _updateCamera = glm.transpose(glm.lookAtLH(_eye, _target, _up))   
+    
+def updateCamera(moveX, moveY, moveZ, rotateX, rotateY):   
+    global _eye 
+    global _target
+    global _up 
+    global _updateCamera 
+    
+    cameraspeed = 0.2
+    teye = np.array(_eye)
+    ttarget = np.array(_target)
+    tup = np.array(_up)
+
+    forwardDir = util.normalise(ttarget - teye)
+    rightDir = util.normalise(np.cross(forwardDir, tup))
+
+    if rotateX:
+        rotMatY = util.rotate(tup, camr["x"] * cameraspeed*15)
+        transMatY = util.translate(ttarget) @ rotMatY @ util.translate(-ttarget)
+        teye = transMatY @ np.append(teye, [1])
+        teye = teye[:-1] / teye[-1]
+    elif rotateY:
+        rotMatX = util.rotate(rightDir, -camr["y"] * cameraspeed*15)
+        transMatX = util.translate(ttarget) @ rotMatX @ util.translate(-ttarget)
+        teye = transMatX @ np.append(teye, [1])
+        teye = teye[:-1] / teye[-1]
+    elif moveX or moveY:
+        panX = -cameraspeed * camt["x"] * rightDir
+        panY = -camt["y"] * cameraspeed * tup
+        teye += panX + panY
+        ttarget += panX + panY
+    elif moveZ:
+        zoom =  np.sign(camt["z"]) * cameraspeed * forwardDir
+        teye += zoom
+        ttarget += zoom
+    createViewMatrix(teye, ttarget, tup)
+
+def cameraHandling(x, y, height, width):
+    # keystatus = sdl2.SDL_GetKeyboardState(None)
+    resetAll()
+
+    if abs(x) > abs(y):
+        camr["x"] = np.sign(x) #event.wheel.x/height*180
+        updateCamera(False, False,False, True, False)
+    else:
+        camr["y"] = np.sign(y) #event.wheel.y/width*180
+        updateCamera(False, False,False, False, True)
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
-canvas = GLFWWindow(windowHeight=height, windowWidth=width, wgpu=True, windowTitle="Wgpu Example"); 
+canvas = GLFWWindow(windowHeight=800, windowWidth=1200, wgpu=True, windowTitle="Wgpu Example")
 canvas.init()
-canvas.init_post()
+canvas.init_post() 
+
+width = canvas._windowWidth 
+height = canvas._windowHeight
 
 # Create a wgpu device
 adapter = wgpu.gpu.request_adapter(power_preference="high-performance")
@@ -81,18 +171,22 @@ S = glm.scale(glm.mat4x4(1.0), glm.vec3(0.5));
 T1 = glm.translate(glm.mat4x4(1.0), glm.vec3(0.0, 0.0, 0.0))
 R1 = glm.rotate(glm.mat4x4(1.0), angle, glm.vec3(0.0, 0.0, 1.0))
 
-model = T1 @ R1 @ S 
+model = T1 @ S  
 
-eye = glm.vec3(1.0, 1.0, 2.0) 
-target = glm.vec3(0.0, 0.0, 0.0)
-up = glm.vec3(0.0, 1.0, 0.0)
-view = glm.transpose(glm.lookAtLH(eye, target, up))
+eye = util.vec(2.5, 2.5, 2.5)
+target = util.vec(0.0, 0.0, 0.0)
+up = util.vec(0.0, 1.0, 0.0)
+# eye = glm.vec3(2.5, 2.5, 2.5) 
+# target = glm.vec3(0.0, 0.0, 0.0)
+# up = glm.vec3(0.0, 1.0, 0.0)
+_updateCamera = glm.transpose(glm.lookAtLH(eye, target, up))  
+view = _updateCamera
 
 ratio = width / height 
 near = 0.001
 far = 1000.0 
 
-proj = glm.transpose(glm.perspectiveLH(glm.radians(45), ratio, near, far))
+proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
 
 uniform_data = np.array((
     np.array(proj),
@@ -206,7 +300,7 @@ render_pipeline = device.create_render_pipeline(
     primitive={
         "topology": wgpu.PrimitiveTopology.triangle_list,
         "front_face": wgpu.FrontFace.ccw,
-        "cull_mode": wgpu.CullMode.none,
+        "cull_mode": wgpu.CullMode.front,
     },
     depth_stencil={
             "format": wgpu.TextureFormat.depth24plus,
@@ -254,12 +348,23 @@ render_pipeline = device.create_render_pipeline(
     },
 ) 
 
-def draw_frame(): 
+def draw_frame():  
+    global proj  
+    global view
+    global _updateCamera
+    
     texture = present_context.get_current_texture();
     textureWidth = texture.width; 
-    textureHeight = texture.height;
-    # Update uniform transform
+    textureHeight = texture.height; 
     
+    # Update uniform transform 
+    ratio = canvas._windowWidth/canvas._windowHeight
+    near = 0.001
+    far = 1000.0 
+
+    proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))   
+    view = _updateCamera
+     
     uniform_data = np.array((
     np.array(proj),
     np.array(view),
@@ -340,7 +445,35 @@ def draw_frame():
 
 canvas.request_draw(draw_frame)
 
-while canvas.event_input_process():  
+running = True
+
+while running:
+    width = canvas._windowWidth
+    height = canvas._windowHeight  
+    wcenter = width / 2
+    hcenter = height / 2 
+    
+    event = canvas.event_input_process();   
+    if event: 
+        if running:
+            if glfw.get_key(canvas.gWindow, glfw.KEY_ESCAPE) == glfw.PRESS:  
+                canvas._running = False
+                running = False 
+
+        if event.type == EventTypes.SCROLL:
+                x = event.data["dx"]
+                y = event.data["dy"]
+                cameraHandling(x,y,width,height)
+            
+        if event.type == EventTypes.MOUSE_MOTION:
+            buttons = event.data["buttons"]  
+            
+            if button_map[glfw.MOUSE_BUTTON_2] in canvas._pointer_buttons:
+                x = np.floor(event.data["x"] - wcenter) 
+                y = np.floor(event.data["y"] - hcenter) 
+                cameraHandling(x, y, height, width)
+        
     if canvas._need_draw:
         canvas.display()
         canvas.display_post()
+# %%
