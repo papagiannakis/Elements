@@ -120,11 +120,10 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 running = True
 scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = IMGUIecssDecorator_Georgiou, openGLversion = 4)
 
-buffer = FrameBuffer()
-buffer.createFrameBuffer()
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
+
 
 ################### EVENT MANAGER ###################
 
@@ -167,6 +166,8 @@ face_data_2 = get_single_texture_faces(mat_img)
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
+buffer = FrameBuffer()
+buffer.createFrameBuffer()
 
 while running:
     running = scene.render()
