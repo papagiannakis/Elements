@@ -15,7 +15,7 @@ from Elements.pyECSS.System import System
 ##________GEORGIOU ADDED_______##
 import Elements.pyGLV.GUI.NodeEditor as ed
 from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
-from imgui_bundle import imgui, imguizmo, hello_imgui
+from imgui_bundle import imgui, imguizmo
 ##_____________________________##
 
 def toList(arg):
@@ -322,6 +322,8 @@ class ImGUIDecorator(RenderDecorator):
         #start new ImGUI frame context
 
         imgui.new_frame()
+        imgui.dock_space_over_viewport(imgui.get_main_viewport());
+        
         #demo ImGUI window with all widgets
         #imgui.show_demo_window()
         #new custom imgui window
@@ -722,6 +724,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         io = imgui.get_io()
         io.config_flags |= imgui.ConfigFlags_.docking_enable  # Enable docking
         
+        
         #self.buffer = fbuff.FrameBuffer();
 
     def scenegraphVisualiser(self):
@@ -731,7 +734,14 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         sceneRoot = self.wrapeeWindow.scene.world.root.name
         if sceneRoot is None:
             sceneRoot = "ECSS Root Entity"
-        
+
+        # main window to act as docking station for other windows
+        # imgui.begin("Elements Editor")
+        # io = imgui.get_io();
+        # imgui.set_window_size(imgui.ImVec2(io.display_size.x, io.display_size.y));
+        # imgui.set_window_pos(imgui.ImVec2(0,0));
+        # imgui.end();
+
         twoColumn = False
         if twoColumn:
             # 2 Column Version
@@ -790,17 +800,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.node_editor.on_frame()
         imgui.end()
         
-       # hello_imgui.DockingSplit( initial_dock_="MainDockSpace",
-       #     new_dock_="ECSSDock",
-       #     direction_=imgui.Dir_.left,
-       #     ratio_=0.25,
-       # )
         
-       # hello_imgui.DockableWindow(label_ = "ECSSgraph", dock_space_name_= "ECSSDock");
-       # hello_imgui.DockableWindow(label_ = "NodeEditor", dock_space_name_= "MainDockSpace");
-        
-       # hello_imgui.DockingLayoutCondition.application_start
-       # hello_imgui.DefaultImGuiWindowType.provide_full_screen_dock_space
             
     def drawNode(self, component):
         #create a local iterator of Entity's children

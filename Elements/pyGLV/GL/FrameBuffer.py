@@ -2,35 +2,22 @@ from OpenGL.GL.framebufferobjects import *
 from OpenGL.GL import *
 from imgui_bundle import imgui
 
+first_run = True;
+
 class FrameBuffer:
     def __init__(self, width = None, height = None):
-        if width is None:
-            self.width = 800;
-        else:
-            self.width = width;
-            
-        if height is None:
-            self.height = 600;
-        else:
-            self.height = height;
-        
-        self.width = 200;
-        self.height = 200;
+        self.width = width if width is not None else 800
+        self.height = height if height is not None else 600
         
         self.fbo = 0;
-        self.depthId = 0;
         self.textureId = 0;
-        
-        self.color_render = 0;
-        self.depth_render = 0;
-        
+        self.depthId = 0;
     
     def createFrameBuffer(self):
         self.fbo = glGenFramebuffers(1);
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
 
         self.generateTexture()
-        #self.generateRenderbuffers();
         
         if glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE:
             print("ERROR::FRAMEBUFFER:: Framebuffer is not complete!\n")
@@ -45,39 +32,22 @@ class FrameBuffer:
         glBindTexture(GL_TEXTURE_2D, self.textureId)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, self.width, self.height, 0, GL_RGB, GL_UNSIGNED_BYTE, None);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.textureId, 0);
-        
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, self.width, self.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, None);
         glBindTexture(GL_TEXTURE_2D, 0);
-        
-        ##--------------- Depth Attachment ----------------##
-        #self.depthId = glGenTextures(1);
 
-        #glBindTexture(GL_TEXTURE_2D, self.depthId)
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-        #glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-        #glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, self.width, self.height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, None);
-        #glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, self.depthId, 0);
-
-        #glBindTexture(GL_TEXTURE_2D, 0);
+        glBindTexture(GL_TEXTURE_2D, self.depthId)
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, self.width, self.height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, None);
+        glBindTexture(GL_TEXTURE_2D, 0);
     
-    def generateRenderbuffers(self):
-        self.color_render = glGenRenderbuffers(1);
-        glBindRenderbuffer(GL_RENDERBUFFER, self.color_render);
-        glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, self.width, self.height);
-        glBindRenderbuffer(GL_RENDERBUFFER, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.textureId, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, self.depthId, 0);
         
-        #self.depth_render = glGenRenderbuffers(1);
-        #glBindRenderbuffer(GL_RENDERBUFFER, self.depth_render);
-        #glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, self.width, self.height);
-        #glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        
-        glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, self.color_render);
-        #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.depth_render);
 
     def bindFramebuffer(self):
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo);
@@ -88,35 +58,39 @@ class FrameBuffer:
     def rescaleFramebuffer(self, _width, _height):
         glBindFramebuffer(GL_FRAMEBUFFER, self.fbo)
         glBindTexture(GL_TEXTURE_2D, self.textureId);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, _width, _height, 0, GL_RGB, GL_UNSIGNED_BYTE, None);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.textureId, 0);
-        
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, _width, _height, 0, GL_RGBA, GL_UNSIGNED_BYTE, None);
         glBindTexture(GL_TEXTURE_2D, 0);
-        
-        #glBindRenderbuffer(GL_RENDERBUFFER, self.color_render);
-        #glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, _width, _height);
-        #glBindRenderbuffer(GL_RENDERBUFFER, 0);
-        
-        #glBindRenderbuffer(GL_RENDERBUFFER, self.depth_render);
-        #glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT, _width, _height);
-        #glBindRenderbuffer(GL_RENDERBUFFER, 0); 
-        
-        #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, self.color_render);
-        #glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, self.depth_render);
+
+        glBindTexture(GL_TEXTURE_2D, self.depthId);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, _width, _height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, None);
+        glBindTexture(GL_TEXTURE_2D, 0);
+
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, self.textureId, 0);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, self.depthId, 0);
+
         glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+        self.width = _width;
+        self.height = _height;
         
-    def drawFramebuffer(self):
+        
+    def drawFramebuffer(self): 
+        global first_run
         glClearColor(0.0, 0.0, 0.0, 1.0)
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) 
         
         imgui.begin("Scene")
         
-        WIDTH = int(imgui.get_content_region_avail().x);
-        HEIGHT = int(imgui.get_content_region_avail().y);
-        self.rescaleFramebuffer(WIDTH, HEIGHT);
-        glViewport(0,0, WIDTH, HEIGHT);
+        w = imgui.get_window_size().x
+        h = imgui.get_window_size().y
+
+        WIDTH = int(w);
+        HEIGHT = int(h);
+
+        if  WIDTH != self.width or HEIGHT != self.height or first_run:
+            first_run = False;
+            self.rescaleFramebuffer(WIDTH, HEIGHT);
+            glViewport(0,0, WIDTH, HEIGHT);
         
         p_min = imgui.ImVec2(imgui.get_cursor_screen_pos().x, imgui.get_cursor_screen_pos().y);
         p_max = imgui.ImVec2(p_min.x + WIDTH, p_min.y + HEIGHT);

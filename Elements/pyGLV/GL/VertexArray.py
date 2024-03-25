@@ -50,7 +50,6 @@ class VertexArray(Component):
         
         #self.buffer = buffer.FrameBuffer();
         #self.buffer.createFrameBuffer();
-        print("vbo created");
     
     @property
     def glid(self):

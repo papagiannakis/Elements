@@ -120,6 +120,7 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 running = True
 scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = IMGUIecssDecorator_Georgiou, openGLversion = 4)
 
+
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
@@ -182,13 +183,13 @@ while running:
 
     shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
+    
+    buffer.drawFramebuffer();
 
     buffer.bindFramebuffer();
     scene.world.traverse_visit(renderUpdate, scene.world.root) 
     buffer.unbindFramebuffer()
     
-    buffer.drawFramebuffer();
-    
     scene.render_post()
-    
+
 scene.shutdown()

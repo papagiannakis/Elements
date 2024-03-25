@@ -235,7 +235,6 @@ class SDL2Window(RenderWindow):
             
         #create the OpenGL context for rendering into the SDL2Window that was constructed just before
         self._gContext = sdl2.SDL_GL_CreateContext(self._gWindow)
-        print("Context Created")
         if self._gContext is None:
             print("OpenGL Context could not be created! SDL Error: ", sdl2.SDL_GetError())
             exit(1)
