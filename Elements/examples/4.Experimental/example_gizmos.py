@@ -26,6 +26,7 @@ Matrix3 = NDArray[np.float64]
 
 
 gizmo = imguizmo.im_guizmo
+statics = None;
 
 useWindow = True
 gizmoCount = 1
@@ -70,18 +71,18 @@ class EditTransformResult:
     objectMatrix: Matrix16
     cameraView: Matrix16
 
-@immapp.static(statics=None)  # type: ignore
+
 def EditTransform(
     cameraView: Matrix16,
     cameraProjection: Matrix16,
     objectMatrix: Matrix16,
     editTransformDecomposition: bool,
 ) -> EditTransformResult:
-    statics = EditTransform.statics
     global mCurrentGizmoOperation
+    global statics
+    
     if statics is None:
-        EditTransform.statics = munch.Munch()
-        statics = EditTransform.statics
+        statics = munch.Munch()
         statics.mCurrentGizmoMode = gizmo.MODE.local
         statics.useSnap = False
         statics.snap = np.array([1.0, 1.0, 1.0], np.float32)
@@ -147,35 +148,32 @@ def EditTransform(
     viewManipulateRight = io.display_size.x
     viewManipulateTop = 0.0
 
-    if useWindow:
-        imgui.set_next_window_size(ImVec2(800, 400), imgui.Cond_.appearing.value)
-        imgui.set_next_window_pos(ImVec2(400, 20), imgui.Cond_.appearing.value)
-        imgui.push_style_color(
-            imgui.Col_.window_bg.value, imgui.ImColor(0.35, 0.3, 0.3).value
-        )
-        imgui.begin("Gizmo", None, statics.gizmoWindowFlags)
-        gizmo.set_drawlist()
-        windowWidth = imgui.get_window_width()
-        windowHeight = imgui.get_window_height()
-        gizmo.set_rect(
-            imgui.get_window_pos().x,
-            imgui.get_window_pos().y,
-            windowWidth,
-            windowHeight,
-        )
-        viewManipulateRight = imgui.get_window_pos().x + windowWidth
-        viewManipulateTop = imgui.get_window_pos().y
-        window = imgui.internal.get_current_window()
-        if imgui.is_window_hovered() and imgui.is_mouse_hovering_rect(
-            window.inner_rect.min, window.inner_rect.max
-        ):
-            statics.gizmoWindowFlags = imgui.WindowFlags_.no_move
-        else:
-            statics.gizmoWindowFlags = 0
-    else:
-        gizmo.set_rect(0, 0, io.display_size.x, io.display_size.y)
+    imgui.set_next_window_size(ImVec2(800, 400), imgui.Cond_.appearing.value)
+    imgui.set_next_window_pos(ImVec2(400, 20), imgui.Cond_.appearing.value)
 
-    gizmo.draw_cubes(cameraView, cameraProjection, gObjectMatrix[:gizmoCount])
+    imgui.begin("Gizmo")
+    gizmo.set_drawlist()
+    
+    windowWidth = imgui.get_window_width()
+    windowHeight = imgui.get_window_height()
+    gizmo.set_rect(
+        imgui.get_window_pos().x,
+        imgui.get_window_pos().y,
+        windowWidth,
+        windowHeight,
+    )
+    viewManipulateRight = imgui.get_window_pos().x + windowWidth
+    viewManipulateTop = imgui.get_window_pos().y
+    window = imgui.internal.get_current_window()
+    if imgui.is_window_hovered() and imgui.is_mouse_hovering_rect(
+        window.inner_rect.min, window.inner_rect.max
+    ):
+        statics.gizmoWindowFlags = imgui.WindowFlags_.no_move
+    else:
+        statics.gizmoWindowFlags = 0
+
+
+    #gizmo.draw_cubes(cameraView, cameraProjection, gObjectMatrix[:gizmoCount])
 
     manip_result = gizmo.manipulate(
         cameraView,
@@ -203,9 +201,8 @@ def EditTransform(
         r.changed = True
         r.cameraView = view_manip_result.value
 
-    if useWindow:
-        imgui.end()
-        imgui.pop_style_color()
+    imgui.end()
+
 
     return r
 
@@ -264,15 +261,16 @@ def make_closure_demo_guizmo() -> GuiFunction:
             cameraView = np.array(cameraView)
             firstFrame = False
 
-        for matId in range(gizmoCount):
-            gizmo.set_id(matId)
 
-            result = EditTransform(cameraView, cameraProjection, gObjectMatrix[matId], lastUsing == matId)  # type: ignore
-            if result.changed:
-                gObjectMatrix[matId] = result.objectMatrix
-                cameraView = result.cameraView
-            if gizmo.is_using():
-                lastUsing = matId
+        gizmo.set_id(0)
+
+        result = EditTransform(cameraView, cameraProjection, gObjectMatrix[0], lastUsing == 0)  # type: ignore
+        
+        if result.changed:
+            gObjectMatrix[0] = result.objectMatrix
+            cameraView = result.cameraView
+        if gizmo.is_using():
+            lastUsing = 0
 
         imgui.end()
 

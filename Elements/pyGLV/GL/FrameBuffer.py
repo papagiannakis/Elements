@@ -1,6 +1,7 @@
 from OpenGL.GL.framebufferobjects import *
 from OpenGL.GL import *
 from imgui_bundle import imgui
+from Elements.pyGLV.GUI.Guizmos import Gizmos
 
 first_run = True;
 
@@ -12,6 +13,8 @@ class FrameBuffer:
         self.fbo = 0;
         self.textureId = 0;
         self.depthId = 0;
+    
+        self.gizmo = Gizmos(imgui.get_current_context());
     
     def createFrameBuffer(self):
         self.fbo = glGenFramebuffers(1);
@@ -83,6 +86,8 @@ class FrameBuffer:
         
         w = imgui.get_window_size().x
         h = imgui.get_window_size().y
+        x = imgui.get_window_pos().x;
+        y = imgui.get_window_pos().y;
 
         WIDTH = int(w);
         HEIGHT = int(h);
@@ -102,6 +107,8 @@ class FrameBuffer:
             imgui.ImVec2(1,1),
             imgui.ImVec2(0,0)
         )
+        
+        self.gizmo.drawGizmo(x, y, w, h);
         
         imgui.end()
     

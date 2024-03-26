@@ -48,8 +48,6 @@ class VertexArray(Component):
         atexit.register(self.__del__)
         #self.init(attributes, index, usage) #init after a valid GL context is active
         
-        #self.buffer = buffer.FrameBuffer();
-        #self.buffer.createFrameBuffer();
     
     @property
     def glid(self):
@@ -95,13 +93,10 @@ class VertexArray(Component):
         gl.glDeleteBuffers(len(self._buffers), self._buffers)
     
     def draw(self):
-        #self.buffer.drawFramebuffer();
-        #self.buffer.bindFramebuffer();
         gl.glBindVertexArray(self._glid)
         self._draw_command(self._primitive, *self._arguments)
         
         gl.glBindVertexArray(0)
-        #self.buffer.unbindFramebuffer();
         
     def update(self):
         self.draw()

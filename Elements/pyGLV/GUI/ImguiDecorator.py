@@ -16,6 +16,7 @@ from Elements.pyECSS.System import System
 import Elements.pyGLV.GUI.NodeEditor as ed
 from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
 from imgui_bundle import imgui, imguizmo
+import Elements.pyGLV.GUI.Guizmos as gizmo
 ##_____________________________##
 
 def toList(arg):
@@ -758,23 +759,21 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             imgui.columns(1,"Properties")
             imgui.text("Properties")
             imgui.separator()
-        
-          
-        #self.gizmo.begin_frame()
+
         if imgui.tree_node("Translation"):
-            self.currGizmoOperation = self.gizmo.OPERATION.translate;
+            gizmo.currOperation = 0;
             changed, value = imgui.drag_float3("X,Y,Z",toList(self.tra), 0.01, -30, 30, "%.001f", 1);
             self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]         
             imgui.tree_pop();
             
         if imgui.tree_node("Rotation"):
-            self.currGizmoOperation = self.gizmo.OPERATION.totate;
+            gizmo.currOperation = 1
             changed, value = imgui.drag_float3("X,Y,Z",toList(self.rot), 1, -180, 180, "%.1f", 1);
             self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
             
         if imgui.tree_node("Scale"):
-            self.currGizmoOperation = self.gizmo.OPERATION.scale;
+            gizmo.currOperation = 2;
             changed, value = imgui.drag_float3("X,Y,Z",toList(self.sc), 0.01, 0, 4, "%.01f", 1);
             self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
