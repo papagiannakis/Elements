@@ -1,6 +1,6 @@
 import OpenGL.GL as gl 
 from imgui_bundle import imgui
-from Elements.pyGLV.GUI.Guizmos import Gizmos
+
 
 first_run = True;
 
@@ -99,17 +99,9 @@ class FrameBuffer:
 
         if first_run:
             self._use = True;
-            self.gizmo = Gizmos(imgui.get_current_context());
-    
-        imgui.begin("Scene")
-        
-        w = imgui.get_window_size().x
-        h = imgui.get_window_size().y
-        x = imgui.get_window_pos().x;
-        y = imgui.get_window_pos().y;
 
-        WIDTH = int(w);
-        HEIGHT = int(h);
+        WIDTH = int(imgui.get_window_size().x);
+        HEIGHT = int(imgui.get_window_size().y);
 
         if  WIDTH != self.width or HEIGHT != self.height or first_run:
             first_run = False;
@@ -127,9 +119,6 @@ class FrameBuffer:
             imgui.ImVec2(0,0)
         )
         
-        self.gizmo.drawGizmo(x, y, w, h);
-        
-        imgui.end()
     
 
         

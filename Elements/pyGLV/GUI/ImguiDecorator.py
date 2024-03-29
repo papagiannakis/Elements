@@ -15,8 +15,8 @@ from Elements.pyECSS.System import System
 ##________GEORGIOU ADDED_______##
 import Elements.pyGLV.GUI.NodeEditor as ed
 from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
-from imgui_bundle import imgui, imguizmo
-import Elements.pyGLV.GUI.Guizmos as gizmo
+from imgui_bundle import imgui
+from Elements.pyGLV.GUI.Guizmos import Gizmos
 from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 ##_____________________________##
 
@@ -716,9 +716,8 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.sc["x"] = 0; self.sc["y"] = 0; self.sc["z"] = 0
         
         self.changed = None;
-        self.gizmo = imguizmo.im_guizmo;
         self.cameraView = None;
-        self.currGizmoOperation = self.gizmo.OPERATION.translate;
+        self.gizmo = Gizmos(self._imguiContext);
 
         self.node_editor = ed.NodeEditor()
         self.generated = False
@@ -754,19 +753,19 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             imgui.separator()
 
         if imgui.tree_node("Translation"):
-            gizmo.currOperation = 0;
+            self.gizmo.currentGizmoOperation = 0;
             changed, value = imgui.drag_float3("X,Y,Z",toList(self.tra), 0.01, -30, 30, "%.001f", 1);
             self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]         
             imgui.tree_pop();
             
         if imgui.tree_node("Rotation"):
-            gizmo.currOperation = 1
+            self.gizmo.currentGizmoOperation = 1;
             changed, value = imgui.drag_float3("X,Y,Z",toList(self.rot), 1, -180, 180, "%.1f", 1);
             self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
             
         if imgui.tree_node("Scale"):
-            gizmo.currOperation = 2;
+            self.gizmo.currentGizmoOperation = 2;
             changed, value = imgui.drag_float3("X,Y,Z",toList(self.sc), 0.01, 0, 4, "%.01f", 1);
             self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
             imgui.tree_pop();
@@ -792,7 +791,18 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.node_editor.on_frame()
         imgui.end()
         
+        imgui.begin("Scene");
+
+        w = imgui.get_window_size().x
+        h = imgui.get_window_size().y
+        x = imgui.get_window_pos().x;
+        y = imgui.get_window_pos().y;
+
+
         self._buffer.drawFramebuffer();
+        self.gizmo.drawGizmo(x, y, w, h);
+        
+        imgui.end();
             
     def drawNode(self, component):
         #create a local iterator of Entity's children

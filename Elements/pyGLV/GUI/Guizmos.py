@@ -38,7 +38,6 @@ objectMatrix = np.array([
 
 firstFrame = True
 
-operations = [imguizmo.im_guizmo.OPERATION.translate, imguizmo.im_guizmo.OPERATION.rotate, imguizmo.im_guizmo.OPERATION.scale];
 
 @dataclass
 class EditTransformResult:
