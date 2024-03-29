@@ -18,7 +18,6 @@ from Elements.definitions import TEXTURE_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 
-from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 
 example_description = \
 "This example demonstrates the cube map texture, i.e., \n\
@@ -167,9 +166,6 @@ face_data_2 = get_single_texture_faces(mat_img)
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
-buffer = FrameBuffer()
-buffer.createFrameBuffer()
-
 while running:
     running = scene.render()
     displayGUI_text(example_description)
@@ -184,11 +180,8 @@ while running:
     shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
     
-    buffer.drawFramebuffer();
-
-    buffer.bindFramebuffer();
+   
     scene.world.traverse_visit(renderUpdate, scene.world.root) 
-    buffer.unbindFramebuffer()
     
     scene.render_post()
 

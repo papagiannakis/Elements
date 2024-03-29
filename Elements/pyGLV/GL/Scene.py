@@ -12,6 +12,7 @@ from typing import List, Dict
 from Elements.pyECSS.ECSSManager import ECSSManager
 from Elements.pyGLV.GUI.Viewer import SDL2Window
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
+from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 
 class Scene():
     """
@@ -28,6 +29,7 @@ class Scene():
             cls._renderWindow = None
             cls._gContext = None
             cls._world = ECSSManager() #which also instantiates an EventManager
+            cls._buffer = FrameBuffer() #creating a singleton instance of a framebuffer
             # add further init here
         return cls._instance
     
@@ -57,6 +59,7 @@ class Scene():
             #create a basic SDL2 RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
             self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
             self._gContext = self._renderWindow
+    
         
         if imgui == True and customImGUIdecorator == None:
             gGUI = ImGUIDecorator(self._renderWindow)
@@ -65,9 +68,10 @@ class Scene():
             gGUI = customImGUIdecorator(self._renderWindow)
             self._gContext = gGUI
     
-        
         self._gContext.init()
         self._gContext.init_post()
+        
+        self._buffer.createFrameBuffer();
     
     
     def update(self):

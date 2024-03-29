@@ -23,7 +23,7 @@ import numpy as np
 import Elements.pyECSS.System
 from Elements.pyECSS.Component import Component, CompNullIterator
 import atexit
-import Elements.pyGLV.GL.FrameBuffer as buffer
+from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 
 class VertexArray(Component):
     """
@@ -47,7 +47,6 @@ class VertexArray(Component):
         self._primitive = primitive #e.g. GL.GL_TRIANGLES
         atexit.register(self.__del__)
         #self.init(attributes, index, usage) #init after a valid GL context is active
-        
     
     @property
     def glid(self):

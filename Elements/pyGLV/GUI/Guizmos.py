@@ -77,6 +77,7 @@ class Gizmos:
     
     def drawGizmo(self, posX, posY, width, height):  
         self.setOperation();
+        global cameraView
 
         r = EditTransformResult(changed = False, objectMatrix = objectMatrix, cameraView = cameraView)
         
@@ -125,6 +126,11 @@ class Gizmos:
         if view_manip_result:
             r.changed = True
             r.cameraView = view_manip_result.value
+
+        if r.changed:
+            #gObjectMatrix[0] = result.objectMatrix
+            cameraView = r.cameraView
+
             
         
         

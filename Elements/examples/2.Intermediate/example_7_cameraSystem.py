@@ -24,7 +24,7 @@ from Elements.pyECSS.Component import BasicTransform,  RenderMesh
 from Elements.pyECSS.Event import Event
 
 from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2, IMGUIecssDecorator_Georgiou
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray

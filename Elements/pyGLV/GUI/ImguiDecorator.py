@@ -17,6 +17,7 @@ import Elements.pyGLV.GUI.NodeEditor as ed
 from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
 from imgui_bundle import imgui, imguizmo
 import Elements.pyGLV.GUI.Guizmos as gizmo
+from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 ##_____________________________##
 
 def toList(arg):
@@ -725,8 +726,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         io = imgui.get_io()
         io.config_flags |= imgui.ConfigFlags_.docking_enable  # Enable docking
         
-        
-        #self.buffer = fbuff.FrameBuffer();
+        self._buffer = FrameBuffer();
 
     def scenegraphVisualiser(self):
         """display the ECSS in an ImGUI tree node structure
@@ -735,13 +735,6 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         sceneRoot = self.wrapeeWindow.scene.world.root.name
         if sceneRoot is None:
             sceneRoot = "ECSS Root Entity"
-
-        # main window to act as docking station for other windows
-        # imgui.begin("Elements Editor")
-        # io = imgui.get_io();
-        # imgui.set_window_size(imgui.ImVec2(io.display_size.x, io.display_size.y));
-        # imgui.set_window_pos(imgui.ImVec2(0,0));
-        # imgui.end();
 
         twoColumn = False
         if twoColumn:
@@ -799,7 +792,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.node_editor.on_frame()
         imgui.end()
         
-        
+        self._buffer.drawFramebuffer();
             
     def drawNode(self, component):
         #create a local iterator of Entity's children

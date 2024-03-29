@@ -21,6 +21,8 @@ import Elements.pyECSS.Component
 import Elements.pyECSS.System
 import Elements.pyECSS.Event 
 
+from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
+
 class ECSSManager():
     """
     Singleton Manager class to provide factory creation methods for
@@ -57,6 +59,8 @@ class ECSSManager():
         # the ECSSManager creates one main EventManager for the whole world
         self._eventManager = Elements.pyECSS.Event.EventManager()
         self._root = None
+
+        self._buffer = FrameBuffer()
 
     # define properties
     @property  # root Entity getter
@@ -250,7 +254,7 @@ class ECSSManager():
         :param iterator: [description]
         :type iterator: Iterator
         """
-
+        self._buffer.bindFramebuffer();
         iterator = None
         try:
             if dfs:
@@ -277,6 +281,8 @@ class ECSSManager():
                         traversedComp.accept(system)
 
             toc1 = time.perf_counter()
+
+        self._buffer.unbindFramebuffer();
 
 
     def print(self):
