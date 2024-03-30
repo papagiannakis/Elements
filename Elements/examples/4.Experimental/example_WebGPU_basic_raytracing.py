@@ -11,8 +11,7 @@ from Elements.pyGLV.GUI.Viewer import GLFWWindow, RenderDecorator
 from Elements.pyGLV.GL.Shader import ShaderLoader  
 from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
-from Elements.pyGLV.GUI.Viewer import button_map  
-from Elements.pyGLV.GUI.cammera import cammera
+from Elements.pyGLV.GUI.Viewer import button_map 
 import Elements.pyECSS.math_utilities as util 
 
 class FPSCounter:
@@ -53,103 +52,45 @@ present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format) 
 
-#Simple Cube
-vertex_data = np.array([
-    [-0.5, -0.5, 0.5, 1.0],
-    [-0.5, 0.5, 0.5, 1.0],
-    [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0], 
-    [-0.5, -0.5, -0.5, 1.0], 
-    [-0.5, 0.5, -0.5, 1.0], 
-    [0.5, 0.5, -0.5, 1.0], 
-    [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32) 
-color_data = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0]
-], dtype=np.float32)
+# #Simple Cube
+# vertex_data = np.array([
+#     [-0.5, -0.5, 0.5, 1.0],
+#     [-0.5, 0.5, 0.5, 1.0],
+#     [0.5, 0.5, 0.5, 1.0],
+#     [0.5, -0.5, 0.5, 1.0], 
+#     [-0.5, -0.5, -0.5, 1.0], 
+#     [-0.5, 0.5, -0.5, 1.0], 
+#     [0.5, 0.5, -0.5, 1.0], 
+#     [0.5, -0.5, -0.5, 1.0]
+# ],dtype=np.float32) 
+# color_data = np.array([
+#     [0.0, 0.0, 0.0, 1.0],
+#     [1.0, 0.0, 0.0, 1.0],
+#     [1.0, 1.0, 0.0, 1.0],
+#     [0.0, 1.0, 0.0, 1.0],
+#     [0.0, 0.0, 1.0, 1.0],
+#     [1.0, 0.0, 1.0, 1.0],
+#     [1.0, 1.0, 1.0, 1.0],
+#     [0.0, 1.0, 1.0, 1.0]
+# ], dtype=np.float32)
 
-#index arrays for above vertex Arrays
+# #index arrays for above vertex Arrays
 
-index_data = np.array((1,0,3, 1,3,2, 
-                  2,3,7, 2,7,6,
-                  3,0,4, 3,4,7,
-                  6,5,1, 6,1,2,
-                  4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles 
-
-
-# Use numpy to create a struct for the uniform
-uniform_dtype = np.dtype([
-    ("proj", np.float32, (4, 4)),
-    ("view", np.float32, (4, 4)),
-    ("model", np.float32, (4, 4)),
-    ("tint", np.float32, (4,)),
-    ("time", np.float32),
-    ("padding", np.float32, (3,)),
-]) 
-
-angle = glfw.get_time()
-S = glm.scale(glm.mat4x4(1.0), glm.vec3(0.5));  
-T1 = glm.translate(glm.mat4x4(1.0), glm.vec3(0.0, 0.0, 0.0))
-R1 = glm.rotate(glm.mat4x4(1.0), angle, glm.vec3(0.0, 0.0, 1.0))
-
-model = T1 @ S  
-
-eye = glm.vec3(2.5, 2.5, 2.5) 
-target = glm.vec3(0.0, 0.0, 0.0)
-up = glm.vec3(0.0, 1.0, 0.0) 
-cam = cammera(eye=eye, target=target, up=up);
-view = cam._updateCamera;
-
-ratio = width / height 
-near = 0.001
-far = 1000.0 
-
-proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
-
-uniform_data = np.array((
-    np.array(proj),
-    np.array(view),
-    np.array(model),
-    [1.0, 1.0, 1.0, 1.0],
-    1.0,
-    [1.0, 1.0, 1.0]
-), dtype=uniform_dtype)
-
-# Create vertex buffer, and upload data
-vertex_buffer = device.create_buffer_with_data(
-    data=vertex_data, usage=wgpu.BufferUsage.VERTEX
-) 
-
-color_buffer = device.create_buffer_with_data(
-    data=color_data, usage=wgpu.BufferUsage.VERTEX
-)
-
-# Create index buffer, and upload data
-index_buffer = device.create_buffer_with_data(
-    data=index_data, usage=wgpu.BufferUsage.INDEX
-)
-
-# Create uniform buffer - data is uploaded each frame
-uniform_buffer = device.create_buffer(
-    size=uniform_data.nbytes, usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
-)
+# index_data = np.array((1,0,3, 1,3,2, 
+#                   2,3,7, 2,7,6,
+#                   3,0,4, 3,4,7,
+#                   6,5,1, 6,1,2,
+#                   4,5,6, 4,6,7,
+#                   5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
 
 
-# GLSL
+# GLSL example
 # vertex_shader = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_vertex.vert");
 # fragment_shader = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_fragment.frag");
 # Vshader = device.create_shader_module(code=vertex_shader, label="vert"); 
 # Fshader = device.create_shader_module(code=fragment_shader, label="frag"); 
 
-#WGSL
+# WGSL example
 shader_code = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_shader.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
@@ -158,23 +99,6 @@ shader = device.create_shader_module(code=shader_code);
 bind_groups_entries = [[]]
 bind_groups_layout_entries = [[]]
 
-bind_groups_entries[0].append(
-    {
-        "binding": 0,
-        "resource": {
-            "buffer": uniform_buffer,
-            "offset": 0,
-            "size": uniform_buffer.size,
-        },
-    }
-)
-bind_groups_layout_entries[0].append(
-    {
-        "binding": 0,
-        "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
-        "buffer": {"type": wgpu.BufferBindingType.uniform},
-    }
-)
 
 
 # Create the wgou binding objects
@@ -275,40 +199,11 @@ render_pipeline = device.create_render_pipeline(
 ) 
 
 def draw_frame():  
-    global proj  
-    global view
-    global cam
-    
     texture = present_context.get_current_texture();
     textureWidth = texture.width; 
     textureHeight = texture.height; 
-    
-    # Update uniform transform 
-    ratio = canvas._windowWidth/canvas._windowHeight
-    near = 0.001
-    far = 1000.0 
-
-    proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))   
-    view = cam._updateCamera
-     
-    uniform_data = np.array((
-    np.array(proj),
-    np.array(view),
-    np.array(model),
-    [1.0, 1.0, 1.0, 1.0],
-    1.0,
-    [1.0, 1.0, 1.0]
-    ), dtype=uniform_dtype) 
-    
-    # Upload the uniform struct
-    tmp_buffer = device.create_buffer_with_data(
-        data=uniform_data, usage=wgpu.BufferUsage.COPY_SRC
-    )
 
     command_encoder = device.create_command_encoder()
-    command_encoder.copy_buffer_to_buffer(
-        tmp_buffer, 0, uniform_buffer, 0, uniform_data.nbytes
-    )
       
     depth_texture : wgpu.GPUTexture = device.create_texture(
             label="depth_texture",
@@ -356,9 +251,9 @@ def draw_frame():
     )
 
     render_pass.set_pipeline(render_pipeline)
-    render_pass.set_index_buffer(index_buffer, wgpu.IndexFormat.uint32)
-    render_pass.set_vertex_buffer(slot=0, buffer=vertex_buffer) 
-    render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
+    # render_pass.set_index_buffer(index_buffer, wgpu.IndexFormat.uint32)
+    # render_pass.set_vertex_buffer(slot=0, buffer=vertex_buffer) 
+    # render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
     render_pass.draw_indexed(index_data.size, 1, 0, 0, 0)
@@ -371,36 +266,8 @@ def draw_frame():
 
 canvas.request_draw(draw_frame)
 
-mouse_noop_x_state = 0
-mouse_noop_y_state = 0 
-
 while canvas._running:
-    width = canvas._windowWidth
-    height = canvas._windowHeight  
-    wcenter = width / 2
-    hcenter = height / 2 
-    
     event = canvas.event_input_process();   
-    if event: 
-        if glfw.get_key(canvas.gWindow, glfw.KEY_ESCAPE) == glfw.PRESS:  
-            canvas._running = False
-
-        if event.type == EventTypes.SCROLL:
-                x = event.data["dx"]
-                y = event.data["dy"]
-                cam.cameraHandling(x,y,width,height)
-            
-        if event.type == EventTypes.MOUSE_MOTION:
-            buttons = event.data["buttons"]   
-            
-            if button_map[glfw.MOUSE_BUTTON_2] in canvas._pointer_buttons:
-                x = np.floor(event.data["x"] - mouse_noop_x_state) 
-                y = np.floor(event.data["y"] - mouse_noop_y_state) 
-                cam.cameraHandling(x, y, height, width) 
-            else:
-                mouse_noop_x_state = np.floor(event.data["x"])
-                mouse_noop_y_state = np.floor(event.data["y"])
-                
     if canvas._need_draw:
         canvas.display()
         canvas.display_post() 

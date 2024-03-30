@@ -11,29 +11,9 @@ from Elements.pyGLV.GUI.Viewer import GLFWWindow, RenderDecorator
 from Elements.pyGLV.GL.Shader import ShaderLoader  
 from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
-from Elements.pyGLV.GUI.Viewer import button_map  
-from Elements.pyGLV.GUI.cammera import cammera
+from Elements.pyGLV.GUI.Viewer import button_map
+from Elements.pyGLV.GUI.cammera import cammera 
 import Elements.pyECSS.math_utilities as util 
-
-class FPSCounter:
-    def __init__(self):
-        self.start_time = time.time()
-        self.frame_count = 0
-        self.fps = 0
-
-    def update(self):
-        self.frame_count += 1
-        current_time = time.time()
-        elapsed_time = current_time - self.start_time
-        if elapsed_time >= 1.0:  # Update FPS every 1 second
-            self.fps = self.frame_count / elapsed_time
-            self.frame_count = 0
-            self.start_time = current_time
-
-    def get_fps(self):
-        return np.floor(self.fps)
-
-fps_counter = FPSCounter()
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
@@ -51,56 +31,87 @@ device = adapter.request_device()
 # Prepare present context
 present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
-present_context.configure(device=device, format=render_texture_format) 
+present_context.configure(device=device, format=render_texture_format)  
 
-#Simple Cube
-vertex_data = np.array([
-    [-0.5, -0.5, 0.5, 1.0],
-    [-0.5, 0.5, 0.5, 1.0],
-    [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0], 
-    [-0.5, -0.5, -0.5, 1.0], 
-    [-0.5, 0.5, -0.5, 1.0], 
-    [0.5, 0.5, -0.5, 1.0], 
-    [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32) 
-color_data = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0]
-], dtype=np.float32)
+ti = []; # indices
+tv = []; # vertices 
+tc = []; # colors
+tn = []; # normals
 
-#index arrays for above vertex Arrays
+def addv( v ):
+    tv.append(v[0])
+    tv.append(v[1])
+    tv.append(v[2]) 
+    ti.append(len(ti))    
 
-index_data = np.array((1,0,3, 1,3,2, 
-                  2,3,7, 2,7,6,
-                  3,0,4, 3,4,7,
-                  6,5,1, 6,1,2,
-                  4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles 
+    
+def addn( n ): 
+    tn.append(-n[0]) 
+    tn.append(-n[1]) 
+    tn.append(-n[2]) 
+
+tet_r = [ 
+    [ 1.0, 0.0, 0.0 ], 
+    [-0.333333333333, 0.942809041582, 0.0], 
+    [-0.333333333333,-0.471404520791, 0.816496580928],
+    [ -0.333333333333, -0.471404520791, -0.816496580928 ] 
+]; 
+
+tris = [];
+tris.append([tet_r[3], tet_r[1], tet_r[2]])
+tris.append([tet_r[2], tet_r[0], tet_r[3]])
+tris.append([tet_r[3], tet_r[0], tet_r[1]])
+tris.append([tet_r[1], tet_r[0], tet_r[2]]) 
+
+def mid ( a, b ): 
+    return [
+        (a[0] + b[0]) * 0.5, 
+        (a[1] + b[1]) * 0.5, 
+        (a[2] + b[2]) * 0.5, 
+    ] 
+    
+def devide( depth, tri ): 
+    if depth == 0: 
+        addv( tri[0] ); addn( tri[0] );
+        addv( tri[1] ); addn( tri[1] );
+        addv( tri[2] ); addn( tri[2] ); 
+    else:
+        a = util.normalise(tri[0])
+        b = util.normalise(tri[1])
+        c = util.normalise(tri[2]) 
+        
+        ab = util.normalise(mid(a, b)) 
+        bc = util.normalise(mid(b, c)) 
+        ca = util.normalise(mid(c, a))
+        
+        devide( depth=depth-1, tri=[a, ab, ca]  )
+        devide( depth=depth-1, tri=[b, bc, ab]  )
+        devide( depth=depth-1, tri=[c, ca, bc]  )
+        devide( depth=depth-1, tri=[ab, bc, ca] )
 
 
-# Use numpy to create a struct for the uniform
+#depth / lod of 5 
+for i in range(len(tris)):
+    devide( 5, tri=tris[i] ) 
+    
+for i in range(int(len(tv) / 3)):    
+    if i % 3 == 0: 
+        tc.append([0.5, 0.0, 0.0]) 
+    else:
+        tc.append([1.0, 0.0, 0.0])  
+    
+    
+vertex_data = np.array(tv, dtype=np.float32)
+color_data = np.array(tc, dtype=np.float32) 
+index_data = np.array(ti, dtype=np.uint32) 
+
 uniform_dtype = np.dtype([
     ("proj", np.float32, (4, 4)),
     ("view", np.float32, (4, 4)),
     ("model", np.float32, (4, 4)),
-    ("tint", np.float32, (4,)),
-    ("time", np.float32),
-    ("padding", np.float32, (3,)),
 ]) 
-
-angle = glfw.get_time()
-S = glm.scale(glm.mat4x4(1.0), glm.vec3(0.5));  
-T1 = glm.translate(glm.mat4x4(1.0), glm.vec3(0.0, 0.0, 0.0))
-R1 = glm.rotate(glm.mat4x4(1.0), angle, glm.vec3(0.0, 0.0, 1.0))
-
-model = T1 @ S  
+    
+model = glm.mat4x4(1.0)
 
 eye = glm.vec3(2.5, 2.5, 2.5) 
 target = glm.vec3(0.0, 0.0, 0.0)
@@ -118,39 +129,27 @@ uniform_data = np.array((
     np.array(proj),
     np.array(view),
     np.array(model),
-    [1.0, 1.0, 1.0, 1.0],
-    1.0,
-    [1.0, 1.0, 1.0]
 ), dtype=uniform_dtype)
 
-# Create vertex buffer, and upload data
+uniform_buffer = device.create_buffer(
+    size=uniform_data.nbytes, usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
+)
+
 vertex_buffer = device.create_buffer_with_data(
     data=vertex_data, usage=wgpu.BufferUsage.VERTEX
-) 
+)
 
 color_buffer = device.create_buffer_with_data(
     data=color_data, usage=wgpu.BufferUsage.VERTEX
-)
+)  
 
 # Create index buffer, and upload data
 index_buffer = device.create_buffer_with_data(
     data=index_data, usage=wgpu.BufferUsage.INDEX
 )
 
-# Create uniform buffer - data is uploaded each frame
-uniform_buffer = device.create_buffer(
-    size=uniform_data.nbytes, usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
-)
-
-
-# GLSL
-# vertex_shader = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_vertex.vert");
-# fragment_shader = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_fragment.frag");
-# Vshader = device.create_shader_module(code=vertex_shader, label="vert"); 
-# Fshader = device.create_shader_module(code=fragment_shader, label="frag"); 
-
-#WGSL
-shader_code = ShaderLoader(definitions.SHADER_DIR / "simple_mvp2_shader.wgsl");
+# WGSL example
+shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Meshes" / "simple_mesh.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
@@ -176,7 +175,6 @@ bind_groups_layout_entries[0].append(
     }
 )
 
-
 # Create the wgou binding objects
 bind_group_layouts = []
 bind_groups = []
@@ -200,33 +198,33 @@ render_pipeline = device.create_render_pipeline(
         "entry_point": "vs_main", 
         "buffers": [
             {
-                "array_stride": vertex_data.shape[1] * 4,
+                "array_stride": 3 * 4,
                 "step_mode": wgpu.VertexStepMode.vertex,
                 "attributes": [
                     {
-                        "format": wgpu.VertexFormat.float32x4,
+                        "format": wgpu.VertexFormat.float32x3,
                         "offset": 0,
                         "shader_location": 0,
                     },
                 ],
             },
             {
-                "array_stride": color_data.shape[1] * 4, 
-                "step_mode": wgpu.VertexStepMode.vertex, 
+                "array_stride": 3 * 4,
+                "step_mode": wgpu.VertexStepMode.vertex,
                 "attributes": [
                     {
-                        "format": wgpu.VertexFormat.float32x4,
+                        "format": wgpu.VertexFormat.float32x3,
                         "offset": 0,
                         "shader_location": 1,
                     },
-                ]
-            }
+                ],
+            },
         ], 
     },
     primitive={
         "topology": wgpu.PrimitiveTopology.triangle_list,
         "front_face": wgpu.FrontFace.ccw,
-        "cull_mode": wgpu.CullMode.front,
+        "cull_mode": wgpu.CullMode.none,
     },
     depth_stencil={
             "format": wgpu.TextureFormat.depth24plus,
@@ -274,30 +272,22 @@ render_pipeline = device.create_render_pipeline(
     },
 ) 
 
-def draw_frame():  
-    global proj  
-    global view
+def draw_frame(): 
     global cam
+    global proj  
+    global canvas
     
-    texture = present_context.get_current_texture();
-    textureWidth = texture.width; 
-    textureHeight = texture.height; 
-    
-    # Update uniform transform 
     ratio = canvas._windowWidth/canvas._windowHeight
     near = 0.001
     far = 1000.0 
 
     proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))   
     view = cam._updateCamera
-     
+    
     uniform_data = np.array((
     np.array(proj),
     np.array(view),
     np.array(model),
-    [1.0, 1.0, 1.0, 1.0],
-    1.0,
-    [1.0, 1.0, 1.0]
     ), dtype=uniform_dtype) 
     
     # Upload the uniform struct
@@ -309,6 +299,10 @@ def draw_frame():
     command_encoder.copy_buffer_to_buffer(
         tmp_buffer, 0, uniform_buffer, 0, uniform_data.nbytes
     )
+    
+    texture = present_context.get_current_texture(); 
+    textureWidth = texture.width; 
+    textureHeight = texture.height; 
       
     depth_texture : wgpu.GPUTexture = device.create_texture(
             label="depth_texture",
@@ -361,7 +355,8 @@ def draw_frame():
     render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
-    render_pass.draw_indexed(index_data.size, 1, 0, 0, 0)
+    render_pass.draw_indexed(index_data.size, 1, 0, 0, 0) 
+    # render_pass.draw(3, 1, 0, 0)
     render_pass.end()
 
     device.queue.submit([command_encoder.finish()])

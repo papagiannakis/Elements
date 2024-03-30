@@ -379,15 +379,17 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         print(f'{self.getClassName()}: init()')
         glfw.init()
        
-        glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE) 
+        glfw.window_hint(glfw.COCOA_RETINA_FRAMEBUFFER, glfw.FALSE)   
          
         if not self.wgpu:
             glfw.window_hint(glfw.CONTEXT_VERSION_MAJOR, 3)
             glfw.window_hint(glfw.CONTEXT_VERSION_MINOR, 3)
             glfw.window_hint(glfw.OPENGL_PROFILE, glfw.OPENGL_CORE_PROFILE) 
             glfw.window_hint(glfw.OPENGL_FORWARD_COMPAT, glfw.TRUE) 
-            glfw.window_hint(glfw.DOUBLEBUFFER, glfw.TRUE)
-            glfw.window_hint(glfw.SAMPLES, 4)
+            # glfw.window_hint(glfw.DOUBLEBUFFER, glfw.TRUE)
+            glfw.window_hint(glfw.SAMPLES, 4) 
+            
+            glfw.swap_interval(0)
             
             #depth stencil buffer size
             glfw.window_hint(glfw.DEPTH_BITS, 24)
@@ -511,7 +513,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         To be called at the end of each drawn frame to swap double buffers
         """ 
         if not self.wgpu:
-            glfw.swap_buffers(self._gWindow)
+            glfw.swap_buffers(self._gWindow) 
         # print(f'{self.getClassName()}: display_post()')
 
     def shutdown(self):
@@ -527,7 +529,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         glfw.poll_events()   
         
         events = PollEventAndFlush()    
-        event = None
+        event = None 
         if events:
             event = events.pop()  
             # if self._running and running:
@@ -632,7 +634,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
     def _on_check_close(self, *args):
         # Follow the close flow that glfw intended.
         if self._gWindow is not None and glfw.window_should_close(self._gWindow): 
-            self._running = False
+            self._running = False 
              
     def _determine_size(self):
         width, height = glfw.get_framebuffer_size(self._gWindow)  
@@ -1240,7 +1242,7 @@ class RenderDecorator(RenderWindow):
         if events:
             event = events.pop() 
         else:
-            return self._wrapeeWindow.event_input_process(running=running) & running; 
+            return running; 
         
         width = self.wrapeeWindow._windowWidth
         height = self.wrapeeWindow._windowHeight  
