@@ -12,15 +12,8 @@ Matrix16 = NDArray[np.float64]
 Matrix6 = NDArray[np.float64]
 Matrix3 = NDArray[np.float64]
 
-currOperation = 0
-
 lastUsing = 0
 
-cameraView = np.array(
-    [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0], np.float32
-)
-
-cameraProjection = np.zeros((4, 4), np.float32)  # remove me?
 
 # Camera projection
 isPerspective = True
@@ -66,19 +59,18 @@ class Gizmos:
         self.statics.boundSizing = False
         self.statics.boundSizingSnap = False
         self.statics.gizmoWindowFlags = 0
+
+        self._view = np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], np.float32)
+        self._projection = np.zeros((4, 4), np.float32)
     
     def __del__(self):
         pass
-
-    def setOperation(self):
-
-        self.currentGizmoOperation = currOperation;
     
     def drawGizmo(self, posX, posY, width, height):  
-        self.setOperation();
+       # self.setOperation();
         global cameraView
 
-        r = EditTransformResult(changed = False, objectMatrix = objectMatrix, cameraView = cameraView)
+        r = EditTransformResult(changed = False, objectMatrix = objectMatrix, cameraView = self._view)
         
         self.gizmo.set_rect(
             posX,
@@ -114,21 +106,32 @@ class Gizmos:
         # if manip_result:
         #     r.changed = True
         #     r.objectMatrix = manip_result.value
-
+        
         view_manip_result = self.gizmo.view_manipulate(
-            cameraView,
+            self._view,
             8.0,
             ImVec2(viewManipulateRight - 128, viewManipulateTop),
             ImVec2(128, 128),
             0x10101010,
         )
+
         if view_manip_result:
             r.changed = True
             r.cameraView = view_manip_result.value
 
         if r.changed:
             #gObjectMatrix[0] = result.objectMatrix
-            cameraView = r.cameraView
+            self._view = np.array(r.cameraView, np.float32);
+
+        return r.changed;
+
+    def decompose_view_matrix(self):
+            eye = self._view[:3, 3]
+            target = eye - self._view[:3, 2];
+            up = np.cross(self._view[:3, 0], (-self._view[:3, 2]));
+
+            return eye, up, target;
+
 
             
         

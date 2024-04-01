@@ -18,6 +18,7 @@ from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
 from imgui_bundle import imgui
 from Elements.pyGLV.GUI.Guizmos import Gizmos
 from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
+import numpy as np
 ##_____________________________##
 
 def toList(arg):
@@ -27,6 +28,7 @@ def toList(arg):
             
     return retVal;
         
+first_run = False;
   
 class ImGUIDecorator(RenderDecorator):  
     """
@@ -720,7 +722,6 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.gizmo = Gizmos(self._imguiContext);
 
         self.node_editor = ed.NodeEditor()
-        self.generated = False
         
         io = imgui.get_io()
         io.config_flags |= imgui.ConfigFlags_.docking_enable  # Enable docking
@@ -731,6 +732,8 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         """display the ECSS in an ImGUI tree node structure
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
         """
+        global first_run
+
         sceneRoot = self.wrapeeWindow.scene.world.root.name
         if sceneRoot is None:
             sceneRoot = "ECSS Root Entity"
@@ -782,10 +785,12 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         imgui.end()
         
         
-        if not self.generated:
-            self.generated = True;
+        if not first_run:
+            first_run = True;
             self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
             self.generate_node_editor(self.wrapeeWindow.scene.world.root)
+            
+        
         
         imgui.begin("NodeEditor")
         self.node_editor.on_frame()
@@ -799,9 +804,22 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         y = imgui.get_window_pos().y;
 
 
-        self._buffer.drawFramebuffer();
-        self.gizmo.drawGizmo(x, y, w, h);
+        self._buffer.drawFramebuffer(self._wireframeMode);
+        if self.gizmo.drawGizmo(x, y, w, h):
+            print("gizmo change")
+            self._eye, self._up, self._target = self.gizmo.decompose_view_matrix();
         
+            #self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            self._updateCamera.value = self.gizmo._view
+            print ("NEW CAMERA VALUE", self._updateCamera.value)
+            if self._wrapeeWindow.eventManager is not None:
+                    self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+        # else:
+        #     self.gizmo._view = np.array(util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up)), np.float32);
+        #print();
+        #print(self._eye)
+        #print(self.gizmo._view)
+
         imgui.end();
             
     def drawNode(self, component):

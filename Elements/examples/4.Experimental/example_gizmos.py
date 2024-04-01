@@ -272,6 +272,10 @@ def make_closure_demo_guizmo() -> GuiFunction:
         if gizmo.is_using():
             lastUsing = 0
 
+
+        print(cameraView);
+
+
         imgui.end()
 
     return gui

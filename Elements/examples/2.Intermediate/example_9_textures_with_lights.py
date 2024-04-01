@@ -225,6 +225,7 @@ while running:
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
+    #print(view)
     # mvp_cube = projMat @ view @ model_cube
 
     model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)

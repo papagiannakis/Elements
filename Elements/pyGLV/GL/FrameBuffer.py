@@ -24,6 +24,7 @@ class FrameBuffer:
             self.fbo = 0;
             self.textureId = 0;
             self.depth_rbo = 0;
+            self._wireframeMode = False;
     
     def createFrameBuffer(self):
         self.fbo = gl.glGenFramebuffers(1);
@@ -66,13 +67,17 @@ class FrameBuffer:
     def bindFramebuffer(self):
         if self._use:
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.fbo);
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
             gl.glClearColor(0.0, 0.0, 0.0, 1.0)
             gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT | gl.GL_STENCIL_BUFFER_BIT)
             gl.glClearDepth(1.0);
             gl.glDisable(gl.GL_CULL_FACE)
             gl.glEnable(gl.GL_DEPTH_TEST)
             gl.glDepthFunc(gl.GL_LESS)
+
+            if self._wireframeMode:
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
+            else:
+                gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
     def unbindFramebuffer(self):
         if self._use:
@@ -94,8 +99,11 @@ class FrameBuffer:
         self.height = _height;
         
         
-    def drawFramebuffer(self): 
+    def drawFramebuffer(self, wireframe = False): 
         global first_run
+
+        if self._wireframeMode != wireframe:
+            self._wireframeMode = wireframe;
 
         if first_run:
             self._use = True;
