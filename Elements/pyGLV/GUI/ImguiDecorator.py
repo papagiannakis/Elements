@@ -809,8 +809,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
             print("gizmo change")
             self._eye, self._up, self._target = self.gizmo.decompose_view_matrix();
         
-            #self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
-            self._updateCamera.value = self.gizmo._view
+            self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
             print ("NEW CAMERA VALUE", self._updateCamera.value)
             if self._wrapeeWindow.eventManager is not None:
                     self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
