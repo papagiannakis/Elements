@@ -173,7 +173,7 @@ def EditTransform(
         statics.gizmoWindowFlags = 0
 
 
-    #gizmo.draw_cubes(cameraView, cameraProjection, gObjectMatrix[:gizmoCount])
+    gizmo.draw_cubes(cameraView, cameraProjection, gObjectMatrix[:gizmoCount])
 
     manip_result = gizmo.manipulate(
         cameraView,
@@ -249,6 +249,8 @@ def make_closure_demo_guizmo() -> GuiFunction:
         imgui.set_next_window_size(ImVec2(320, 340), imgui.Cond_.appearing)
         imgui.begin("Editor")
 
+        _, camDistance = imgui.drag_float("Distance:", camDistance, 0.1, 1.0, 10.0, "%.3f");
+
         if firstFrame:
             eye = glm.vec3(
                 math.cos(camYAngle) * math.cos(camXAngle) * camDistance,
@@ -271,10 +273,6 @@ def make_closure_demo_guizmo() -> GuiFunction:
             cameraView = result.cameraView
         if gizmo.is_using():
             lastUsing = 0
-
-
-        print(cameraView);
-
 
         imgui.end()
 

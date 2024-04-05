@@ -28,7 +28,7 @@ def toList(arg):
             
     return retVal;
         
-first_run = False;
+first_run = True;
   
 class ImGUIDecorator(RenderDecorator):  
     """
@@ -785,8 +785,8 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         imgui.end()
         
         
-        if not first_run:
-            first_run = True;
+        if first_run:
+            first_run = False;
             self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
             self.generate_node_editor(self.wrapeeWindow.scene.world.root)
             
@@ -805,14 +805,17 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
 
 
         self._buffer.drawFramebuffer(self._wireframeMode);
-        if self.gizmo.drawGizmo(x, y, w, h):
+        if self.gizmo.drawGizmo():
             print("gizmo change")
-            self._eye, self._up, self._target = self.gizmo.decompose_view_matrix();
-        
+            # self._eye, self._up, self._target = self.gizmo.decompose_view_matrix();
+            self._eye, self._up, self._target = self.gizmo.decompose_look_at();
+
+            print(self.gizmo._view);
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
             print ("NEW CAMERA VALUE", self._updateCamera.value)
             if self._wrapeeWindow.eventManager is not None:
                     self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+                    
         # else:
         #     self.gizmo._view = np.array(util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up)), np.float32);
         #print();

@@ -337,7 +337,8 @@ def make_closure_demo_guizmo() -> GuiFunction:
         if changed:
             viewDirty = True
         _, gizmoCount = imgui.slider_int("Gizmo count", gizmoCount, 1, 4)
-
+        
+        print(viewDirty)
         if viewDirty or firstFrame:
             eye = glm.vec3(
                 math.cos(camYAngle) * math.cos(camXAngle) * camDistance,

@@ -66,23 +66,23 @@ class Gizmos:
     def __del__(self):
         pass
     
-    def drawGizmo(self, posX, posY, width, height):  
+    def drawGizmo(self):  
        # self.setOperation();
         global cameraView
-
-        r = EditTransformResult(changed = False, objectMatrix = objectMatrix, cameraView = self._view)
         
         self.gizmo.set_rect(
-            posX,
-            posY,
-            width,
-            height,
+            imgui.get_window_pos().x,
+            imgui.get_window_pos().y,
+            imgui.get_window_width(),
+            imgui.get_window_height(),
         )
 
         self.gizmo.set_drawlist()
-    
-        viewManipulateRight = posX + width
-        viewManipulateTop = posY
+
+        r = EditTransformResult(changed = False, objectMatrix = objectMatrix, cameraView = self._view)
+        
+        viewManipulateRight = imgui.get_window_pos().x + imgui.get_window_width();
+        viewManipulateTop = imgui.get_window_pos().y
         window = imgui.internal.get_current_window()
         if imgui.is_window_hovered() and imgui.is_mouse_hovering_rect(
             window.inner_rect.min, window.inner_rect.max
@@ -109,7 +109,7 @@ class Gizmos:
         
         view_manip_result = self.gizmo.view_manipulate(
             self._view,
-            8.0,
+            50.0,
             ImVec2(viewManipulateRight - 128, viewManipulateTop),
             ImVec2(128, 128),
             0x10101010,
@@ -126,12 +126,32 @@ class Gizmos:
         return r.changed;
 
     def decompose_view_matrix(self):
-            eye = self._view[:3, 3]
-            target = eye - self._view[:3, 2];
-            up = np.cross(self._view[:3, 0], (-self._view[:3, 2]));
+        eye = self._view[:3, 3]
+        target = eye - self._view[:3, 2];
+        up = np.cross(self._view[:3, 0], (-self._view[:3, 2]));
 
-            return eye, up, target;
+        return eye, up, target;
 
+    def decompose_look_at(self):
+        r = self._view[:3,:3]
+        target = self._view[:3,3]
+        eye = target + r[:,2];
+        up = r[:,1]
+        
+        # cnt = 0;
+
+        # for i in eye:
+        #     if i > 0.1:
+        #         i += 2.0;
+        #     elif i < -0.1:
+        #         i -= 2.0;
+        #     eye[cnt] = i;
+        #     cnt += 1;
+
+        for i in range(0,3):
+            eye[i] = eye[i] * 4;
+
+        return eye, up, target;
 
             
         
