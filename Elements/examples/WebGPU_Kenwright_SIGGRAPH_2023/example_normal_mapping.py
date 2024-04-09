@@ -12,8 +12,11 @@ from Elements.pyGLV.GL.Shader import ShaderLoader
 from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
-from Elements.pyGLV.GUI.cammera import cammera 
-import Elements.pyECSS.math_utilities as util 
+from Elements.pyGLV.GUI.cammera import cammera  
+from Elements.pyGLV.GL.Textures import WGPUTexture
+import Elements.pyECSS.math_utilities as util  
+
+from Elements.definitions import TEXTURE_DIR
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
@@ -33,81 +36,125 @@ present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)  
 
-ti = []; # indices
-tv = []; # vertices 
-tc = []; # colors
-tn = []; # normals
-
-def addv( v ):
-    tv.append(v[0])
-    tv.append(v[1])
-    tv.append(v[2]) 
-    ti.append(len(ti))    
-
+cubev = [
+    { "p": [-1.0, -1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] },
+    { "p": [1.0, -1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] },
+    { "p": [-1.0, 1.0, 1.0], "u":[0.0, 0.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] },
+    { "p": [1.0, 1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] }, 
     
-def addn( n ): 
-    tn.append(-n[0]) 
-    tn.append(-n[1]) 
-    tn.append(-n[2]) 
-
-tet_r = [ 
-    [ 1.0, 0.0, 0.0 ], 
-    [-0.333333333333, 0.942809041582, 0.0], 
-    [-0.333333333333,-0.471404520791, 0.816496580928],
-    [ -0.333333333333, -0.471404520791, -0.816496580928 ] 
-]; 
-
-tris = [];
-tris.append([tet_r[3], tet_r[1], tet_r[2]])
-tris.append([tet_r[2], tet_r[0], tet_r[3]])
-tris.append([tet_r[3], tet_r[0], tet_r[1]])
-tris.append([tet_r[1], tet_r[0], tet_r[2]]) 
-
-def mid ( a, b ): 
-    return [
-        (a[0] + b[0]) * 0.5, 
-        (a[1] + b[1]) * 0.5, 
-        (a[2] + b[2]) * 0.5, 
-    ] 
+    { "p": [1.0, -1.0, 1.0], "u":[1.0, 0.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
+    { "p": [1.0, -1.0, 1.0], "u":[0.0, 0.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
+    { "p": [1.0, 1.0, 1.0], "u":[1.0, 1.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
+    { "p": [1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
     
-def devide( depth, tri ): 
-    if depth == 0: 
-        addv( tri[0] ); addn( tri[0] );
-        addv( tri[1] ); addn( tri[1] );
-        addv( tri[2] ); addn( tri[2] ); 
-    else:
-        a = util.normalise(tri[0])
-        b = util.normalise(tri[1])
-        c = util.normalise(tri[2]) 
-        
-        ab = util.normalise(mid(a, b)) 
-        bc = util.normalise(mid(b, c)) 
-        ca = util.normalise(mid(c, a))
-        
-        devide( depth=depth-1, tri=[a, ab, ca]  )
-        devide( depth=depth-1, tri=[b, bc, ab]  )
-        devide( depth=depth-1, tri=[c, ca, bc]  )
-        devide( depth=depth-1, tri=[ab, bc, ca] )
-
-
-#depth / lod of 5 
-for i in range(len(tris)):
-    devide( 3, tri=tris[i] ) 
+    { "p": [1.0, -1.0, -1.0], "u":[1.0, 0.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] },
+    { "p": [-1.0, -1.0, -1.0], "u":[0.0, 0.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] },
+    { "p": [1.0, 1.0, -1.0], "u":[1.0, 1.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] }, 
     
-for i in range(int(len(tv) / 3)):    
-    if i % 3 == 0: 
-        tc.append([0.5, 0.0, 0.0]) 
-    else:
-        tc.append([1.0, 0.0, 0.0])   
+    { "p": [-1.0, -1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] },
+    { "p": [-1.0, -1.0, 1.0], "u":[0.0, 0.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] },
+    { "p": [-1.0, 1.0, -1.0], "u":[1.0, 1.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] }, 
+    
+    { "p": [-1.0, -1.0, -1.0], "u":[0.0, 1.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] },
+    { "p": [-1.0, -1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 0.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] },
+    { "p": [-1.0, 1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] }, 
+    
+    { "p": [-1.0, 1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
+    { "p": [1.0, 1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 0.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
+    { "p": [1.0, 1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
+] 
 
-# for i in range(int(len(tv) / 3)):    
-#     tc.append([0.5, 0.0, 0.0]) 
+cubef = [
+    0,1,3,      0,3,2,
+    4,5,7,      4,7,6,
+    8,9,11,     8,11,10,
+    12,13,15,   12,15,14,
+    16,17,19,   16,19,18,
+    20,21,23,   20,23,22
+] 
+
+for i in range(0, len(cubef), 8): 
+    v0 = cubev[ cubef[i+0] ]
+    v1 = cubev[ cubef[i+1] ]
+    v2 = cubev[ cubef[i+2] ] 
+    
+    edge0 = [ v1["p"][0] - v0["p"][0], v1["p"][1] - v0["p"][1], v1["p"][2] - v0["p"][2] ]
+    edge1 = [ v2["p"][0] - v0["p"][0], v2["p"][1] - v0["p"][1], v2["p"][2] - v0["p"][2] ] 
+    
+    duv0 = [ v1["u"][0] - v0["u"][0], v1["u"][1] - v0["u"][1] ]
+    duv1 = [ v2["u"][0] - v0["u"][0], v2["u"][1] - v0["u"][1] ] 
+     
+    f = 1.0 / (duv0[0] * duv1[1] - duv1[0] * duv0[1]) 
+    tangentx = f * (duv1[1] * edge0[0] - duv0[1] * edge1[0])
+    tangenty = f * (duv1[1] * edge0[1] - duv0[1] * edge1[1])
+    tangentz = f * (duv1[1] * edge0[2] - duv0[1] * edge1[2])
+    
+    cubev[ cubef[i+0] ]['t'] = [ tangentx, tangenty, tangentz ]
+    cubev[ cubef[i+1] ]['t'] = [ tangentx, tangenty, tangentz ]
+    cubev[ cubef[i+2] ]['t'] = [ tangentx, tangenty, tangentz ]
     
     
-vertex_data = np.array(tv, dtype=np.float32)
-color_data = np.array(tc, dtype=np.float32) 
-index_data = np.array(ti, dtype=np.uint32) 
+print("vertices", cubev.__len__) 
+print("faces", cubef.__len__)   
 
+min = { 'x': 1000, 'y':1000, 'z':1000 }
+max = { 'x': -1000, 'y': -1000, 'z': -1000 } 
+
+for i in range(0, len(cubev), 1):
+    min["x"] = np.min( min['x'], cubev[i]['p'][0] )
+    min["y"] = np.min( min['y'], cubev[i]['y'][1] )
+    min["z"] = np.min( min['z'], cubev[i]['z'][2] ) 
+    
+    max["x"] = np.min( max['x'], cubev[i]['p'][0] )
+    max["y"] = np.min( max['y'], cubev[i]['y'][1] )
+    max["z"] = np.min( max['z'], cubev[i]['z'][2] ) 
+    
+delta = { "x": (max["x"] - min["x"]), "y": (max['y'] - min['y']), "z": (max["z"] - min["z"]) } 
+middle = { "x": (min["x"] + delta["x"] * 0.5), "y": (min["y"] + delta["y"] * 0.5), "z": (min["z"] + delta["z"] * 0.5) }  
+dist = np.sqrt( delta["x"]*delta["x"] + delta["y"]*delta["y"] + delta["z"]*delta["z"] )
+
+positionBuffer = []
+colorBuffer = []
+tcoordBuffer = []
+normalBuffer = [] 
+tangentBuffer = [] 
+indexBuffer = []
+ 
+array = { "v":[], "u":[], "n":[], "f":[], "t":[], "c":[] }  
+for i in range(0, len(cubev) ): 
+    array["v"].append( cubev[i]["p"][0] )
+    array["v"].append( cubev[i]["p"][1] )
+    array["v"].append( cubev[i]["p"][2] ) 
+    
+    array["c"].append( cubev[i]["c"][0] )
+    array["c"].append( cubev[i]["c"][1] )
+    array["c"].append( cubev[i]["c"][2] ) 
+    
+    array["u"].append( cubev[i]["u"][0] ) 
+    array["u"].append( cubev[i]["u"][1] )  
+    
+    array["n"].append( cubev[i]["n"][0] )
+    array["n"].append( cubev[i]["n"][1] )
+    array["n"].append( cubev[i]["n"][2] ) 
+     
+    array["t"].append( cubev[i]["t"][0] )
+    array["t"].append( cubev[i]["t"][1] )
+    array["t"].append( cubev[i]["t"][2] )  
+    
+for i in range(0, len(cubef[i])): 
+    array["f"].append( cubef[i] )  
+    
+positions = np.array(array["v"], dtype=np.float32)
+colors = np.array(array["c"], dtype=np.float32)
+tcoords = np.array(array["u"], dtype=np.float32)
+normals = np.array(array["n"], dtype=np.float32) 
+tangents = np.array(array["t"], dtype=np.float32)
+indices = np.array(array["f"], dtype=np.uint32)
+ 
 uniform_dtype = np.dtype([
     ("proj", np.float32, (4, 4)),
     ("view", np.float32, (4, 4)),
@@ -139,20 +186,38 @@ uniform_buffer = device.create_buffer(
 )
 
 vertex_buffer = device.create_buffer_with_data(
-    data=vertex_data, usage=wgpu.BufferUsage.VERTEX
+    data=positions, usage=wgpu.BufferUsage.VERTEX
 )
 
 color_buffer = device.create_buffer_with_data(
-    data=color_data, usage=wgpu.BufferUsage.VERTEX
+    data=colors, usage=wgpu.BufferUsage.VERTEX
+)  
+
+uv_buffer = device.create_buffer_with_data(
+    data=tcoords, usage=wgpu.BufferUsage.VERTEX
+) 
+
+normal_buffer = device.create_buffer_with_data(
+    data=normals, usage=wgpu.BufferUsage.VERTEX
+)   
+
+tangent_buffer = device.create_buffer_with_data(
+    data=tangents, usage=wgpu.BufferUsage.VERTEX
 )  
 
 # Create index buffer, and upload data
 index_buffer = device.create_buffer_with_data(
-    data=index_data, usage=wgpu.BufferUsage.INDEX
-)
+    data=indices, usage=wgpu.BufferUsage.INDEX
+)  
+
+texturePath = TEXTURE_DIR / "3x3.jpg"
+texture1 = WGPUTexture(device=device, filepath=texturePath)
+texture2 = WGPUTexture(device=device, filepath=texturePath)
+
+sampler = device.create_sampler()
 
 # WGSL example
-shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Meshes" / "simple_mesh.wgsl");
+shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Textures" / "simple_texture.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
@@ -175,6 +240,54 @@ bind_groups_layout_entries[0].append(
         "binding": 0,
         "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
         "buffer": {"type": wgpu.BufferBindingType.uniform},
+    }
+) 
+
+bind_groups_entries[0].append(
+    {
+        "binding": 1, 
+        "resource": sampler
+    }
+)
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 1,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "sampler": {"type": wgpu.SamplerBindingType.filtering},
+    }
+) 
+
+bind_groups_entries[0].append(
+    {
+        "binding": 2,
+        "resource": texture1.view
+    } 
+) 
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 2,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "texture": {  
+            "sample_type": wgpu.TextureSampleType.float,
+            "view_dimension": wgpu.TextureViewDimension.d2,
+        },
+    }
+)
+
+bind_groups_entries[0].append(
+    {
+        "binding": 3,
+        "resource": texture2.view
+    } 
+) 
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 3,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "texture": {  
+            "sample_type": wgpu.TextureSampleType.float,
+            "view_dimension": wgpu.TextureViewDimension.d2,
+        },
     }
 )
 
@@ -212,16 +325,49 @@ render_pipeline = device.create_render_pipeline(
                 ],
             },
             {
+                "array_stride": 2 * 4,
+                "step_mode": wgpu.VertexStepMode.vertex,
+                "attributes": [
+                    {
+                        "format": wgpu.VertexFormat.float32x2,
+                        "offset": 0,
+                        "shader_location": 1,
+                    },
+                ],
+            }, 
+            {
                 "array_stride": 3 * 4,
                 "step_mode": wgpu.VertexStepMode.vertex,
                 "attributes": [
                     {
                         "format": wgpu.VertexFormat.float32x3,
                         "offset": 0,
-                        "shader_location": 1,
+                        "shader_location": 2,
                     },
                 ],
-            },
+            }, 
+            {
+                "array_stride": 3 * 4,
+                "step_mode": wgpu.VertexStepMode.vertex,
+                "attributes": [
+                    {
+                        "format": wgpu.VertexFormat.float32x3,
+                        "offset": 0,
+                        "shader_location": 3,
+                    },
+                ],
+            }, 
+            {
+                "array_stride": 3 * 4,
+                "step_mode": wgpu.VertexStepMode.vertex,
+                "attributes": [
+                    {
+                        "format": wgpu.VertexFormat.float32x3,
+                        "offset": 0,
+                        "shader_location": 4,
+                    },
+                ],
+            }, 
         ], 
     },
     primitive={
@@ -355,10 +501,13 @@ def draw_frame():
     render_pass.set_pipeline(render_pipeline)
     render_pass.set_index_buffer(index_buffer, wgpu.IndexFormat.uint32)
     render_pass.set_vertex_buffer(slot=0, buffer=vertex_buffer) 
-    render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
+    render_pass.set_vertex_buffer(slot=1, buffer=uv_buffer)
+    render_pass.set_vertex_buffer(slot=2, buffer=normal_buffer) 
+    render_pass.set_vertex_buffer(slot=3, buffer=tangent_buffer)  
+    render_pass.set_vertex_buffer(slot=4, buffer=color_buffer)  
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
-    render_pass.draw_indexed(index_data.size, 1, 0, 0, 0) 
+    render_pass.draw_indexed(indices.size, 1, 0, 0, 0) 
     # render_pass.draw(3, 1, 0, 0)
     render_pass.end()
 

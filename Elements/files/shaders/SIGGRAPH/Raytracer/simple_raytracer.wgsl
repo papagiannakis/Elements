@@ -68,7 +68,7 @@ fn background( rd:vec3<f32> ) -> vec3<f32>
 @fragment
 fn fs_main( @location(0) uvs : vec2<f32> ) -> @location(0) vec4<f32>
 { 
-    var uv = (-1 + 2.0 * uvs);
+    var uv = (-1 + (2.0 * uvs));
     var ro = vec3<f32>(0.0, 0.0, -6.0);
     var rd = normalize(vec3<f32>(uv, 1.0)); 
     var transmit = vec3<f32>(1.0);

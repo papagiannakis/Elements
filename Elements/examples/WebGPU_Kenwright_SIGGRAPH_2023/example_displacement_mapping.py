@@ -4,7 +4,7 @@ import glm
 
 import wgpu    
 import numpy as np   
-import glfw
+import glfw 
 import Elements.definitions as definitions
 
 from Elements.pyGLV.GUI.Viewer import GLFWWindow, RenderDecorator
@@ -12,7 +12,9 @@ from Elements.pyGLV.GL.Shader import ShaderLoader
 from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
-from Elements.pyGLV.GUI.cammera import cammera 
+from Elements.pyGLV.GUI.cammera import cammera   
+from PIL import Image
+
 import Elements.pyECSS.math_utilities as util 
 
 # Create a canvas to render to
@@ -33,105 +35,74 @@ present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)  
 
-ti = []; # indices
-tv = []; # vertices 
-tc = []; # colors
-tn = []; # normals
+rows = 50
+columns = 50
+spacing = 0.3
 
-def addv( v ):
-    tv.append(v[0])
-    tv.append(v[1])
-    tv.append(v[2]) 
-    ti.append(len(ti))    
+varray = [] 
+iarray = [] 
 
-    
-def addn( n ): 
-    tn.append(-n[0]) 
-    tn.append(-n[1]) 
-    tn.append(-n[2]) 
-
-tet_r = [ 
-    [ 1.0, 0.0, 0.0 ], 
-    [-0.333333333333, 0.942809041582, 0.0], 
-    [-0.333333333333,-0.471404520791, 0.816496580928],
-    [ -0.333333333333, -0.471404520791, -0.816496580928 ] 
-]; 
-
-tris = [];
-tris.append([tet_r[3], tet_r[1], tet_r[2]])
-tris.append([tet_r[2], tet_r[0], tet_r[3]])
-tris.append([tet_r[3], tet_r[0], tet_r[1]])
-tris.append([tet_r[1], tet_r[0], tet_r[2]]) 
-
-def mid ( a, b ): 
-    return [
-        (a[0] + b[0]) * 0.5, 
-        (a[1] + b[1]) * 0.5, 
-        (a[2] + b[2]) * 0.5, 
-    ] 
-    
-def devide( depth, tri ): 
-    if depth == 0: 
-        addv( tri[0] ); addn( tri[0] );
-        addv( tri[1] ); addn( tri[1] );
-        addv( tri[2] ); addn( tri[2] ); 
-    else:
-        a = util.normalise(tri[0])
-        b = util.normalise(tri[1])
-        c = util.normalise(tri[2]) 
+for r in range(rows): 
+    for c in range(columns): 
+        varray.append((c * spacing) - (rows * spacing * 0.5)) 
+        varray.append(0) 
+        varray.append((r * spacing) - (rows * spacing * 0.5))    
+        # varray.append(
+        #     [(c * spacing) - (rows * spacing * 0.5), 0, (r * spacing) - (rows * spacing * 0.5)]
+        # ) 
         
-        ab = util.normalise(mid(a, b)) 
-        bc = util.normalise(mid(b, c)) 
-        ca = util.normalise(mid(c, a))
-        
-        devide( depth=depth-1, tri=[a, ab, ca]  )
-        devide( depth=depth-1, tri=[b, bc, ab]  )
-        devide( depth=depth-1, tri=[c, ca, bc]  )
-        devide( depth=depth-1, tri=[ab, bc, ca] )
-
-
-#depth / lod of 5 
-for i in range(len(tris)):
-    devide( 3, tri=tris[i] ) 
-    
-for i in range(int(len(tv) / 3)):    
-    if i % 3 == 0: 
-        tc.append([0.5, 0.0, 0.0]) 
-    else:
-        tc.append([1.0, 0.0, 0.0])   
-
-# for i in range(int(len(tv) / 3)):    
-#     tc.append([0.5, 0.0, 0.0]) 
+for r in range(rows): 
+    iarray.append( r * columns )
+    for c in range(columns):  
+        iarray.append( r * columns + c ) 
+        iarray.append( (r + 1) * columns + c ) 
+    iarray.append( (r + 1) * columns + (columns + 1) )  
     
     
-vertex_data = np.array(tv, dtype=np.float32)
-color_data = np.array(tc, dtype=np.float32) 
-index_data = np.array(ti, dtype=np.uint32) 
+vertex_data = np.array(varray, dtype=np.float32)
+index_data = np.array(iarray, dtype=np.uint32) 
+
+print((vertex_data));
+
 
 uniform_dtype = np.dtype([
     ("proj", np.float32, (4, 4)),
     ("view", np.float32, (4, 4)),
-    ("model", np.float32, (4, 4)),
-]) 
-    
+    ("model", np.float32, (4, 4)), 
+    ("timestep", np.float32),
+    ("timestep1", np.float32),
+    ("timestep2", np.float32), 
+    ("timestep3", np.float32)
+])  
+
+time = np.float32(glfw.get_timer_value()) 
+print(time)
+
+# Model matrix setup 
 model = glm.mat4x4(1.0)
 
-eye = glm.vec3(2.5, 2.5, 2.5) 
+# View matrix setup 
+eye = glm.vec3(0, 5, 5) 
 target = glm.vec3(0.0, 0.0, 0.0)
 up = glm.vec3(0.0, 1.0, 0.0) 
 cam = cammera(eye=eye, target=target, up=up);
-view = cam._updateCamera;
+view = cam._updateCamera; 
 
 ratio = width / height 
 near = 0.001
 far = 1000.0 
 
+# Projection matrix setup 
 proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
 
 uniform_data = np.array((
     np.array(proj),
     np.array(view),
     np.array(model),
+    time,
+    time,
+    time,
+    time,
 ), dtype=uniform_dtype)
 
 uniform_buffer = device.create_buffer(
@@ -140,11 +111,7 @@ uniform_buffer = device.create_buffer(
 
 vertex_buffer = device.create_buffer_with_data(
     data=vertex_data, usage=wgpu.BufferUsage.VERTEX
-)
-
-color_buffer = device.create_buffer_with_data(
-    data=color_data, usage=wgpu.BufferUsage.VERTEX
-)  
+) 
 
 # Create index buffer, and upload data
 index_buffer = device.create_buffer_with_data(
@@ -152,13 +119,15 @@ index_buffer = device.create_buffer_with_data(
 )
 
 # WGSL example
-shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Meshes" / "simple_mesh.wgsl");
+shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "displacement_mapping" / "simple_displacement_mapping.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
 # resources over these two groups in different configurations.
 bind_groups_entries = [[]]
 bind_groups_layout_entries = [[]]
+
+print(uniform_buffer.size)
 
 bind_groups_entries[0].append(
     {
@@ -211,17 +180,17 @@ render_pipeline = device.create_render_pipeline(
                     },
                 ],
             },
-            {
-                "array_stride": 3 * 4,
-                "step_mode": wgpu.VertexStepMode.vertex,
-                "attributes": [
-                    {
-                        "format": wgpu.VertexFormat.float32x3,
-                        "offset": 0,
-                        "shader_location": 1,
-                    },
-                ],
-            },
+            # {
+            #     "array_stride": 3 * 4,
+            #     "step_mode": wgpu.VertexStepMode.vertex,
+            #     "attributes": [
+            #         {
+            #             "format": wgpu.VertexFormat.float32x3,
+            #             "offset": 0,
+            #             "shader_location": 1,
+            #         },
+            #     ],
+            # },
         ], 
     },
     primitive={
@@ -285,19 +254,24 @@ def draw_frame():
     far = 1000.0 
 
     proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))   
-    view = cam._updateCamera
+    view = cam._updateCamera 
+    time = np.float32(glfw.get_timer_value())
     
     uniform_data = np.array((
     np.array(proj),
     np.array(view),
     np.array(model),
+    time,
+    time,
+    time,
+    time
     ), dtype=uniform_dtype) 
     
     # Upload the uniform struct
     tmp_buffer = device.create_buffer_with_data(
         data=uniform_data, usage=wgpu.BufferUsage.COPY_SRC
-    )
-
+    ) 
+    # device.queue.write_buffer(uniform_buffer, 0, uniform_data)
     command_encoder = device.create_command_encoder()
     command_encoder.copy_buffer_to_buffer(
         tmp_buffer, 0, uniform_buffer, 0, uniform_data.nbytes
@@ -355,7 +329,7 @@ def draw_frame():
     render_pass.set_pipeline(render_pipeline)
     render_pass.set_index_buffer(index_buffer, wgpu.IndexFormat.uint32)
     render_pass.set_vertex_buffer(slot=0, buffer=vertex_buffer) 
-    render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
+    # render_pass.set_vertex_buffer(slot=1, buffer=color_buffer
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
     render_pass.draw_indexed(index_data.size, 1, 0, 0, 0) 

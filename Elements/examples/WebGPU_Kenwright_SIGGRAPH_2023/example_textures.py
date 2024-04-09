@@ -12,8 +12,11 @@ from Elements.pyGLV.GL.Shader import ShaderLoader
 from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
-from Elements.pyGLV.GUI.cammera import cammera 
-import Elements.pyECSS.math_utilities as util 
+from Elements.pyGLV.GUI.cammera import cammera  
+from Elements.pyGLV.GL.Textures import WGPUTexture
+import Elements.pyECSS.math_utilities as util  
+
+from Elements.definitions import TEXTURE_DIR
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
@@ -33,80 +36,42 @@ present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)  
 
-ti = []; # indices
-tv = []; # vertices 
-tc = []; # colors
-tn = []; # normals
+position = np.array(
+    [
+        [-1,-1,-1],     [1,-1,-1],      [1,1,-1],   [-1,1,-1],
+        [-1,-1,1],      [1,-1,1],       [1,1,1],    [-1,1,1],
+        [-1,-1,-1],     [-1,1,-1],      [-1,1,1],   [-1,-1,1],
+        [1,-1,-1],      [1,1,-1],       [1,1,1],    [1,-1,1],
+        [-1,-1,-1],     [-1,-1,1],      [1,-1,1],   [1,-1,-1],
+        [-1,1,-1],      [-1,1,1],       [1,1,1],    [1,1,-1]
+    ], dtype=np.float32)
 
-def addv( v ):
-    tv.append(v[0])
-    tv.append(v[1])
-    tv.append(v[2]) 
-    ti.append(len(ti))    
+color = np.array(
+    [
+        [0,1,0], [0,1,0], [0,1,0], [0,1,0],
+        [1,1,0], [1,1,0], [1,1,0], [1,1,0],
+        [0,0,1], [0,0,1], [0,0,1], [0,0,1],
+        [1,0,0], [1,0,0], [1,0,0], [1,0,0], 
+        [1,1,0], [1,1,0], [1,1,0], [1,1,0],
+        [0,1,0], [0,1,0], [0,1,0], [0,1,0],
+    ], dtype=np.float32) 
 
-    
-def addn( n ): 
-    tn.append(-n[0]) 
-    tn.append(-n[1]) 
-    tn.append(-n[2]) 
+uv = np.array(
+    [
+        [0,0], [1,0], [1,1], [0,1],
+        [0,0], [1,0], [1,1], [0,1],
+        [0,0], [1,0], [1,1], [0,1],
+        [0,0], [1,0], [1,1], [0,1],
+        [0,0], [1,0], [1,1], [0,1],
+        [0,0], [1,0], [1,1], [0,1],
+    ], dtype=np.float32)
 
-tet_r = [ 
-    [ 1.0, 0.0, 0.0 ], 
-    [-0.333333333333, 0.942809041582, 0.0], 
-    [-0.333333333333,-0.471404520791, 0.816496580928],
-    [ -0.333333333333, -0.471404520791, -0.816496580928 ] 
-]; 
-
-tris = [];
-tris.append([tet_r[3], tet_r[1], tet_r[2]])
-tris.append([tet_r[2], tet_r[0], tet_r[3]])
-tris.append([tet_r[3], tet_r[0], tet_r[1]])
-tris.append([tet_r[1], tet_r[0], tet_r[2]]) 
-
-def mid ( a, b ): 
-    return [
-        (a[0] + b[0]) * 0.5, 
-        (a[1] + b[1]) * 0.5, 
-        (a[2] + b[2]) * 0.5, 
-    ] 
-    
-def devide( depth, tri ): 
-    if depth == 0: 
-        addv( tri[0] ); addn( tri[0] );
-        addv( tri[1] ); addn( tri[1] );
-        addv( tri[2] ); addn( tri[2] ); 
-    else:
-        a = util.normalise(tri[0])
-        b = util.normalise(tri[1])
-        c = util.normalise(tri[2]) 
-        
-        ab = util.normalise(mid(a, b)) 
-        bc = util.normalise(mid(b, c)) 
-        ca = util.normalise(mid(c, a))
-        
-        devide( depth=depth-1, tri=[a, ab, ca]  )
-        devide( depth=depth-1, tri=[b, bc, ab]  )
-        devide( depth=depth-1, tri=[c, ca, bc]  )
-        devide( depth=depth-1, tri=[ab, bc, ca] )
-
-
-#depth / lod of 5 
-for i in range(len(tris)):
-    devide( 3, tri=tris[i] ) 
-    
-for i in range(int(len(tv) / 3)):    
-    if i % 3 == 0: 
-        tc.append([0.5, 0.0, 0.0]) 
-    else:
-        tc.append([1.0, 0.0, 0.0])   
-
-# for i in range(int(len(tv) / 3)):    
-#     tc.append([0.5, 0.0, 0.0]) 
-    
-    
-vertex_data = np.array(tv, dtype=np.float32)
-color_data = np.array(tc, dtype=np.float32) 
-index_data = np.array(ti, dtype=np.uint32) 
+indices = np.array(
+    [
+        0,1,2,      0,2,3,      4,5,6,      4,6,7,
+        8,9,10,     8,10,11,    12,13,14,   12,14,15,
+        16,17,18,   16,18,19,   20,21,22,   20,22,23,
+    ], dtype=np.uint32)
 
 uniform_dtype = np.dtype([
     ("proj", np.float32, (4, 4)),
@@ -139,20 +104,29 @@ uniform_buffer = device.create_buffer(
 )
 
 vertex_buffer = device.create_buffer_with_data(
-    data=vertex_data, usage=wgpu.BufferUsage.VERTEX
+    data=position, usage=wgpu.BufferUsage.VERTEX
 )
 
 color_buffer = device.create_buffer_with_data(
-    data=color_data, usage=wgpu.BufferUsage.VERTEX
+    data=color, usage=wgpu.BufferUsage.VERTEX
 )  
+
+uv_buffer = device.create_buffer_with_data(
+    data=uv, usage=wgpu.BufferUsage.VERTEX
+) 
 
 # Create index buffer, and upload data
 index_buffer = device.create_buffer_with_data(
-    data=index_data, usage=wgpu.BufferUsage.INDEX
-)
+    data=indices, usage=wgpu.BufferUsage.INDEX
+)  
+
+texturePath = TEXTURE_DIR / "3x3.jpg"
+texture = WGPUTexture(device=device, filepath=texturePath)
+
+sampler = device.create_sampler()
 
 # WGSL example
-shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Meshes" / "simple_mesh.wgsl");
+shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Textures" / "simple_texture.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
@@ -175,6 +149,37 @@ bind_groups_layout_entries[0].append(
         "binding": 0,
         "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
         "buffer": {"type": wgpu.BufferBindingType.uniform},
+    }
+) 
+
+bind_groups_entries[0].append(
+    {
+        "binding": 1,
+        "resource": texture.view
+    } 
+) 
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 1,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "texture": {  
+            "sample_type": wgpu.TextureSampleType.float,
+            "view_dimension": wgpu.TextureViewDimension.d2,
+        },
+    }
+)
+
+bind_groups_entries[0].append(
+    {
+        "binding": 2, 
+        "resource": sampler
+    }
+)
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 2,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "sampler": {"type": wgpu.SamplerBindingType.filtering},
     }
 )
 
@@ -221,7 +226,18 @@ render_pipeline = device.create_render_pipeline(
                         "shader_location": 1,
                     },
                 ],
-            },
+            }, 
+            {
+                "array_stride": 2 * 4,
+                "step_mode": wgpu.VertexStepMode.vertex,
+                "attributes": [
+                    {
+                        "format": wgpu.VertexFormat.float32x2,
+                        "offset": 0,
+                        "shader_location": 2,
+                    },
+                ],
+            }, 
         ], 
     },
     primitive={
@@ -356,9 +372,10 @@ def draw_frame():
     render_pass.set_index_buffer(index_buffer, wgpu.IndexFormat.uint32)
     render_pass.set_vertex_buffer(slot=0, buffer=vertex_buffer) 
     render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
+    render_pass.set_vertex_buffer(slot=2, buffer=uv_buffer) 
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
-    render_pass.draw_indexed(index_data.size, 1, 0, 0, 0) 
+    render_pass.draw_indexed(indices.size, 1, 0, 0, 0) 
     # render_pass.draw(3, 1, 0, 0)
     render_pass.end()
 

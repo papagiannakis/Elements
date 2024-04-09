@@ -14,6 +14,8 @@ from Elements.pyGLV.GUI.windowEvents import EventTypes
 from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.cammera import cammera 
 import Elements.pyECSS.math_utilities as util 
+from Elements.definitions import TEXTURE_DIR
+from Elements.pyGLV.GL.Textures import WGPUTexture
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
@@ -92,7 +94,7 @@ def devide( depth, tri ):
 
 #depth / lod of 5 
 for i in range(len(tris)):
-    devide( 3, tri=tris[i] ) 
+    devide( 6, tri=tris[i] ) 
     
 for i in range(int(len(tv) / 3)):    
     if i % 3 == 0: 
@@ -106,7 +108,8 @@ for i in range(int(len(tv) / 3)):
     
 vertex_data = np.array(tv, dtype=np.float32)
 color_data = np.array(tc, dtype=np.float32) 
-index_data = np.array(ti, dtype=np.uint32) 
+index_data = np.array(ti, dtype=np.uint32)  
+normal_data = np.array(tn, dtype=np.float32)
 
 uniform_dtype = np.dtype([
     ("proj", np.float32, (4, 4)),
@@ -144,6 +147,10 @@ vertex_buffer = device.create_buffer_with_data(
 
 color_buffer = device.create_buffer_with_data(
     data=color_data, usage=wgpu.BufferUsage.VERTEX
+)   
+
+normal_buffer = device.create_buffer_with_data(
+    data=normal_data, usage=wgpu.BufferUsage.VERTEX
 )  
 
 # Create index buffer, and upload data
@@ -151,8 +158,13 @@ index_buffer = device.create_buffer_with_data(
     data=index_data, usage=wgpu.BufferUsage.INDEX
 )
 
+texturePath = TEXTURE_DIR / "earth.jpg"
+texture = WGPUTexture(device=device, filepath=texturePath)
+
+sampler = device.create_sampler()
+
 # WGSL example
-shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Meshes" / "simple_mesh.wgsl");
+shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Lighting" / "simple_lighting.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
@@ -176,8 +188,38 @@ bind_groups_layout_entries[0].append(
         "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
         "buffer": {"type": wgpu.BufferBindingType.uniform},
     }
+) 
+
+bind_groups_entries[0].append(
+    {
+        "binding": 1,
+        "resource": texture.view
+    } 
+) 
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 1,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "texture": {  
+            "sample_type": wgpu.TextureSampleType.float,
+            "view_dimension": wgpu.TextureViewDimension.d2,
+        },
+    }
 )
 
+bind_groups_entries[0].append(
+    {
+        "binding": 2, 
+        "resource": sampler
+    }
+)
+bind_groups_layout_entries[0].append(
+    {
+        "binding": 2,
+        "visibility": wgpu.ShaderStage.FRAGMENT,
+        "sampler": {"type": wgpu.SamplerBindingType.filtering},
+    }
+)
 # Create the wgou binding objects
 bind_group_layouts = []
 bind_groups = []
@@ -219,6 +261,17 @@ render_pipeline = device.create_render_pipeline(
                         "format": wgpu.VertexFormat.float32x3,
                         "offset": 0,
                         "shader_location": 1,
+                    },
+                ],
+            },
+            {
+                "array_stride": 3 * 4,
+                "step_mode": wgpu.VertexStepMode.vertex,
+                "attributes": [
+                    {
+                        "format": wgpu.VertexFormat.float32x3,
+                        "offset": 0,
+                        "shader_location": 2,
                     },
                 ],
             },
@@ -356,6 +409,7 @@ def draw_frame():
     render_pass.set_index_buffer(index_buffer, wgpu.IndexFormat.uint32)
     render_pass.set_vertex_buffer(slot=0, buffer=vertex_buffer) 
     render_pass.set_vertex_buffer(slot=1, buffer=color_buffer)
+    render_pass.set_vertex_buffer(slot=2, buffer=normal_buffer)
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
     render_pass.draw_indexed(index_data.size, 1, 0, 0, 0) 

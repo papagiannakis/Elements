@@ -8,6 +8,8 @@ from typing import Tuple
 import OpenGL.GL as gl
 from PIL import Image
 
+import wgpu
+
 class Texture:
     """
     This Class is used for initializing simple 2D textures
@@ -80,6 +82,46 @@ class Texture:
     def unbind(self):
         gl.glDeleteTextures(1, self._texture)
 
+class WGPUTexture:
+    def __init__(self, device:wgpu.GPUDevice=None, filepath:str=None, img_data:Tuple[bytes, int, int]=None):  
+        
+        img_bytes = img_data[0] if img_data is not None else None
+        img = None
+        if filepath is not None:
+            img = Image.open(filepath)
+            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1) 
+           
+        self.data = img_bytes; 
+        self.width = int(img.width) # Width
+        self.height = int(img.height) # Height 
+        self.size = [self.width, self.height, 1] 
+        
+        self.context = device.create_texture(
+            size=self.size,
+            usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING,
+            dimension=wgpu.TextureDimension.d2,
+            format=wgpu.TextureFormat.rgba8unorm,
+            mip_level_count=1,
+            sample_count=1,
+        )
+        
+        self.view = self.context.create_view() 
+        
+        device.queue.write_texture(
+            {
+                "texture": self.context,
+                "mip_level": 0, 
+                "origin": (0, 0, 0)
+            }, 
+            self.data, 
+            {  
+                "offset": 0,
+                "bytes_per_row": self.width * 4, 
+                "rows_per_image": self.height
+            }, 
+            self.size
+        )
+         
 
 class texture_data:
     """
