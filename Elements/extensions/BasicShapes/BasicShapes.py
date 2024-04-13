@@ -6,11 +6,8 @@ import Elements.pyECSS.math_utilities as util
 import numpy as np
 
 from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
-from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 
 
 # Creates a basic object with a transform, mesh, shader, and vertex array
@@ -18,16 +15,16 @@ from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 # .entity is the entity that contains all the components and can be added to the scene
 class ObjectCreator():
     def __init__(self, name=None, type=None, id=None) -> None:
-        self.entity = Entity(name, type, id);
+        from Elements.pyGLV.GL.Scene import Scene;
         # Gameobject basic properties
         # Create basic components of a primitive object
+        scene = Scene();
+        self.entity = scene.world.createEntity(Entity(name));
         self.entity.trans          = BasicTransform(name="trans", trs=util.identity());
         self.entity.mesh           = RenderMesh(name="mesh");
-        self.entity.shaderDec      = ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
+        self.entity.shaderDec      = ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG));
         self.entity.vArray         = VertexArray();
         # Add components to entity
-        scene = Scene();
-        scene.world.createEntity(self.entity);
         scene.world.addComponent(self.entity, self.entity.trans);
         scene.world.addComponent(self.entity, self.entity.mesh);
         scene.world.addComponent(self.entity, self.entity.shaderDec);
@@ -51,6 +48,7 @@ class ObjectCreator():
 # Returns the entity that contains the cube
 def CubeSpawn(cubename = "Cube", color = None): 
     cube = ObjectCreator(cubename);
+    print(cube.entity.shaderDec.get_glid());
     vertices = [
         [-0.5, -0.5, 0.5, 1.0],
         [-0.5, 0.5, 0.5, 1.0],

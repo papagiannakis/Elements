@@ -22,6 +22,9 @@ import Elements.pyECSS.System
 import Elements.pyECSS.Event 
 
 from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
+from Elements.pyECSS.Component import BasicTransform
+from Elements.pyGLV.GL.Shader import ShaderGLDecorator
+import Elements.pyECSS.math_utilities as util
 
 class ECSSManager():
     """
@@ -59,7 +62,6 @@ class ECSSManager():
         # the ECSSManager creates one main EventManager for the whole world
         self._eventManager = Elements.pyECSS.Event.EventManager()
         self._root = None
-
         self._buffer = FrameBuffer()
 
     # define properties
@@ -230,7 +232,57 @@ class ECSSManager():
                 self._entities_components[entity_parent] = [];
             self._entities_components[entity_parent].append(entity_child);
 
+    def update_entity_values(self, entity, winWidth, winHeight,
+                             Lambientcolor = None, Lambientstr = None, LviewPos = None,
+                             Lposition = None, Lcolor = None, Lintensity = None,
+                             Mshininess = None, Mcolor = None):
+        from Elements.pyGLV.GL.Scene import Scene
+        scene = Scene();
+        view = scene.renderWindow._myCamera;
 
+        try:
+            iterator = self.createIterator(entity)
+        except RuntimeError:
+            print("ECSSManager::traverse_visit() Could Not Create Iterator")
+
+        if iterator is not None:
+            done_traversing = False
+            
+            while(not done_traversing):
+                try:
+                    traversedComp = next(iterator)
+                except StopIteration:
+
+                    done_traversing = True
+                else:
+                    shaderDec = None;
+                    trans = None;
+
+                    if isinstance(traversedComp, Entity):
+                        for child in traversedComp._children:
+                            if isinstance(child, ShaderGLDecorator):
+                                shaderDec = child;
+                            elif isinstance(child, BasicTransform):
+                                trans = child;
+                    
+                    if shaderDec is not None and trans is not None:
+                        projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
+                        model = trans.l2world;
+                        if Lambientcolor is not None:
+                            mvp = projMat @ view @ trans.l2world;
+                            shaderDec.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+                            shaderDec.setUniformVariable(key='model', value=model, mat4=True)
+                            shaderDec.setUniformVariable(key='View', value=view, mat4=True)
+                            shaderDec.setUniformVariable(key='Proj', value=projMat, mat4=True)
+                            shaderDec.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+                            shaderDec.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+                            shaderDec.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+                            shaderDec.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+                            shaderDec.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+                            shaderDec.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+                            shaderDec.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+                            #shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+                            
 
     
     def traverse_visit_pre_camera(self, camUpdate: Elements.pyECSS.System, camera: Elements.pyECSS.Component.Camera):

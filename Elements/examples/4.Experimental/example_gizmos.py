@@ -180,11 +180,7 @@ def EditTransform(
         cameraProjection,
         mCurrentGizmoOperation,
         statics.mCurrentGizmoMode,
-        objectMatrix,
-        None,
-        statics.snap if statics.useSnap else None,
-        statics.bounds if statics.boundSizing else None,
-        statics.boundsSnap if statics.boundSizingSnap else None,
+        objectMatrix
     )
     if manip_result:
         r.changed = True

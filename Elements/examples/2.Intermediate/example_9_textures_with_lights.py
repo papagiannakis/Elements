@@ -235,22 +235,24 @@ while running:
     else:
         model_cube = trans4.l2world
 
-    mvp_terrain = projMat @ view @ terrain_trans.l2world
-    mvp_axes = projMat @ view @ axes_trans.l2world
-    axes_shader.setUniformVariable(key='modelViewProj', value = mvp_axes, mat4=True)
+    scene.world.update_entity_values(rootEntity, winWidth, winHeight, Lambientcolor, Lambientstr, LviewPos, Lposition, Lcolor, Lintensity, Mshininess)
 
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+    # mvp_terrain = projMat @ view @ terrain_trans.l2world
+    # mvp_axes = projMat @ view @ axes_trans.l2world
+    # axes_shader.setUniformVariable(key='modelViewProj', value = mvp_axes, mat4=True)
 
-    shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
-    shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
-    shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
-    shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
-    shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
-    shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-    shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
-    shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
-    shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+
+    # shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
+    # shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
+    # shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    # shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+    # shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+    # shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+    # shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+    # shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+    # shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+    # shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
     #shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
     scene.world.traverse_visit(renderUpdate, scene.world.root)

@@ -5,6 +5,12 @@ from imgui_bundle import (
     imgui as imgui,
     imgui_node_editor as ed,
 )
+import Elements.extensions.BasicShapes.BasicShapes as bshapes
+
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator
+
+shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
+
 
 class IdProvider:
     """A simple utility to obtain unique ids, and to be able to restore them at each frame"""
@@ -38,6 +44,8 @@ class Node:
         self.id = ed.NodeId(ID.next_id())
         self.childrenPinId = ed.PinId(ID.next_id())
         self.parentPinId = ed.PinId(ID.next_id())
+        self.creation = None;
+        self.parent = None;
     
     def display(self):
         ed.begin_node(self.id)
@@ -68,30 +76,24 @@ class NodeEditor:
         ID.reset()
         self.config = None;
         self.editor_context = ed.create_editor();
-        self.imgui_context = imgui.create_context()
         self.links = []
         self.selected = None
         self.creation = False
         self.nodes = []
         self.name = ""
-        self.parent = None
         self.children = ""
-        
-        
-    
-    def addNode(self):
-        tmp = Node(self.name)
-        if self.parent is not None:
-            for node in self.nodes:
-                if node.name == self.parent.name:
-                    tmp.parentId = node.id
-                    self.links.append(LinkInfo(ed.LinkId(ID.next_id()), tmp.parentPinId, node.childrenPinId))
-        self.nodes.append(tmp)
-        self.name = ""
-        self.parent = None
-        
-    def addNode(self, node):
-        self.nodes.append(node)
+        self.shape = None;
+        self.to_add = None;
+     
+    def addNode(self, node = None):
+        if node is None:
+            tmp = Node(self.name)
+            tmp.parentId = self.nodes[0].id
+            self.links.append(LinkInfo(ed.LinkId(ID.next_id()), tmp.parentPinId, self.nodes[0].childrenPinId))
+            self.nodes.append(tmp)
+            self.name = ""
+        else:
+            self.nodes.append(node)
 
     def createLink(self, parent, child):
         self.links.append(LinkInfo(ed.LinkId(ID.next_id()), child.parentPinId, parent.childrenPinId))
@@ -101,6 +103,13 @@ class NodeEditor:
             node.display()
 
     def on_frame(self):
+        if self.to_add is not None:
+            from Elements.pyGLV.GL.Scene import Scene
+            scene = Scene(); 
+            scene.world.addEntityChild(scene.world.root, self.to_add); 
+            self.to_add = None;
+
+
         ed.set_current_editor(self.editor_context); 
         ed.begin("My Editor", imgui.ImVec2(0.0, 0.0))
 
@@ -155,5 +164,36 @@ class NodeEditor:
             ed.navigate_to_content(0.0)
 
         self.is_first_frame = False
+
+    def entity_window(self):
+        imgui.text("Name: "); imgui.same_line()
+        _, self.name = imgui.input_text(' ', self.name)
+
+        imgui.separator_text("Shape");
+        for shape in shapes.keys():
+            _ ,selected = imgui.selectable(shape, self.shape is not None and self.shape == shape)
+            if selected:
+                self.shape = shape
+
+        if imgui.button("Add"):
+            from Elements.pyGLV.GL.Scene import Scene
+            scene = Scene(); 
+            print(scene.world.root)
+            tmp = shapes[self.shape](self.name);
+            scene.world.addEntityChild(scene.world.root, tmp); 
+                
+            for system in scene.world.systems:
+                if isinstance(system, InitGLShaderSystem):
+                    scene.world.traverse_visit(system, tmp)
+                    break;
+            
+            self.addNode();
+            self.shape = None;
+
+            return tmp
+        
+        return False;
+        
+
 
         
