@@ -782,7 +782,6 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         
         if first_run:
             first_run = False;
-            self.gizmo.setView(np.array(glm.lookAt(self._eye, self._target, self._up), np.float32));
             self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
             self.node_editor.generate(self.wrapeeWindow.scene.world.root)
             
@@ -796,13 +795,14 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         
         imgui.begin("Scene");               # scene window
         self._buffer.drawFramebuffer(self._wireframeMode);
-        if self.gizmo.drawGizmo(self.selected):
+        if self.gizmo.drawCameraGizmo():
             self._eye, self._up, self._target = self.gizmo.decompose_look_at();
             self._updateCamera.value = np.array(glm.lookAt(self._eye, self._target, self._up), np.float32)
             if self._wrapeeWindow.eventManager is not None:
                     self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
         else:
             self.gizmo.setView(np.array(glm.lookAt(self._eye, self._target, self._up), np.float32));
+        self.gizmo.drawTransformGizmo(self.selected);
         imgui.end();
             
     def drawNode(self, component):

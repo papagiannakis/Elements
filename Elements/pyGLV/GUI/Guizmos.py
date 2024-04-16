@@ -34,12 +34,6 @@ objectMatrix = np.array([
 firstFrame = True
 
 
-@dataclass
-class EditTransformResult:
-    changed: bool
-    objectMatrix: Matrix16
-    cameraView: Matrix16
-    
 class Gizmos:
     def __init__(self, imguiContext = None):
         self.gizmo = imguizmo.im_guizmo
@@ -63,7 +57,7 @@ class Gizmos:
         self.statics.gizmoWindowFlags = 0
 
         self._view = np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], np.float32)
-        self._projection = np.zeros((4, 4), np.float32)
+        self._projection = None;  
 
     def setView(self, _view):
         self._view = _view;
@@ -71,29 +65,11 @@ class Gizmos:
     def __del__(self):
         pass
     
-    def drawGizmo(self, comp):  
+    def drawTransformGizmo(self, comp):  
        # self.setOperation();
         global cameraView, firstFrame, objectMatrix
-
-        if firstFrame:
-            firstFrame = False;
-            radians = glm.radians(fov)
-            cameraProjection = glm.perspective(radians, imgui.get_window_width() / imgui.get_window_height(), 0.1, 100.0)
-            self._projection =np.array(cameraProjection)
+        trs_changed = False;
         
-        self.gizmo.set_rect(
-            imgui.get_window_pos().x,
-            imgui.get_window_pos().y,
-            imgui.get_window_width(),
-            imgui.get_window_height(),
-        )
-
-        self.gizmo.set_drawlist()
-
-        r = EditTransformResult(changed = False, objectMatrix = objectMatrix, cameraView = self._view)
-        
-        viewManipulateRight = imgui.get_window_pos().x + imgui.get_window_width();
-        viewManipulateTop = imgui.get_window_pos().y
         window = imgui.internal.get_current_window()
         if imgui.is_window_hovered() and imgui.is_mouse_hovering_rect(
             window.inner_rect.min, window.inner_rect.max
@@ -115,9 +91,36 @@ class Gizmos:
             )
 
             if manip_result:
-                r.changed = True
-                r.objectMatrix = manip_result.value
+                trs_changed = True
+                objectMatrix = manip_result.value;
+                comp.trs = manip_result.value;
+                # return manip_result.value;
+            
+        # return False;
+
+    def drawCameraGizmo(self):
+        global firstFrame
+        changed = False;
+        width = imgui.get_window_size().x;
+        height =  imgui.get_window_size().y;
+
+        self.gizmo.set_rect(
+            imgui.get_window_pos().x,
+            imgui.get_window_pos().y,
+            imgui.get_window_width(),
+            imgui.get_window_height(),
+        )
+
+        self.gizmo.set_drawlist()
+
+        if firstFrame:
+            firstFrame = False;
+            self._projection = np.array(glm.perspective(50.0, width/height, 0.01, 100.0), np.float32); 
+
+        viewManipulateRight = imgui.get_window_pos().x + imgui.get_window_width();
+        viewManipulateTop = imgui.get_window_pos().y
         
+
         view_manip_result = self.gizmo.view_manipulate(
             self._view,
             50.0,
@@ -127,14 +130,11 @@ class Gizmos:
         )
 
         if view_manip_result:
-            r.changed = True
-            r.cameraView = view_manip_result.value
+            changed = True
+            cameraView = view_manip_result.value
+            self._view = np.array(cameraView, np.float32);
 
-        if r.changed:
-            objectMatrix = r.objectMatrix
-            self._view = np.array(r.cameraView, np.float32);
-
-        return r.changed;
+        return changed;
 
     def decompose_look_at(self):
         r = self._view[:3,:3]
