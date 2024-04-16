@@ -13,6 +13,8 @@ from imgui_bundle.python_backends.sdl_backend import SDL2Renderer
 from imgui_bundle import imgui
 from Elements.pyGLV.GUI.Guizmos import Gizmos
 from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
+import numpy as np
+import glm
 
 def toList(arg):
     retVal = []
@@ -780,26 +782,27 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         
         if first_run:
             first_run = False;
+            self.gizmo.setView(np.array(glm.lookAt(self._eye, self._target, self._up), np.float32));
             self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
-            self.generate_node_editor(self.wrapeeWindow.scene.world.root)
+            self.node_editor.generate(self.wrapeeWindow.scene.world.root)
             
         imgui.begin("NodeEditor")           # node editor window
         self.node_editor.on_frame()
         imgui.end()
 
         imgui.begin("Create Entity")        # entity creation window
-        entity = self.node_editor.entity_window()
-        if entity:
-            self.generate_node_editor(entity);
+        self.node_editor.entity_window()
         imgui.end()
         
         imgui.begin("Scene");               # scene window
         self._buffer.drawFramebuffer(self._wireframeMode);
         if self.gizmo.drawGizmo(self.selected):
             self._eye, self._up, self._target = self.gizmo.decompose_look_at();
-            self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            self._updateCamera.value = np.array(glm.lookAt(self._eye, self._target, self._up), np.float32)
             if self._wrapeeWindow.eventManager is not None:
                     self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+        else:
+            self.gizmo.setView(np.array(glm.lookAt(self._eye, self._target, self._up), np.float32));
         imgui.end();
             
     def drawNode(self, component):
@@ -862,30 +865,8 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         process SDL2 basic events and input
         """
         return super().event_input_process()
-      
-    def find_parent(self, name):
-        for node in self.node_editor.nodes:
-            if name == node.name:
-                return node
-        return None
     
-    def generate_node_editor(self, component):
-        if component._children is not None:
-            debugIterator = iter(component._children)
-            done_traversing = False
-            while not done_traversing:
-                try:
-                    comp = next(debugIterator)
-                except StopIteration:
-                    done_traversing = True
-                else:
-                    tmp = ed.Node(comp.name)
-                    parent = self.find_parent(comp._parent.name)
-                    if parent is not None:
-                        tmp.parentId = parent.id
-                        self.node_editor.createLink(parent, tmp)
-                    self.node_editor.addNode(tmp)
-                    self.generate_node_editor(comp) 
+    
 
                     
 

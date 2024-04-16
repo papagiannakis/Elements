@@ -46,6 +46,7 @@ class Node:
         self.parentPinId = ed.PinId(ID.next_id())
         self.creation = None;
         self.parent = None;
+
     
     def display(self):
         ed.begin_node(self.id)
@@ -95,12 +96,37 @@ class NodeEditor:
         else:
             self.nodes.append(node)
 
+    def find_parent(self, name):
+        for node in self.nodes:
+            if name == node.name:
+                return node
+        return None
+
     def createLink(self, parent, child):
         self.links.append(LinkInfo(ed.LinkId(ID.next_id()), child.parentPinId, parent.childrenPinId))
     
     def display_nodes(self):
         for node in self.nodes:
             node.display()
+
+    def generate(self, component):
+        if component._children is not None:
+            debugIterator = iter(component._children)
+            done_traversing = False
+            while not done_traversing:
+                try:
+                    comp = next(debugIterator)
+                except StopIteration:
+                    done_traversing = True
+                else:
+                    tmp = Node(comp.name)
+                    parent = self.find_parent(comp._parent.name)
+                    if parent is not None:
+                        tmp.parentId = parent.id
+                        self.createLink(parent, tmp)
+                    self.addNode(tmp)
+                    self.generate(comp) 
+
 
     def on_frame(self):
         if self.to_add is not None:
@@ -179,18 +205,17 @@ class NodeEditor:
             from Elements.pyGLV.GL.Scene import Scene
             scene = Scene(); 
             print(scene.world.root)
-            tmp = shapes[self.shape](self.name);
-            scene.world.addEntityChild(scene.world.root, tmp); 
-                
-            for system in scene.world.systems:
-                if isinstance(system, InitGLShaderSystem):
-                    scene.world.traverse_visit(system, tmp)
-                    break;
+            if self.name is "":
+                tmp = shapes[self.shape]();
+            else:
+                tmp = shapes[self.shape](self.name);
             
+            self.name = tmp.name;
             self.addNode();
+            self.generate(tmp);
             self.shape = None;
 
-            return tmp
+            return tmp;
         
         return False;
         

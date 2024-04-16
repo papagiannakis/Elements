@@ -142,6 +142,7 @@ def EditTransform(
         if edited:
             r.changed = True
             r.objectMatrix = gizmo.recompose_matrix_from_components(matrixComponents)
+            print(r.objectMatrix)
 
 
     io = imgui.get_io()
@@ -266,6 +267,7 @@ def make_closure_demo_guizmo() -> GuiFunction:
         
         if result.changed:
             gObjectMatrix[0] = result.objectMatrix
+            print(result.objectMatrix)
             cameraView = result.cameraView
         if gizmo.is_using():
             lastUsing = 0

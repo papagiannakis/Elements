@@ -232,7 +232,7 @@ class ECSSManager():
                 self._entities_components[entity_parent] = [];
             self._entities_components[entity_parent].append(entity_child);
 
-    def update_entity_values(self, entity, winWidth, winHeight,
+    def update_entity_values(self, entity, winWidth, winHeight, Phong = False,
                              Lambientcolor = None, Lambientstr = None, LviewPos = None,
                              Lposition = None, Lcolor = None, Lintensity = None,
                              Mshininess = None, Mcolor = None):
@@ -268,9 +268,10 @@ class ECSSManager():
                     if shaderDec is not None and trans is not None:
                         projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
                         model = trans.l2world;
-                        if Lambientcolor is not None:
-                            mvp = projMat @ view @ trans.l2world;
-                            shaderDec.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+                        mvp = projMat @ view @ model;
+                        shaderDec.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+
+                        if Phong:
                             shaderDec.setUniformVariable(key='model', value=model, mat4=True)
                             shaderDec.setUniformVariable(key='View', value=view, mat4=True)
                             shaderDec.setUniformVariable(key='Proj', value=projMat, mat4=True)

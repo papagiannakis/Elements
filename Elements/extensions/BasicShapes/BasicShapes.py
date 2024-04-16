@@ -9,16 +9,19 @@ from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
-
+scene = None;
 # Creates a basic object with a transform, mesh, shader, and vertex array
 # This is a helper class to make it easier to create objects
 # .entity is the entity that contains all the components and can be added to the scene
 class ObjectCreator():
     def __init__(self, name=None, type=None, id=None) -> None:
-        from Elements.pyGLV.GL.Scene import Scene;
+        global scene
+        if scene is None:
+            from Elements.pyGLV.GL.Scene import Scene;
+            scene = Scene();
+        
         # Gameobject basic properties
         # Create basic components of a primitive object
-        scene = Scene();
         self.entity = scene.world.createEntity(Entity(name));
         self.entity.trans          = BasicTransform(name="trans", trs=util.identity());
         self.entity.mesh           = RenderMesh(name="mesh");
@@ -47,8 +50,8 @@ class ObjectCreator():
 # Creates a cube with the given name and color
 # Returns the entity that contains the cube
 def CubeSpawn(cubename = "Cube", color = None): 
+    global scene;
     cube = ObjectCreator(cubename);
-    print(cube.entity.shaderDec.get_glid());
     vertices = [
         [-0.5, -0.5, 0.5, 1.0],
         [-0.5, 0.5, 0.5, 1.0],
@@ -88,11 +91,20 @@ def CubeSpawn(cubename = "Cube", color = None):
     ) #rhombus out of two triangles
     vertices, colors, indices, normals = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
     cube.SetVertexAttributes(vertices, colors, indices, normals);
+
+    scene.world.addEntityChild(scene.world.root, cube.entity);
+
+    for system in scene.world.systems:
+        if isinstance(system, InitGLShaderSystem):
+            scene.world.traverse_visit(system, cube.entity);
+            break;
+
     return cube.entity;
 
 # Creates a sphere with the given name and color
 # Returns the entity that contains the sphere
 def SphereSpawn(spherename = "Sphere", color = None):
+    global scene;
     sphere = ObjectCreator(spherename);
     if color is None:
         color = [1.0, 1.0, 1.0, 1.0];
@@ -101,16 +113,16 @@ def SphereSpawn(spherename = "Sphere", color = None):
     colors = [];
     indices = [];
     normals = [];
-    for i in range(0, 20):
-        for j in range(0, 20):
+    for i in range(0, 21):
+        for j in range(0, 21):
             x = np.cos(2 * np.pi * j / 20) * np.sin(np.pi * i / 20);
             y = np.sin(2 * np.pi * j / 20) * np.sin(np.pi * i / 20);
             z = np.cos(np.pi * i / 20);
             vertices.append([x, y, z, 1.0]);
             colors.append(color);
             normals.append([x, y, z]);
-    for i in range(0, 20):
-        for j in range(0, 20):
+    for i in range(0, 21):
+        for j in range(0, 21):
             indices.append(i * 20 + j);
             indices.append((i + 1) * 20 + j);
             indices.append((i + 1) * 20 + (j + 1) % 20);
@@ -118,6 +130,14 @@ def SphereSpawn(spherename = "Sphere", color = None):
             indices.append((i + 1) * 20 + (j + 1) % 20);
             indices.append(i * 20 + (j + 1) % 20);
     sphere.SetVertexAttributes(vertices, colors, indices, normals);
+
+    scene.world.addEntityChild(scene.world.root, sphere.entity);
+    
+    for system in scene.world.systems:
+        if isinstance(system, InitGLShaderSystem):
+            scene.world.traverse_visit(system, sphere.entity);
+            break;
+    
     return sphere.entity;
 
 # Creates a cylinder with the given name and color
@@ -125,6 +145,7 @@ def SphereSpawn(spherename = "Sphere", color = None):
 # The cylinder is oriented along the z axis
 # The cylinder is centered at the origin
 def CylinderSpawn(cylindername = "Cylinder", color = None):
+    global scene;
     cylinder = ObjectCreator(cylindername);
     if color is None:
         color = [1.0, 1.0, 1.0, 1.0]
@@ -150,6 +171,14 @@ def CylinderSpawn(cylindername = "Cylinder", color = None):
             indices.append((i + 1) * 20 + (j + 1) % 20);
             indices.append(i * 20 + (j + 1) % 20);
     cylinder.SetVertexAttributes(vertices, colors, indices, normals);
+
+    scene.world.addEntityChild(scene.world.root, cylinder.entity);
+    
+    for system in scene.world.systems:
+        if isinstance(system, InitGLShaderSystem):
+            scene.world.traverse_visit(system, cylinder.entity);
+            break;
+    
     return cylinder.entity;
 
 # Creates a cone with the given name and color
@@ -157,6 +186,7 @@ def CylinderSpawn(cylindername = "Cylinder", color = None):
 # The cone is oriented along the z axis
 # The cone is centered at the origin
 def ConeSpawn(conename = "Cone", color = None):
+    global scene;
     cone = ObjectCreator(conename);
     if color is None:
         color = [1.0, 1.0, 1.0, 1.0];
@@ -182,11 +212,20 @@ def ConeSpawn(conename = "Cone", color = None):
             indices.append((i + 1) * 20 + (j + 1) % 20);
             indices.append(i * 20 + (j + 1) % 20);
     cone.SetVertexAttributes(vertices, colors, indices, normals);
+
+    scene.world.addEntityChild(scene.world.root, cone.entity);
+    
+    for system in scene.world.systems:
+        if isinstance(system, InitGLShaderSystem):
+            scene.world.traverse_visit(system, cone.entity);
+            break; 
+
     return cone.entity;
 
 # Creates a torus with the given name and color
 # Returns the entity that contains the torus
 def TorusSpawn(torusname = "Torus", color = None):
+    global scene;
     torus = ObjectCreator(torusname);
     if color is None:
         color = [1.0, 1.0, 1.0, 1.0];
@@ -212,6 +251,14 @@ def TorusSpawn(torusname = "Torus", color = None):
             indices.append((i + 1) * 20 + (j + 1) % 20);
             indices.append(i * 20 + (j + 1) % 20);
     torus.SetVertexAttributes(vertices, colors, indices, normals);
+
+    scene.world.addEntityChild(scene.world.root, torus.entity);
+    
+    for system in scene.world.systems:
+        if isinstance(system, InitGLShaderSystem):
+            scene.world.traverse_visit(system, torus.entity);
+            break;
+
     return torus.entity;
 
 class IndexedConverter():

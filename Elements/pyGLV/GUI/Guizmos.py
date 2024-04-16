@@ -6,6 +6,7 @@ import munch
 import glm
 from numpy.typing import NDArray
 from Elements.pyECSS.Component import Component
+from Elements.pyECSS.Component import BasicTransform
 
 from imgui_bundle import imgui, imguizmo, ImVec2
 
@@ -24,10 +25,10 @@ camYAngle = 165.0 / 180.0 * 3.14159
 camXAngle = 32.0 / 180.0 * 3.14159
 
 objectMatrix = np.array([
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-        0.0, 0.0, 0.0, 1.0
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
     ], np.float32)
 
 firstFrame = True
@@ -63,7 +64,10 @@ class Gizmos:
 
         self._view = np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], np.float32)
         self._projection = np.zeros((4, 4), np.float32)
-    
+
+    def setView(self, _view):
+        self._view = _view;
+        
     def __del__(self):
         pass
     
@@ -98,21 +102,21 @@ class Gizmos:
         else:
             self.statics.gizmoWindowFlags = 0
 
-        # if comp is not None and isinstance(comp, Component):
-        #     manip_result = self.gizmo.manipulate(
-        #         self._view,
-        #         self._projection,
-        #         self.currentGizmoOperation,
-        #         self.statics.mCurrentGizmoMode,
-        #         # np.array(comp.trs, np.float32),
-        #         objectMatrix
-        #     )
 
-        #     print(comp.trs)
+        if comp is not None and isinstance(comp, BasicTransform):
+            # print(np.array(comp.l2world, np.float32));
+            # print(objectMatrix);
+            manip_result = self.gizmo.manipulate(
+                self._view,
+                self._projection,
+                self.currentGizmoOperation,
+                self.statics.mCurrentGizmoMode,
+                objectMatrix
+            )
 
-        #     if manip_result:
-        #         r.changed = True
-        #         r.objectMatrix = manip_result.value
+            if manip_result:
+                r.changed = True
+                r.objectMatrix = manip_result.value
         
         view_manip_result = self.gizmo.view_manipulate(
             self._view,
@@ -132,18 +136,12 @@ class Gizmos:
 
         return r.changed;
 
-    def decompose_view_matrix(self):
-        components = self.gizmo.decompose_matrix_to_components(self._view);
-        eye = -components.translation;
-        target = eye - components.rotation;
-        up = components.rotation
-
-        return eye, up, target;
-
     def decompose_look_at(self):
         r = self._view[:3,:3]
         target = self._view[:3,3]
         eye = target + r[:,2];
+        direction = -((target - eye) / np.linalg.norm(target - eye));
+        eye = target + direction;
         up = r[:,1]
         
         eye[:] *= 4;
