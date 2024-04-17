@@ -120,7 +120,7 @@ index_buffer = device.create_buffer_with_data(
     data=indices, usage=wgpu.BufferUsage.INDEX
 )  
 
-texturePath = TEXTURE_DIR / "3x3.jpg"
+texturePath = TEXTURE_DIR / "Texture_Grass.png"
 texture = WGPUTexture(device=device, filepath=texturePath)
 
 sampler = device.create_sampler()

@@ -15,7 +15,8 @@ from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.cammera import cammera 
 import Elements.pyECSS.math_utilities as util 
 from Elements.definitions import TEXTURE_DIR
-from Elements.pyGLV.GL.Textures import WGPUTexture
+from Elements.pyGLV.GL.Textures import WGPUTexture 
+import Elements.utils.normals as norm
 
 # Create a canvas to render to
 #canvas = WgpuCanvas(title="wgpu cube") 
@@ -41,16 +42,18 @@ tc = []; # colors
 tn = []; # normals
 
 def addv( v ):
-    tv.append(v[0])
-    tv.append(v[1])
-    tv.append(v[2]) 
+    # tv.append(v[0])
+    # tv.append(v[1])
+    # tv.append(v[2])  
+    tv.append([v[0], v[1], v[2]])
     ti.append(len(ti))    
 
     
 def addn( n ): 
-    tn.append(-n[0]) 
-    tn.append(-n[1]) 
-    tn.append(-n[2]) 
+    # tn.append(-n[0]) 
+    # tn.append(-n[1]) 
+    # tn.append(-n[2])  
+    tn.append([-n[0], -n[1], -n[2]])
 
 tet_r = [ 
     [ 1.0, 0.0, 0.0 ], 
@@ -95,20 +98,14 @@ def devide( depth, tri ):
 #depth / lod of 5 
 for i in range(len(tris)):
     devide( 6, tri=tris[i] ) 
-    
-for i in range(int(len(tv) / 3)):    
-    if i % 3 == 0: 
-        tc.append([0.5, 0.0, 0.0]) 
-    else:
-        tc.append([1.0, 0.0, 0.0])   
 
-# for i in range(int(len(tv) / 3)):    
-#     tc.append([0.5, 0.0, 0.0]) 
+for i in range(len(tv)):    
+    tc.append([1.0, 1.0, 1.0])  
     
     
 vertex_data = np.array(tv, dtype=np.float32)
 color_data = np.array(tc, dtype=np.float32) 
-index_data = np.array(ti, dtype=np.uint32)  
+index_data = np.array(ti, dtype=np.uint32)   
 normal_data = np.array(tn, dtype=np.float32)
 
 uniform_dtype = np.dtype([

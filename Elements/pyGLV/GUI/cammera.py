@@ -75,13 +75,13 @@ class cammera:
             ttarget += zoom
         self.createViewMatrix(teye, ttarget, tup)
 
-    def cameraHandling(self, x, y, height, width):
+    def cameraHandling(self, xx, yy, x=0, y=0, z=0):
         # keystatus = sdl2.SDL_GetKeyboardState(None)
         self.resetAll()
 
-        if abs(x) > abs(y):
-            self.camr["x"] = np.sign(x) #event.wheel.x/height*180
+        if abs(xx) > abs(yy):
+            self.camr["x"] = np.sign(xx) #event.wheel.x/height*180
             self.updateCamera(False, False,False, True, False)
         else:
-            self.camr["y"] = np.sign(y) #event.wheel.y/width*180
-            self.updateCamera(False, False,False, False, True)
+            self.camr["y"] = np.sign(yy) #event.wheel.y/width*180
+            self.updateCamera(False, False,False, False, True)  

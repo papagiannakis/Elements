@@ -836,4 +836,4 @@ def ShaderLoader(file):
         print ("Could not open/read fragment shader file:", file)
         sys.exit()
     with f:
-        return f.read() 
+        return f.read()  

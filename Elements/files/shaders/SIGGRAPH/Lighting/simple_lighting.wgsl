@@ -35,7 +35,7 @@ fn vs_main( @location(0) inPos: vec3f,
 
     var out : VertexOut;
     out.Position = mvp * ubuffer.model * vec4f( inPos, 1.0 );
-    out.uvs = calcUV( inPos );
+    out.uvs = calcUV(inPos);
     out.normal = inNorm;
     out.color = inClr;
     return out;
@@ -51,9 +51,9 @@ fn fs_main( @location(0) inClr: vec3f,
 { 
     let texCol = textureSample(u_texture, u_sampler, inUvs);
 
-    let dir = vec3f(0.0, 1.0, 0.0);
+    let dir = vec3f(0.0, 0.0, 1.0);
 
     let illum = abs( dot(dir, inNrom) );
 
-    return vec4f( texCol.xyz * illum, 1.0 );
+    return vec4f( inClr.xyz * illum, 1.0 );
 }

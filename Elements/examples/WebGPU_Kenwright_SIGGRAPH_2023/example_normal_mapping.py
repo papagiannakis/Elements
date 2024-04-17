@@ -37,35 +37,35 @@ render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)  
 
 cubev = [
-    { "p": [-1.0, -1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] },
-    { "p": [1.0, -1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] },
-    { "p": [-1.0, 1.0, 1.0], "u":[0.0, 0.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] },
-    { "p": [1.0, 1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0] }, 
+    { "p": [-1.0, -1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0], "t":[] },
+    { "p": [1.0, -1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0], "t":[] },
+    { "p": [-1.0, 1.0, 1.0], "u":[0.0, 0.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0], "t":[] },
+    { "p": [1.0, 1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 0.0], "n":[0.0, 0.0, 1.0], "t":[] }, 
     
-    { "p": [1.0, -1.0, 1.0], "u":[1.0, 0.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
-    { "p": [1.0, -1.0, 1.0], "u":[0.0, 0.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
-    { "p": [1.0, 1.0, 1.0], "u":[1.0, 1.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
-    { "p": [1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0] },
+    { "p": [1.0, -1.0, 1.0], "u":[1.0, 0.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0], "t":[] },
+    { "p": [1.0, -1.0, 1.0], "u":[0.0, 0.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0],"t":[] },
+    { "p": [1.0, 1.0, 1.0], "u":[1.0, 1.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0], "t":[] },
+    { "p": [1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[0.0, 1.0, 0.0], "n":[-1.0, 0.0, 0.0], "t":[] },
     
-    { "p": [1.0, -1.0, -1.0], "u":[1.0, 0.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] },
-    { "p": [-1.0, -1.0, -1.0], "u":[0.0, 0.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] },
-    { "p": [1.0, 1.0, -1.0], "u":[1.0, 1.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] },
-    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0] }, 
+    { "p": [1.0, -1.0, -1.0], "u":[1.0, 0.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0], "t":[] },
+    { "p": [-1.0, -1.0, -1.0], "u":[0.0, 0.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0], "t":[] },
+    { "p": [1.0, 1.0, -1.0], "u":[1.0, 1.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0], "t":[] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[0.0, 0.0, 1.0], "n":[0.0, 0.0, -1.0], "t":[] }, 
     
-    { "p": [-1.0, -1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] },
-    { "p": [-1.0, -1.0, 1.0], "u":[0.0, 0.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] },
-    { "p": [-1.0, 1.0, -1.0], "u":[1.0, 1.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] },
-    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0] }, 
+    { "p": [-1.0, -1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0], "t":[] },
+    { "p": [-1.0, -1.0, 1.0], "u":[0.0, 0.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0], "t":[] },
+    { "p": [-1.0, 1.0, -1.0], "u":[1.0, 1.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0], "t":[] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 1.0], "c":[1.0, 0.0, 1.0], "n":[1.0, 0.0, 0.0], "t":[] }, 
     
-    { "p": [-1.0, -1.0, -1.0], "u":[0.0, 1.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] },
-    { "p": [-1.0, -1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] },
-    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 0.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] },
-    { "p": [-1.0, 1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0] }, 
+    { "p": [-1.0, -1.0, -1.0], "u":[0.0, 1.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0], "t":[] },
+    { "p": [-1.0, -1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0], "t":[] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 0.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0], "t":[] },
+    { "p": [-1.0, 1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 1.0, 0.0], "n":[0.0, -1.0, 0.0], "t":[] }, 
     
-    { "p": [-1.0, 1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
-    { "p": [1.0, 1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
-    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 0.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
-    { "p": [1.0, 1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0] },
+    { "p": [-1.0, 1.0, 1.0], "u":[0.0, 1.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0], "t":[] },
+    { "p": [1.0, 1.0, 1.0], "u":[1.0, 1.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0], "t":[] },
+    { "p": [-1.0, 1.0, -1.0], "u":[0.0, 0.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0], "t":[] },
+    { "p": [1.0, 1.0, -1.0], "u":[1.0, 0.0], "c":[1.0, 1.0, 1.0], "n":[0.0, 1.0, 0.0], "t":[] },
 ] 
 
 cubef = [
@@ -88,34 +88,34 @@ for i in range(0, len(cubef), 8):
     duv0 = [ v1["u"][0] - v0["u"][0], v1["u"][1] - v0["u"][1] ]
     duv1 = [ v2["u"][0] - v0["u"][0], v2["u"][1] - v0["u"][1] ] 
      
-    f = 1.0 / (duv0[0] * duv1[1] - duv1[0] * duv0[1]) 
-    tangentx = f * (duv1[1] * edge0[0] - duv0[1] * edge1[0])
-    tangenty = f * (duv1[1] * edge0[1] - duv0[1] * edge1[1])
-    tangentz = f * (duv1[1] * edge0[2] - duv0[1] * edge1[2])
+    #f = 1.0 / (duv0[0] * duv1[1] - duv1[0] * duv0[1]) 
+    tangentx = 1 * (duv1[1] * edge0[0] - duv0[1] * edge1[0])
+    tangenty = 1 * (duv1[1] * edge0[1] - duv0[1] * edge1[1])
+    tangentz = 1 * (duv1[1] * edge0[2] - duv0[1] * edge1[2])
     
-    cubev[ cubef[i+0] ]['t'] = [ tangentx, tangenty, tangentz ]
-    cubev[ cubef[i+1] ]['t'] = [ tangentx, tangenty, tangentz ]
-    cubev[ cubef[i+2] ]['t'] = [ tangentx, tangenty, tangentz ]
+    cubev[ cubef[i+0] ]["t"] = [ tangentx, tangenty, tangentz ]
+    cubev[ cubef[i+1] ]["t"] = [ tangentx, tangenty, tangentz ]
+    cubev[ cubef[i+2] ]["t"] = [ tangentx, tangenty, tangentz ]
     
     
-print("vertices", cubev.__len__) 
-print("faces", cubef.__len__)   
+print("vertices", len(cubev)) 
+print("faces", len(cubef))   
 
-min = { 'x': 1000, 'y':1000, 'z':1000 }
-max = { 'x': -1000, 'y': -1000, 'z': -1000 } 
+# min = { 'x': 1000.0, 'y':1000.0, 'z':1000.0 }
+# max = { 'x': -1000.0, 'y': -1000.0, 'z': -1000.0 } 
 
-for i in range(0, len(cubev), 1):
-    min["x"] = np.min( min['x'], cubev[i]['p'][0] )
-    min["y"] = np.min( min['y'], cubev[i]['y'][1] )
-    min["z"] = np.min( min['z'], cubev[i]['z'][2] ) 
+# for i in range(0, len(cubev), 1):
+#     min["x"] = np.min( min['x'], cubev[i]['p'][0] )
+#     min["y"] = np.min( min['y'], cubev[i]['y'][1] )
+#     min["z"] = np.min( min['z'], cubev[i]['z'][2] ) 
     
-    max["x"] = np.min( max['x'], cubev[i]['p'][0] )
-    max["y"] = np.min( max['y'], cubev[i]['y'][1] )
-    max["z"] = np.min( max['z'], cubev[i]['z'][2] ) 
+#     max["x"] = np.min( max['x'], cubev[i]['p'][0] )
+#     max["y"] = np.min( max['y'], cubev[i]['y'][1] )
+#     max["z"] = np.min( max['z'], cubev[i]['z'][2] ) 
     
-delta = { "x": (max["x"] - min["x"]), "y": (max['y'] - min['y']), "z": (max["z"] - min["z"]) } 
-middle = { "x": (min["x"] + delta["x"] * 0.5), "y": (min["y"] + delta["y"] * 0.5), "z": (min["z"] + delta["z"] * 0.5) }  
-dist = np.sqrt( delta["x"]*delta["x"] + delta["y"]*delta["y"] + delta["z"]*delta["z"] )
+# delta = { "x": (max["x"] - min["x"]), "y": (max['y'] - min['y']), "z": (max["z"] - min["z"]) } 
+# middle = { "x": (min["x"] + delta["x"] * 0.5), "y": (min["y"] + delta["y"] * 0.5), "z": (min["z"] + delta["z"] * 0.5) }  
+# dist = np.sqrt( delta["x"]*delta["x"] + delta["y"]*delta["y"] + delta["z"]*delta["z"] )
 
 positionBuffer = []
 colorBuffer = []
@@ -125,25 +125,25 @@ tangentBuffer = []
 indexBuffer = []
  
 array = { "v":[], "u":[], "n":[], "f":[], "t":[], "c":[] }  
-for i in range(0, len(cubev) ): 
-    array["v"].append( cubev[i]["p"][0] )
-    array["v"].append( cubev[i]["p"][1] )
-    array["v"].append( cubev[i]["p"][2] ) 
+for cube in cubev: 
+    array["v"].append( cube["p"][0] )
+    array["v"].append( cube["p"][1] )
+    array["v"].append( cube["p"][2] ) 
     
-    array["c"].append( cubev[i]["c"][0] )
-    array["c"].append( cubev[i]["c"][1] )
-    array["c"].append( cubev[i]["c"][2] ) 
+    array["c"].append( cube["c"][0] )
+    array["c"].append( cube["c"][1] )
+    array["c"].append( cube["c"][2] ) 
+ 
+    array["u"].append( cube["u"][0] ) 
+    array["u"].append( cube["u"][1] )   
     
-    array["u"].append( cubev[i]["u"][0] ) 
-    array["u"].append( cubev[i]["u"][1] )  
-    
-    array["n"].append( cubev[i]["n"][0] )
-    array["n"].append( cubev[i]["n"][1] )
-    array["n"].append( cubev[i]["n"][2] ) 
+    array["n"].append( cube["n"][0] )
+    array["n"].append( cube["n"][1] )
+    array["n"].append( cube["n"][2] ) 
      
-    array["t"].append( cubev[i]["t"][0] )
-    array["t"].append( cubev[i]["t"][1] )
-    array["t"].append( cubev[i]["t"][2] )  
+    array["t"].append( cube["t"][0] )
+    array["t"].append( cube["t"][1] )
+    array["t"].append( cube["t"][2] )  
     
 for i in range(0, len(cubef[i])): 
     array["f"].append( cubef[i] )  
@@ -210,14 +210,15 @@ index_buffer = device.create_buffer_with_data(
     data=indices, usage=wgpu.BufferUsage.INDEX
 )  
 
-texturePath = TEXTURE_DIR / "3x3.jpg"
-texture1 = WGPUTexture(device=device, filepath=texturePath)
-texture2 = WGPUTexture(device=device, filepath=texturePath)
+texturePath0 = TEXTURE_DIR / "crateA-decal.jpg" 
+texturePath1 = TEXTURE_DIR / "crateA-normal.jpg"
+texture0 = WGPUTexture(device=device, filepath=texturePath0)
+texture1 = WGPUTexture(device=device, filepath=texturePath1)
 
 sampler = device.create_sampler()
 
 # WGSL example
-shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Textures" / "simple_texture.wgsl");
+shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Normal_mapping" / "simple_normal_mapping.wgsl");
 shader = device.create_shader_module(code=shader_code);
 
 # We always have two bind groups, so we can play distributing our
@@ -260,7 +261,7 @@ bind_groups_layout_entries[0].append(
 bind_groups_entries[0].append(
     {
         "binding": 2,
-        "resource": texture1.view
+        "resource": texture0.view
     } 
 ) 
 bind_groups_layout_entries[0].append(
@@ -277,7 +278,7 @@ bind_groups_layout_entries[0].append(
 bind_groups_entries[0].append(
     {
         "binding": 3,
-        "resource": texture2.view
+        "resource": texture1.view
     } 
 ) 
 bind_groups_layout_entries[0].append(
