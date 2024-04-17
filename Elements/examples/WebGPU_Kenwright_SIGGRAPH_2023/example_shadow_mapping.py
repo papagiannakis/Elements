@@ -145,7 +145,6 @@ index_buffer = device.create_buffer_with_data(
     data=index_data, usage=wgpu.BufferUsage.INDEX
 ) 
 
-
 # WGSL example
 shader_code = ShaderLoader(definitions.SHADER_DIR / "SIGGRAPH" / "Shadows" / "simple_light_source.wgsl");
 shader = device.create_shader_module(code=shader_code);
