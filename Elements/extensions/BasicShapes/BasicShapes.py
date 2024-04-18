@@ -154,8 +154,8 @@ def CylinderSpawn(cylindername = "Cylinder", color = None):
     colors = [];
     indices = [];
     normals = [];
-    for i in range(0, 20):
-        for j in range(0, 20):
+    for i in range(0, 21):
+        for j in range(0, 21):
             x = np.cos(2 * np.pi * j / 20);
             y = np.sin(2 * np.pi * j / 20);
             z = 2 * i / 20 - 1;
@@ -195,8 +195,8 @@ def ConeSpawn(conename = "Cone", color = None):
     colors = [];
     indices = [];
     normals = [];
-    for i in range(0, 20):
-        for j in range(0, 20):
+    for i in range(0, 21):
+        for j in range(0, 21):
             x = np.cos(2 * np.pi * j / 20) * (1 - i / 20);
             y = np.sin(2 * np.pi * j / 20) * (1 - i / 20);
             z = 2 * i / 20 - 1;
@@ -234,8 +234,8 @@ def TorusSpawn(torusname = "Torus", color = None):
     colors = [];
     indices = [];
     normals = [];
-    for i in range(0, 20):
-        for j in range(0, 20):
+    for i in range(0, 21):
+        for j in range(0, 21):
             x = np.cos(2 * np.pi * j / 20) * (1 + np.cos(2 * np.pi * i / 20) / 2);
             y = np.sin(2 * np.pi * j / 20) * (1 + np.cos(2 * np.pi * i / 20) / 2);
             z = np.sin(2 * np.pi * i / 20) / 2;

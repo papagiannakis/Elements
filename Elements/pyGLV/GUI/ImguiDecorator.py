@@ -729,56 +729,6 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
         """
         global first_run
-
-        sceneRoot = self.wrapeeWindow.scene.world.root.name
-        if sceneRoot is None:
-            sceneRoot = "ECSS Root Entity"
-
-        twoColumn = False
-        if twoColumn:
-            # 2 Column Version
-            imgui.begin("ECSSgraph")
-            imgui.columns(2,"Properties")
-            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
-            imgui.next_column()
-            imgui.text("Properties")
-            imgui.separator()
-        else:
-            imgui.begin("ECSSgraph")
-            imgui.columns(1,"Properties")
-            imgui.text("Properties")
-            imgui.separator()
-
-        if imgui.tree_node("Translation"):
-            self.gizmo.currentGizmoOperation = 0;
-            changed, value = imgui.drag_float3("X,Y,Z",toList(self.tra), 0.01, -30, 30, "%.001f", 1);
-            self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]         
-            imgui.tree_pop();
-            
-        if imgui.tree_node("Rotation"):
-            self.gizmo.currentGizmoOperation = 1;
-            changed, value = imgui.drag_float3("X,Y,Z",toList(self.rot), 1, -180, 180, "%.1f", 1);
-            self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
-            
-        if imgui.tree_node("Scale"):
-            self.gizmo.currentGizmoOperation = 2;
-            changed, value = imgui.drag_float3("X,Y,Z",toList(self.sc), 0.01, 0, 4, "%.01f", 1);
-            self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
-            imgui.tree_pop();
-
-        
-        if twoColumn:
-            pass
-        else:
-            imgui.separator()
-            if imgui.tree_node(sceneRoot):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
-                imgui.tree_pop()
-                
-        imgui.end()
         
         if first_run:
             first_run = False;
@@ -802,8 +752,69 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
                     self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
         else:
             self.gizmo.setView(np.array(glm.lookAt(self._eye, self._target, self._up), np.float32));
-        self.gizmo.drawTransformGizmo(self.selected);
+        
+        changed, trs = self.gizmo.drawTransformGizmo(self.selected);
+
+        if changed:
+            components = self.gizmo.gizmo.decompose_matrix_to_components(trs);
+            if self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.translate:
+                self.tra['z'], self.tra['y'], self.tra['x'] = components.translation[0] * 1.8, components.translation[1] * 1.8, components.translation[2] * 1.8;
+            elif self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.rotate:
+                self.rot['z'], self.rot['y'], self.rot['x'] = -components.rotation[0], -components.rotation[1], -components.rotation[2];
+            elif self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.scale:
+                self.sc['z'], self.sc['y'], self.sc['x'] = components.scale[0], components.scale[1], components.scale[2];
+        
         imgui.end();
+    
+        sceneRoot = self.wrapeeWindow.scene.world.root.name
+        if sceneRoot is None:
+            sceneRoot = "ECSS Root Entity"
+
+        twoColumn = False
+        if twoColumn:
+            # 2 Column Version
+            imgui.begin("ECSSgraph")
+            imgui.columns(2,"Properties")
+            if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
+                self.drawNode(self.wrapeeWindow.scene.world.root)
+                imgui.tree_pop()
+            imgui.next_column()
+            imgui.text("Properties")
+            imgui.separator()
+        else:
+            imgui.begin("ECSSgraph")
+            imgui.columns(1,"Properties")
+            imgui.text("Properties")
+            imgui.separator()
+
+        if imgui.tree_node("Translation"):
+            self.gizmo.currentGizmoOperation = self.gizmo.gizmo.OPERATION.translate;
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.tra), 0.01, -30, 30, "%.001f", 1);
+            self.tra["x"],self.tra["y"],self.tra["z"] = value[0],value[1], value[2]         
+            imgui.tree_pop();
+            
+        if imgui.tree_node("Rotation"):
+            self.gizmo.currentGizmoOperation = self.gizmo.gizmo.OPERATION.rotate;
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.rot), 1, -180, 180, "%.1f", 1);
+            self.rot["x"],self.rot["y"],self.rot["z"] = value[0],value[1], value[2]
+            imgui.tree_pop();
+            
+        if imgui.tree_node("Scale"):
+            self.gizmo.currentGizmoOperation = self.gizmo.gizmo.OPERATION.scale;
+            changed, value = imgui.drag_float3("X,Y,Z",toList(self.sc), 0.01, 0, 4, "%.01f", 1);
+            self.sc["x"],self.sc["y"],self.sc["z"] = value[0],value[1], value[2]
+            imgui.tree_pop();
+
+        
+        if twoColumn:
+            pass
+        else:
+            imgui.separator()
+            if imgui.tree_node(sceneRoot):
+                self.drawNode(self.wrapeeWindow.scene.world.root)
+                imgui.tree_pop()
+                
+        imgui.end()
             
     def drawNode(self, component):
         #create a local iterator of Entity's children

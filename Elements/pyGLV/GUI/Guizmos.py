@@ -7,6 +7,7 @@ import glm
 from numpy.typing import NDArray
 from Elements.pyECSS.Component import Component
 from Elements.pyECSS.Component import BasicTransform
+import Elements.pyECSS.math_utilities as util
 
 from imgui_bundle import imgui, imguizmo, ImVec2
 
@@ -19,7 +20,7 @@ lastUsing = 0
 
 # Camera projection
 isPerspective = True
-fov = 27.0
+fov = 60.0
 viewWidth = 10.0  # for orthographic
 camYAngle = 165.0 / 180.0 * 3.14159
 camXAngle = 32.0 / 180.0 * 3.14159
@@ -66,22 +67,10 @@ class Gizmos:
         pass
     
     def drawTransformGizmo(self, comp):  
-       # self.setOperation();
-        global cameraView, firstFrame, objectMatrix
+        global cameraView, objectMatrix
         trs_changed = False;
-        
-        window = imgui.internal.get_current_window()
-        if imgui.is_window_hovered() and imgui.is_mouse_hovering_rect(
-            window.inner_rect.min, window.inner_rect.max
-        ):
-            self.statics.gizmoWindowFlags = imgui.WindowFlags_.no_move
-        else:
-            self.statics.gizmoWindowFlags = 0
-
 
         if comp is not None and isinstance(comp, BasicTransform):
-            # print(np.array(comp.l2world, np.float32));
-            # print(objectMatrix);
             manip_result = self.gizmo.manipulate(
                 self._view,
                 self._projection,
@@ -89,14 +78,12 @@ class Gizmos:
                 self.statics.mCurrentGizmoMode,
                 objectMatrix
             )
-
-            if manip_result:
-                trs_changed = True
-                objectMatrix = manip_result.value;
-                comp.trs = manip_result.value;
-                # return manip_result.value;
             
-        # return False;
+            if manip_result:
+                objectMatrix = manip_result.value;
+                trs_changed = True
+            
+        return trs_changed, objectMatrix;
 
     def drawCameraGizmo(self):
         global firstFrame
@@ -115,7 +102,7 @@ class Gizmos:
 
         if firstFrame:
             firstFrame = False;
-            self._projection = np.array(glm.perspective(50.0, width/height, 0.01, 100.0), np.float32); 
+            self._projection = util.perspective(25, 1200/800, 0.01, 100.0); 
 
         viewManipulateRight = imgui.get_window_pos().x + imgui.get_window_width();
         viewManipulateTop = imgui.get_window_pos().y

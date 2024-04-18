@@ -230,6 +230,7 @@ def make_closure_demo_guizmo() -> GuiFunction:
             radians = glm.radians(fov)  # The gui is in degree, we need radians for glm
             cameraProjection = glm.perspective(radians, io.display_size.x / io.display_size.y, 0.1, 100.0)  # type: ignore
             cameraProjection = np.array(cameraProjection)
+            # print(cameraProjection)
         else:
             viewHeight = viewWidth * io.display_size.y / io.display_size.x
             cameraProjection = glm.ortho(-viewWidth, viewWidth, -viewHeight, viewHeight, 1000.0, -1000.0)  # type: ignore
