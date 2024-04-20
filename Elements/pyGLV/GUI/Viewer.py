@@ -440,6 +440,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         set_window_maximize_callback(self._gWindow, weakbind(self._on_window_dirty))
         set_window_content_scale_callback(self._gWindow, weakbind(self._on_pixelratio_change))
         
+        self._key_state = []
         self._key_modifiers = [] 
         self._pointer_buttons = [] 
         self._pointer_pos = 0, 0 
@@ -524,9 +525,12 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
             glfw.destroy_window(self._gWindow)
             glfw.terminate() 
             
-    def IsKeyPressed(self, key:int): 
-        state = glfw.get_key(self._gWindow, key)
-        return state == glfw.PRESS;
+    def IsKeyPressed(self, key:str): 
+        _state = True if key in self._key_state else False
+        return _state 
+    
+    def GetMousePos(self): 
+        return self._pointer_pos
     
     def event_input_process(self, running = True):   
         glfw.poll_events()   
@@ -754,9 +758,9 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         event.data = ev
         PushEvent(event) 
     
-    #TODO refactor for modes 
     def _on_key(self, window, key, scancode, action, mods): 
         modifier = KEY_MAP_MOD.get(key, None)
+        _key = KEY_MAP.get(key, None)
         
         if action == glfw.PRESS:
             event_type = EventTypes.KEY_PRESS
@@ -764,12 +768,21 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
                 modifiers = set(self._key_modifiers) 
                 modifiers.add(modifier) 
                 self._key_modifiers = list(sorted(modifiers)) 
+            if _key: 
+                keystate = set(self._key_state)
+                keystate.add(_key)
+                self._key_state = list(sorted(keystate))
         elif action == glfw.RELEASE: 
             event_type = EventTypes.KEY_RELEASE
             if modifier: 
                 modifiers = set(self._key_modifiers) 
                 modifiers.discard(modifier)
-                self._key_modifiers = list(sorted(modifiers)) 
+                self._key_modifiers = list(sorted(modifiers))
+            if _key:
+                keystate = set(self._key_state)
+                keystate.discard(_key)
+                self._key_state = list(sorted(keystate))
+ 
         else: 
             return 
         
@@ -1243,8 +1256,8 @@ if __name__ == "__main__":
     gWindow.init_post() 
     running = True        
     # MAIN RENDERING LOOP        
-    while running:
-        running = gWindow.event_input_process()
+    while gWindow._running:
+        gWindow.event_input_process()
         # gWindow.display()                
         # gWindow.display_post()            
     

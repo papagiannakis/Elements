@@ -1,7 +1,9 @@
 
 import glm
+import glfw
 import numpy as np 
 import Elements.pyECSS.math_utilities as util  
+from Elements.pyGLV.GUI.Viewer import button_map
 
 class cammera: 
     def __init__(self, eye, target, up):
@@ -20,6 +22,9 @@ class cammera:
 
         self._updateCamera = None
         self.createViewMatrix(self._eye, self._target, self._up) 
+
+        self._mouse_noop_x_state = 0
+        self._mouse_noop_y_state = 0
         # test_example = true 
 
     def resetAll(self):
@@ -46,7 +51,7 @@ class cammera:
         self._updateCamera = glm.transpose(glm.lookAtLH(self._eye, self._target, up))   
         
     def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):   
-        cameraspeed = 0.2
+        cameraspeed = 0.1
         teye = np.array(self._eye)
         ttarget = np.array(self._target)
         tup = np.array(self._up)
@@ -85,3 +90,16 @@ class cammera:
         else:
             self.camr["y"] = np.sign(yy) #event.wheel.y/width*180
             self.updateCamera(False, False,False, False, True)  
+
+    def update(self, canvas):
+        width = canvas._windowWidth
+        height = canvas._windowHeight  
+
+        x, y = canvas.GetMousePos()
+        if button_map[glfw.MOUSE_BUTTON_2] in canvas._pointer_buttons:
+                _x = np.floor(x - self.mouse_noop_x_state) 
+                _y = np.floor(y - self.mouse_noop_y_state) 
+                self.cameraHandling(_x, _y, height, width) 
+        else:
+            self.mouse_noop_x_state = np.floor(x)
+            self.mouse_noop_y_state = np.floor(y)
