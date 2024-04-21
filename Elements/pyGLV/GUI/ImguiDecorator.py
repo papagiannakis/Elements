@@ -780,6 +780,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
                 if yes:
                     print("delete")
                     self.wrapeeWindow.scene.world.root.remove(self.to_be_removed);
+                    self.node_editor.remove(self.to_be_removed);
 
                 if no or not self.remove_entity:
                     print("no")

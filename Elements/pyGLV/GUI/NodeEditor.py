@@ -90,14 +90,38 @@ class NodeEditor:
         if node is None:
             tmp = Node(self.name)
             tmp.parentId = self.nodes[0].id
+            tmp.parent = self.nodes[0]
             self.links.append(LinkInfo(ed.LinkId(ID.next_id()), tmp.parentPinId, self.nodes[0].childrenPinId))
             self.nodes.append(tmp)
             self.name = ""
         else:
             self.nodes.append(node)
 
-    def removeNode(self, node):
-        pass
+    def remove(self, comp):
+        input_id = None;
+        output_id = None;
+        for node in self.nodes:
+            print(node.name)
+            if node.name == comp.name:
+                input_id = node.parentPinId;
+                output_id = node.childrenPinId;
+                self.nodes.remove(node)
+                break;
+        
+        i = 0;
+        while i < len(self.nodes):
+            if self.nodes[i].parent is not None and self.nodes[i].parent.name == comp.name:
+                self.nodes.remove(self.nodes[i])
+            else:
+                i += 1;
+        
+        i = 0;
+        while i < len(self.links):
+            if self.links[i].input_id == output_id or self.links[i].output_id == input_id:
+                self.links.remove(self.links[i])
+            else:
+                i += 1;
+
     
     def find_parent(self, name):
         for node in self.nodes:
@@ -127,6 +151,7 @@ class NodeEditor:
                     if parent is not None:
                         tmp.parentId = parent.id
                         self.createLink(parent, tmp)
+                        tmp.parent = parent;
                     self.addNode(tmp)
                     self.generate(comp) 
 
