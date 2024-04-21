@@ -7,7 +7,7 @@ from Elements.definitions import MODEL_DIR
 
 meshes = []
 
-def MeshLoader(file):
+def json_laoder(file):
     try:
         f = open(file, 'r')
     except OSError:
@@ -50,6 +50,7 @@ def obj_loader(file_path):
 
                 for vertex_data in face:
                     v_vt_vn = list(map(int, vertex_data.split('/')))
+
                     face_vertices.append(vertices[v_vt_vn[0] - 1])
                     face_uvs.append(uvs[v_vt_vn[1] - 1])
                     
@@ -58,7 +59,7 @@ def obj_loader(file_path):
 
 class mesh: 
     def __init__(self, file, modelMat=None):  
-        self.data = json.loads(MeshLoader(file))   
+        self.data = json.loads(json_laoder(file))   
         
         if modelMat is None: 
             modelMat = glm.mat4x4(1)  

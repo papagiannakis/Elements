@@ -1,0 +1,54 @@
+# Aspose.3D Wavefront OBJ Exporter
+# Copyright 2004-2024 Aspose Pty Ltd.
+# File created: 04/21/2024 14:52:30
+
+newmtl Fortress
+	Ka 0.588 0.588 0.588
+	Kd 0.588 0.588 0.588
+	Ke 0 0 0
+	illum 2
+	Ks 0.9 0.9 0.9
+	Ns 2
+	d 1
+	Tr 0
+	map_Kd C:\Users\Abyss\Desktop\DAE\1DAE2 - 2 semester\Game Art\Assignments\AssN3\project folder\tex\texture_building.jpg
+newmtl Environment
+	Ka 0.588 0.588 0.588
+	Kd 0.588 0.588 0.588
+	Ke 0 0 0
+	illum 2
+	Ks 0.9 0.9 0.9
+	Ns 2
+	d 1
+	Tr 0
+	map_Kd C:\Users\Abyss\Desktop\DAE\1DAE2 - 2 semester\Game Art\Assignments\AssN3\project folder\tex\texture_environment.jpg
+newmtl Sand
+	Ka 0.588 0.588 0.588
+	Kd 0.588 0.588 0.588
+	Ke 0 0 0
+	illum 2
+	Ks 0.9 0.9 0.9
+	Ns 2
+	d 1
+	Tr 0
+	map_Kd C:\Users\Abyss\Desktop\DAE\1DAE2 - 2 semester\Game Art\Assignments\AssN3\project folder\tex\texture_sand.jpg
+newmtl Sea
+	Ka 1 1 1
+	Kd 1 1 1
+	Ke 0 0 0
+	illum 2
+	Ks 0.9 0.9 0.9
+	Ns 1.9999999
+	d 1
+	Tr 0
+	map_Kd C:\Users\Abyss\Desktop\DAE\1DAE2 - 2 semester\Game Art\Assignments\AssN3\project folder\tex\texture_sea.jpg
+newmtl Sky
+	Ka 0.5882353 0.5882353 0.5882353
+	Kd 0.5882353 0.5882353 0.5882353
+	Ke 0 0 0
+	illum 2
+	Ks 0.9 0.9 0.9
+	Ns 1.9999999
+	d 1
+	Tr 0
+	map_Kd C:\Users\Abyss\Desktop\DAE\1DAE2 - 2 semester\Game Art\Assignments\AssN3\project folder\tex\texture_sky.jpg

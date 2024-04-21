@@ -15,7 +15,7 @@ from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.static_cammera import cammera  
-from Elements.pyGLV.GL.wgpu_meshes import MeshLoader, mesh, GenerateSceneMeshData
+from Elements.pyGLV.GL.wgpu_meshes import json_laoder, mesh, GenerateSceneMeshData
 import Elements.pyECSS.math_utilities as util 
 import Elements.utils.normals as norm
 

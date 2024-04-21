@@ -13,7 +13,7 @@ from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.fps_cammera import cammera  
-from Elements.pyGLV.GL.Textures import WGPUTexture
+from Elements.pyGLV.GL.wgpu_material import wgpu_material
 import Elements.pyECSS.math_utilities as util  
 
 from Elements.definitions import TEXTURE_DIR
@@ -122,7 +122,7 @@ index_buffer = device.create_buffer_with_data(
 )  
 
 texturePath = TEXTURE_DIR / "Texture_Grass.png"
-texture = WGPUTexture(device=device, filepath=texturePath)
+texture = wgpu_material(device=device, filepath=texturePath)
 
 sampler = device.create_sampler()
 
@@ -388,8 +388,8 @@ def draw_frame():
 canvas.request_draw(draw_frame)
 
 while canvas._running:
-    _ = canvas.event_input_process();   
-    cam.update(canvas)
+    event = canvas.event_input_process();   
+    cam.update(canvas, event)
                 
     if canvas._need_draw:
         canvas.display()

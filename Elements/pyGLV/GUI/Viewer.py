@@ -733,6 +733,8 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         ev = {  
             "x": self._pointer_pos[0], 
             "y": self._pointer_pos[1],
+            "width": self._windowWidth,
+            "height": self._windowHeight,
             "button": 0, 
             "buttons": list(self._pointer_buttons),
             "modifiers": list(self._key_modifiers)

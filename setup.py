@@ -39,7 +39,7 @@ setup(
         'pysdl2',
         'pysdl2-dll', 
         'glfw',
-        'wgpu', 
+        'wgpu==0.14', 
         'cffi',  
         'PyGLM',
         'jupyter-rfb',

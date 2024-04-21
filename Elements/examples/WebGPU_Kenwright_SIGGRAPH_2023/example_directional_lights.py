@@ -15,7 +15,7 @@ from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.static_cammera import cammera 
 import Elements.pyECSS.math_utilities as util 
 from Elements.definitions import TEXTURE_DIR
-from Elements.pyGLV.GL.Textures import WGPUTexture 
+from Elements.pyGLV.GL.wgpu_material import wgpu_material 
 import Elements.utils.normals as norm
 
 # Create a canvas to render to
@@ -155,8 +155,8 @@ index_buffer = device.create_buffer_with_data(
     data=index_data, usage=wgpu.BufferUsage.INDEX
 )
 
-texturePath = TEXTURE_DIR / "earth.jpg"
-texture = WGPUTexture(device=device, filepath=texturePath)
+# texturePath = TEXTURE_DIR / "earth.jpg"
+# texture = wgpu_material(device=device, filepath=texturePath)
 
 sampler = device.create_sampler()
 

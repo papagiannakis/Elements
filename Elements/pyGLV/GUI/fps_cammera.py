@@ -3,6 +3,7 @@ import glfw
 import numpy as np 
 import Elements.pyECSS.math_utilities as util  
 from Elements.pyGLV.GUI.Viewer import button_map
+from Elements.pyGLV.GUI.windowEvents import EventTypes
 
 class cammera:
     def __init__(self, postition:any, theta:any, phi:any): 
@@ -65,13 +66,11 @@ class cammera:
         self.view = glm.transpose(glm.lookAtLH(self.position, self.target, self.up)) 
         self.view = glm.rotate(np.deg2rad(-90), glm.vec3(1, 0, 0)) * self.view
 
-    def update(self, canvas):
-        halfw = canvas._windowWidth
-        halfh = canvas._windowHeight
+    def update(self, canvas, event): 
+        sensitivity = 0.5
 
         self.forward_state = 0
         self.right_state = 0
-
 
         if canvas.IsKeyPressed('W'):
             self.forward_state = 0.02
@@ -98,19 +97,16 @@ class cammera:
 
         self.moveCammera(self.forward_state, self.right_state)
 
-        x, y = canvas.GetMousePos()
-        if button_map[glfw.MOUSE_BUTTON_2] in canvas._pointer_buttons:
-            if  np.floor(x - self.mouse_noop_x) < 0:
-                self.spinCammera(0.3, 0)
-            elif np.floor(x - self.mouse_noop_x) > 0:
-                self.spinCammera(-0.3, 0)
-
-            if  np.floor(y - self.mouse_noop_y) < 0:
-                self.spinCammera(0, 0.2)
-            elif np.floor(y - self.mouse_noop_y) > 0:
-                self.spinCammera(0, -0.2)
-        else:
-            self.mouse_noop_x = x
-            self.mouse_noop_y = y
+        if event and event.type == EventTypes.MOUSE_MOTION:
+            if button_map[glfw.MOUSE_BUTTON_2] in event.data["buttons"]:
+                x = np.floor(event.data["x"] - event.data["width"]/2)
+                y = np.floor(event.data["y"] - event.data["height"]/2)
+                
+                if np.abs(x) > np.abs(y):
+                    x =  (x / np.abs(x)) * sensitivity
+                    self.spinCammera(-x, 0)
+                else:
+                    y = (y / np.abs(y)) * sensitivity
+                    self.spinCammera(0, -y)         
 
         self.cammeraUpdate()
