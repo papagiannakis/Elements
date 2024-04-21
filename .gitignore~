@@ -56,9 +56,6 @@ coverage.xml
 *.mo
 *.pot
 
-# Node Editor Configuration
-NodeEditor.json
-
 # Django stuff:
 *.log
 local_settings.py
