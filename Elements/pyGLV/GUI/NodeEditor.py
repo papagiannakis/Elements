@@ -3,7 +3,7 @@ from typing import List
 from dataclasses import dataclass
 from imgui_bundle import (
     imgui as imgui,
-    imgui_node_editor as ed,
+    imgui_node_editor as ed, # type: ignore
 )
 import Elements.extensions.BasicShapes.BasicShapes as bshapes
 
@@ -96,6 +96,9 @@ class NodeEditor:
         else:
             self.nodes.append(node)
 
+    def removeNode(self, node):
+        pass
+    
     def find_parent(self, name):
         for node in self.nodes:
             if name == node.name:
@@ -191,7 +194,7 @@ class NodeEditor:
 
         self.is_first_frame = False
 
-    def entity_window(self):
+    def add_entity_window(self):
         imgui.text("Name: "); imgui.same_line()
         _, self.name = imgui.input_text(' ', self.name)
 
@@ -215,7 +218,7 @@ class NodeEditor:
             self.generate(tmp);
             self.shape = None;
 
-            return tmp;
+            return True;
         
         return False;
         

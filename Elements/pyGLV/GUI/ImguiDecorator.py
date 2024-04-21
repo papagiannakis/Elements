@@ -719,6 +719,12 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.node_editor = ed.NodeEditor()
         self.shape = None;
         
+        self.add_entity = False;
+        self.remove_entity = False;
+
+        self.to_be_removed = None;
+
+
         io = imgui.get_io()
         io.config_flags |= imgui.ConfigFlags_.docking_enable  # Enable docking
         
@@ -729,7 +735,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
         """
         global first_run
-        
+
         if first_run:
             first_run = False;
             self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
@@ -739,11 +745,51 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.node_editor.on_frame()
         imgui.end()
 
-        imgui.begin("Create Entity")        # entity creation window
-        self.node_editor.entity_window()
-        imgui.end()
+        if self.add_entity:
+            _, self.add_entity = imgui.begin("Create Entity",  1)        # entity creation window
+            done = self.node_editor.add_entity_window()
+            if done:
+                self.add_entity = False;
+            imgui.end()
         
         imgui.begin("Scene");               # scene window
+
+        if imgui.begin_main_menu_bar():
+            if imgui.begin_menu("File"):
+                if imgui.begin_menu("Entites"):
+                    _, clicked = imgui.menu_item("Add", "", False)
+                    if clicked:
+                        self.add_entity = True;
+                    if imgui.begin_menu("Remove"):
+                        self.remove_entity = self.show_selectable_entities();
+                        imgui.end_menu();
+                    imgui.end_menu()
+                if imgui.menu_item("Close", "Lal", False):
+                    pass
+                imgui.end_menu()
+            imgui.end_main_menu_bar()
+
+        if self.remove_entity and self.to_be_removed is not None:
+            _, self.remove_entity = imgui.begin("Warning",  1)
+            imgui.text("Are you sure you want to remove " + self.to_be_removed.name + "?");
+            yes = imgui.button("Yes", imgui.ImVec2(40,20)); 
+            imgui.same_line();
+            no = imgui.button("No", imgui.ImVec2(40,20));
+
+            if yes or no:   
+                if yes:
+                    print("delete")
+                    self.wrapeeWindow.scene.world.root.remove(self.to_be_removed);
+
+                if no or not self.remove_entity:
+                    print("no")
+
+                self.to_be_removed = None;
+                print(self.to_be_removed)
+            
+            imgui.end()
+
+        
         self._buffer.drawFramebuffer(self._wireframeMode);
         if self.gizmo.drawCameraGizmo():
             self._eye, self._up, self._target = self.gizmo.decompose_look_at();
@@ -758,7 +804,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         if changed:
             components = self.gizmo.gizmo.decompose_matrix_to_components(trs);
             if self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.translate:
-                self.tra['z'], self.tra['y'], self.tra['x'] = components.translation[0] * 1.8, components.translation[1] * 1.8, components.translation[2] * 1.8;
+                self.tra['z'], self.tra['y'], self.tra['x'] = components.translation[0], components.translation[1], components.translation[2];
             elif self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.rotate:
                 self.rot['z'], self.rot['y'], self.rot['x'] = -components.rotation[0], -components.rotation[1], -components.rotation[2];
             elif self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.scale:
@@ -815,6 +861,10 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
                 imgui.tree_pop()
                 
         imgui.end()
+
+
+    def entityManagement(self):
+        pass
             
     def drawNode(self, component):
         #create a local iterator of Entity's children
@@ -876,6 +926,15 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         process SDL2 basic events and input
         """
         return super().event_input_process()
+    
+    def show_selectable_entities(self):
+        for child in self.wrapeeWindow.scene.world.root._children:
+            _, clicked = imgui.menu_item(child.name, "", False);
+            if clicked:
+                self.to_be_removed = child;
+                return True
+
+        return False
     
     
 

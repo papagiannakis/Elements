@@ -9,7 +9,7 @@ from Elements.pyECSS.Component import Component
 from Elements.pyECSS.Component import BasicTransform
 import Elements.pyECSS.math_utilities as util
 
-from imgui_bundle import imgui, imguizmo, ImVec2
+from imgui_bundle import imgui, imguizmo, ImVec2 # type: ignore
 
 Matrix16 = NDArray[np.float64]
 Matrix6 = NDArray[np.float64]
@@ -80,7 +80,9 @@ class Gizmos:
             )
             
             if manip_result:
+                # objectMatrix = np.array(glm.transpose(manip_result.value), np.float32);
                 objectMatrix = manip_result.value;
+                # print(comp.trs, "\n", objectMatrix)
                 trs_changed = True
             
         return trs_changed, objectMatrix;
@@ -88,8 +90,6 @@ class Gizmos:
     def drawCameraGizmo(self):
         global firstFrame
         changed = False;
-        width = imgui.get_window_size().x;
-        height =  imgui.get_window_size().y;
 
         self.gizmo.set_rect(
             imgui.get_window_pos().x,
