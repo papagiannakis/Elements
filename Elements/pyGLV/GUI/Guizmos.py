@@ -32,6 +32,13 @@ objectMatrix = np.array([
         [0, 0, 0, 1]
     ], np.float32)
 
+idMatrix =  np.array([
+        [1, 0, 0, 0],
+        [0, 1, 0, 0],
+        [0, 0, 1, 0],
+        [0, 0, 0, 1]
+    ], np.float32)
+
 firstFrame = True
 
 
@@ -71,18 +78,24 @@ class Gizmos:
         trs_changed = False;
 
         if comp is not None and isinstance(comp, BasicTransform):
+            pos = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
+            tmp = pos[3][0];
+            pos[3][0] = pos[3][2];
+            pos[3][2] = tmp;
+
             manip_result = self.gizmo.manipulate(
                 self._view,
                 self._projection,
                 self.currentGizmoOperation,
                 self.statics.mCurrentGizmoMode,
+                # pos
                 objectMatrix
             )
-            
+
             if manip_result:
                 # objectMatrix = np.array(glm.transpose(manip_result.value), np.float32);
+                # print(np.array(glm.transpose(comp.trs), np.float32))
                 objectMatrix = manip_result.value;
-                # print(comp.trs, "\n", objectMatrix)
                 trs_changed = True
             
         return trs_changed, objectMatrix;

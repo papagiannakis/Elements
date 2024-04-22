@@ -6,11 +6,13 @@ from imgui_bundle import (
     imgui_node_editor as ed, # type: ignore
 )
 import Elements.extensions.BasicShapes.BasicShapes as bshapes
+from Elements.pyECSS.Entity import Entity
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator
 
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
+update_needed = True;
 
 class IdProvider:
     """A simple utility to obtain unique ids, and to be able to restore them at each frame"""
@@ -83,15 +85,24 @@ class NodeEditor:
         self.nodes = []
         self.name = ""
         self.children = ""
+        self.entities = [];
         self.shape = None;
         self.to_add = None;
+        self.selected_parent = None;
      
     def addNode(self, node = None):
         if node is None:
             tmp = Node(self.name)
-            tmp.parentId = self.nodes[0].id
-            tmp.parent = self.nodes[0]
-            self.links.append(LinkInfo(ed.LinkId(ID.next_id()), tmp.parentPinId, self.nodes[0].childrenPinId))
+            if self.selected_parent is not None:
+                parent = self.find_parent(self.selected_parent.name);
+                if parent:
+                    tmp.parent = parent;
+                    tmp.parentId = parent.id;
+                    self.links.append(LinkInfo(ed.LinkId(ID.next_id()), tmp.parentPinId, parent.childrenPinId))
+            else:
+                tmp.parentId = self.nodes[0].id
+                tmp.parent = self.nodes[0]
+                self.links.append(LinkInfo(ed.LinkId(ID.next_id()), tmp.parentPinId, self.nodes[0].childrenPinId))
             self.nodes.append(tmp)
             self.name = ""
         else:
@@ -220,32 +231,75 @@ class NodeEditor:
         self.is_first_frame = False
 
     def add_entity_window(self):
+        global update_needed
+
+        from Elements.pyGLV.GL.Scene import Scene
+        scene = Scene(); 
+
+        if update_needed:
+            self.update_entities(scene.world.root);
+            update_needed = False;
+
         imgui.text("Name: "); imgui.same_line()
         _, self.name = imgui.input_text(' ', self.name)
 
-        imgui.separator_text("Shape");
-        for shape in shapes.keys():
-            _ ,selected = imgui.selectable(shape, self.shape is not None and self.shape == shape)
-            if selected:
-                self.shape = shape
+        prev_shape = "Select Shape"
+        if self.shape is not None:
+            prev_shape = self.shape
+
+        imgui.text("Shape "); imgui.same_line();
+        if imgui.begin_combo("#S", prev_shape):
+            for shape in shapes.keys():
+                _ ,selected = imgui.selectable(shape, self.shape is not None and self.shape == shape)
+                if selected:
+                    self.shape = shape
+            imgui.end_combo()
+                
+        prev_parent = "Select Parent"
+        if self.selected_parent is not None:
+            prev_parent = self.selected_parent.name;
+
+        imgui.text("Parent"); imgui.same_line();
+        if imgui.begin_combo("#P", prev_parent):
+            for entity in self.entities:
+                _, clicked = imgui.selectable(entity.name, False);
+                if clicked:
+                    self.selected_parent = entity;
+            imgui.end_combo();
 
         if imgui.button("Add"):
-            from Elements.pyGLV.GL.Scene import Scene
-            scene = Scene(); 
-            print(scene.world.root)
+            
             if self.name is "":
-                tmp = shapes[self.shape]();
+                tmp = shapes[self.shape](parent = self.selected_parent);
             else:
-                tmp = shapes[self.shape](self.name);
+                tmp = shapes[self.shape](self.name, parent = self.selected_parent);
             
             self.name = tmp.name;
             self.addNode();
             self.generate(tmp);
             self.shape = None;
+            self.selected_parent = None;
+            update_needed = True;
 
             return True;
         
         return False;
+
+    def update_entities(self, component):
+        self.entities = [];
+        if component._children is not None:
+            debugIterator = iter(component._children)
+            #call print() on all children (Concrete Components or Entities) while there are more children to traverse
+            done_traversing = False
+            while not done_traversing:
+                try:
+                    comp = next(debugIterator)
+                    imgui.indent(10)
+                except StopIteration:
+                    done_traversing = True
+                else:
+                    if isinstance(comp, Entity):
+                        self.entities.append(comp);
         
 
 

@@ -49,7 +49,7 @@ class ObjectCreator():
 
 # Creates a cube with the given name and color
 # Returns the entity that contains the cube
-def CubeSpawn(cubename = "Cube", color = None): 
+def CubeSpawn(cubename = "Cube", color = None, parent = None): 
     global scene;
     cube = ObjectCreator(cubename);
     vertices = [
@@ -92,7 +92,10 @@ def CubeSpawn(cubename = "Cube", color = None):
     vertices, colors, indices, normals = IndexedConverter().Convert(vertices, colors, indices, produceNormals=True);
     cube.SetVertexAttributes(vertices, colors, indices, normals);
 
-    scene.world.addEntityChild(scene.world.root, cube.entity);
+    if parent:
+        scene.world.addEntityChild(parent, cube.entity);
+    else:
+        scene.world.addEntityChild(scene.world.root, cube.entity);
 
     for system in scene.world.systems:
         if isinstance(system, InitGLShaderSystem):
@@ -103,7 +106,7 @@ def CubeSpawn(cubename = "Cube", color = None):
 
 # Creates a sphere with the given name and color
 # Returns the entity that contains the sphere
-def SphereSpawn(spherename = "Sphere", color = None):
+def SphereSpawn(spherename = "Sphere", color = None, parent = None):
     global scene;
     sphere = ObjectCreator(spherename);
     if color is None:
@@ -131,7 +134,10 @@ def SphereSpawn(spherename = "Sphere", color = None):
             indices.append(i * 20 + (j + 1) % 20);
     sphere.SetVertexAttributes(vertices, colors, indices, normals);
 
-    scene.world.addEntityChild(scene.world.root, sphere.entity);
+    if parent:
+        scene.world.addEntityChild(parent, sphere.entity);
+    else:
+        scene.world.addEntityChild(scene.world.root, sphere.entity);
     
     for system in scene.world.systems:
         if isinstance(system, InitGLShaderSystem):
@@ -144,7 +150,7 @@ def SphereSpawn(spherename = "Sphere", color = None):
 # Returns the entity that contains the cylinder
 # The cylinder is oriented along the z axis
 # The cylinder is centered at the origin
-def CylinderSpawn(cylindername = "Cylinder", color = None):
+def CylinderSpawn(cylindername = "Cylinder", color = None, parent = None):
     global scene;
     cylinder = ObjectCreator(cylindername);
     if color is None:
@@ -172,7 +178,10 @@ def CylinderSpawn(cylindername = "Cylinder", color = None):
             indices.append(i * 20 + (j + 1) % 20);
     cylinder.SetVertexAttributes(vertices, colors, indices, normals);
 
-    scene.world.addEntityChild(scene.world.root, cylinder.entity);
+    if parent:
+        scene.world.addEntityChild(parent, cylinder.entity);
+    else:
+        scene.world.addEntityChild(scene.world.root, cylinder.entity);
     
     for system in scene.world.systems:
         if isinstance(system, InitGLShaderSystem):
@@ -185,7 +194,7 @@ def CylinderSpawn(cylindername = "Cylinder", color = None):
 # Returns the entity that contains the cone
 # The cone is oriented along the z axis
 # The cone is centered at the origin
-def ConeSpawn(conename = "Cone", color = None):
+def ConeSpawn(conename = "Cone", color = None, parent = None):
     global scene;
     cone = ObjectCreator(conename);
     if color is None:
@@ -213,7 +222,10 @@ def ConeSpawn(conename = "Cone", color = None):
             indices.append(i * 20 + (j + 1) % 20);
     cone.SetVertexAttributes(vertices, colors, indices, normals);
 
-    scene.world.addEntityChild(scene.world.root, cone.entity);
+    if parent:
+        scene.world.addEntityChild(parent, cone.entity);
+    else:
+        scene.world.addEntityChild(scene.world.root, cone.entity);
     
     for system in scene.world.systems:
         if isinstance(system, InitGLShaderSystem):
@@ -224,7 +236,7 @@ def ConeSpawn(conename = "Cone", color = None):
 
 # Creates a torus with the given name and color
 # Returns the entity that contains the torus
-def TorusSpawn(torusname = "Torus", color = None):
+def TorusSpawn(torusname = "Torus", color = None, parent = None):
     global scene;
     torus = ObjectCreator(torusname);
     if color is None:
@@ -252,7 +264,10 @@ def TorusSpawn(torusname = "Torus", color = None):
             indices.append(i * 20 + (j + 1) % 20);
     torus.SetVertexAttributes(vertices, colors, indices, normals);
 
-    scene.world.addEntityChild(scene.world.root, torus.entity);
+    if parent:
+        scene.world.addEntityChild(parent, torus.entity);
+    else:
+        scene.world.addEntityChild(scene.world.root, torus.entity);
     
     for system in scene.world.systems:
         if isinstance(system, InitGLShaderSystem):
