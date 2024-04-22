@@ -1,11 +1,11 @@
 import wgpu
 import glm
 import numpy as np
-from Elements.pyGLV.GL.wpgu_scene import Scene
+from Elements.pyGLV.GL.wpgu_scene import Scene, DEFAULT_OBJ_BUFFER_DISC
 from Elements.pyGLV.GL.wgpu_shader import BasicShader
 
 
-class Renderer:
+class SimpleRenderer:
     def __init__(self, scene, canvas, device, present_context, render_texture_format): 
         self._scene = scene
         self._canvas = canvas
@@ -52,19 +52,15 @@ class Renderer:
         ), dtype=self._shader._uniformDiscriptor)
 
         objectData = []
-        for obj in self._scene._objects:  
-            obj.transform = np.array( 
-                obj.transform, 
-                dtype=self._shader._objectDiscriptor
-            )
-            objectData.append(obj.transform)  
-
-        self._objectData = np.zeros(len(objectData), dtype=self._shader._objectDiscriptor) 
-        for i in range(len(objectData)):
-            self._objectData[i]["model"] = objectData[i]
-
-        # self._device.queue.write_buffer(self._shader._uniformBuffer, 0, self._uniformData, 0) 
-        # self._device.queue.write_buffer(self._shader._objectBuffer, 0, self._objectData, 0) 
+        for obj in self._scene._objects:   
+            for trs in obj.transforms: 
+                trs = np.array( 
+                    trs, 
+                    dtype=np.float32
+                )
+                objectData.append(trs)     
+                
+        self._objectData = np.asarray(objectData) 
 
         temp_uniform = self._device.create_buffer_with_data(
             data=self._uniformData, usage=wgpu.BufferUsage.COPY_SRC
@@ -133,26 +129,18 @@ class Renderer:
         render_pipeline = self.make_render_pipeline(
             shader=self._shader._shaderContext, 
             groupLayouts=[self._shader._frameGroupLayout, self._shader._materialGourpLayout], 
-            bufferDiscripor=self._scene._objects[0].bufferDiscriptor
+            bufferDiscripor=DEFAULT_OBJ_BUFFER_DISC
         ) 
 
-
-        render_pass.set_pipeline(render_pipeline)  
-
         for obj in self._scene._objects:
+            render_pass.set_pipeline(render_pipeline)  
             render_pass.set_vertex_buffer(slot=0, buffer=obj.vertex_buffer) 
             render_pass.set_vertex_buffer(slot=1, buffer=obj.uvs_buffer) 
             render_pass.set_bind_group(0, self._shader._frameBindingGroup, [], 0, 99) 
             render_pass.set_bind_group(1, obj.material.bindGroup, [], 0, 99)
-            render_pass.draw(len(obj.vertices), 1, 0, objects_drawn) 
+            render_pass.draw(len(obj.vertices), obj.instance_count, 0, objects_drawn) 
         
-            objects_drawn += 1 
-
-        #render_pass.set_vertex_buffer(slot=0, buffer=self._scene._objects[0].vertex_buffer) 
-        #render_pass.set_vertex_buffer(slot=1, buffer=self._scene._objects[0].uvs_buffer) 
-        #render_pass.set_bind_group(0, self._shader._frameBindingGroup, [], 0, 99) 
-        #render_pass.set_bind_group(1, obj.material.bindGroup, [], 0, 99)
-        #render_pass.draw(len(obj.vertices), 1, 0, objects_drawn) 
+            objects_drawn += obj.instance_count
 
         render_pass.end()
         self._device.queue.submit([command_encoder.finish()]) 

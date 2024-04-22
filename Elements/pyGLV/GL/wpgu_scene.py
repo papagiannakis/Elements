@@ -13,6 +13,31 @@ from Elements.pyGLV.GUI import fps_cammera, static_cammera
 
 
 
+DEFAULT_OBJ_BUFFER_DISC = [
+    {
+        "array_stride": 3 * 4,
+        "step_mode": wgpu.VertexStepMode.vertex,
+        "attributes": [
+            {
+                "format": wgpu.VertexFormat.float32x3,
+                "offset": 0,
+                "shader_location": 0,
+            },
+        ],
+    },
+    {
+        "array_stride": 2 * 4,
+        "step_mode": wgpu.VertexStepMode.vertex,
+        "attributes": [
+            {
+                "format": wgpu.VertexFormat.float32x2,
+                "offset": 0,
+                "shader_location": 1,
+            },
+        ],
+    },
+] 
+
 def json_laoder(file):
     try:
         f = open(file, 'r')
@@ -55,16 +80,16 @@ def obj_loader(file_path):
 
 
 class Object:
-    def __init__(self):
+    def __init__(self, instance_count:int=1):
         self.vertices = None
         self.uvs = None
         self.normals = None
 
-        self.transform = glm.mat4x4(1)
+        self.transforms = []
 
-        self.material_info = {}
+        self.material_info = {} 
 
-        self.updateFunc = None
+        self.instance_count = instance_count;
 
     def load_mesh_from_obj(self, file_path):
         self.vertices, self.uvs = obj_loader(file_path=file_path) 
@@ -75,10 +100,13 @@ class Object:
     def load_materila(self, file_path:str):
         self.material_info["file"] = file_path
 
-    def update(self):
+    def onInit(self):
         raise NotImplementedError();
 
-    def _internal_init(self, device:wgpu.GPUDevice, materialBindGroupLayout:wgpu.GPUBindGroupLayout=None):
+    def onUpdate(self):
+        raise NotImplementedError();
+
+    def set_renderer_attributes(self, device:wgpu.GPUDevice, materialBindGroupLayout:wgpu.GPUBindGroupLayout=None):
         vertices = np.array(self.vertices, dtype=np.float32)
         uvs = np.array(self.uvs, dtype=np.float32)
 
@@ -96,35 +124,6 @@ class Object:
         self.uvs_buffer = device.create_buffer_with_data(
             data=uvs, usage=wgpu.BufferUsage.VERTEX
         )
-
-        self.bufferDiscriptor = [
-            {
-                "array_stride": 3 * 4,
-                "step_mode": wgpu.VertexStepMode.vertex,
-                "attributes": [
-                    {
-                        "format": wgpu.VertexFormat.float32x3,
-                        "offset": 0,
-                        "shader_location": 0,
-                    },
-                ],
-            },
-            {
-                "array_stride": 2 * 4,
-                "step_mode": wgpu.VertexStepMode.vertex,
-                "attributes": [
-                    {
-                        "format": wgpu.VertexFormat.float32x2,
-                        "offset": 0,
-                        "shader_location": 1,
-                    },
-                ],
-            },
-        ]
-
-
-
-
 
 class Scene():
     """
@@ -154,14 +153,17 @@ class Scene():
         self._objects.append(obj)
 
     def init(self, device:wgpu.GPUDevice, materialBindGroupLayout:wgpu.GPUBindGroupLayout=None):
+        for obj in self._objects: 
+            obj.onInit() 
+
         for obj in self._objects:
-            obj._internal_init(device=device, materialBindGroupLayout=materialBindGroupLayout)
+            obj.set_renderer_attributes(device=device, materialBindGroupLayout=materialBindGroupLayout)
 
     def update(self, canvas, event):
         self._cammera.update(canvas=canvas, event=event)
 
         for obj in self._objects:
-            obj.update()
+            obj.onUpdate()
 
 
 if __name__ == "__main__":
