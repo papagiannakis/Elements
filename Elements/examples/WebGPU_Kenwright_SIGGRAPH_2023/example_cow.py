@@ -41,39 +41,58 @@ present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)   
 
-class newObj(Object): 
-    def __init__(self, instasnce_count):
-        super().__init__(instasnce_count) 
+class talble(Object): 
+    def __init__(self, *args, instance_count, **kwards):
+        super(*args).__init__(*args, **kwards) 
+        self.instance_count = instance_count
         self.load_mesh_from_obj(definitions.MODEL_DIR / "ToolsTable" / "ToolsTable.obj")
         self.load_materila(definitions.MODEL_DIR / "ToolsTable" / "Cloth-TOOLtable_LOW_Material__126_Albedo.png")
 
     def onInit(self): 
         for i in range(1, self.instance_count):
-            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 20), randint(0, 20), randint(0, 20)))))
+            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40)))))
 
     def onUpdate(self): 
         return;
 
 
-class oldObj(Object): 
-    def __init__(self, instasnce_count):
-        super().__init__(instasnce_count) 
+class tray(Object): 
+    def __init__(self, *args, instance_count, **kwards):
+        super().__init__(*args, **kwards) 
+        self.instance_count = instance_count
         self.load_mesh_from_obj(definitions.MODEL_DIR / "Tray" / "Tray.obj")
         self.load_materila(definitions.MODEL_DIR / "Tray" / "TrayTexture.png")
     
     def onInit(self): 
-        print(self.instance_count) 
         for i in range(1, self.instance_count):
-            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 20), randint(0, 20), randint(0, 20)))))
+            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40)))))
+
+    def onUpdate(self): 
+        return; 
+
+
+class implants(Object): 
+    def __init__(self, *args, instance_count, **kwards):
+        super().__init__(*args, **kwards)  
+        self.instance_count = instance_count
+        self.load_mesh_from_obj(definitions.MODEL_DIR / "ImplantsTable" / "ImplantsTable.obj")
+        self.load_materila(definitions.MODEL_DIR / "ImplantsTable" / "table_with_implants_01_Material__3_Albedo.png")
+    
+    def onInit(self): 
+        for i in range(1, self.instance_count):
+            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40)))))
 
     def onUpdate(self): 
         return;
 
+
 scene = Scene()
-obj1 = newObj(500); 
-obj2 = oldObj(500);
+obj1 = talble(instance_count=250); 
+obj2 = tray(instance_count=250);
+obj3 = implants(instance_count=250)
 scene.append_object(obj1)   
 scene.append_object(obj2)
+scene.append_object(obj3)
 
 cam = cammera([-5, 0, 2.5], 0, 0)
 scene.set_cammera(cam=cam)
@@ -89,8 +108,8 @@ renderer = SimpleRenderer(
 renderer.init()
 
 def draw_frame(): 
-    renderer.render()
-    pass; 
+    renderer.render() 
+    canvas.request_draw()
 
 canvas.request_draw(draw_frame)
 

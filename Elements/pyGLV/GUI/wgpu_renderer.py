@@ -59,7 +59,7 @@ class SimpleRenderer:
                     dtype=np.float32
                 )
                 objectData.append(trs)     
-                
+
         self._objectData = np.asarray(objectData) 
 
         temp_uniform = self._device.create_buffer_with_data(
@@ -144,8 +144,6 @@ class SimpleRenderer:
 
         render_pass.end()
         self._device.queue.submit([command_encoder.finish()]) 
-
-        self._canvas.request_draw()
 
 
     def make_render_pipeline(self, shader, groupLayouts, bufferDiscripor):
