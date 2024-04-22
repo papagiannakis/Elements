@@ -62,7 +62,6 @@ class oldObj(Object):
         self.load_materila(definitions.MODEL_DIR / "Tray" / "TrayTexture.png")
     
     def onInit(self): 
-        print(self.instance_count) 
         for i in range(1, self.instance_count):
             self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 20), randint(0, 20), randint(0, 20)))))
 
