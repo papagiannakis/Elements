@@ -24,6 +24,7 @@ import Elements.pyECSS.Event
 from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 from Elements.pyECSS.Component import BasicTransform
 from Elements.pyGLV.GL.Shader import ShaderGLDecorator
+from Elements.pyGLV.GL.Shader import RenderGLShaderSystem
 import Elements.pyECSS.math_utilities as util
 
 class ECSSManager():
@@ -307,7 +308,10 @@ class ECSSManager():
         :param iterator: [description]
         :type iterator: Iterator
         """
-        self._buffer.bindFramebuffer();
+
+        if isinstance(system, RenderGLShaderSystem):
+            self._buffer.bindFramebuffer();
+        
         iterator = None
         try:
             if dfs:
@@ -335,7 +339,8 @@ class ECSSManager():
 
             toc1 = time.perf_counter()
 
-        self._buffer.unbindFramebuffer();
+        if isinstance(system, RenderGLShaderSystem):
+            self._buffer.unbindFramebuffer();
 
 
     def print(self):

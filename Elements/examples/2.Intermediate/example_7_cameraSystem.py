@@ -198,7 +198,7 @@ def main(imguiFlag = False):
     
     # MAIN RENDERING LOOP
     running = True
-    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator2)
+    scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = IMGUIecssDecorator_Georgiou)
 
     #imGUIecss = scene.gContext
 
