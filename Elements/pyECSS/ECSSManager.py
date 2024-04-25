@@ -271,11 +271,11 @@ class ECSSManager():
                         model = trans.l2world;
                         mvp = projMat @ view @ model;
                         shaderDec.setUniformVariable(key='modelViewProj', value=mvp, mat4=True)
+                        shaderDec.setUniformVariable(key='model', value=model, mat4=True)
+                        shaderDec.setUniformVariable(key='View', value=view, mat4=True)
+                        shaderDec.setUniformVariable(key='Proj', value=projMat, mat4=True)
 
                         if Phong:
-                            shaderDec.setUniformVariable(key='model', value=model, mat4=True)
-                            shaderDec.setUniformVariable(key='View', value=view, mat4=True)
-                            shaderDec.setUniformVariable(key='Proj', value=projMat, mat4=True)
                             shaderDec.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
                             shaderDec.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
                             shaderDec.setUniformVariable(key='viewPos',value=LviewPos,float3=True)

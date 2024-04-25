@@ -257,11 +257,12 @@ def main(imguiFlag = False):
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
+        # scene.world.update_entity_values(scene.world.root, winWidth, winHeight);
         home1.getChild(1).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(1).trans.l2cam, mat4=True);
         home1.getChild(2).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(2).trans.l2cam, mat4=True);
         home1.getChild(1).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
 
-        terrain_shader.setUniformVariable(key='modelViewProj', value=terrain_trans.l2cam, mat4=True);  
+        # terrain_shader.setUniformVariable(key='modelViewProj', value=terrain_trans.l2cam, mat4=True);  
         
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()

@@ -223,13 +223,14 @@ while running:
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
 
-    view =  gWindow._myCamera # updates view via the imgui
-    mvp_cube = projMat @ view @ model_cube
-    mvp_terrain = projMat @ view @ model_terrain
-    mvp_axes = projMat @ view @ model_axes
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
+    scene.world.update_entity_values(scene.world.root, winWidth, winHeight);
+    # view =  gWindow._myCamera # updates view via the imgui
+    # mvp_cube = projMat @ view @ model_cube
+    # mvp_terrain = projMat @ view @ model_terrain
+    # mvp_axes = projMat @ view @ model_axes
+    # axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+    # shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
     scene.render_post()
     
 scene.shutdown()

@@ -201,15 +201,16 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     
-    view =  gWindow._myCamera # updates view via the imgui
-    mvp_terrain = projMat @ view @ terrain_trans.l2world
-    mvp_axes = projMat @ view @ axes_trans.l2world
-    model_cube = trans4.l2world
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
-    shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
-    shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
-    shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    scene.world.update_entity_values(scene.world.root, winWidth, winHeight);
+    # view =  gWindow._myCamera # updates view via the imgui
+    # mvp_terrain = projMat @ view @ terrain_trans.l2world
+    # mvp_axes = projMat @ view @ axes_trans.l2world
+    # model_cube = trans4.l2world
+    # axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+    # shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
+    # shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
+    # shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
     scene.render_post()
     
 scene.shutdown()

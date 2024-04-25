@@ -8,7 +8,7 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIecssDecorator2
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIecssDecorator2, IMGUIecssDecorator_Georgiou
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -164,7 +164,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator=ImGUIecssDecorator2)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator=IMGUIecssDecorator_Georgiou)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -204,24 +204,28 @@ while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    view =  gWindow._myCamera # updates view via the imgui
 
-    mvp_object = projMat @ view @ trans4.l2world
-    mvp_terrain = projMat @ view @ terrain_trans.l2world
-    mvp_axes = projMat @ view @ axes_trans.l2world
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+    scene.world.update_entity_values(scene.world.root, winWidth, winHeight, True,
+                                     Lambientcolor, Lambientstr, LviewPos, Lposition,
+                                     Lcolor, Lintensity, Mshininess, Mcolor);
+    # view =  gWindow._myCamera # updates view via the imgui
 
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_object, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=trans4.l2world,mat4=True)
-    shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
-    shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
-    shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
-    shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-    shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
-    shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
-    shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+    # mvp_object = projMat @ view @ trans4.l2world
+    # mvp_terrain = projMat @ view @ terrain_trans.l2world
+    # mvp_axes = projMat @ view @ axes_trans.l2world
+    # axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+
+    # shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_object, mat4=True)
+    # shaderDec4.setUniformVariable(key='model',value=trans4.l2world,mat4=True)
+    # shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+    # shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+    # shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+    # shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+    # shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+    # shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+    # shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+    # shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
 
     scene.world.traverse_visit(renderUpdate, scene.world.root)

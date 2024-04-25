@@ -8,7 +8,7 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, IMGUIecssDecorator_Georgiou
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -172,7 +172,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = 1200, windowHeight = 800, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator)
+scene.init(imgui=True, windowWidth = 1200, windowHeight = 800, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator = IMGUIecssDecorator_Georgiou)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -218,27 +218,31 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
-    view =  gWindow._myCamera # updates view via the imgui
-    # mvp_cube = projMat @ view @ model_cube
-    windowaspect = scene.renderWindow._windowWidth/scene.renderWindow._windowHeight
-    # print("windowaspect : ", windowaspect)
-    projMat = util.perspective(50.0, windowaspect, 0.01, 100.0) 
-    mvp_cube = projMat @ view @ trans4.trs
-    mvp_terrain = projMat @ view @ terrain_trans.trs
-    mvp_axes = projMat @ view @ axes_trans.trs
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
-    shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
-    shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
-    shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
-    shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-    shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
-    shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
-    shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+    scene.world.update_entity_values(scene.world.root, 1200, 800, True,
+                                     Lambientcolor, Lambientstr, LviewPos, Lposition,
+                                     Lcolor, Lintensity, Mshininess, Mcolor);
+    # view =  gWindow._myCamera # updates view via the imgui
+    # # mvp_cube = projMat @ view @ model_cube
+    # windowaspect = scene.renderWindow._windowWidth/scene.renderWindow._windowHeight
+    # # print("windowaspect : ", windowaspect)
+    # projMat = util.perspective(50.0, windowaspect, 0.01, 100.0) 
+    # mvp_cube = projMat @ view @ trans4.trs
+    # mvp_terrain = projMat @ view @ terrain_trans.trs
+    # mvp_axes = projMat @ view @ axes_trans.trs
+    # axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+
+    # shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
+    # shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
+    # shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+    # shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+    # shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+    # shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+    # shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+    # shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+    # shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+    # shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
 
     scene.render_post()
