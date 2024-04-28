@@ -9,8 +9,6 @@ import Elements.extensions.BasicShapes.BasicShapes as bshapes
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GUI.Viewer import RenderWindow
 
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator
-
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
 update_needed = True;
@@ -107,7 +105,7 @@ class NodeEditor:
         if node is None:
             tmp = Node(self.name)
             if self.selected_parent is not None:
-                parent = self.find_parent(self.selected_parent.name);
+                parent = self.findNodeByName(self.selected_parent.name);
                 if parent:
                     tmp.parent = parent;
                     tmp.parentId = parent.id;
@@ -360,7 +358,7 @@ class NodeEditor:
 
 
         ed.set_current_editor(self.editor_context); 
-        ed.begin("My Editor", imgui.ImVec2(0.0, 0.0))
+        ed.begin("ECSS Node Editor", imgui.ImVec2(0.0, 0.0))
 
         self.display_nodes()
         
