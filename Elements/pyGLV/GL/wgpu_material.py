@@ -1,60 +1,71 @@
+
 import wgpu
-from PIL import Image
+from Elements.pyGLV.GL.wgpu_shader import Shader
+from Elements.pyGLV.GL.wgpu_uniform_groups import UniformGroup
 
+class Material:
+    def __init__(self, tag:str, shader:any): 
+        self.tag = tag 
+        self.shader = shader
+        self.shader.attachedMaterial = self  
+        self.uniformGroups = {} 
+        self.shader.init()  
 
-class wgpu_material:
-    def __init__(self, device:wgpu.GPUDevice=None, filepath:str=None, bindGroupLayout:wgpu.GPUBindGroupLayout=None):
+        self.pipelineLayout = None 
+        self.pipeline = None
+
+    def makePipelineLayout(self, device:wgpu.GPUDevice):
+        layouts = []
+        for key, value in self.uniformGroups.items():
+            layouts.append(value.bindGroupLayout) 
+
+        self.pipelineLayout = device.create_pipeline_layout(
+            bind_group_layouts=layouts
+        ) 
+
+    def makePipeline(self, device:wgpu.GPUDevice, renderTextureFormat):
+        self.makePipelineLayout(device=device) 
+        self.pipeline = device.create_render_pipeline(
+            layout=self.pipelineLayout,
+            vertex={
+                "module": self.shader.getShader(),
+                "entry_point": "vs_main", 
+                "buffers": self.shader.getVertexBufferLayout(),
+            },
+            primitive={
+                "topology": wgpu.PrimitiveTopology.triangle_list,
+                "front_face": wgpu.FrontFace.ccw,
+                "cull_mode": wgpu.CullMode.none,
+            },
+            depth_stencil={
+                "format": wgpu.TextureFormat.depth24plus,
+                "depth_write_enabled": True,
+                "depth_compare": wgpu.CompareFunction.less,
+            },
+            multisample=None,
+            fragment={
+                "module": self.shader.getShader(),
+                "entry_point": "fs_main",
+                "targets": [
+                    {
+                        "format": renderTextureFormat,
+                        "blend": {
+                            "alpha": (
+                                wgpu.BlendFactor.one,
+                                wgpu.BlendFactor.zero,
+                                wgpu.BlendOperation.add,
+                            ),
+                            "color": (
+                                wgpu.BlendFactor.one,
+                                wgpu.BlendFactor.zero,
+                                wgpu.BlendOperation.add,
+                            ),
+                        },
+                    }
+                ],
+            },
+        )
+
+        return self.pipeline
+
         
-        self.loadTextureToGpu(device=device, filepath=filepath)
-
-        self.view = self.context.create_view()
-        self.sampler = device.create_sampler()
-
-        self.bindGroup = device.create_bind_group(
-            layout=bindGroupLayout,
-            entries=[
-                {
-                    "binding": 0,
-                    "resource": self.view
-                },
-                {
-                    "binding": 1,
-                    "resource": self.sampler
-                }
-            ]
-        )
-
-
-    def loadTextureToGpu(self, device:wgpu.GPUDevice, filepath:str):
-        if filepath is not None:
-            img = Image.open(filepath)
-            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
-
-        self.data = img_bytes;
-        self.width = int(img.width) # Width
-        self.height = int(img.height) # Height 
-        self.size = [self.width, self.height, 1]
-
-        self.context = device.create_texture(
-            size=self.size,
-            usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
-            dimension=wgpu.TextureDimension.d2,
-            format=wgpu.TextureFormat.rgba8unorm,
-            mip_level_count=1,
-            sample_count=1,
-        )
-
-        device.queue.write_texture(
-            {
-                "texture": self.context,
-                "mip_level": 0,
-                "origin": (0, 0, 0)
-            },
-            self.data,
-            {
-                "offset": 0,
-                "bytes_per_row": self.width * 4,
-                "rows_per_image": self.height
-            },
-            self.size
-        )

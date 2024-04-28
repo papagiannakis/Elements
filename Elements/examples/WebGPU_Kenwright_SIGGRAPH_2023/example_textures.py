@@ -13,7 +13,7 @@ from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.fps_cammera import cammera  
-from Elements.pyGLV.GL.wgpu_material import wgpu_material
+from Elements.pyGLV.GL.wgpu_material import ImprotTexture
 import Elements.pyECSS.math_utilities as util  
 
 from Elements.definitions import TEXTURE_DIR
@@ -122,7 +122,7 @@ index_buffer = device.create_buffer_with_data(
 )  
 
 texturePath = TEXTURE_DIR / "Texture_Grass.png"
-texture = wgpu_material(device=device, filepath=texturePath)
+texture = ImprotTexture(device=device, filepath=texturePath)
 
 sampler = device.create_sampler()
 

@@ -13,7 +13,7 @@ from Elements.pyECSS.Event import EventManager
 from Elements.pyGLV.GUI.windowEvents import EventTypes 
 from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.static_cammera import cammera  
-from Elements.pyGLV.GL.wgpu_material import wgpu_material
+from Elements.pyGLV.GL.wgpu_material import ImprotTexture
 import Elements.pyECSS.math_utilities as util  
 
 from Elements.definitions import TEXTURE_DIR
@@ -212,8 +212,8 @@ index_buffer = device.create_buffer_with_data(
 
 texturePath0 = TEXTURE_DIR / "crateA-decal.jpg" 
 texturePath1 = TEXTURE_DIR / "crateA-normal.jpg"
-texture0 = wgpu_material(device=device, filepath=texturePath0)
-texture1 = wgpu_material(device=device, filepath=texturePath1)
+texture0 = ImprotTexture(device=device, filepath=texturePath0)
+texture1 = ImprotTexture(device=device, filepath=texturePath1)
 
 sampler = device.create_sampler()
 

@@ -15,7 +15,7 @@ from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.static_cammera import cammera 
 import Elements.pyECSS.math_utilities as util 
 from Elements.definitions import TEXTURE_DIR
-from Elements.pyGLV.GL.wgpu_material import wgpu_material 
+from Elements.pyGLV.GL.wgpu_material import ImprotTexture 
 import Elements.utils.normals as norm
 
 # Create a canvas to render to

@@ -1,28 +1,22 @@
-import time 
-
-import glm  
 from random import random, randint
-
-import wgpu    
+import wgpu   
+import glm 
 import numpy as np   
-import glfw
 import Elements.definitions as definitions
 
-from Elements.pyGLV.GUI.Viewer import GLFWWindow, RenderDecorator
-from Elements.pyGLV.GL.Shader import ShaderLoader  
-from Elements.pyECSS.Event import EventManager
-from Elements.pyGLV.GUI.windowEvents import EventTypes 
+from Elements.pyGLV.GUI.Viewer import GLFWWindow 
 from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.fps_cammera import cammera
-from Elements.pyGLV.GL.wgpu_meshes import  obj_loader
 import Elements.pyECSS.math_utilities as util 
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
-from Elements.pyGLV.GL.wgpu_material import wgpu_material 
+from Elements.pyGLV.GL.wgpu_texture import ImprotTexture 
 import Elements.utils.normals as norm
-from Elements.utils.obj_to_mesh import obj_to_mesh 
 
-from Elements.pyGLV.GL.wpgu_scene import Scene, Object
+from Elements.pyGLV.GL.wpgu_scene import Scene 
+from Elements.pyGLV.GL.wgpu_material import Material
+from Elements.pyGLV.GL.wgpu_object import Object, import_mesh
 from Elements.pyGLV.GUI.wgpu_renderer import SimpleRenderer
+from Elements.pyGLV.GL.Shader.wgpu_SimpleShader import SimpleShader
 
 
 canvas = GLFWWindow(windowHeight=1050, windowWidth=1600, wgpu=True, windowTitle="Wgpu Example")
@@ -45,56 +39,39 @@ class talble(Object):
     def __init__(self, *args, instance_count, **kwards):
         super(*args).__init__(*args, **kwards) 
         self.instance_count = instance_count
-        self.load_mesh_from_obj(definitions.MODEL_DIR / "ToolsTable" / "ToolsTable.obj")
-        self.load_materila(definitions.MODEL_DIR / "ToolsTable" / "Cloth-TOOLtable_LOW_Material__126_Albedo.png")
+        # self.load_mesh_from_obj(definitions.MODEL_DIR / "ToolsTable" / "ToolsTable.obj")
+        # self.load_materila(definitions.MODEL_DIR / "ToolsTable" / "Cloth-TOOLtable_LOW_Material__126_Albedo.png")
 
-    def onInit(self): 
-        for i in range(1, self.instance_count):
-            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40)))))
+    def onInit(self):  
+        self.attachedMaterial = Material(tag="simple", shader=SimpleShader(device=device))
+        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "ToolsTable" / "Cloth-TOOLtable_LOW_Material__126_Albedo.png")
+        texture.make(device=device)
+        self.attachedMaterial.shader.setTexture(value=texture)  
 
-    def onUpdate(self): 
-        return;
+        # for i in range(0, self.instance_count - 1):
+        self.transforms.append( 
+            np.array(
+                glm.transpose(
+                    glm.translate(
+                        # glm.mat4x4(1), glm.vec3(randint(0, 3), randint(0, 3), randint(0, 3))
+                        glm.mat4x4(1), glm.vec3(0, 0, 0)
+                    )
+                ),
+                dtype=np.float32
+            )
+        ) 
 
-
-class tray(Object): 
-    def __init__(self, *args, instance_count, **kwards):
-        super().__init__(*args, **kwards) 
-        self.instance_count = instance_count
-        self.load_mesh_from_obj(definitions.MODEL_DIR / "Tray" / "Tray.obj")
-        self.load_materila(definitions.MODEL_DIR / "Tray" / "TrayTexture.png")
-    
-    def onInit(self): 
-        for i in range(1, self.instance_count):
-            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40)))))
-
-    def onUpdate(self): 
-        return; 
-
-
-class implants(Object): 
-    def __init__(self, *args, instance_count, **kwards):
-        super().__init__(*args, **kwards)  
-        self.instance_count = instance_count
-        self.load_mesh_from_obj(definitions.MODEL_DIR / "ImplantsTable" / "ImplantsTable.obj")
-        self.load_materila(definitions.MODEL_DIR / "ImplantsTable" / "table_with_implants_01_Material__3_Albedo.png")
-    
-    def onInit(self): 
-        for i in range(1, self.instance_count):
-            self.transforms.append(glm.transpose(glm.translate(glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40)))))
+        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "ToolsTable" / "ToolsTable.obj") 
 
     def onUpdate(self): 
         return;
 
 
 scene = Scene()
-obj1 = talble(instance_count=250); 
-obj2 = tray(instance_count=250);
-obj3 = implants(instance_count=250)
+obj1 = talble(instance_count=1); 
 scene.append_object(obj1)   
-scene.append_object(obj2)
-scene.append_object(obj3)
 
-cam = cammera([-5, 0, 2.5], 0, 0)
+cam = cammera([-5, 0, 10], 5, 0)
 scene.set_cammera(cam=cam)
 
 renderer = SimpleRenderer(

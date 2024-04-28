@@ -1,9 +1,6 @@
 import wgpu
 import glm
 import numpy as np
-from Elements.pyGLV.GL.wpgu_scene import Scene, DEFAULT_OBJ_BUFFER_DISC
-from Elements.pyGLV.GL.wgpu_shader import BasicShader
-
 
 class SimpleRenderer:
     def __init__(self, scene, canvas, device, present_context, render_texture_format): 
@@ -12,31 +9,13 @@ class SimpleRenderer:
         self._device = device
         self._present_context = present_context
         self._render_texture_format = render_texture_format 
-        self._shader = BasicShader(device)
-
-        self._uniformData = None
-        self._objectData = None
-
-        self._view = None
-        self._proj = None
-
 
     def init(self):
-        self._shader.init()
-        self._scene.init(device=self._device, materialBindGroupLayout=self._shader._materialGourpLayout)
+        self._scene.init(device=self._device)
 
-        self._view = self._scene._cammera.view;
-
-        ratio = self._canvas._windowWidth  / self._canvas._windowHeight
-        near = 0.001
-        far = 1000.0 
-        self._proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
-
-        self._uniformData = np.array((
-            np.array(self._proj),
-            np.array(self._view),
-        ), dtype=self._shader._uniformDiscriptor)
-
+        for obj in self._scene._objects:
+            for key, uniformGroup in obj.attachedMaterial.uniformGroups.items():
+                    uniformGroup.makeBindGroup(device=self._device)
 
     def render(self):
         self._view = self._scene._cammera.view;
@@ -44,38 +23,13 @@ class SimpleRenderer:
         ratio = self._canvas._windowWidth  / self._canvas._windowHeight
         near = 0.001
         far = 1000.0 
-        self._proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
+        self._proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far)) 
+        
+        for obj in self._scene._objects:
+            obj.attachedMaterial.shader.setProj(data=self._proj)
+            obj.attachedMaterial.shader.setView(data=self._view)
+            obj.attachedMaterial.shader.setModel(data=np.asarray(obj.transforms, dtype=np.float32))
 
-        self._uniformData = np.array((
-            np.array(self._proj),
-            np.array(self._view),
-        ), dtype=self._shader._uniformDiscriptor)
-
-        objectData = []
-        for obj in self._scene._objects:   
-            for trs in obj.transforms: 
-                trs = np.array( 
-                    trs, 
-                    dtype=np.float32
-                )
-                objectData.append(trs)     
-
-        self._objectData = np.asarray(objectData) 
-
-        temp_uniform = self._device.create_buffer_with_data(
-            data=self._uniformData, usage=wgpu.BufferUsage.COPY_SRC
-        ) 
-        temp_obj = self._device.create_buffer_with_data(
-            data=self._objectData, usage=wgpu.BufferUsage.COPY_SRC
-        )
-
-        command_encoder = self._device.create_command_encoder() 
-        command_encoder.copy_buffer_to_buffer(
-            temp_uniform, 0, self._shader._uniformBuffer, 0, self._uniformData.nbytes
-        ) 
-        command_encoder.copy_buffer_to_buffer(
-            temp_obj, 0, self._shader._objectBuffer, 0, self._objectData.nbytes
-        ) 
         texture = self._present_context.get_current_texture(); 
         textureWidth = texture.width; 
         textureHeight = texture.height; 
@@ -101,6 +55,10 @@ class SimpleRenderer:
             array_layer_count=1,
         )
 
+        command_encoder = self._device.create_command_encoder() 
+        for obj in self._scene._objects:
+            obj.attachedMaterial.shader.update(command_encoder=command_encoder)  
+
         current_texture_view = texture.create_view()
         render_pass = command_encoder.begin_render_pass( 
             color_attachments=[
@@ -125,83 +83,23 @@ class SimpleRenderer:
                 },
         )
 
-        objects_drawn = 0;  
-        render_pipeline = self.make_render_pipeline(
-            shader=self._shader._shaderContext, 
-            groupLayouts=[self._shader._frameGroupLayout, self._shader._materialGourpLayout], 
-            bufferDiscripor=DEFAULT_OBJ_BUFFER_DISC
-        ) 
+        # render_pipeline = self.make_render_pipeline(
+        #     shader=self._shader._shaderContext, 
+        #     groupLayouts=[self._shader._frameGroupLayout, self._shader._materialGourpLayout], 
+        #     bufferDiscripor=DEFAULT_OBJ_BUFFER_DISC
+        # ) 
 
-        for obj in self._scene._objects:
+        for obj in self._scene._objects: 
+            render_pipeline = obj.attachedMaterial.makePipeline(device=self._device, renderTextureFormat=self._render_texture_format)
+
             render_pass.set_pipeline(render_pipeline)  
-            render_pass.set_vertex_buffer(slot=0, buffer=obj.vertex_buffer) 
-            render_pass.set_vertex_buffer(slot=1, buffer=obj.uvs_buffer) 
-            render_pass.set_bind_group(0, self._shader._frameBindingGroup, [], 0, 99) 
-            render_pass.set_bind_group(1, obj.material.bindGroup, [], 0, 99)
-            render_pass.draw(len(obj.vertices), obj.instance_count, 0, objects_drawn) 
-        
-            objects_drawn += obj.instance_count
+            render_pass.set_index_buffer(obj.mesh.bufferMap["indices"], wgpu.IndexFormat.uint32)
+            render_pass.set_vertex_buffer(slot=0, buffer=obj.mesh.bufferMap["vertices"]) 
+            render_pass.set_vertex_buffer(slot=1, buffer=obj.mesh.bufferMap["uvs"]) 
+            render_pass.set_bind_group(0, obj.attachedMaterial.uniformGroups["frameGroup"].bindGroup, [], 0, 99) 
+            render_pass.set_bind_group(1, obj.attachedMaterial.uniformGroups["materialGroup"].bindGroup, [], 0, 99)
+            render_pass.draw_indexed(obj.mesh.numIndices, 1, 0, 0, 0) 
 
         render_pass.end()
         self._device.queue.submit([command_encoder.finish()]) 
 
-
-    def make_render_pipeline(self, shader, groupLayouts, bufferDiscripor):
-        pipeline_layout = self._device.create_pipeline_layout(bind_group_layouts=groupLayouts)
-        return self._device.create_render_pipeline(
-        layout=pipeline_layout,
-        vertex={
-            "module": shader,
-            "entry_point": "vs_main", 
-            "buffers": bufferDiscripor,
-        },
-        primitive={
-            "topology": wgpu.PrimitiveTopology.triangle_list,
-            "front_face": wgpu.FrontFace.ccw,
-            "cull_mode": wgpu.CullMode.none,
-        },
-        depth_stencil={
-                "format": wgpu.TextureFormat.depth24plus,
-                "depth_write_enabled": True,
-                "depth_compare": wgpu.CompareFunction.less,
-                "stencil_front": {
-                    "compare": wgpu.CompareFunction.always,
-                    "fail_op": wgpu.StencilOperation.keep,
-                    "depth_fail_op": wgpu.StencilOperation.keep,
-                    "pass_op": wgpu.StencilOperation.keep,
-                },
-                "stencil_back": {
-                    "compare": wgpu.CompareFunction.always,
-                    "fail_op": wgpu.StencilOperation.keep,
-                    "depth_fail_op": wgpu.StencilOperation.keep,
-                    "pass_op": wgpu.StencilOperation.keep,
-                },
-                "stencil_read_mask": 0,
-                "stencil_write_mask": 0,
-                "depth_bias": 0,
-                "depth_bias_slope_scale": 0.0,
-                "depth_bias_clamp": 0.0,
-            },
-        multisample=None,
-        fragment={
-            "module": shader,
-            "entry_point": "fs_main",
-            "targets": [
-                {
-                    "format": self._render_texture_format,
-                    "blend": {
-                        "alpha": (
-                            wgpu.BlendFactor.one,
-                            wgpu.BlendFactor.zero,
-                            wgpu.BlendOperation.add,
-                        ),
-                        "color": (
-                            wgpu.BlendFactor.one,
-                            wgpu.BlendFactor.zero,
-                            wgpu.BlendOperation.add,
-                        ),
-                    },
-                }
-            ],
-        },
-    )
