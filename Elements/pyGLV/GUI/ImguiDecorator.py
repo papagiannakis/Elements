@@ -716,7 +716,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         self.cameraView = None;
         self.gizmo = Gizmos(self._imguiContext);
 
-        self.node_editor = ed.NodeEditor()
+        self.node_editor = ed.NodeEditor(self.wrapeeWindow);
         self.shape = None;
         
         self.add_entity = False;
@@ -778,12 +778,8 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
 
             if yes or no:   
                 if yes:
-                    print("delete")
                     self.wrapeeWindow.scene.world.root.remove(self.to_be_removed);
                     self.node_editor.remove(self.to_be_removed);
-
-                if no or not self.remove_entity:
-                    print("no")
 
                 self.to_be_removed = None;
                 print(self.to_be_removed)

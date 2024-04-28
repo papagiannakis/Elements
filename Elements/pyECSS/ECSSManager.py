@@ -232,11 +232,87 @@ class ECSSManager():
             if entity_parent not in self._entities_components:
                 self._entities_components[entity_parent] = [];
             self._entities_components[entity_parent].append(entity_child);
+    
+    def changeEntityParent(self, entity_child: Entity, entity_parent:Entity ):
+        """
+        Changes the parent of the entity given as a parameter,
+        and uses the other entity from parameters as the new parent
+
+        :param entity_parent: [description]
+        :type entity_parent: Entity
+        :param entity_child: [description]
+        :type entity_child: Entity
+        """
+
+        if entity_parent is None or entity_child is None:
+            return False;
+
+        if isinstance(entity_parent, Entity) and isinstance(entity_child, Entity):
+            if entity_child.getParent() is not entity_parent:
+                entity_child.parent.remove(entity_child);
+                entity_parent.add(entity_child);
+                return True;
+                    
+        return False;
+                
+    def getEntityByName(self, name: str):
+        """
+        Returns the entity that goes by the given name, if not found it returns None
+
+        :param name: [description] 
+        :type name: str
+        """
+        for entity in self.entities:
+            if entity.name is name:
+                return entity;
+        return None;
+
+    def getComponentByName(self, name:str):
+        """
+        Returns the component that goes by the given name, if not found it returns None
+
+        :param name: [description] 
+        :type name: str
+        """
+        for comp in self.components:
+            if comp.name is name:
+                return comp;
+        return None;
 
     def update_entity_values(self, entity, winWidth, winHeight, Phong = False,
                              Lambientcolor = None, Lambientstr = None, LviewPos = None,
                              Lposition = None, Lcolor = None, Lintensity = None,
                              Mshininess = None, Mcolor = None):
+        
+        """
+        Updates the values needed for the display of the entities.
+
+        :param entity: [description]
+        :type entity: Entity
+        :param winWidth: [description]
+        :type winWidth: Integer
+        :param winHeight: [description]
+        :type winHeight: Integer
+        :param Phong: [description]
+        :type Phong: Boolean
+        :param Lambientcolor: [description]
+        :type Lambientcolor: Array of Float
+        :param Lambientstr: [description]
+        :type Lambientstr: Float
+        :param LviewPos: [description]
+        :type LviewPos: Array of Float
+        :param Lposition: [description]
+        :type Lposition: Array of Float
+        :param Lcolor: [description]
+        :type Lcolor: Array of Float
+        :param Lintensity: [description]
+        :type Lintensity: Float
+        :param Mshininess: [description]
+        :type Mshininess: Float
+        :param Mcolor: [description]
+        :type Mcolor:
+        """
+
         from Elements.pyGLV.GL.Scene import Scene
         scene = Scene();
         view = scene.renderWindow._myCamera;
