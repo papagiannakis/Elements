@@ -13,10 +13,6 @@ class SimpleRenderer:
     def init(self):
         self._scene.init(device=self._device)
 
-        for obj in self._scene._objects:
-            for key, uniformGroup in obj.attachedMaterial.uniformGroups.items():
-                    uniformGroup.makeBindGroup(device=self._device)
-
     def render(self):
         self._view = self._scene._cammera.view;
 
@@ -25,9 +21,9 @@ class SimpleRenderer:
         far = 1000.0 
         self._proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far)) 
         
-        for obj in self._scene._objects:
+        for obj in self._scene._objects: 
             obj.attachedMaterial.shader.setProj(data=self._proj)
-            obj.attachedMaterial.shader.setView(data=self._view)
+            obj.attachedMaterial.shader.setView(data=self._view) 
             obj.attachedMaterial.shader.setModel(data=np.asarray(obj.transforms, dtype=np.float32))
 
         texture = self._present_context.get_current_texture(); 
@@ -56,9 +52,6 @@ class SimpleRenderer:
         )
 
         command_encoder = self._device.create_command_encoder() 
-        for obj in self._scene._objects:
-            obj.attachedMaterial.shader.update(command_encoder=command_encoder)  
-
         current_texture_view = texture.create_view()
         render_pass = command_encoder.begin_render_pass( 
             color_attachments=[
@@ -83,14 +76,14 @@ class SimpleRenderer:
                 },
         )
 
-        # render_pipeline = self.make_render_pipeline(
-        #     shader=self._shader._shaderContext, 
-        #     groupLayouts=[self._shader._frameGroupLayout, self._shader._materialGourpLayout], 
-        #     bufferDiscripor=DEFAULT_OBJ_BUFFER_DISC
-        # ) 
+        objects_drawn = 0
+        for obj in self._scene._objects:  
 
-        for obj in self._scene._objects: 
-            render_pipeline = obj.attachedMaterial.makePipeline(device=self._device, renderTextureFormat=self._render_texture_format)
+            for key, uniformGroup in obj.attachedMaterial.uniformGroups.items():
+                    uniformGroup.makeBindGroup(device=self._device) 
+
+            obj.attachedMaterial.shader.update(command_encoder=command_encoder)   
+            render_pipeline = obj.attachedMaterial.makePipeline(device=self._device, renderTextureFormat=self._render_texture_format) 
 
             render_pass.set_pipeline(render_pipeline)  
             render_pass.set_index_buffer(obj.mesh.bufferMap["indices"], wgpu.IndexFormat.uint32)
@@ -98,7 +91,8 @@ class SimpleRenderer:
             render_pass.set_vertex_buffer(slot=1, buffer=obj.mesh.bufferMap["uvs"]) 
             render_pass.set_bind_group(0, obj.attachedMaterial.uniformGroups["frameGroup"].bindGroup, [], 0, 99) 
             render_pass.set_bind_group(1, obj.attachedMaterial.uniformGroups["materialGroup"].bindGroup, [], 0, 99)
-            render_pass.draw_indexed(obj.mesh.numIndices, 1, 0, 0, 0) 
+            render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, objects_drawn)  
+            objects_drawn += 1 
 
         render_pass.end()
         self._device.queue.submit([command_encoder.finish()]) 

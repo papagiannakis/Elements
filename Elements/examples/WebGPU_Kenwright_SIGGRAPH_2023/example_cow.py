@@ -44,31 +44,31 @@ class talble(Object):
 
     def onInit(self):  
         self.attachedMaterial = Material(tag="simple", shader=SimpleShader(device=device))
-        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "ToolsTable" / "Cloth-TOOLtable_LOW_Material__126_Albedo.png")
+        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "ImplantsTable" / "table_with_implants_01_Material__3_Albedo.png")
         texture.make(device=device)
         self.attachedMaterial.shader.setTexture(value=texture)  
 
-        # for i in range(0, self.instance_count - 1):
-        self.transforms.append( 
-            np.array(
-                glm.transpose(
-                    glm.translate(
-                        # glm.mat4x4(1), glm.vec3(randint(0, 3), randint(0, 3), randint(0, 3))
-                        glm.mat4x4(1), glm.vec3(0, 0, 0)
-                    )
-                ),
-                dtype=np.float32
-            )
-        ) 
+        for i in range(0, self.instance_count - 1):
+            self.transforms.append( 
+                np.array(
+                    glm.transpose(
+                        glm.translate(
+                            glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40))
+                            # glm.mat4x4(1), glm.vec3(1, 1, 1)
+                        )
+                    ),
+                    dtype=np.float32
+                )
+            )  
 
-        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "ToolsTable" / "ToolsTable.obj") 
+        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "ImplantsTable" / "ImplantsTable.obj") 
 
     def onUpdate(self): 
         return;
 
 
 scene = Scene()
-obj1 = talble(instance_count=1); 
+obj1 = talble(instance_count=256); 
 scene.append_object(obj1)   
 
 cam = cammera([-5, 0, 10], 5, 0)
@@ -93,8 +93,8 @@ canvas.request_draw(draw_frame)
 while canvas._running:
     event = canvas.event_input_process();   
     scene.update(canvas, event)
-    if canvas._need_draw:
-        canvas.display()
-        canvas.display_post() 
+    # if canvas._need_draw:
+    canvas.display()
+    canvas.display_post()
         
 canvas.shutdown()

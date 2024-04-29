@@ -377,7 +377,7 @@ def draw_frame():
     for bind_group_id, bind_group in enumerate(bind_groups):
         render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
     render_pass.draw_indexed(indices.size, 1, 0, 0, 0) 
-    # render_pass.draw(3, 1, 0, 0)
+    #render_pass.draw(3, 1, 0, 0)
     render_pass.end()
 
     device.queue.submit([command_encoder.finish()])

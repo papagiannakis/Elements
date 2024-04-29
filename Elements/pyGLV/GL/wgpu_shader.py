@@ -51,7 +51,9 @@ class Attribute:
                             "shader_location": self.slot,
                         },
                     ],
-                }
+                } 
+    
+
 
 class Shader:
     def __init__(self): 
@@ -64,18 +66,19 @@ class Shader:
         raise NotImplementedError()
     
     def addUniform(self, 
-                   name:str, 
+                   name:str,
+                   groupName:str, 
                    size:int,
                    offset:int,
                    value:any=None, 
                    usage:any=wgpu.BufferUsage.VERTEX | wgpu.ShaderStage.FRAGMENT, 
                    type:any=wgpu.BufferBindingType.uniform
     ): 
-        if self.attachedMaterial.uniformGroups.get("frameGroup") is None: 
-            # self.attachedMaterial.uniformGroups["frameGroup"] = UniformGroup("frameGroup", 0)  
-            self.attachedMaterial.uniformGroups.update({"frameGroup": UniformGroup("frameGroup", 0)})  
+        # if self.attachedMaterial.uniformGroups.get("frameGroup") is None: 
+        #     # self.attachedMaterial.uniformGroups["frameGroup"] = UniformGroup("frameGroup", 0)  
+        #     self.attachedMaterial.uniformGroups.update({"frameGroup": UniformGroup("frameGroup", 0)})  
         
-        self.attachedMaterial.uniformGroups["frameGroup"].addUniform(
+        self.attachedMaterial.uniformGroups[groupName].addUniform(
             name=name,
             data=value,
             size=size,
@@ -86,15 +89,16 @@ class Shader:
 
     def addStorage(self,
                    name:str, 
+                   groupName:str,
                    size:int,
                    data:any=None, 
                    usage:any=wgpu.BufferUsage.VERTEX | wgpu.ShaderStage.FRAGMENT, 
-                   type:any=wgpu.BufferBindingType.uniform,
+                   type:any=wgpu.BufferBindingType.read_only_storage,
     ): 
-        if self.attachedMaterial.uniformGroups.get("frameGroup") is None: 
-            self.attachedMaterial.uniformGroups["frameGroup"] = UniformGroup("frameGroup", 0) 
+        # if self.attachedMaterial.uniformGroups.get("frameGroup") is None: 
+        #     self.attachedMaterial.uniformGroups["frameGroup"] = UniformGroup("frameGroup", 0) 
         
-        self.attachedMaterial.uniformGroups["frameGroup"].addStorage(
+        self.attachedMaterial.uniformGroups[groupName].addStorage(
             name=name,
             data=data,
             size=size,
@@ -104,15 +108,16 @@ class Shader:
 
     def addTexture(self,
                     name:str,
+                    groupName:str,
                     value:Texture=None,
                     usage:any=wgpu.ShaderStage.FRAGMENT,
                     sampleType:any=wgpu.TextureSampleType.float,
                     dimension:any=wgpu.TextureViewDimension.d2,
     ):
-        if self.attachedMaterial.uniformGroups.get("materialGroup") is None: 
-            self.attachedMaterial.uniformGroups["materialGroup"] = UniformGroup("materialGroup", 1) 
+        # if self.attachedMaterial.uniformGroups.get("materialGroup") is None: 
+        #     self.attachedMaterial.uniformGroups["materialGroup"] = UniformGroup("materialGroup", 1) 
 
-        self.attachedMaterial.uniformGroups["materialGroup"].addTexture(
+        self.attachedMaterial.uniformGroups[groupName].addTexture(
             name=name,
             value=value,
             usage=usage, 
@@ -121,15 +126,16 @@ class Shader:
         ) 
 
     def addSampler(self,
-                  name:str,  
+                  name:str, 
+                  groupName:str, 
                   sampler:any,
                   usage:any=wgpu.ShaderStage.FRAGMENT,
                   compare=False
     ):
-        if self.attachedMaterial.uniformGroups.get("materialGroup") is None: 
-            self.attachedMaterial.uniformGroups["materialGroup"] = UniformGroup("materialGroup", 1) 
+        # if self.attachedMaterial.uniformGroups.get("materialGroup") is None: 
+        #     self.attachedMaterial.uniformGroups["materialGroup"] = UniformGroup("materialGroup", 1) 
 
-        self.attachedMaterial.uniformGroups["materialGroup"].addSampler(
+        self.attachedMaterial.uniformGroups[groupName].addSampler(
             name=name,
             sampler=sampler,
             usage=usage,
@@ -141,7 +147,8 @@ class Shader:
         slot = len(self.attributes);
         at = Attribute(rowLenght, primitiveType, slot) 
 
-        self.attributes[name] = at 
+        # self.attributes[name] = at  
+        self.attributes.update({name: at})
 
 
     def getVertexBufferLayout(self):

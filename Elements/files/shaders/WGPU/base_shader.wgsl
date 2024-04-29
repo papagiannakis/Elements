@@ -24,8 +24,7 @@ fn vs_main(
     @location(1) vertexTexCoord: vec2<f32>) -> Fragment {
 
     var output : Fragment;
-    // output.Position = ubuffer.projection * ubuffer.view * objects.model[ID] * vec4<f32>(vertexPostion, 1.0); 
-    output.Position = vec4f(vertexPostion, 1.0);
+    output.Position = ubuffer.projection * ubuffer.view * objects.model[ID] * vec4<f32>(vertexPostion, 1.0); 
     output.TexCoord = vertexTexCoord;
 
     return output;

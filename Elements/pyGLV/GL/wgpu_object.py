@@ -1,4 +1,5 @@
 import wgpu 
+import numpy as np
 from Elements.pyGLV.GL.wgpu_meshes import Mesh, import_mesh 
 from Elements.pyGLV.GL.wgpu_material import Material
 
@@ -19,13 +20,13 @@ class Object:
     def init(self, device:wgpu.GPUDevice):
         self.mesh = Mesh(device) 
         if self.vertices.any():  
-            self.mesh.setVertices(self.vertices)
+            self.mesh.setVertices(np.array(self.vertices, dtype=np.float32))
         if self.indices.any():  
-            self.mesh.setIndices(self.indices) 
+            self.mesh.setIndices(np.array(self.indices, dtype=np.uint32))
         if self.uvs.any():  
-            self.mesh.setUVs(self.uvs) 
+            self.mesh.setUVs(np.array(self.uvs, dtype=np.float32))
         if self.normals.any():  
-            self.mesh.setNormals(self.normals) 
+            self.mesh.setNormals(np.array(self.normals, dtype=np.float32))
 
 
     def onInit(self):

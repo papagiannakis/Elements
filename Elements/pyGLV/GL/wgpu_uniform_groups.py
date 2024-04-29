@@ -70,7 +70,7 @@ class UniformGroup:
                    data:any, 
                    size:int,
                    usage:any=wgpu.BufferUsage.VERTEX | wgpu.ShaderStage.FRAGMENT, 
-                   type:any=wgpu.BufferBindingType.uniform,
+                   type:any=wgpu.BufferBindingType.read_only_storage,
     ): 
         b = Uniform() 
         b.data = data
@@ -121,8 +121,8 @@ class UniformGroup:
         # if self.uniforms[name] in None:
         #     exit("Buffer not in buffergroup") 
 
-        self.isUniformsDirty = True 
-        self.uniforms[name].data = value 
+        self.isUniformsDirty = True  
+        self.uniforms[name].data = value  
         self.uniforms[name].isSet = True 
 
     def setStorage(self,
@@ -160,22 +160,22 @@ class UniformGroup:
 
     def makeStorageBuffers(self, device:wgpu.GPUDevice): 
         for key, data in self.storages.items(): 
-
             self.storageBuffers[key] = device.create_buffer(
                 size=data.size, usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_DST
-            )
+            )  
+        
 
     def updateUniformBuffer(self, device:wgpu.GPUDevice, command_encoder:wgpu.GPUCommandEncoder):  
         buffer = [] 
         for key, data in self.uniforms.items():
             buffer.append(data) 
-        sbuffer = sorted(buffer, key=lambda x:x.offset)   
+        sbuffer = sorted(buffer, key=lambda x:x.offset)
 
         extract = []
         for data in sbuffer:
-            extract.append(data) 
+            extract.append(np.array(data.data, dtype=np.float32)) 
 
-        ndbuffer = np.asarray(extract) 
+        ndbuffer = np.asarray(extract, dtype=np.float32)  
 
         tempBuffer = device.create_buffer_with_data(
             data=ndbuffer, usage=wgpu.BufferUsage.COPY_SRC
@@ -186,7 +186,7 @@ class UniformGroup:
         )  
 
     def updateStorageBuffers(self, device:wgpu.GPUDevice, command_encoder:wgpu.GPUCommandEncoder):  
-        for key, data in self.storages.items():
+        for key, data in self.storages.items(): 
             tempBuffer = device.create_buffer_with_data(
                 data=data.data, usage=wgpu.BufferUsage.COPY_SRC
             ) 
@@ -247,8 +247,6 @@ class UniformGroup:
 
                 bindingCount += 1  
 
-        print(entries)
-
         self.bindGroupLayout = device.create_bind_group_layout(
             entries=entries
         ) 
@@ -265,7 +263,7 @@ class UniformGroup:
                     "offset": 0,
                     "size": self.uniformBuffer.size,
                 },
-            }) 
+            })  
             bindingCount += 1
 
         if len(self.storages) > 0: 
@@ -295,8 +293,6 @@ class UniformGroup:
                     "resource": value.sampler 
                 }) 
 
-        print(entries)  
-        
         self.bindGroup = device.create_bind_group(
             layout=self.bindGroupLayout,
             entries=entries
