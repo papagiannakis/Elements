@@ -62,7 +62,6 @@ class UniformGroup:
         b.dirty = True 
         b.offset = offset
 
-        # self.uniforms[b.name] = b   
         self.uniforms.update({b.name: b})
 
     def addStorage(self,
@@ -81,7 +80,6 @@ class UniformGroup:
         b.isSet = False
         b.dirty = True 
 
-        # self.storages[b.name] = b  
         self.storages.update({b.name: b})
 
     def addTexture(self,
@@ -118,8 +116,6 @@ class UniformGroup:
                     name:str,
                     value:any
     ): 
-        # if self.uniforms[name] in None:
-        #     exit("Buffer not in buffergroup") 
 
         self.isUniformsDirty = True  
         self.uniforms[name].data = value  
@@ -129,26 +125,15 @@ class UniformGroup:
                     name:str,
                     value:any
     ): 
-        # if self.storages[name] in None:
-        #     exit("Buffer not in buffergroup") 
 
         self.isStorageDirty= True 
         self.storages[name].data = value 
         self.storages[name].isSet = True 
 
     def setTexture(self, name:str, value:Texture):
-        # if self.textureUniforms.get(name) in None:
-        #     exit("Texture not in buffergroup")
-
         self.textureUniforms.get(name).texture = value  
 
     def makeUniformBuffer(self, device:wgpu.GPUDevice): 
-        # buffer = []
-        # for key, data in self.uniforms:
-        #     buffer.append(data.data)  
-
-        # sbuffer = sorted(buffer, key=lambda x:x.offset) 
-        # ndbuffer = np.asarray(sbuffer)
         size = 0;
         for key, data in self.uniforms.items():
             size += data.size 

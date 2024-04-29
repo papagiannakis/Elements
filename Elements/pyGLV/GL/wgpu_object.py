@@ -20,13 +20,17 @@ class Object:
     def init(self, device:wgpu.GPUDevice):
         self.mesh = Mesh(device) 
         if self.vertices.any():  
-            self.mesh.setVertices(np.array(self.vertices, dtype=np.float32))
+            # self.mesh.setVertices(np.array(self.vertices, dtype=np.float32)) 
+            self.mesh.setVertices(self.vertices)
         if self.indices.any():  
-            self.mesh.setIndices(np.array(self.indices, dtype=np.uint32))
+            # self.mesh.setIndices(np.array(self.indices, dtype=np.uint32))
+            self.mesh.setIndices(self.indices)
         if self.uvs.any():  
-            self.mesh.setUVs(np.array(self.uvs, dtype=np.float32))
-        if self.normals.any():  
-            self.mesh.setNormals(np.array(self.normals, dtype=np.float32))
+            # self.mesh.setUVs(np.array(self.uvs, dtype=np.float32)) 
+            self.mesh.setUVs(self.uvs)
+        if self.normals.any(): 
+            # self.mesh.setNormals(np.array(self.normals, dtype=np.float32))
+            self.mesh.setNormals(self.normals)
 
 
     def onInit(self):
@@ -34,22 +38,3 @@ class Object:
 
     def onUpdate(self):
         raise NotImplementedError(); 
-
-    # def set_renderer_attributes(self, device:wgpu.GPUDevice, materialBindGroupLayout:wgpu.GPUBindGroupLayout=None):
-    #     vertices = np.array(self.vertices, dtype=np.float32)
-    #     uvs = np.array(self.uvs, dtype=np.float32)
-
-    #     if materialBindGroupLayout:
-    #         self.material = wgpu_material(device=device, filepath=self.material_info["file"], bindGroupLayout=materialBindGroupLayout);
-    #         self.bindGroup = self.material.bindGroup;
-    #     else:
-    #         self.material = None
-    #         self.bindGroup = None
-
-    #     self.vertex_buffer = device.create_buffer_with_data(
-    #         data=vertices, usage=wgpu.BufferUsage.VERTEX
-    #     )
-
-    #     self.uvs_buffer = device.create_buffer_with_data(
-    #         data=uvs, usage=wgpu.BufferUsage.VERTEX
-    #     )

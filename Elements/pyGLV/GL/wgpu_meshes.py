@@ -41,7 +41,7 @@ class Mesh:
     def setUVs(self, uvs:np.ndarray):
         self.createBuffer(uvs, "uvs")
 
-    def createBuffer(self, data:np.ndarray, name:str):
+    def createBuffer(self, data:np.ndarray, name:str): 
         buffer = self.device.create_buffer_with_data(
             data=data, usage=wgpu.BufferUsage.VERTEX
         ) 

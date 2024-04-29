@@ -91,8 +91,7 @@ class SimpleRenderer:
             render_pass.set_vertex_buffer(slot=1, buffer=obj.mesh.bufferMap["uvs"]) 
             render_pass.set_bind_group(0, obj.attachedMaterial.uniformGroups["frameGroup"].bindGroup, [], 0, 99) 
             render_pass.set_bind_group(1, obj.attachedMaterial.uniformGroups["materialGroup"].bindGroup, [], 0, 99)
-            render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, objects_drawn)  
-            objects_drawn += 1 
+            render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)   
 
         render_pass.end()
         self._device.queue.submit([command_encoder.finish()]) 

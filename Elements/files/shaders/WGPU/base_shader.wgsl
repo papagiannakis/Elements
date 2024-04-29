@@ -33,5 +33,4 @@ fn vs_main(
 @fragment
 fn fs_main(@location(0) TexCoord : vec2<f32>) -> @location(0) vec4<f32> {
     return textureSample(myTexture, mySampler, TexCoord); 
-    // return vec4f(1,0,0,1);
 }

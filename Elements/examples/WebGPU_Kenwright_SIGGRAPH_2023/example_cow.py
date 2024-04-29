@@ -39,8 +39,6 @@ class talble(Object):
     def __init__(self, *args, instance_count, **kwards):
         super(*args).__init__(*args, **kwards) 
         self.instance_count = instance_count
-        # self.load_mesh_from_obj(definitions.MODEL_DIR / "ToolsTable" / "ToolsTable.obj")
-        # self.load_materila(definitions.MODEL_DIR / "ToolsTable" / "Cloth-TOOLtable_LOW_Material__126_Albedo.png")
 
     def onInit(self):  
         self.attachedMaterial = Material(tag="simple", shader=SimpleShader(device=device))
@@ -54,7 +52,6 @@ class talble(Object):
                     glm.transpose(
                         glm.translate(
                             glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40))
-                            # glm.mat4x4(1), glm.vec3(1, 1, 1)
                         )
                     ),
                     dtype=np.float32
@@ -66,10 +63,40 @@ class talble(Object):
     def onUpdate(self): 
         return;
 
+class mediumRare(Object): 
+    def __init__(self, *args, instance_count, **kwards):
+        super(*args).__init__(*args, **kwards) 
+        self.instance_count = instance_count
+
+    def onInit(self):  
+        self.attachedMaterial = Material(tag="simple", shader=SimpleShader(device=device))
+        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "Tray" / "TrayTexture.png")
+        texture.make(device=device)
+        self.attachedMaterial.shader.setTexture(value=texture)  
+
+        for i in range(0, self.instance_count - 1):
+            self.transforms.append( 
+                np.array(
+                    glm.transpose(
+                        glm.translate(
+                            glm.mat4x4(1), glm.vec3(randint(0, 40), randint(0, 40), randint(0, 40))
+                        )
+                    ),
+                    dtype=np.float32
+                )
+            )  
+
+        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "Tray" / "Tray.obj") 
+
+    def onUpdate(self): 
+        return;
+
 
 scene = Scene()
 obj1 = talble(instance_count=256); 
-scene.append_object(obj1)   
+obj2 = mediumRare(instance_count=256)
+scene.append_object(obj1)  
+scene.append_object(obj2) 
 
 cam = cammera([-5, 0, 10], 5, 0)
 scene.set_cammera(cam=cam)
@@ -93,7 +120,6 @@ canvas.request_draw(draw_frame)
 while canvas._running:
     event = canvas.event_input_process();   
     scene.update(canvas, event)
-    # if canvas._need_draw:
     canvas.display()
     canvas.display_post()
         
