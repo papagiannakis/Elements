@@ -19,7 +19,9 @@ class Scene():
             cls._instance = super(Scene, cls).__new__(cls)
 
             cls._cammera = None
-            cls._objects = []
+            cls._objects = [] 
+            cls._canvasWidth = 0 
+            cls._canvasHeight = 0
         return cls._instance
     
     
@@ -43,11 +45,13 @@ class Scene():
             obj.init(device=device) 
 
     def update(self, canvas, event):
+        self._canvasWidth = canvas._windowWidth
+        self._canvasHeight = canvas._windowHeight
+
         self._cammera.update(canvas=canvas, event=event)
 
         for obj in self._objects:
             obj.onUpdate()
-
 
 if __name__ == "__main__":
     # The client singleton code.

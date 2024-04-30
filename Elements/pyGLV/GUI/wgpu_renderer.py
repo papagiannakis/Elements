@@ -2,6 +2,8 @@ import wgpu
 import glm
 import numpy as np
 
+from Elements.pyGLV.GL.wgpu_meshes import Buffers
+
 class SimpleRenderer:
     def __init__(self, scene, canvas, device, present_context, render_texture_format): 
         self._scene = scene
@@ -14,18 +16,6 @@ class SimpleRenderer:
         self._scene.init(device=self._device)
 
     def render(self):
-        self._view = self._scene._cammera.view;
-
-        ratio = self._canvas._windowWidth  / self._canvas._windowHeight
-        near = 0.001
-        far = 1000.0 
-        self._proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far)) 
-        
-        for obj in self._scene._objects: 
-            obj.attachedMaterial.shader.setProj(data=self._proj)
-            obj.attachedMaterial.shader.setView(data=self._view) 
-            obj.attachedMaterial.shader.setModel(data=np.asarray(obj.transforms, dtype=np.float32))
-
         texture = self._present_context.get_current_texture(); 
         textureWidth = texture.width; 
         textureHeight = texture.height; 
@@ -51,7 +41,10 @@ class SimpleRenderer:
             array_layer_count=1,
         )
 
-        command_encoder = self._device.create_command_encoder() 
+        command_encoder = self._device.create_command_encoder()  
+        for obj in self._scene._objects:
+            obj.attachedMaterial.shader.update(command_encoder)
+
         current_texture_view = texture.create_view()
         render_pass = command_encoder.begin_render_pass( 
             color_attachments=[
@@ -76,22 +69,35 @@ class SimpleRenderer:
                 },
         )
 
-        objects_drawn = 0
         for obj in self._scene._objects:  
 
-            for key, uniformGroup in obj.attachedMaterial.uniformGroups.items():
+            for uniformGroup in obj.attachedMaterial.uniformGroups.values():
                     uniformGroup.makeBindGroup(device=self._device) 
 
             obj.attachedMaterial.shader.update(command_encoder=command_encoder)   
             render_pipeline = obj.attachedMaterial.makePipeline(device=self._device, renderTextureFormat=self._render_texture_format) 
 
-            render_pass.set_pipeline(render_pipeline)  
-            render_pass.set_index_buffer(obj.mesh.bufferMap["indices"], wgpu.IndexFormat.uint32)
-            render_pass.set_vertex_buffer(slot=0, buffer=obj.mesh.bufferMap["vertices"]) 
-            render_pass.set_vertex_buffer(slot=1, buffer=obj.mesh.bufferMap["uvs"]) 
-            render_pass.set_bind_group(0, obj.attachedMaterial.uniformGroups["frameGroup"].bindGroup, [], 0, 99) 
-            render_pass.set_bind_group(1, obj.attachedMaterial.uniformGroups["materialGroup"].bindGroup, [], 0, 99)
-            render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)   
+            render_pass.set_pipeline(render_pipeline)   
+
+            if obj.mesh.hasIndices:
+                render_pass.set_index_buffer(obj.mesh.bufferMap[Buffers.INDEX], wgpu.IndexFormat.uint32)  
+
+                for attribute in obj.attachedMaterial.shader.attributes.values():
+                    render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
+
+                for group in obj.attachedMaterial.uniformGroups.values(): 
+                    render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
+
+                render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)  
+                  
+            else:
+                for attribute in obj.attachedMaterial.shader.attributes.values():
+                    render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
+
+                for group in obj.attachedMaterial.uniformGroups.values(): 
+                    render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
+
+                render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)    
 
         render_pass.end()
         self._device.queue.submit([command_encoder.finish()]) 

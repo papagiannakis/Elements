@@ -168,7 +168,9 @@ class UniformGroup:
 
         command_encoder.copy_buffer_to_buffer(
             tempBuffer, 0, self.uniformBuffer, 0, ndbuffer.nbytes
-        )  
+        )   
+
+        tempBuffer = None
 
     def updateStorageBuffers(self, device:wgpu.GPUDevice, command_encoder:wgpu.GPUCommandEncoder):  
         for key, data in self.storages.items(): 
@@ -177,7 +179,9 @@ class UniformGroup:
             ) 
             command_encoder.copy_buffer_to_buffer(
                 tempBuffer, 0, self.storageBuffers[key], 0, tempBuffer.size 
-            )  
+            )   
+
+            tempBuffer = None
 
     def makeBindGroupLayout(self, device:wgpu.GPUDevice):
         bindingCount = 0; 

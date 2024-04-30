@@ -1,8 +1,17 @@
 import wgpu
 import trimesh
-import numpy as np
+import numpy as np  
+from enum import Enum
 
-from Elements.definitions import MODEL_DIR
+from Elements.definitions import MODEL_DIR 
+
+class Buffers(Enum):
+    VERTEX = 1
+    INDEX = 2
+    UV = 3
+    NORMAL = 4 
+    COLOR = 5
+
 
 def import_mesh(path:str):
     mesh = trimesh.load(file_obj=path, force='mesh') 
@@ -25,38 +34,38 @@ class Mesh:
 
     def setVertices(self, vertices:np.ndarray):
         self.numVertices = len(vertices)   
-        self.createBuffer(vertices, "vertices") 
+        self.createBuffer(vertices, Buffers.VERTEX)
 
     def setIndices(self, indices:np.ndarray):
         self.numIndices = len(indices)  
         self.hasIndices = True 
-        self.createIndexBuffer(indices, "indices") 
+        self.createIndexBuffer(indices, Buffers.INDEX) 
 
     def setNormals(self, normals:np.ndarray): 
-        self.createBuffer(normals, "normals")  
+        self.createBuffer(normals, Buffers.NORMAL)  
 
     def setColors(self, colors:np.ndarray):
-        self.createBuffer(colors, "normals")   
+        self.createBuffer(colors, Buffers.COLOR)   
 
     def setUVs(self, uvs:np.ndarray):
-        self.createBuffer(uvs, "uvs")
+        self.createBuffer(uvs, Buffers.UV)
 
-    def createBuffer(self, data:np.ndarray, name:str): 
+    def createBuffer(self, data:np.ndarray, name:Buffers): 
         buffer = self.device.create_buffer_with_data(
             data=data, usage=wgpu.BufferUsage.VERTEX
         ) 
         self.bufferMap.update({name: buffer})  
     
-    def createIndexBuffer(self, data:np.ndarray, name:str):
+    def createIndexBuffer(self, data:np.ndarray, name:Buffers):
         buffer = self.device.create_buffer_with_data(
             data=data, usage=wgpu.BufferUsage.INDEX
         ) 
         self.bufferMap.update({name: buffer})   
 
-    def getBufferByName(self, name:str):
+    def getBufferByName(self, name:Buffers):
         return self.bufferMap.get(name)
 
-    def updateBuffer(self, name:str, data:np.ndarray): 
+    def updateBuffer(self, name:Buffers, data:np.ndarray): 
         buffer = self.getBufferByName(name) 
         buffer.destroy()
         del self.bufferMap[name] 

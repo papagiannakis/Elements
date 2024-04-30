@@ -10,7 +10,7 @@ import OpenGL.GL as gl
 import wgpu
 import numpy as np
 
-
+from Elements.pyGLV.GL.wgpu_meshes import Buffers
 from Elements.pyECSS.System import System
 from Elements.pyECSS.Component import Component, ComponentDecorator, RenderMesh, CompNullIterator
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -31,7 +31,8 @@ def ShaderLoader(file):
 
 
 class Attribute:
-    def __init__(self, rowLength, primitiveType, slot):
+    def __init__(self, name:Buffers, rowLength, primitiveType, slot): 
+        self.name = name
         self.rowLength = rowLength
         self.primitiveBytes = primitiveType
         self.slot = slot
@@ -72,9 +73,6 @@ class Shader:
                    usage:any=wgpu.BufferUsage.VERTEX | wgpu.ShaderStage.FRAGMENT, 
                    type:any=wgpu.BufferBindingType.uniform
     ): 
-        # if self.attachedMaterial.uniformGroups.get("frameGroup") is None: 
-        #     # self.attachedMaterial.uniformGroups["frameGroup"] = UniformGroup("frameGroup", 0)  
-        #     self.attachedMaterial.uniformGroups.update({"frameGroup": UniformGroup("frameGroup", 0)})  
         
         self.attachedMaterial.uniformGroups[groupName].addUniform(
             name=name,
@@ -93,8 +91,6 @@ class Shader:
                    usage:any=wgpu.BufferUsage.VERTEX | wgpu.ShaderStage.FRAGMENT, 
                    type:any=wgpu.BufferBindingType.read_only_storage,
     ): 
-        # if self.attachedMaterial.uniformGroups.get("frameGroup") is None: 
-        #     self.attachedMaterial.uniformGroups["frameGroup"] = UniformGroup("frameGroup", 0) 
         
         self.attachedMaterial.uniformGroups[groupName].addStorage(
             name=name,
@@ -112,8 +108,6 @@ class Shader:
                     sampleType:any=wgpu.TextureSampleType.float,
                     dimension:any=wgpu.TextureViewDimension.d2,
     ):
-        # if self.attachedMaterial.uniformGroups.get("materialGroup") is None: 
-        #     self.attachedMaterial.uniformGroups["materialGroup"] = UniformGroup("materialGroup", 1) 
 
         self.attachedMaterial.uniformGroups[groupName].addTexture(
             name=name,
@@ -130,8 +124,6 @@ class Shader:
                   usage:any=wgpu.ShaderStage.FRAGMENT,
                   compare=False
     ):
-        # if self.attachedMaterial.uniformGroups.get("materialGroup") is None: 
-        #     self.attachedMaterial.uniformGroups["materialGroup"] = UniformGroup("materialGroup", 1) 
 
         self.attachedMaterial.uniformGroups[groupName].addSampler(
             name=name,
@@ -141,18 +133,17 @@ class Shader:
         ) 
 
 
-    def addAtribute(self, name:str, rowLenght:int, primitiveType):   
+    def addAtribute(self, name:Buffers, rowLenght:int, primitiveType):   
         slot = len(self.attributes);
-        at = Attribute(rowLenght, primitiveType, slot) 
+        at = Attribute(name, rowLenght, primitiveType, slot) 
 
-        # self.attributes[name] = at  
         self.attributes.update({name: at})
 
 
     def getVertexBufferLayout(self):
         bufferLayout = [] 
 
-        for key, data in self.attributes.items():
+        for data in self.attributes.values():
             bufferLayout.append(data.layout) 
 
         return bufferLayout

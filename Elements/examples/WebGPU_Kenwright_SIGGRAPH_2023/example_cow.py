@@ -33,7 +33,8 @@ device = adapter.request_device()
 # Prepare present context
 present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
-present_context.configure(device=device, format=render_texture_format)   
+present_context.configure(device=device, format=render_texture_format)    
+
 
 class talble(Object): 
     def __init__(self, *args, instance_count, **kwards):
@@ -46,8 +47,8 @@ class talble(Object):
         texture.make(device=device)
         self.attachedMaterial.shader.setTexture(value=texture)  
 
-        for i in range(0, self.instance_count - 1):
-            self.transforms.append( 
+        for i in range(0, self.instance_count - 1): 
+            self.attachedMaterial.shader.Models.append(
                 np.array(
                     glm.transpose(
                         glm.translate(
@@ -56,12 +57,14 @@ class talble(Object):
                     ),
                     dtype=np.float32
                 )
-            )  
+            )
 
         self.load_mesh_from_obj(path=definitions.MODEL_DIR / "ImplantsTable" / "ImplantsTable.obj") 
 
     def onUpdate(self): 
-        return;
+        return; 
+
+
 
 class mediumRare(Object): 
     def __init__(self, *args, instance_count, **kwards):
@@ -70,12 +73,12 @@ class mediumRare(Object):
 
     def onInit(self):  
         self.attachedMaterial = Material(tag="simple", shader=SimpleShader(device=device))
-        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "Tray" / "TrayTexture.png")
+        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "Anesthesia" / "Anaisthesia_UVS_02_Material__26_Albedo.png")
         texture.make(device=device)
         self.attachedMaterial.shader.setTexture(value=texture)  
 
         for i in range(0, self.instance_count - 1):
-            self.transforms.append( 
+            self.attachedMaterial.shader.Models.append(
                 np.array(
                     glm.transpose(
                         glm.translate(
@@ -84,9 +87,9 @@ class mediumRare(Object):
                     ),
                     dtype=np.float32
                 )
-            )  
-
-        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "Tray" / "Tray.obj") 
+            ) 
+            
+        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "Anesthesia" / "Anesthesia.obj") 
 
     def onUpdate(self): 
         return;
@@ -98,7 +101,7 @@ obj2 = mediumRare(instance_count=256)
 scene.append_object(obj1)  
 scene.append_object(obj2) 
 
-cam = cammera([-5, 0, 10], 5, 0)
+cam = cammera([0, 0, 10], 5, 0)
 scene.set_cammera(cam=cam)
 
 renderer = SimpleRenderer(
@@ -119,7 +122,8 @@ canvas.request_draw(draw_frame)
 
 while canvas._running:
     event = canvas.event_input_process();   
-    scene.update(canvas, event)
+    scene.update(canvas, event) 
+
     canvas.display()
     canvas.display_post()
         
