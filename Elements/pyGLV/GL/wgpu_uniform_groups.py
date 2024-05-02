@@ -158,9 +158,9 @@ class UniformGroup:
 
         extract = []
         for data in sbuffer:
-            extract.append(np.array(data.data, dtype=np.float32)) 
+            extract.append(np.ascontiguousarray(np.array(data.data, dtype=np.float32)))
 
-        ndbuffer = np.asarray(extract, dtype=np.float32)  
+        ndbuffer = np.vstack(extract, dtype=np.float32)  
 
         tempBuffer = device.create_buffer_with_data(
             data=ndbuffer, usage=wgpu.BufferUsage.COPY_SRC
@@ -168,8 +168,9 @@ class UniformGroup:
 
         command_encoder.copy_buffer_to_buffer(
             tempBuffer, 0, self.uniformBuffer, 0, ndbuffer.nbytes
-        )   
+        )    
 
+        tempBuffer.destroy()
         tempBuffer = None
 
     def updateStorageBuffers(self, device:wgpu.GPUDevice, command_encoder:wgpu.GPUCommandEncoder):  
@@ -181,6 +182,7 @@ class UniformGroup:
                 tempBuffer, 0, self.storageBuffers[key], 0, tempBuffer.size 
             )   
 
+            tempBuffer.destroy()
             tempBuffer = None
 
     def makeBindGroupLayout(self, device:wgpu.GPUDevice):

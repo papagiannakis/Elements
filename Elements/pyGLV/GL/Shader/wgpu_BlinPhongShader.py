@@ -1,6 +1,6 @@
 import wgpu
 import glm
-import numpy as np   
+import numpy as np  
 from Elements.pyGLV.GL.wpgu_scene import Scene
 from Elements.pyGLV.GL.wgpu_meshes import Buffers
 from Elements.pyGLV.GL.wgpu_shader import Shader
@@ -14,18 +14,22 @@ from Elements.pyGLV.GL.wgpu_uniform_groups import UniformGroup
 from Elements.pyGLV.GUI.fps_cammera import cammera
 from Elements.definitions import SHADER_DIR
 
-class SimpleShader(Shader):
+class BlinPhongShader(Shader):
     def __init__(self, device:wgpu.GPUDevice):  
         super().__init__()
 
         self.device:wgpu.GPUDevice = device
-        self.code = ShaderLoader(SHADER_DIR / "WGPU" / "base_shader.wgsl") 
+        self.code = ShaderLoader(SHADER_DIR / "WGPU" / "blin_phong_shader.wgsl") 
         self.context = device.create_shader_module(code=self.code)
 
-    def init(self):  
-        self.tempStorageModels = None
-        self.tempProj = None 
-        self.tempView = None 
+    def init(self):    
+        self.Models = [];
+        self.View = None;
+        self.Proj = None; 
+
+        self.lightColor = np.array([1.0, 1.0, 1.0, 1.0], dtype=np.float32) 
+        self.lightPos = np.array([0.0, 0.0, 0.0, 1.0], dtype=np.float32) 
+        self.camPos = None
 
         self.attachedMaterial.uniformGroups.update({"frameGroup": UniformGroup(groupName="frameGroup", groupIndex=0)})
         self.attachedMaterial.uniformGroups.update({"materialGroup": UniformGroup(groupName="materialGroup", groupIndex=1)})
@@ -45,43 +49,26 @@ class SimpleShader(Shader):
             groupName="frameGroup",
             size=SHADER_TYPES['mat4x4'] * F32, 
             offset=1
-        )   
-        self.addUniform(
-            name="viewPos",
+        )    
+        self.addUniform( 
+            name="lightColor",
             groupName="frameGroup",
-            size=SHADER_TYPES['vec4f'] * F32,
+            size=SHADER_TYPES['vec4f'] * F32, 
             offset=2
-        ) 
-        self.addUniform(
-            name="lightPos", 
-            groupName="frameGroup",
-            size=SHADER_TYPES['vec4f'] * F32,
-            offset=3
-        )  
-        self.addUniform(
-            name="lightColor", 
-            groupName="frameGroup", 
-            size=SHADER_TYPES['vec4f'] * F32,
-            offset=4
-        )  
-        self.addUniform( 
-            name="lightIntensity",
-            groupName="frameGroup", 
-            size=F32, 
-            offset=5
-        ) 
-        self.addUniform( 
-            name="shininess",
-            groupName="frameGroup",
-            size=F32,
-            offset=6
-        ) 
-        self.addUniform( 
-            name="matColor",
-            groupName="frameGroup",
-            size=SHADER_TYPES['vec4f'] * F32,
-            offset=7
         )
+        self.addUniform( 
+            name="lightPos",
+            groupName="frameGroup",
+            size=SHADER_TYPES['vec4f'] * F32, 
+            offset=3
+        ) 
+        self.addUniform( 
+            name="camPos",
+            groupName="frameGroup",
+            size=SHADER_TYPES['vec4f'] * F32, 
+            offset=4
+        ) 
+
         self.addStorage(
             name="models", 
             groupName="frameGroup",
@@ -98,12 +85,22 @@ class SimpleShader(Shader):
             sampler=self.device.create_sampler()
         ) 
 
-        self.attachedMaterial.uniformGroups["frameGroup"].makeUniformBuffer(device=self.device)
-        self.attachedMaterial.uniformGroups["frameGroup"].makeStorageBuffers(device=self.device)
+        self.makeUniformBuffer("frameGroup") 
+        self.makeStorageBuffers("frameGroup") 
+        self.makeBindGroupLayout("frameGroup") 
+        self.makeBindGroupLayout("materialGroup")
 
-        self.attachedMaterial.uniformGroups["frameGroup"].makeBindGroupLayout(device=self.device) 
-        self.attachedMaterial.uniformGroups["materialGroup"].makeBindGroupLayout(device=self.device) 
+    def makeUniformBuffer(self, tag:str):
+        self.attachedMaterial.uniformGroups[tag].makeUniformBuffer(device=self.device) 
+    
+    def makeStorageBuffers(self, tag:str):
+        self.attachedMaterial.uniformGroups[tag].makeStorageBuffers(device=self.device)
 
+    def makeBindGroupLayout(self, tag:str): 
+        self.attachedMaterial.uniformGroups[tag].makeBindGroupLayout(device=self.device) 
+
+    def setTexture(self, value:Texture):
+        self.attachedMaterial.uniformGroups["materialGroup"].setTexture(name="texture", value=value)  
 
     def update(self, command_encoder:wgpu.GPUCommandBuffer): 
         scene = Scene()
@@ -115,19 +112,21 @@ class SimpleShader(Shader):
         far = 1000.0 
         proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far)) 
         
-        for obj in scene._objects: 
-            obj.attachedMaterial.shader.setProj(data=proj)
-            obj.attachedMaterial.shader.setView(data=view) 
-            obj.attachedMaterial.shader.setModel(data=np.asarray(obj.transforms, dtype=np.float32)) 
+        self.Proj = proj 
+        self.View = view
+        self.Models = np.asarray(self.Models, dtype=np.float32) 
+        camPos = glm.vec4(scene._cammera.position, 1.0) 
+        self.camPos = np.array(camPos, dtype=np.float32); 
 
         self.setUniformValues(command_encoder=command_encoder)
 
     def setUniformValues(self, command_encoder:wgpu.GPUCommandEncoder): 
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="proj", value=self.tempProj) 
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="view", value=self.tempView) 
-        self.attachedMaterial.uniformGroups["frameGroup"].setStorage(name="models", value=self.tempStorageModels) 
-        self.attachedMaterial.uniformGroups["frameGroup"].update(self.device, command_encoder)
+        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="proj", value=self.Proj) 
+        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="view", value=self.View) 
+        self.attachedMaterial.uniformGroups["frameGroup"].setStorage(name="models", value=self.Models)    
 
-        self.tempStorageModels = None 
-        self.tempView = None 
-        self.tempProj = None
+        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="lightColor", value=self.lightColor) 
+        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="lightPos", value=self.lightPos) 
+        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="camPos", value=self.camPos) 
+
+        self.attachedMaterial.uniformGroups["frameGroup"].update(self.device, command_encoder) 

@@ -85,7 +85,7 @@ class SimpleRenderer:
                 for attribute in obj.attachedMaterial.shader.attributes.values():
                     render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
 
-                for group in obj.attachedMaterial.uniformGroups.values(): 
+                for group in obj.attachedMaterial.uniformGroups.values():
                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
 
                 render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)  

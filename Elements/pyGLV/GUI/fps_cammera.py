@@ -100,8 +100,13 @@ class cammera:
         if event and event.type == EventTypes.MOUSE_MOTION:
             if button_map[glfw.MOUSE_BUTTON_2] in event.data["buttons"]:
                 x = np.floor(event.data["x"] - event.data["width"]/2)
-                y = np.floor(event.data["y"] - event.data["height"]/2)
-                
+                y = np.floor(event.data["y"] - event.data["height"]/2) 
+
+                # x = (x / np.abs(y)) * sensitivity
+                # y = (y / np.abs(y)) * sensitivity
+
+                # self.spinCammera(-x, -y)
+
                 if np.abs(x) > np.abs(y):
                     x =  (x / np.abs(x)) * sensitivity
                     self.spinCammera(-x, 0)

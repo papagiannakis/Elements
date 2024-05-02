@@ -20,17 +20,17 @@ class Object:
     def init(self, device:wgpu.GPUDevice):
         self.mesh = Mesh(device) 
         if self.vertices.any():  
-            # self.mesh.setVertices(np.array(self.vertices, dtype=np.float32)) 
-            self.mesh.setVertices(self.vertices)
+            self.mesh.setVertices(np.ascontiguousarray(np.array(self.vertices, dtype=np.float32)))
+            # self.mesh.setVertices(self.vertices)
         if self.indices.any():  
-            # self.mesh.setIndices(np.array(self.indices, dtype=np.uint32))
-            self.mesh.setIndices(self.indices)
+            self.mesh.setIndices(np.ascontiguousarray(np.array(self.indices, dtype=np.uint32)))
+            # self.mesh.setIndices(self.indices)
         if self.uvs.any():  
-            # self.mesh.setUVs(np.array(self.uvs, dtype=np.float32)) 
-            self.mesh.setUVs(self.uvs)
+            self.mesh.setUVs(np.ascontiguousarray(np.array(self.uvs, dtype=np.float32)))
+            # self.mesh.setUVs(self.uvs)
         if self.normals.any(): 
-            # self.mesh.setNormals(np.array(self.normals, dtype=np.float32))
-            self.mesh.setNormals(self.normals)
+            self.mesh.setNormals(np.ascontiguousarray(np.array(self.normals, dtype=np.float32)))
+            # self.mesh.setNormals(self.normals)
 
 
     def onInit(self):
