@@ -48,13 +48,14 @@ fn fs_main(
     @location(2) currentPos: vec3f
 ) -> @location(0) vec4f { 
 
-    var color = vec4f(1.0, 1.0, 1.0, 1.0);
+    var color = vec4f(1.0, 1.0, 1.0, 1.0); 
+    var ambientColor = vec4f(0.3, 0.3, 0.3, 1.0);
     var lightVec = ubuffer.lightPos.xyz - currentPos;
 
     var dist = length(lightVec);
     var a = 0.005;
-    var b = 0.0005;
-    var inten = 1.0 / (a * dist * dist + b * dist + 1.0); 
+    var b = 0.05;
+    var inten = 1.0 / (a * dist * dist + b * dist * dist + 1.0); 
 
     var ambient = 0.2; 
 

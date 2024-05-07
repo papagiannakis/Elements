@@ -60,7 +60,7 @@ class cammera:
         )
 
         self.right = glm.vec3(glm.cross(self.forward, [0,0,1]))
-        self.up = glm.vec3(glm.cross(self.right, self.forward))
+        self.up = glm.vec3(glm.cross(self.right, self.forward)) 
         self.target = glm.vec3(glm.add(self.position, self.forward))
 
         self.view = glm.transpose(glm.lookAtLH(self.position, self.target, self.up)) 

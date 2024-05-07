@@ -21,7 +21,8 @@ class Scene():
             cls._cammera = None
             cls._objects = [] 
             cls._canvasWidth = 0 
-            cls._canvasHeight = 0
+            cls._canvasHeight = 0 
+            cls._light = None
         return cls._instance
     
     
@@ -34,8 +35,8 @@ class Scene():
     def append_object(self, obj: Object): 
         self._objects.append(obj) 
 
-    def append_material(self, mat: Material): 
-        self._matterials[mat.tag] = mat 
+    def set_light(self, pos:any):
+        self._light = pos;
 
     def init(self, device:wgpu.GPUDevice):
         for obj in self._objects: 

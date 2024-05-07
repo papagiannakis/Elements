@@ -282,7 +282,8 @@ class UniformGroup:
                 entries.append({ 
                     "binding": bindingCount,
                     "resource": value.sampler 
-                }) 
+                })
+                bindingCount += 1 
 
         self.bindGroup = device.create_bind_group(
             layout=self.bindGroupLayout,

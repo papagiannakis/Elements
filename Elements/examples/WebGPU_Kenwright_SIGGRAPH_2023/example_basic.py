@@ -15,11 +15,11 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.wpgu_scene import Scene 
 from Elements.pyGLV.GL.wgpu_material import Material
 from Elements.pyGLV.GL.wgpu_object import Object, import_mesh
-from Elements.pyGLV.GUI.wgpu_renderer import SimpleRenderer
+from Elements.pyGLV.GUI.wgpu_renderer import Renderer, RENDER_PASSES, PASS
 from Elements.pyGLV.GL.Shader.wgpu_SimpleShader import SimpleShader
 
 
-canvas = GLFWWindow(windowHeight=1050, windowWidth=1600, wgpu=True, windowTitle="Wgpu Example")
+canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example")
 canvas.init()
 canvas.init_post() 
 
@@ -104,15 +104,15 @@ scene.append_object(obj2)
 cam = cammera([0, 0, 10], 5, 0)
 scene.set_cammera(cam=cam)
 
-renderer = SimpleRenderer(
-    scene=scene,
-    device=device,
-    canvas=canvas,
-    present_context=present_context,
-    render_texture_format=render_texture_format
-)
+renderer = Renderer() 
 
-renderer.init()
+renderer.init(
+    scene=scene,
+    device=device, 
+    present_context=present_context
+) 
+
+RENDER_PASSES.append(PASS.MODEL)
 
 def draw_frame(): 
     renderer.render() 

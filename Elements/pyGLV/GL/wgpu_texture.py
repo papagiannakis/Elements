@@ -32,27 +32,29 @@ class TextureDescriptor:
 
 
 class Texture:
-    def __init__(self, device:wgpu.GPUDevice, textureDescriptor:TextureDescriptor, label:str): 
+    def __init__(self, device:wgpu.GPUDevice, label:str, textureDescriptor:TextureDescriptor=None, context=None, view=None): 
         self.descriptor = textureDescriptor
         self.context = any  
-        self.view = any
+        self.view = view 
         self.device = device 
-        self.label = label
+        self.label = label 
+        self.context = context
 
-    def init(self):
-        print("im unda da water please help me")
-        self.context = self.device.create_texture(
-            label=self.label,
-            size=[self.descriptor.width, self.descriptor.height, self.descriptor.depthOrArrayLayers],
-            sample_count=self.descriptor.sampleCount,
-            format=self.descriptor.format,
-            usage=self.descriptor.usage,
-            mip_level_count=self.descriptor.mipLevelCount,
-            dimension=self.descriptor.dimension
-        ) 
+    def init(self): 
+        if self.context is None: 
+            self.context = self.device.create_texture(
+                label=self.label,
+                size=[self.descriptor.width, self.descriptor.height, self.descriptor.depthOrArrayLayers],
+                sample_count=self.descriptor.sampleCount,
+                format=self.descriptor.format,
+                usage=self.descriptor.usage,
+                mip_level_count=self.descriptor.mipLevelCount,
+                dimension=self.descriptor.dimension
+            ) 
 
     def getView(self):
-        self.view = self.context.create_view() 
+        if self.view is None:
+            self.view = self.context.create_view() 
         return self.view 
     
     def writeTexture(self, data:any, width:int, height:int, bytesPerRow:int, depthOrArrayLater:int=1):

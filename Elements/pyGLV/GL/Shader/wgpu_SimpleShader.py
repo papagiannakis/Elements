@@ -77,8 +77,8 @@ class SimpleShader(Shader):
         view = scene._cammera.view;
 
         ratio = scene._canvasWidth / scene._canvasHeight
-        near = 0.001
-        far = 1000.0 
+        near = 0.01
+        far = 100.0 
         proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far)) 
         
         self.Proj = proj 

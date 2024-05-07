@@ -16,14 +16,14 @@ class Material:
 
     def makePipelineLayout(self, device:wgpu.GPUDevice):
         layouts = []
-        for key, value in self.uniformGroups.items():
+        for value in self.uniformGroups.values():
             layouts.append(value.bindGroupLayout) 
 
         self.pipelineLayout = device.create_pipeline_layout(
             bind_group_layouts=layouts
         ) 
 
-    def makePipeline(self, device:wgpu.GPUDevice, renderTextureFormat):
+    def makePipeline(self, device:wgpu.GPUDevice, renderPass):
         self.makePipelineLayout(device=device) 
         self.pipeline = device.create_render_pipeline(
             layout=self.pipelineLayout,
@@ -32,37 +32,13 @@ class Material:
                 "entry_point": "vs_main", 
                 "buffers": self.shader.getVertexBufferLayout(),
             },
-            primitive={
-                "topology": wgpu.PrimitiveTopology.triangle_list,
-                "front_face": wgpu.FrontFace.ccw,
-                "cull_mode": wgpu.CullMode.none,
-            },
-            depth_stencil={
-                "format": wgpu.TextureFormat.depth24plus,
-                "depth_write_enabled": True,
-                "depth_compare": wgpu.CompareFunction.less,
-            },
+            primitive=renderPass.primitive,
+            depth_stencil=renderPass.depth_stencil,
             multisample=None,
             fragment={
                 "module": self.shader.getShader(),
                 "entry_point": "fs_main",
-                "targets": [
-                    {
-                        "format": renderTextureFormat,
-                        "blend": {
-                            "alpha": (
-                                wgpu.BlendFactor.one,
-                                wgpu.BlendFactor.zero,
-                                wgpu.BlendOperation.add,
-                            ),
-                            "color": (
-                                wgpu.BlendFactor.one,
-                                wgpu.BlendFactor.zero,
-                                wgpu.BlendOperation.add,
-                            ),
-                        },
-                    }
-                ],
+                "targets": renderPass.colorBlend
             },
         )
 

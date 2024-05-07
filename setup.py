@@ -31,7 +31,8 @@ setup(
         'setuptools>=61',
         'wheel',
         'numpy',
-        'scipy',
+        'trimesh', 
+        'scipy==1.12',
         'imgui',
         'PyOpenGL',
         'pillow',
@@ -49,10 +50,9 @@ setup(
         'scikit-spatial',
         'bezier',
         'clifford',
-        'trimesh',
         'pyganja',
         'open3d',
-        'pyassimp==4.1.3'
+        'pyassimp==4.1.3', 
     ],
     
 
