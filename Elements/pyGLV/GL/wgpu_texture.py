@@ -41,7 +41,7 @@ class Texture:
         self.context = context
 
     def init(self): 
-        if self.context is None: 
+        if self.context is None:  
             self.context = self.device.create_texture(
                 label=self.label,
                 size=[self.descriptor.width, self.descriptor.height, self.descriptor.depthOrArrayLayers],
@@ -49,7 +49,7 @@ class Texture:
                 format=self.descriptor.format,
                 usage=self.descriptor.usage,
                 mip_level_count=self.descriptor.mipLevelCount,
-                dimension=self.descriptor.dimension
+                dimension=self.descriptor.dimension,
             ) 
 
     def getView(self):
@@ -60,14 +60,15 @@ class Texture:
     def writeTexture(self, data:any, width:int, height:int, bytesPerRow:int, depthOrArrayLater:int=1):
         self.device.queue.write_texture(
             {
-                "texture": self.context,
+                "texture": self.context, 
             },
             data, 
             { 
-                "bytes_per_row": bytesPerRow,
+                "bytes_per_row": bytesPerRow, 
+                "rows_per_image": height
             }, 
             [width, height, depthOrArrayLater]
-        )
+        ) 
 
 
 class ImprotTexture(Texture): 
@@ -89,4 +90,51 @@ class ImprotTexture(Texture):
         self.descriptor.height = self.height 
 
         self.init() 
-        self.writeTexture(self.data, self.width, self.height, self.width * 4)
+        self.writeTexture(self.data, self.width, self.height, self.width * 4) 
+
+
+class CubeMapTexture(Texture):
+    def __init__(self, tag:str, paths:list):
+        super().__init__(device=None, label=tag, textureDescriptor=None)
+        self.tag = tag
+        self.paths = paths 
+        self.descriptor = None 
+
+    def make(self, device:wgpu.GPUDevice):
+        self.device = device
+
+        self.data = []
+        self.width = []
+        self.height = [] 
+
+        for path in self.paths:
+            dwh = load_image(path) 
+            self.data.append(dwh[0]) 
+            self.width.append(dwh[1]) 
+            self.height.append(dwh[2])  
+
+        self.descriptor = TextureDescriptor( 
+            usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING,
+            width=self.width[0], 
+            height=self.height[0],
+            depthOrArrayLayers=6, 
+        ) 
+        self.init()
+
+        self.view = self.context.create_view(
+            format=wgpu.TextureFormat.rgba8unorm,
+            dimension=wgpu.TextureViewDimension.cube,
+            aspect=wgpu.TextureAspect.all,
+            base_mip_level=0,
+            mip_level_count=1, 
+            base_array_layer=0,
+            array_layer_count=6
+        )   
+
+        byteData = bytes()
+        for data in self.data: 
+            byteData += data 
+
+        self.writeTexture(byteData, self.width[0], self.height[0], self.width[0] * 4, 6)
+            
+        

@@ -50,8 +50,8 @@ fn vs_main(
     out.fragPos = (model * vec4(aPos, 1.0)).xyz; 
     out.normal = (model_ti * vec4f(aNormal, 1.0)).xyz; 
     out.fragPosLight = lmvp * vec4f(aPos, 1.0);
-    out.Position = mvp * vec4(aPos, 1.0);
     out.deffuseUV = aUV;
+    out.Position = mvp * vec4(aPos, 1.0);
     return out;
 }  
 
@@ -71,7 +71,7 @@ fn ShadowCalculation(
 
             visibility += textureSampleCompare(
                 shadowMap, shadowSampler,
-                uv.xy + offset, projCoord.z - 0.0005
+                uv.xy + offset, projCoord.z - 0.0001
             );
         }
     }

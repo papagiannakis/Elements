@@ -14,7 +14,7 @@ class cammera:
         self.right = glm.vec3(0)
         self.up = glm.vec3(0)
 
-        self.view = glm.mat4(1)
+        self.view = glm.transpose(glm.lookAtLH(self.position, glm.vec3(0.0, 0.0, 0.0), glm.vec3(0.0, 0.0, 1.0)))
 
         self.forward_state = 0;
         self.right_state = 0;
@@ -99,8 +99,8 @@ class cammera:
 
         if event and event.type == EventTypes.MOUSE_MOTION:
             if button_map[glfw.MOUSE_BUTTON_2] in event.data["buttons"]:
-                x = np.floor(event.data["x"] - event.data["width"]/2)
-                y = np.floor(event.data["y"] - event.data["height"]/2) 
+                x = np.floor(event.data["x"] - self.mouse_noop_x)
+                y = np.floor(event.data["y"] - self.mouse_noop_y) 
 
                 # x = (x / np.abs(y)) * sensitivity
                 # y = (y / np.abs(y)) * sensitivity
@@ -112,6 +112,10 @@ class cammera:
                     self.spinCammera(-x, 0)
                 else:
                     y = (y / np.abs(y)) * sensitivity
-                    self.spinCammera(0, -y)         
+                    self.spinCammera(0, -y)          
+
+            else:
+                self.mouse_noop_x = np.floor(event.data['x']) 
+                self.mouse_noop_y = np.floor(event.data['y'])
 
         self.cammeraUpdate()

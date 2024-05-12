@@ -106,7 +106,8 @@ class Shader:
                     value:Texture=None,
                     usage:any=wgpu.ShaderStage.FRAGMENT,
                     sampleType:any=wgpu.TextureSampleType.float,
-                    dimension:any=wgpu.TextureViewDimension.d2,
+                    dimension:any=wgpu.TextureViewDimension.d2, 
+                    viewDimention:any=wgpu.TextureViewDimension.d2
     ):
 
         self.attachedMaterial.uniformGroups[groupName].addTexture(
@@ -114,7 +115,8 @@ class Shader:
             value=value,
             usage=usage, 
             sampleType=sampleType, 
-            dimension=dimension
+            dimension=dimension,
+            viewDimention=viewDimention
         ) 
 
     def addSampler(self,

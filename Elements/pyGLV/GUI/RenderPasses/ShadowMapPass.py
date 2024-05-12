@@ -142,7 +142,7 @@ class ShadowMapPass:
                 for attribute in self._shadow_prepass_mat.shader.attributes.values():
                     render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
 
-                for group in self._shadow_prepass_mat.shader.uniformGroups.values():
+                for group in self._shadow_prepass_mat.uniformGroups.values():
                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
 
                 render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)    

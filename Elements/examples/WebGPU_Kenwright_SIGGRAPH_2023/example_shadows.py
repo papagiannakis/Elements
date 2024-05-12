@@ -9,7 +9,7 @@ from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.fps_cammera import cammera
 import Elements.pyECSS.math_utilities as util
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
-from Elements.pyGLV.GL.wgpu_texture import ImprotTexture
+from Elements.pyGLV.GL.wgpu_texture import ImprotTexture, CubeMapTexture
 import Elements.utils.normals as norm
 
 from Elements.pyGLV.GL.wpgu_scene import Scene
@@ -18,6 +18,7 @@ from Elements.pyGLV.GL.wgpu_object import Object, import_mesh
 from Elements.pyGLV.GUI.wgpu_renderer import Renderer, RENDER_PASSES, PASS
 from Elements.pyGLV.GL.Shader.wgpu_SimpleShader import SimpleShader
 from Elements.pyGLV.GL.Shader.wgpu_ShadowShader import ShadowShader
+from Elements.pyGLV.GL.Shader.wgpu_CubeMapShader import CubeMapShader 
 
 
 canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example")
@@ -34,7 +35,79 @@ device = adapter.request_device()
 # Prepare present context
 present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
-present_context.configure(device=device, format=render_texture_format)
+present_context.configure(device=device, format=render_texture_format) 
+
+class simple(Object):
+    def __init__(self, *args, instance_count, **kwards):
+        super(*args).__init__(*args, **kwards)
+        self.instance_count = instance_count  
+
+    def onInit(self): 
+        self.attachedMaterial = Material(tag="name", shader=SimpleShader(device=device)) 
+
+        model = glm.mat4x4(1)
+        model = glm.transpose(glm.translate(model, glm.vec3(10, 10, 10))) 
+        model = np.array(model, dtype=np.float32)
+        self.attachedMaterial.shader.Models.append(model) 
+
+        self.load_mesh_from_obj(path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj")
+        texture = ImprotTexture("cubeTexture", path=definitions.MODEL_DIR / "cube-sphere" / "CubeTexture.png")
+        texture.make(device=device)
+        self.attachedMaterial.shader.setTexture(value=texture)
+
+    def onUpdate(self):
+        return
+
+
+class cubemap(Object): 
+    def __init__(self, *args, instance_count, **kwards):
+        super(*args).__init__(*args, **kwards)
+        self.instance_count = instance_count  
+
+    def onInit(self): 
+        self.attachedMaterial = Material(tag="cubemap", shader=CubeMapShader(device=device)) 
+        paths = [] 
+        paths.append(TEXTURE_DIR / "Skyboxes" / "Cloudy" / "back.jpg")
+        paths.append(TEXTURE_DIR / "Skyboxes" / "Cloudy" / "front.jpg")
+        paths.append(TEXTURE_DIR / "Skyboxes" / "Cloudy" / "left.jpg")
+        paths.append(TEXTURE_DIR / "Skyboxes" / "Cloudy" / "right.jpg") 
+        paths.append(TEXTURE_DIR / "Skyboxes" / "Cloudy" / "top.jpg") 
+        paths.append(TEXTURE_DIR / "Skyboxes" / "Cloudy" / "bottom.jpg")  
+
+        texture = CubeMapTexture("cubemap", paths)  
+        texture.make(device=device) 
+        self.attachedMaterial.shader.setTexture(value=texture) 
+
+        self.vertices = np.array([
+            [ 1.0,  1.0],
+            [ 1.0, -1.0],
+            [-1.0, -1.0],
+            [ 1.0,  1.0],
+            [-1.0, -1.0],
+            [-1.0,  1.0]
+        ], dtype=np.float32) 
+
+        self.normals = np.array([
+            [0.0, 0.0, 1.0, 1.0],  # Front face
+            [0.0, 0.0, -1.0, 1.0],  # Back face
+            [1.0, 0.0, 0.0, 1.0],  # Right face
+            [-1.0, 0.0, 0.0, 1.0],  # Left face
+            [0.0, 1.0, 0.0, 1.0],  # Top face
+            [0.0, -1.0, 0.0, 1.0]  # Bottom face
+        ], dtype=np.float32)  
+
+        self.indices = np.array([
+            0, 1, 2, 3, 4, 5
+        ], dtype=np.uint32)
+
+        model = glm.mat4x4(1)
+        model = glm.transpose(glm.translate(model, glm.vec3(0, 0, 0))) 
+        model = np.array(model, dtype=np.float32)
+        self.attachedMaterial.shader.Models.append(model)
+
+    def onUpdate(self): 
+        return;
+
 
 class plane(Object):
     def __init__(self, *args, instance_count, **kwards):
@@ -93,6 +166,7 @@ class talble(Object):
     def onUpdate(self):
         return;
 
+
 class stronghold(Object):
     def __init__(self, *args, instance_count, **kwards):
         super(*args).__init__(*args, **kwards)
@@ -121,12 +195,17 @@ class stronghold(Object):
     def onUpdate(self):
         return;
 
-scene = Scene()
+
+scene = Scene() 
+cube = cubemap(instance_count=1)
 obj = plane(instance_count=1)
-obj1 = talble(instance_count=1);
-# obj2 = mediumRare(instance_count=256)
+obj1 = talble(instance_count=1); 
+s = simple(instance_count=1)
+# obj2 = mediumRare(instance_count=256) 
+scene.append_object(cube)
+scene.append_object(s)
 scene.append_object(obj)
-scene.append_object(obj1)  
+scene.append_object(obj1)   
 # obj = stronghold(instance_count=1) 
 # scene.append_object(obj)
 # scene.append_object(obj2) 

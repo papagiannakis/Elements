@@ -19,6 +19,7 @@ class TextureUniform:
     usage:any
     sampleType:any
     dimension:any 
+    viewDimension:any
 
 class SamplerUniform:
     name:str
@@ -87,7 +88,8 @@ class UniformGroup:
                     value:Texture=None,
                     usage:any=wgpu.ShaderStage.FRAGMENT,
                     sampleType:any=wgpu.TextureSampleType.float,
-                    dimension:any=wgpu.TextureViewDimension.d2,
+                    dimension:any=wgpu.TextureViewDimension.d2, 
+                    viewDimention:any=wgpu.TextureViewDimension.d2
     ):
         t = TextureUniform() 
         t.name = name
@@ -95,6 +97,7 @@ class UniformGroup:
         t.usage = usage
         t.sampleType = sampleType
         t.dimension = dimension 
+        t.viewDimention = viewDimention
 
         self.textureUniforms.update({t.name: t})
 
@@ -217,7 +220,7 @@ class UniformGroup:
                     "visibility": data.usage,
                     "texture": {  
                         "sample_type": data.sampleType,
-                        "view_dimension": data.dimension,
+                        "view_dimension": data.viewDimention,
                     }
                 }) 
                 bindingCount += 1

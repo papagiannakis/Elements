@@ -11,7 +11,7 @@ class ModelPass:
     
     def onInit(self, command_encoder): 
         for obj in self._renderer._scene._objects:   
-            if (self._renderer._shadowMapDepthTexture): 
+            if (self._renderer._shadowMapDepthTexture and hasattr(obj.attachedMaterial.shader, "setShadowMap")): 
                 obj.attachedMaterial.shader.setShadowMap(Texture( 
                         label="ShadowMap",
                         device=self._renderer._device, 
@@ -108,20 +108,6 @@ class ModelPass:
         )
 
         for obj in self._renderer._scene._objects:   
-            # if (self._renderer._shadowMapDepthTexture): 
-            #     obj.attachedMaterial.shader.setShadowMap(Texture( 
-            #             label="ShadowMap",
-            #             device=self._renderer._device, 
-            #             context=self._renderer._shadowMapDepthTexture,
-            #             view = self._renderer._shadowMapDepthTextureView 
-            #         )
-            #     )
-
-            # obj.attachedMaterial.shader.update(command_encoder=command_encoder)  
-
-            # for uniformGroup in obj.attachedMaterial.uniformGroups.values():
-            #     uniformGroup.makeBindGroup(device=self._renderer._device) 
-
             render_pipeline = obj.attachedMaterial.makePipeline(device=self._renderer._device, renderPass=self) 
 
             render_pass.set_pipeline(render_pipeline)   
