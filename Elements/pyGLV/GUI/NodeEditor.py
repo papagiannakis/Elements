@@ -12,6 +12,8 @@ from Elements.pyGLV.GUI.Viewer import RenderWindow
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
 update_needed = True;
+rounding = 5.0;
+padding  = 12.0;
 
 class IdProvider:
     """A simple utility to obtain unique ids, and to be able to restore them at each frame"""
@@ -31,7 +33,7 @@ class IdProvider:
 ID = IdProvider()
 
 class Node:
-    def __init__(self, _name = None, _parent = None):
+    def __init__(self, _name = None, _parent = None, _type = None):
         if _name is None:
             self.name = "new_node"
         else:
@@ -47,15 +49,31 @@ class Node:
         self.parentPinId = ed.PinId(ID.next_id())
         self.creation = None;
         self.parent = None;
+        self.type = _type;
 
     
     def display(self):
         """
         Displays a node in the node
         """
+        global padding, rounding
+        ed.push_style_var(ed.StyleVar.node_rounding, rounding);
+
+        if self.type == "Root":
+            ed.push_style_color(ed.StyleColor.node_bg, imgui.ImVec4(1, 0, 0, 0.5));
+        elif self.type == "Entity":
+            ed.push_style_color(ed.StyleColor.node_bg, imgui.ImVec4(0, 0.5, 0.5, 0.5));
+        elif self.type == "Component":
+            ed.push_style_color(ed.StyleColor.node_bg, imgui.ImVec4(0.5, 0.5, 0, 0.5));
+        
+        ed.push_style_color(ed.StyleColor.node_border, imgui.ImVec4(1, 1, 1, 1));
+        ed.push_style_color(ed.StyleColor.pin_rect, imgui.ImVec4(60, 180, 255, 150));
+        ed.push_style_color(ed.StyleColor.pin_rect_border, imgui.ImVec4( 60, 180, 255, 150));
+        
         ed.begin_node(self.id)
 
-        imgui.text(self.name)
+        imgui.text_unformatted(self.name);
+
         ed.begin_pin(self.parentPinId, ed.PinKind.input)
         imgui.text("Parent")
         ed.end_pin()
@@ -199,7 +217,13 @@ class NodeEditor:
                 except StopIteration:
                     done_traversing = True
                 else:
-                    tmp = Node(comp.name)
+                    comp_type = None;
+                    if isinstance(comp, Entity):
+                        comp_type = "Entity";
+                    else:
+                        comp_type = "Component";
+
+                    tmp = Node(comp.name, _type = comp_type);
                     parent = self.findNodeByName(comp._parent.name)
                     if parent is not None:
                         tmp.parentId = parent.id

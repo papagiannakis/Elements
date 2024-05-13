@@ -6,7 +6,7 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import IMGUIecssDecorator_Georgiou, ImGUIecssDecorator
+from Elements.pyGLV.GUI.ImguiDecorator import IMGUIecssDecoratorBundle, ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -117,7 +117,7 @@ shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = IMGUIecssDecorator_Georgiou, openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = IMGUIecssDecoratorBundle, openGLversion = 4)
 
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes

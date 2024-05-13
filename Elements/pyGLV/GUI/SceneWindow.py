@@ -5,11 +5,14 @@ import Elements.extensions.BasicShapes.BasicShapes as bshapes
 from Elements.pyECSS.Entity import Entity
 from Elements.pyGLV.GUI.Viewer import RenderWindow
 import numpy as np
+from imgui_bundle import imguizmo #type: ignore
+import Elements.pyECSS.math_utilities as util
 import glm
 
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
 update_needed = True;
+first_run = True;
 
 class SceneWindow:
     def __init__(self, wrapee: RenderWindow, imguiContext = None, ) -> None:
@@ -24,7 +27,6 @@ class SceneWindow:
         self.changed = None;
         self.cameraView = None;
         
-        self.to_add = None;
         self.selected_parent = None;
         self.shape = None;
         
@@ -38,9 +40,12 @@ class SceneWindow:
     
 
     def mainWindowLoop(self, view, wireframe, selected, currOperation):
-        if self.to_add is not None:
-            self.wrapee.scene.world.addEntityChild(self.wrapee.scene.world.root, self.to_add); 
-            self.to_add = None;
+        global update_needed
+        
+        if update_needed:
+            self.entities = [];
+            self.update_entities(self.wrapee.scene.world.root);
+            update_needed = False;
             
         self.mainMenuBar();
         self.gizmo.currentGizmoOperation = currOperation;
@@ -59,8 +64,18 @@ class SceneWindow:
         trsChange, trs = self.gizmo.drawTransformGizmo(selected);
         
         imgui.end();
+        
 
-        return cameraChange, view, trsChange, self.gizmo.gizmo.decompose_matrix_to_components(trs)
+        if cameraChange and self.gizmo._cameraSystem is not None:
+            camera_trs = imguizmo.im_guizmo.decompose_matrix_to_components(self.gizmo._view);
+            transMat = util.translate(camera_trs.translation[0],camera_trs.translation[1],camera_trs.translation[2])
+            rotMatX = util.rotate((1, 0, 0), camera_trs.rotation[0])
+            rotMatY = util.rotate((0, 1, 0), camera_trs.rotation[1])
+            rotMatZ = util.rotate((0, 0, 1), camera_trs.rotation[2])
+            scaleMat = util.scale(camera_trs.scale[0],camera_trs.scale[1],camera_trs.scale[2])
+            self.gizmo._cameraSystem._children[0]._children[0].trs = util.identity() @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+
+        return cameraChange, view, trsChange, imguizmo.im_guizmo.decompose_matrix_to_components(trs)
 
     def mainMenuBar(self):
         if imgui.begin_main_menu_bar():
@@ -70,7 +85,7 @@ class SceneWindow:
                     if clicked:
                         self.add_entity = True;
                     if imgui.begin_menu("Remove"):
-                        self.remove_entity = self.show_selectable_entities();
+                        self.show_selectable_entities(self.wrapee.scene.world.root);
                         imgui.end_menu();
                     imgui.end_menu()
                 if imgui.menu_item("Close", "Lal", False):
@@ -83,12 +98,9 @@ class SceneWindow:
         global update_needed
         tmp = None;
         add = False;
+
         if self.add_entity:
             _, self.add_entity = imgui.begin("Create Entity",  1)
-            
-            if update_needed:
-                self.update_entities(self.wrapee.scene.world.root);
-                update_needed = False;
 
             imgui.text("Name: "); imgui.same_line()
             _, self.name = imgui.input_text(' ', self.name)
@@ -119,7 +131,7 @@ class SceneWindow:
 
             if imgui.button("Add"):
                 
-                if self.name is "":
+                if self.name == "":
                     tmp = shapes[self.shape](parent = self.selected_parent);
                 else:
                     tmp = shapes[self.shape](self.name, parent = self.selected_parent);
@@ -148,13 +160,11 @@ class SceneWindow:
 
             if yes or no:   
                 if yes:
-                    self.wrapee.scene.world.root.remove(self.to_be_removed);
+                    self.to_be_removed.parent.remove(self.to_be_removed);
                     remove = True;
                     node = self.to_be_removed;
-
-
+                
                 self.to_be_removed = None;
-                print(self.to_be_removed)
             
             imgui.end()
             
@@ -169,25 +179,37 @@ class SceneWindow:
         :param component: [description]
         :type component: Component
         """
-        self.entities = [];
+        global first_run 
         if component._children is not None:
             debugIterator = iter(component._children)
             done_traversing = False
             while not done_traversing:
                 try:
                     comp = next(debugIterator)
-                    imgui.indent(10)
                 except StopIteration:
                     done_traversing = True
                 else:
                     if isinstance(comp, Entity):
+                        if first_run:
+                            print("first_run");
+                            first_run = False;
+                            from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
+                            if isinstance(comp, SimpleCamera):
+                                self.gizmo._cameraSystem = comp;
+
                         self.entities.append(comp);
+                    self.update_entities(comp);
+    
 
-    def show_selectable_entities(self):
-        for child in self.wrapee.scene.world.root._children:
-            _, clicked = imgui.menu_item(child.name, "", False);
-            if clicked:
-                self.to_be_removed = child;
-                return True
-
-        return False
+    def show_selectable_entities(self, comp: Entity):
+        if comp._children is not None:
+            for child in comp._children:
+                if isinstance(child, Entity):
+                    _, clicked = imgui.menu_item(child.name, "", False);
+                    if clicked:
+                        self.to_be_removed = child;
+                        self.remove_entity = True
+                self.show_selectable_entities(child);
+        
+        if not self.remove_entity:
+            self.remove_entity = False

@@ -17,7 +17,6 @@ Matrix3 = NDArray[np.float64]
 
 lastUsing = 0
 
-
 # Camera projection
 isPerspective = True
 fov = 60.0
@@ -66,6 +65,8 @@ class Gizmos:
 
         self._view = np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], np.float32)
         self._projection = None;  
+    
+        self._cameraSystem = None;
 
     def setView(self, _view):
         self._view = _view;

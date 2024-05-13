@@ -697,7 +697,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         return super().event_input_process()
 
 
-class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
+class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
     def __init__(self, wrapee: RenderWindow, imguiContext = None):
         super().__init__(wrapee, imguiContext)
@@ -741,7 +741,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
 
         if first_run:
             first_run = False;
-            self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name))
+            self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name, _type = "Root"));
             self.node_editor.generate(self.wrapeeWindow.scene.world.root)
             
         imgui.begin("NodeEditor")           # node editor window
@@ -764,6 +764,7 @@ class IMGUIecssDecorator_Georgiou(ImGUIDecorator):
         if cameraChange:
             self._eye, self._up, self._target = view[0], view[1], view[2];
             self._updateCamera.value = np.array(glm.lookAt(self._eye, self._target, self._up), np.float32)
+
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
 

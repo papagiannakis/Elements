@@ -8,7 +8,7 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2, IMGUIecssDecorator_Georgiou
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2, IMGUIecssDecoratorBundle
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -191,7 +191,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_sou
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Let There Be Light", openGLversion = 4, customImGUIdecorator = IMGUIecssDecorator_Georgiou)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Let There Be Light", openGLversion = 4, customImGUIdecorator = IMGUIecssDecoratorBundle)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
