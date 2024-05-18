@@ -40,6 +40,28 @@ idMatrix =  np.array([
 
 firstFrame = True
 
+def makeMatrixCompatible():
+    global objectMatrix
+
+    tmp = objectMatrix[3][0];
+    objectMatrix[3][0] = objectMatrix[3][2];
+    objectMatrix[3][2] = tmp;
+
+    tmp = objectMatrix[0][0];
+    objectMatrix[0][0] = objectMatrix[2][2];
+    objectMatrix[2][2] = tmp;
+
+    tmp = objectMatrix[1][0];
+    objectMatrix[1][0] = objectMatrix[1][2];
+    objectMatrix[1][2] = tmp;
+
+    tmp = objectMatrix[0][1];
+    objectMatrix[0][1] = objectMatrix[2][1];
+    objectMatrix[2][1] = tmp;
+
+    tmp = objectMatrix[0][2];
+    objectMatrix[0][2] = objectMatrix[2][0];
+    objectMatrix[2][0] = tmp;
 
 class Gizmos:
     def __init__(self, imguiContext = None):
@@ -50,6 +72,7 @@ class Gizmos:
             exit(1);
         
         self.gizmo.set_im_gui_context(imguiContext);
+        self.gizmo.allow_axis_flip(False);
         self.camDistance = 8.0
         self.currentGizmoOperation = imguizmo.im_guizmo.OPERATION.translate
 
@@ -73,29 +96,25 @@ class Gizmos:
         
     def __del__(self):
         pass
-    
+
+
     def drawTransformGizmo(self, comp):  
         global cameraView, objectMatrix
         trs_changed = False;
 
         if comp is not None and isinstance(comp, BasicTransform):
-            pos = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
-            tmp = pos[3][0];
-            pos[3][0] = pos[3][2];
-            pos[3][2] = tmp;
+            objectMatrix = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
+            makeMatrixCompatible();
 
             manip_result = self.gizmo.manipulate(
                 self._view,
                 self._projection,
                 self.currentGizmoOperation,
                 self.statics.mCurrentGizmoMode,
-                # pos
                 objectMatrix
             )
 
             if manip_result:
-                # objectMatrix = np.array(glm.transpose(manip_result.value), np.float32);
-                # print(np.array(glm.transpose(comp.trs), np.float32))
                 objectMatrix = manip_result.value;
                 trs_changed = True
             
@@ -114,9 +133,9 @@ class Gizmos:
 
         self.gizmo.set_drawlist()
 
-        if firstFrame:
-            firstFrame = False;
-            self._projection = util.perspective(25, 1200/800, 0.01, 100.0); 
+
+        io = imgui.get_io()
+        self._projection = util.perspective(25, io.display_size.x / io.display_size.y, 0.01, 100.0); 
 
         viewManipulateRight = imgui.get_window_pos().x + imgui.get_window_width();
         viewManipulateTop = imgui.get_window_pos().y

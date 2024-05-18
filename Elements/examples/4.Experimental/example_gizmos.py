@@ -142,7 +142,6 @@ def EditTransform(
         if edited:
             r.changed = True
             r.objectMatrix = gizmo.recompose_matrix_from_components(matrixComponents)
-            print(r.objectMatrix)
 
 
     io = imgui.get_io()
@@ -230,7 +229,6 @@ def make_closure_demo_guizmo() -> GuiFunction:
             radians = glm.radians(fov)  # The gui is in degree, we need radians for glm
             cameraProjection = glm.perspective(radians, io.display_size.x / io.display_size.y, 0.1, 100.0)  # type: ignore
             cameraProjection = np.array(cameraProjection)
-            # print(cameraProjection)
         else:
             viewHeight = viewWidth * io.display_size.y / io.display_size.x
             cameraProjection = glm.ortho(-viewWidth, viewWidth, -viewHeight, viewHeight, 1000.0, -1000.0)  # type: ignore
@@ -250,6 +248,7 @@ def make_closure_demo_guizmo() -> GuiFunction:
         _, camDistance = imgui.drag_float("Distance:", camDistance, 0.1, 1.0, 10.0, "%.3f");
 
         if firstFrame:
+            print(cameraProjection)
             eye = glm.vec3(
                 math.cos(camYAngle) * math.cos(camXAngle) * camDistance,
                 math.sin(camXAngle) * camDistance,
@@ -267,8 +266,9 @@ def make_closure_demo_guizmo() -> GuiFunction:
         result = EditTransform(cameraView, cameraProjection, gObjectMatrix[0], lastUsing == 0)  # type: ignore
         
         if result.changed:
+            print(cameraProjection)
             gObjectMatrix[0] = result.objectMatrix
-            print(result.objectMatrix)
+
             cameraView = result.cameraView
         if gizmo.is_using():
             lastUsing = 0
