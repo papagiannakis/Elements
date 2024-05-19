@@ -30,8 +30,8 @@ fn vs_main(
 
     var output : VertexOutput;
     output.Position = vec4f(aVertex, 1.0, 1.0);
-    var x: f32 = aVertex.x;
-    var y: f32 = aVertex.y;
+    var x: f32 = -aVertex.x;
+    var y: f32 = -aVertex.y;
 
     output.direction = normalize(camera.forwards.xyz + x * camera.right.xyz + y * camera.up.xyz); 
     return output;

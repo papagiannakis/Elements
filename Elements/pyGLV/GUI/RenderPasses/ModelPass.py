@@ -3,7 +3,8 @@ import glm
 import numpy as np
 
 from Elements.pyGLV.GL.wgpu_meshes import Buffers  
-from Elements.pyGLV.GL.wgpu_texture import Texture
+from Elements.pyGLV.GL.wgpu_texture import Texture 
+from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import DEPTH_TEXTURE_SIZE
 
 class ModelPass:
     def __init__(self, renderer): 
@@ -11,14 +12,14 @@ class ModelPass:
     
     def onInit(self, command_encoder): 
         for obj in self._renderer._scene._objects:   
-            if (self._renderer._shadowMapDepthTexture and hasattr(obj.attachedMaterial.shader, "setShadowMap")): 
-                obj.attachedMaterial.shader.setShadowMap(Texture( 
-                        label="ShadowMap",
-                        device=self._renderer._device, 
-                        context=self._renderer._shadowMapDepthTexture,
-                        view = self._renderer._shadowMapDepthTextureView 
-                    )
-                )
+            if (self._renderer._shadowMapDepthTexture and hasattr(obj.attachedMaterial.shader, "setShadowMap")):  
+                shadow_depth_map = Texture(
+                    label="ShadowMap",
+                    device=self._renderer._device, 
+                    context=self._renderer._shadowMapDepthTexture,
+                    view = self._renderer._shadowMapDepthTextureView 
+                )  
+                obj.attachedMaterial.shader.setShadowMap(shadow_depth_map)
 
             obj.attachedMaterial.shader.update(command_encoder=command_encoder)  
 
@@ -58,7 +59,7 @@ class ModelPass:
         self.depth_stencil = {
             "format": wgpu.TextureFormat.depth24plus,
             "depth_write_enabled": True,
-            "depth_compare": wgpu.CompareFunction.less,
+            "depth_compare": wgpu.CompareFunction.less_equal,
         }
         
         depth_texture : wgpu.GPUTexture = self._renderer._device.create_texture(
@@ -120,8 +121,8 @@ class ModelPass:
                 for group in obj.attachedMaterial.uniformGroups.values():
                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
 
-                render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)  
-                  
+                render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)   
+
             else:
                 for attribute in obj.attachedMaterial.shader.attributes.values():
                     render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
@@ -129,7 +130,7 @@ class ModelPass:
                 for group in obj.attachedMaterial.uniformGroups.values(): 
                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
 
-                render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)    
+                render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)     
 
         render_pass.end()
         # self._renderer._device.queue.submit([command_encoder.finish()]) 

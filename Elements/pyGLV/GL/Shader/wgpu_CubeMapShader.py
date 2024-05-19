@@ -9,7 +9,7 @@ from Elements.pyGLV.GL.wgpu_shader import Attribute
 from Elements.pyGLV.GL.wgpu_shader import SHADER_TYPE_BUFFER_STRIDE 
 from Elements.pyGLV.GL.wgpu_shader import SHADER_TYPES 
 from Elements.pyGLV.GL.wgpu_shader import F32, I32 
-from Elements.pyGLV.GL.wgpu_texture import Texture, ImprotTexture 
+from Elements.pyGLV.GL.wgpu_texture import Texture, ImportTexture 
 from Elements.pyGLV.GL.wgpu_uniform_groups import UniformGroup  
 from Elements.pyGLV.GUI.fps_cammera import cammera
 from Elements.definitions import SHADER_DIR
@@ -81,8 +81,8 @@ class CubeMapShader(Shader):
     def update(self, command_encoder:wgpu.GPUCommandBuffer): 
         scene = Scene()  
 
-        dy = np.tan(np.pi / 8); 
-        dx = dy * (scene._canvasWidth / scene._canvasHeight) 
+        dy = -np.tan(np.pi / 8); 
+        dx = -dy * (scene._canvasWidth / scene._canvasHeight) 
 
         forward = scene._cammera.forward 
         right = scene._cammera.right
@@ -90,7 +90,11 @@ class CubeMapShader(Shader):
 
         self.forward = glm.vec4(forward, 1.0)
         self.right = glm.vec4((dx * right[0]), (dx * right[1]), (dx * right[2]), 1.0) 
-        self.up = glm.vec4((dy * up[0]), (dy * up[1]), (dy * up[2]), 1.0) 
+        self.up = glm.vec4((dy * up[0]), (dy * up[1]), (dy * up[2]), 1.0)  
+
+        # self.forward = glm.vec4(forward, 1.0) 
+        # self.right = glm.vec4(right, 1.0) 
+        # self.up = glm.vec4(up, 1.0)
 
         self.setUniformValues(command_encoder=command_encoder)
 

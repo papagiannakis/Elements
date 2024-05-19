@@ -14,7 +14,7 @@ class cammera:
         self.right = glm.vec3(0)
         self.up = glm.vec3(0)
 
-        self.view = glm.transpose(glm.lookAtLH(self.position, glm.vec3(0.0, 0.0, 0.0), glm.vec3(0.0, 0.0, 1.0)))
+        self.view = glm.transpose(glm.lookAtLH(glm.vec3(self.position), glm.vec3(0.0, 0.0, 0.0), glm.vec3(0.0, 0.0, 1.0)))
 
         self.forward_state = 0;
         self.right_state = 0;
@@ -22,10 +22,11 @@ class cammera:
         self.mouse_noop_x = 0;
         self.mouse_noop_y = 0;
     
-        self.cammeraUpdate()
-
     def getView(self):
-        return self.view;
+        return self.view; 
+
+    def getPos(self): 
+        return self.position;
 
     def spinCammera(self, dx:any, dy:any):
         self.eulers[2] -= dx;
@@ -54,20 +55,23 @@ class cammera:
 
     def cammeraUpdate(self): 
         self.forward = glm.vec3( 
-            glm.cos(np.deg2rad(self.eulers[2])) * glm.cos(np.deg2rad(self.eulers[1])),
-            glm.sin(np.deg2rad(self.eulers[2])) * glm.cos(np.deg2rad(self.eulers[1])),
-            glm.sin(np.deg2rad(self.eulers[1])),
+            glm.cos(glm.radians(self.eulers[2])) * glm.cos(glm.radians(self.eulers[1])),
+            glm.sin(glm.radians(self.eulers[2])) * glm.cos(glm.radians(self.eulers[1])),
+            glm.sin(glm.radians(self.eulers[1])),
         )
 
         self.right = glm.vec3(glm.cross(self.forward, [0,0,1]))
         self.up = glm.vec3(glm.cross(self.right, self.forward)) 
-        self.target = glm.vec3(glm.add(self.position, self.forward))
+        self.target = glm.vec3(glm.add(self.position, self.forward)) 
+        # self.target = glm.vec3(0.0, 0.0, 0.0)
 
-        self.view = glm.transpose(glm.lookAtLH(self.position, self.target, self.up)) 
-        self.view = glm.rotate(np.deg2rad(-90), glm.vec3(1, 0, 0)) * self.view
+        self.view = glm.transpose(glm.lookAtLH(self.position, self.target, self.up))
+        # print(glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0))) 
+        # print("\n")
+        self.view = glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * self.view
 
     def update(self, canvas, event): 
-        sensitivity = 0.5
+        sensitivity = 0.7
 
         self.forward_state = 0
         self.right_state = 0
@@ -102,17 +106,15 @@ class cammera:
                 x = np.floor(event.data["x"] - self.mouse_noop_x)
                 y = np.floor(event.data["y"] - self.mouse_noop_y) 
 
-                # x = (x / np.abs(y)) * sensitivity
-                # y = (y / np.abs(y)) * sensitivity
-
-                # self.spinCammera(-x, -y)
-
                 if np.abs(x) > np.abs(y):
-                    x =  (x / np.abs(x)) * sensitivity
+                    x =  np.sign(x) * sensitivity 
                     self.spinCammera(-x, 0)
                 else:
-                    y = (y / np.abs(y)) * sensitivity
-                    self.spinCammera(0, -y)          
+                    y = np.sign(y) * sensitivity
+                    self.spinCammera(0, -y)            
+
+                self.mouse_noop_x = np.floor(event.data['x']) 
+                self.mouse_noop_y = np.floor(event.data['y'])
 
             else:
                 self.mouse_noop_x = np.floor(event.data['x']) 

@@ -9,7 +9,7 @@ from Elements.pyGLV.GL.wgpu_shader import Attribute
 from Elements.pyGLV.GL.wgpu_shader import SHADER_TYPE_BUFFER_STRIDE 
 from Elements.pyGLV.GL.wgpu_shader import SHADER_TYPES 
 from Elements.pyGLV.GL.wgpu_shader import F32, I32 
-from Elements.pyGLV.GL.wgpu_texture import Texture, ImprotTexture 
+from Elements.pyGLV.GL.wgpu_texture import Texture, ImportTexture 
 from Elements.pyGLV.GL.wgpu_uniform_groups import UniformGroup  
 from Elements.pyGLV.GUI.fps_cammera import cammera
 from Elements.definitions import SHADER_DIR

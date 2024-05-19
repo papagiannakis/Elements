@@ -9,7 +9,7 @@ from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyGLV.GUI.fps_cammera import cammera
 import Elements.pyECSS.math_utilities as util 
 from Elements.definitions import TEXTURE_DIR, MODEL_DIR
-from Elements.pyGLV.GL.wgpu_texture import ImprotTexture 
+from Elements.pyGLV.GL.wgpu_texture import ImportTexture 
 import Elements.utils.normals as norm
 
 from Elements.pyGLV.GL.wpgu_scene import Scene 
@@ -44,7 +44,7 @@ class talble(Object):
 
     def onInit(self):  
         self.attachedMaterial = Material(tag="simple", shader=BlinPhongShader(device=device))
-        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "cube-sphere" / "CubeTexture.png")
+        texture = ImportTexture("toolsTable", path=definitions.MODEL_DIR / "cube-sphere" / "CubeTexture.png")
         texture.make(device=device)
         self.attachedMaterial.shader.setTexture(value=texture)  
 
@@ -73,7 +73,7 @@ class ble(Object):
 
     def onInit(self):  
         self.attachedMaterial = Material(tag="simple", shader=SimpleShader(device=device))
-        texture = ImprotTexture("toolsTable", path=definitions.MODEL_DIR / "cube-sphere" / "CubeTexture.png")
+        texture = ImportTexture("toolsTable", path=definitions.MODEL_DIR / "cube-sphere" / "CubeTexture.png")
         texture.make(device=device)
         self.attachedMaterial.shader.setTexture(value=texture)  
 
@@ -122,9 +122,10 @@ canvas.request_draw(draw_frame)
 
 while canvas._running:
     event = canvas.event_input_process();   
-    scene.update(canvas, event) 
-
-    canvas.display()
-    canvas.display_post()
+    scene.update(canvas, event)  
+    
+    if canvas._need_draw:
+        canvas.display()
+        canvas.display_post()
         
 canvas.shutdown()

@@ -16,7 +16,15 @@ struct Fragment {
 };
 
 @binding(0) @group(0) var<uniform> ubuffer: Uniforms; 
-@binding(1) @group(0) var<storage, read> objects: ObjectData; 
+@binding(1) @group(0) var<storage, read> objects: ObjectData;  
+
+const near_plane = 0.1;
+const far_plane = 500.0;
+
+fn linearizeDepth(depth: f32) -> f32 {
+    let z: f32 = depth * 2.0 - 1.0; // Back to NDC
+    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
+} 
 
 @vertex
 fn vs_main( 
@@ -30,12 +38,12 @@ fn vs_main(
     var model = objects.model[ID]; 
 
     var lmvp = ubuffer.light_proj * ubuffer.light_view * model; 
-    out.Position = lmvp * vec4f(aPos, 1.0); 
-    out.pos = lmvp * vec4f(aPos, 1.0); 
-
     let n = normalize(aNormal); 
+    // out.Position = lmvp * vec4f(aPos, 1.0); 
+    out.pos = lmvp * vec4f(aPos, 1.0); 
     out.normal = (model * vec4f(n, 0.0)).xyz; 
 
+    out.Position = out.pos; 
     return out;
 } 
 
@@ -47,5 +55,5 @@ fn fs_main(
 
     var depth = pos.z/pos.w; 
 
-    return vec4f(depth, depth, depth, 1.0);
+    return vec4f(depth, depth, depth, depth);
 }

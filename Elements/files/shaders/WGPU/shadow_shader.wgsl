@@ -32,6 +32,8 @@ struct Fragment {
 @binding(3) @group(1) var mySampler: sampler; 
 
 const ShadowDepthTextureSize = 2048;
+const near_plane = 0.1;
+const far_plane = 500.0;
 
 @vertex
 fn vs_main(
@@ -55,6 +57,11 @@ fn vs_main(
     return out;
 }  
 
+fn linearizeDepth(depth: f32) -> f32 {
+    let z: f32 = depth * 2.0 - 1.0; // Back to NDC
+    return (2.0 * near_plane * far_plane) / (far_plane + near_plane - z * (far_plane - near_plane));
+}
+
 fn ShadowCalculation(
     fragPosLight: vec4f,
 ) -> f32 { 
@@ -68,7 +75,6 @@ fn ShadowCalculation(
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
             let offset = vec2f(vec2(x, y)) * oneOverShadowDepthTextureSize;
-
             visibility += textureSampleCompare(
                 shadowMap, shadowSampler,
                 uv.xy + offset, projCoord.z - 0.0001

@@ -105,7 +105,7 @@ class ShadowMapPass:
                 }
             ],
             depth_stencil_attachment={
-                    "view": depth_texture_view,
+                    "view": self._renderer._shadowMapDepthTextureView,
                     "depth_clear_value": 1.0,
                     "depth_load_op": wgpu.LoadOp.clear,
                     "depth_store_op": wgpu.StoreOp.store,
@@ -120,7 +120,7 @@ class ShadowMapPass:
         for uniformGroup in self._shadow_prepass_mat.uniformGroups.values():
             uniformGroup.makeBindGroup(device=self._renderer._device)  
 
-        render_pipeline = self._shadow_prepass_mat.makePipeline(device=self._renderer._device, renderPass=self) 
+        render_pipeline = self._shadow_prepass_mat.makePipeline(device=self._renderer._device, renderPass=self)  
 
         for obj in self._renderer._scene._objects:   
             self._shadow_prepass_mat.shader.Models = obj.attachedMaterial.shader.Models
@@ -136,16 +136,16 @@ class ShadowMapPass:
                 for group in self._shadow_prepass_mat.uniformGroups.values():
                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
 
-                render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)  
+                render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)   
                   
             else:
                 for attribute in self._shadow_prepass_mat.shader.attributes.values():
                     render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
 
-                for group in self._shadow_prepass_mat.uniformGroups.values():
+                for group in self._shadow_prepass_mat.uniformGroups.values(): 
                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
-
-                render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)    
+                
+                render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)     
 
         render_pass.end()
         # self._renderer._device.queue.submit([command_encoder.finish()]) 

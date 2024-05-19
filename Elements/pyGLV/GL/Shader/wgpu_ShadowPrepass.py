@@ -9,7 +9,7 @@ from Elements.pyGLV.GL.wgpu_shader import Attribute
 from Elements.pyGLV.GL.wgpu_shader import SHADER_TYPE_BUFFER_STRIDE
 from Elements.pyGLV.GL.wgpu_shader import SHADER_TYPES
 from Elements.pyGLV.GL.wgpu_shader import F32, I32
-from Elements.pyGLV.GL.wgpu_texture import Texture, ImprotTexture
+from Elements.pyGLV.GL.wgpu_texture import Texture, ImportTexture
 from Elements.pyGLV.GL.wgpu_uniform_groups import UniformGroup
 from Elements.pyGLV.GUI.fps_cammera import cammera
 from Elements.definitions import SHADER_DIR
@@ -73,23 +73,30 @@ class ShadowPrepassShader(Shader):
     def update(self, command_encoder:wgpu.GPUCommandBuffer):
         scene = Scene()
 
-        view = scene._cammera.view;
-
         light_pos = scene._light;
 
+        view = glm.transpose(glm.lookAtLH(light_pos.xyz, [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]))
+        view = glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * view
+
         light_view = glm.transpose(glm.lookAtLH(light_pos.xyz, [0.0, 0.0, 0.0], [0.0, 0.0, 1.0]))
+        light_view = glm.rotate(glm.radians(-90), glm.vec3(1, 0, 0)) * light_view
+
+        # light_view = glm.rotate(glm.radians(-90), glm.vec3(0, 0, 1)) * light_view
+        # light_view = glm.rotate(glm.radians(-90), glm.vec3(0, 0, 1)) * light_view
+
         # light_view = glm.rotate(np.deg2rad(-90), glm.vec3(0, 0, 1)) * light_view
 
         ratio = scene._canvasWidth / scene._canvasHeight
         near = 0.1
-        far = 1000.0
-        light_proj = glm.transpose(glm.perspectiveLH(glm.radians(90), ratio, near, far))
-        # light_proj = glm.transpose(glm.orthoLH(-100, 100, -100, 100, -400, 400))
+        far = 500.0
+        light_proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
+        # light_proj = (glm.orthoLH(-light_pos.x, light_pos.x, -light_pos.y, -light_pos.y, -400, 400))
 
         ratio = scene._canvasWidth / scene._canvasHeight
-        near = 0.01
+        near = 0.1
         far = 500.0
-        proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far))
+        proj = glm.transpose(glm.perspectiveLH(glm.radians(60), ratio, near, far)) 
+        # proj = (glm.orthoLH(-light_pos.x, light_pos.x, -light_pos.y, -light_pos.y, -400, 400))
 
         self.Proj = np.asarray(proj, dtype=np.float32)
         self.View = np.asarray(view, dtype=np.float32)

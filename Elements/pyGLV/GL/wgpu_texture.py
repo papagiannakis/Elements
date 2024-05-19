@@ -57,7 +57,7 @@ class Texture:
             self.view = self.context.create_view() 
         return self.view 
     
-    def writeTexture(self, data:any, width:int, height:int, bytesPerRow:int, depthOrArrayLater:int=1):
+    def writeTexture(self, data:any, width:int, height:int, bytesPerRow:int, depthOrArrayLater:int=1): 
         self.device.queue.write_texture(
             {
                 "texture": self.context, 
@@ -71,7 +71,7 @@ class Texture:
         ) 
 
 
-class ImprotTexture(Texture): 
+class ImportTexture(Texture): 
     def __init__(self, tag:str, path:str, desc: TextureDescriptor = None): 
         super().__init__(device=None, label=tag, textureDescriptor=desc)
         self.tag = tag
