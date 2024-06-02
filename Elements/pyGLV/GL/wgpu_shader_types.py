@@ -4,11 +4,14 @@ F32 = 4
 I32 = 4
 
 SHADER_TYPES = { 
-    'vec2f' : 2,
-    'vec3f' : 3,
+    'vec2f' : 2, 
+    'vec2i' : 2, 
+    'vec3f' : 3, 
+    'vec3i' : 3,
     'vec4f' : 4,
     'vec4i' : 4,
-    'mat4x4' : 16
+    'mat4x4f' : 16,
+    'mat4x4i' : 16
 } 
 
 SHADER_TYPE_BUFFER_STRIDE = { 

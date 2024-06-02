@@ -60,14 +60,15 @@ class CubeMapShader(Shader):
         self.addSampler(
             name="sampler",
             groupName="materialGroup",
-            sampler=self.device.create_sampler(
-                address_mode_u=wgpu.AddressMode.repeat,
-                address_mode_v=wgpu.AddressMode.repeat,
-                mag_filter=wgpu.FilterMode.linear,
-                min_filter=wgpu.FilterMode.nearest, 
-                mipmap_filter=wgpu.FilterMode.nearest,
-                max_anisotropy=1 
-            )
+            # sampler=self.device.create_sampler(
+            #     address_mode_u=wgpu.AddressMode.repeat,
+            #     address_mode_v=wgpu.AddressMode.repeat,
+            #     mag_filter=wgpu.FilterMode.linear,
+            #     min_filter=wgpu.FilterMode.nearest, 
+            #     mipmap_filter=wgpu.FilterMode.nearest,
+            #     max_anisotropy=1 
+            # ) 
+            sampler=self.device.create_sampler()
         ) 
 
         self.attachedMaterial.uniformGroups["frameGroup"].makeUniformBuffer(device=self.device)

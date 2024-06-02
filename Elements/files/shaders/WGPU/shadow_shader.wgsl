@@ -24,8 +24,8 @@ struct Fragment {
 }
 
 @binding(0) @group(0) var<uniform> ubuffer: Uniforms;
-@binding(1) @group(0) var<storage, read> models: ModelData;
-@binding(2) @group(0) var<storage, read> models_ti: ModelTIData;
+@binding(1) @group(0) var<storage, read> models: array<mat4x4f>;
+@binding(2) @group(0) var<storage, read> models_ti: array<mat4x4f>;
 @binding(0) @group(1) var myTexture: texture_2d<f32>;
 @binding(1) @group(1) var shadowMap: texture_depth_2d; 
 @binding(2) @group(1) var shadowSampler: sampler_comparison; 
@@ -38,22 +38,22 @@ const far_plane = 500.0;
 @vertex
 fn vs_main(
     @builtin(instance_index) ID: u32,
-    @location(0) aPos: vec3f,
-    @location(1) aNormal: vec3f,
-    @location(2) aUV: vec2f
+    @location(0) a_pos: vec3f,
+    @location(1) a_normal: vec3f,
+    @location(2) a_uv: vec2f
 ) -> Fragment { 
 
-    var model = models.model[ID]; 
-    var model_ti = models_ti.model_ti[ID];
+    var model = models[ID]; 
+    var model_ti = models_ti[ID];
     var lmvp = ubuffer.light_proj * ubuffer.light_view * model;
     var mvp = ubuffer.proj * ubuffer.view * model;  
 
     var out: Fragment;
-    out.fragPos = (model * vec4(aPos, 1.0)).xyz; 
-    out.normal = (model_ti * vec4f(aNormal, 1.0)).xyz; 
-    out.fragPosLight = lmvp * vec4f(aPos, 1.0);
-    out.deffuseUV = aUV;
-    out.Position = mvp * vec4(aPos, 1.0);
+    out.fragPos = (model * vec4(a_pos, 1.0)).xyz; 
+    out.normal = (model_ti * vec4f(a_normal, 1.0)).xyz; 
+    out.fragPosLight = lmvp * vec4f(a_pos, 1.0);
+    out.deffuseUV = a_uv;
+    out.Position = mvp * vec4(a_pos, 1.0);
     return out;
 }  
 

@@ -1,3 +1,4 @@
+import re
 import wgpu
 import glm
 import numpy as np
@@ -12,7 +13,7 @@ from Elements.pyGLV.GL.wgpu_shader import F32, I32
 from Elements.pyGLV.GL.wgpu_texture import Texture, ImportTexture
 from Elements.pyGLV.GL.wgpu_uniform_groups import UniformGroup
 from Elements.pyGLV.GUI.fps_cammera import cammera
-from Elements.definitions import SHADER_DIR
+from Elements.definitions import SHADER_DIR 
 
 class ShadowShader(Shader):
     def __init__(self, device:wgpu.GPUDevice):
@@ -33,93 +34,99 @@ class ShadowShader(Shader):
 
         self.light_pos = None
         self.cam_pos = None
+ 
+        group_ids = self.extract_group_id() 
+        if not group_ids:
+            raise Exception("No groups found")  
+        
+        for group in group_ids:
+            name = f"({group})" 
+            self.attachedMaterial.uniformGroups.update({name: UniformGroup(groupName=name, groupIndex=int(group))})
 
-        self.attachedMaterial.uniformGroups.update({"frameGroup": UniformGroup(groupName="frameGroup", groupIndex=0)})
-        self.attachedMaterial.uniformGroups.update({"materialGroup": UniformGroup(groupName="materialGroup", groupIndex=1)})
+        attributes = self.extract_attributes() 
+        if not attributes:
+            raise Exception("No attributes present") 
+        
+        for attr in attributes:
+            self.addAtribute(name=self.attribute_dispatch(attr[1]), rowLenght=SHADER_TYPES[attr[2]], primitiveType=self.separate_type_and_precision(attr[2]))
 
-        self.addAtribute(name=Buffers.VERTEX, rowLenght=SHADER_TYPES['vec3f'], primitiveType=F32)
-        self.addAtribute(name=Buffers.NORMAL, rowLenght=SHADER_TYPES['vec3f'], primitiveType=F32)
-        self.addAtribute(name=Buffers.UV, rowLenght=SHADER_TYPES['vec2f'], primitiveType=F32)
+        uniformContents = self.extract_struct("Uniforms") 
+        if not uniformContents: 
+            raise Exception("No content")  
 
-        self.addUniform(
-            name="proj",
-            groupName="frameGroup",
-            size=SHADER_TYPES['mat4x4'] * F32,
-            offset=0,
-        )
-        self.addUniform(
-            name="view",
-            groupName="frameGroup",
-            size=SHADER_TYPES['mat4x4'] * F32,
-            offset=1
-        )
-        self.addUniform(
-            name="light_proj",
-            groupName="frameGroup",
-            size=SHADER_TYPES['mat4x4'] * F32,
-            offset=2,
-        )
-        self.addUniform(
-            name="light_view",
-            groupName="frameGroup",
-            size=SHADER_TYPES['mat4x4'] * F32,
-            offset=3
-        )
-        self.addUniform(
-            name="light_pos",
-            groupName="frameGroup",
-            size=SHADER_TYPES['vec4f'] * F32,
-            offset=4
-        )
-        self.addUniform(
-            name="cam_pos",
-            groupName="frameGroup",
-            size=SHADER_TYPES['vec4f'] * F32,
-            offset=5
-        )
+        offset = 0
+        for pair in uniformContents: 
+            shader_precision = self.separate_type_and_precision(pair[1])
+            self.addUniform(
+                name=pair[0],
+                groupName="(0)", 
+                size=SHADER_TYPES[pair[1]] * shader_precision,
+                offset=offset
+            ) 
+            offset += 1 
 
-        self.addStorage(
-            name="models",
-            groupName="frameGroup",
-            size=(SHADER_TYPES['mat4x4'] * F32) * 1024
-        )
-        self.addStorage(
-            name="models_ti",
-            groupName="frameGroup",
-            size=(SHADER_TYPES['mat4x4'] * F32) * 1024
-        )
+        storage_content = self.extract_storage_read_variables()
+        if not storage_content:
+            raise Exception("No content") 
+        
+        for pair in storage_content: 
+            shader_precision = self.separate_type_and_precision(pair[1]) 
+            self.addStorage(
+                name=pair[0],
+                groupName="(0)",
+                size=SHADER_TYPES[pair[1]] * shader_precision * 1024
+            )
 
-        self.addTexture(
-            name="texture",
-            groupName="materialGroup",
-        )
-        self.addTexture(
-            name="shadowMap",
-            groupName="materialGroup",
-            sampleType=wgpu.TextureSampleType.depth
-        )
-        self.addSampler(
-            name="shadowSampler",
-            groupName="materialGroup",
-            compare=True,
-            sampler=self.device.create_sampler(compare=wgpu.CompareFunction.less_equal)
-        )
-        self.addSampler(
-            name="textureSampler",
-            groupName="materialGroup",
-            sampler=self.device.create_sampler()
-        )
+        textures = self.extract_textures() 
+        if not storage_content:
+            raise Exception("No textures")  
+        
+        for text in textures:
+            name = text[0] 
+            text_type = wgpu.TextureSampleType.float 
 
-        self.attachedMaterial.uniformGroups["frameGroup"].makeUniformBuffer(device=self.device)
-        self.attachedMaterial.uniformGroups["frameGroup"].makeStorageBuffers(device=self.device)
-        self.attachedMaterial.uniformGroups["frameGroup"].makeBindGroupLayout(device=self.device)
-        self.attachedMaterial.uniformGroups["materialGroup"].makeBindGroupLayout(device=self.device)
+            if text[1] == "texture_depth_2d":
+                text_type = wgpu.TextureSampleType.depth
+            elif text[1] == "texture_cube<f32>": 
+                text_type = wgpu.TextureSampleType.cube
+
+            self.addTexture(
+                name=name, 
+                groupName="(1)",
+                sampleType=text_type
+            )
+
+        samplers = self.extract_samplers() 
+        if not samplers: 
+            raise Exception("vre malaka") 
+
+        for smpler in samplers:
+            name = smpler[0] 
+            compare = False 
+            compare_function = None 
+
+            if smpler[1] == "sampler_comparison":  
+                compare = True;
+                compare_function = wgpu.CompareFunction.less_equal                  
+
+            self.addSampler(
+                name=smpler[0],
+                groupName="(1)",
+                compare=compare,
+                sampler=self.device.create_sampler(compare=compare_function)
+            ) 
+
+        self.attachedMaterial.uniformGroups["(0)"].makeUniformBuffer(device=self.device)
+        self.attachedMaterial.uniformGroups["(0)"].makeStorageBuffers(device=self.device)
+
+        for bind_group_layouts in self.attachedMaterial.uniformGroups.values(): 
+            bind_group_layouts.makeBindGroupLayout(device=self.device)
 
     def setShadowMap(self, value:Texture):
-        self.attachedMaterial.uniformGroups["materialGroup"].setTexture(name="shadowMap", value=value)
+        self.attachedMaterial.uniformGroups["(1)"].setTexture(name="shadowMap", value=value)
 
     def setTexture(self, value:Texture):
-        self.attachedMaterial.uniformGroups["materialGroup"].setTexture(name="texture", value=value)
+        self.attachedMaterial.uniformGroups["(1)"].setTexture(name="myTexture", value=value)
 
     def update(self, command_encoder:wgpu.GPUCommandBuffer):
         scene = Scene()
@@ -163,12 +170,12 @@ class ShadowShader(Shader):
         self.setUniformValues(command_encoder=command_encoder)
 
     def setUniformValues(self, command_encoder:wgpu.GPUCommandEncoder):
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="proj", value=self.Proj)
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="view", value=self.View)
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="light_view", value=self.light_view)
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="light_proj", value=self.light_proj)
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="light_pos", value=self.light_pos)
-        self.attachedMaterial.uniformGroups["frameGroup"].setUniform(name="cam_pos", value=self.cam_pos)
-        self.attachedMaterial.uniformGroups["frameGroup"].setStorage(name="models", value=self.Models)
-        self.attachedMaterial.uniformGroups["frameGroup"].setStorage(name="models_ti", value=self.Models_ti)
-        self.attachedMaterial.uniformGroups["frameGroup"].update(self.device, command_encoder)
+        self.attachedMaterial.uniformGroups["(0)"].setUniform(name="proj", value=self.Proj)
+        self.attachedMaterial.uniformGroups["(0)"].setUniform(name="view", value=self.View)
+        self.attachedMaterial.uniformGroups["(0)"].setUniform(name="light_view", value=self.light_view)
+        self.attachedMaterial.uniformGroups["(0)"].setUniform(name="light_proj", value=self.light_proj)
+        self.attachedMaterial.uniformGroups["(0)"].setUniform(name="light_pos", value=self.light_pos)
+        self.attachedMaterial.uniformGroups["(0)"].setUniform(name="cam_pos", value=self.cam_pos)
+        self.attachedMaterial.uniformGroups["(0)"].setStorage(name="models", value=self.Models)
+        self.attachedMaterial.uniformGroups["(0)"].setStorage(name="models_ti", value=self.Models_ti)
+        self.attachedMaterial.uniformGroups["(0)"].update(self.device, command_encoder)

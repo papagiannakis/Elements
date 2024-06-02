@@ -25,7 +25,6 @@ struct VertexOutput {
 @vertex
 fn vs_main( 
     @location(0) aVertex: vec2f
-    // @builtin(vertex_index) VertexIndex : u32
 ) -> VertexOutput {
 
     var output : VertexOutput;

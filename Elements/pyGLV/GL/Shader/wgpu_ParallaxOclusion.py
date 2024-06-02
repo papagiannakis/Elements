@@ -42,13 +42,13 @@ class ParallaxOclusion(Shader):
         self.addUniform(
             name="proj", 
             groupName="frameGroup",
-            size=SHADER_TYPES['mat4x4'] * F32, 
+            size=SHADER_TYPES['mat4x4f'] * F32, 
             offset=0,
         ) 
         self.addUniform(
             name="view",   
             groupName="frameGroup",
-            size=SHADER_TYPES['mat4x4'] * F32, 
+            size=SHADER_TYPES['mat4x4f'] * F32, 
             offset=1
         )  
         self.addUniform( 
@@ -67,12 +67,12 @@ class ParallaxOclusion(Shader):
         self.addStorage(
             name="models", 
             groupName="frameGroup",
-            size=(SHADER_TYPES['mat4x4'] * F32) * 1024
+            size=(SHADER_TYPES['mat4x4f'] * F32) * 1024
         ) 
         self.addStorage(
             name="normals",
             groupName="frameGroup",
-            size=(SHADER_TYPES['mat4x4'] * F32) * 1024
+            size=(SHADER_TYPES['mat4x4f'] * F32) * 1024
         )
 
         self.addTexture(
