@@ -739,13 +739,15 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         """
         global first_run
 
+        self.changed = False;
+
         if first_run:
             first_run = False;
             self.node_editor.addNode(ed.Node(self.wrapeeWindow.scene.world.root.name, _type = "Root"));
             self.node_editor.generate(self.wrapeeWindow.scene.world.root)
             
         imgui.begin("NodeEditor")           # node editor window
-        self.node_editor.on_frame()
+        self.changed, open_node = self.node_editor.on_frame()     
         imgui.end()
 
         view = [self._eye, self._up, self._target]
@@ -756,17 +758,19 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         if add:
             self.node_editor.selected_parent = new.parent;
             self.node_editor.name = new.name;
-            self.node_editor.addNode()
+            self.node_editor.addNode(new)
+            self.node_editor.generate(new);
 
         if remove:
             self.node_editor.remove(entity);
 
         if cameraChange:
-            self._eye, self._up, self._target = view[0], view[1], view[2];
-            self._updateCamera.value = np.array(glm.lookAt(self._eye, self._target, self._up), np.float32)
+            self._eye = view[0]
+            self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
 
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+            
 
         if trsChange:
             if self.gizmo.currentGizmoOperation == self.gizmo.gizmo.OPERATION.translate:
@@ -820,8 +824,26 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
             pass
         else:
             imgui.separator()
-            if imgui.tree_node(sceneRoot):
-                self.drawNode(self.wrapeeWindow.scene.world.root)
+
+            if open_node:
+                imgui.set_next_item_open(True);
+            
+            if imgui.tree_node(sceneRoot) or self.changed:
+                if open_node:
+                    self.drawNode(self.wrapeeWindow.scene.world.root, open_node.name)
+                    entity = self.wrapeeWindow.scene.world.getEntityByName(open_node.name);
+                    if entity:
+                        comp = entity.getChildByType("BasicTransform");
+                        if comp:
+                            [x, y, z] = comp.translation
+                            self._target = np.array([x,y,z], np.float32);
+                            self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
+
+                            if self.changed and self._wrapeeWindow.eventManager is not None:
+                                self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+                                
+                else:
+                    self.drawNode(self.wrapeeWindow.scene.world.root, "");
                 imgui.tree_pop()
                 
         imgui.end()
@@ -830,7 +852,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
     def entityManagement(self):
         pass
             
-    def drawNode(self, component):
+    def drawNode(self, component, node):
         #create a local iterator of Entity's children
         if component._children is not None:
             debugIterator = iter(component._children)
@@ -845,6 +867,13 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
                 else:
                     # using ## creates unique labels, without showing anything after ##
                     # see: https://github.com/ocornut/imgui/blob/master/docs/FAQ.md#q-how-can-i-have-multiple-widgets-with-the-same-label
+                    open_node = False;
+                    if comp.name == node:
+                        open_node = True;
+                                            
+                    if self.changed:
+                        imgui.set_next_item_open(open_node);
+
                     if imgui.tree_node(comp.name + "##" + str(comp.id)):
                         imgui.text(comp.name)
                         _, selected = imgui.selectable(comp.__str__(), True)
@@ -882,7 +911,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
                         imgui.tree_pop()
                     
-                    self.drawNode(comp) # recursive call of this method to traverse hierarchy
+                    self.drawNode(comp, node) # recursive call of this method to traverse hierarchy
                     imgui.unindent(10) # Corrent placement of unindent
 
     def event_input_process(self):

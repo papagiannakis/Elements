@@ -74,47 +74,41 @@ class Gizmos:
         self.gizmo.set_im_gui_context(imguiContext);
         self.gizmo.allow_axis_flip(False);
         self.camDistance = 8.0
-        self.currentGizmoOperation = imguizmo.im_guizmo.OPERATION.translate
-
-        self.statics = munch.Munch();
-        self.statics.mCurrentGizmoMode = self.gizmo.MODE.local
-        self.statics.useSnap = False
-        self.statics.snap = np.array([1.0, 1.0, 1.0], np.float32)
-        self.statics.bounds = np.array([-0.5, -0.5, -0.5, 0.5, 0.5, 0.5], np.float32)
-        self.statics.boundsSnap = np.array([0.1, 0.1, 0.1], np.float32)
-        self.statics.boundSizing = False
-        self.statics.boundSizingSnap = False
-        self.statics.gizmoWindowFlags = 0
+        self.currentGizmoOperation = imguizmo.im_guizmo.OPERATION.translate;
+        self.currentGizmoMode = self.gizmo.MODE.local;
 
         self._view = np.array([[1.0, 0.0, 0.0, 0.0], [0.0, 1.0, 0.0, 0.0], [0.0, 0.0, 1.0, 0.0], [0.0, 0.0, 0.0, 1.0]], np.float32)
         self._projection = None;  
+        self._gizmoView = self._view;
     
         self._cameraSystem = None;
 
     def setView(self, _view):
         self._view = _view;
+        if firstFrame:
+            self._gizmoView = self._view;
         
     def __del__(self):
         pass
 
 
     def drawTransformGizmo(self, comp):  
-        global cameraView, objectMatrix
+        global objectMatrix
         trs_changed = False;
 
         if comp is not None and isinstance(comp, BasicTransform):
             objectMatrix = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
-            makeMatrixCompatible();
+            makeMatrixCompatible()
 
             manip_result = self.gizmo.manipulate(
-                self._view,
+                self._gizmoView,
                 self._projection,
                 self.currentGizmoOperation,
-                self.statics.mCurrentGizmoMode,
+                self.currentGizmoMode,
                 objectMatrix
             )
 
-            if manip_result:
+            if manip_result.edited:
                 objectMatrix = manip_result.value;
                 trs_changed = True
             
@@ -168,7 +162,20 @@ class Gizmos:
 
         return eye, up, target;
 
-            
-        
-        
-        
+
+    def reverse_lookat(self):
+        _s = self._view[0, 0:3]
+        _u = self._view[1, 0:3]
+        _f = -self._view[2, 0:3]
+
+        tx = self._view[0, 3]
+        ty = self._view[1, 3]
+        tz = self._view[2, 3]
+
+        eye = -np.dot(self._view[:3, :3].T, [tx, ty, tz])
+
+        target = eye + _f
+
+        up = _u / np.linalg.norm(_u)
+
+        return eye, up, target

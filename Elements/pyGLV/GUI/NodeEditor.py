@@ -7,6 +7,7 @@ from imgui_bundle import (
 )
 import Elements.extensions.BasicShapes.BasicShapes as bshapes
 from Elements.pyECSS.Entity import Entity
+from Elements.pyECSS.Component import Component
 from Elements.pyGLV.GUI.Viewer import RenderWindow
 
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
@@ -98,7 +99,9 @@ class NodeEditor:
     def __init__(self, wrapee: RenderWindow):
         ID.reset()
         self.wrapee = wrapee;
-
+        
+        self.config = ed.Config();
+        self.config.settings_file = "../../NodeEditor.json"
         self.editor_context = ed.create_editor();
         self.links = []
         self.selected = None
@@ -112,15 +115,16 @@ class NodeEditor:
         self.shape = None;
         self.to_add = None;
         self.selected_parent = None;
+        self.highlighted = None;
     
-    def addNode(self, node = None):
+    def addNode(self, comp = None):
         """
         Adds a new node to the node list
         
         :param node: [description]
         :type node: Node
         """
-        if node is None:
+        if comp is None:
             tmp = Node(self.name)
             if self.selected_parent is not None:
                 parent = self.findNodeByName(self.selected_parent.name);
@@ -135,7 +139,22 @@ class NodeEditor:
             self.nodes.append(tmp)
             self.name = ""
         else:
-            self.nodes.append(node)
+            comp_type = None;
+            if isinstance(comp, Entity):
+                comp_type = "Entity";
+            elif isinstance(comp, Component):
+                comp_type = "Component";
+            else:
+                comp_type = "Root";
+
+            tmp = Node(comp.name, _type = comp_type);
+            if comp.parent:
+                parent = self.findNodeByName(comp.parent.name)
+                if parent is not None:
+                    tmp.parentId = parent.id
+                    self.createLink(parent, tmp)
+                    tmp.parent = parent;
+            self.nodes.append(tmp);
 
     def remove(self, comp):
         """
@@ -217,19 +236,7 @@ class NodeEditor:
                 except StopIteration:
                     done_traversing = True
                 else:
-                    comp_type = None;
-                    if isinstance(comp, Entity):
-                        comp_type = "Entity";
-                    else:
-                        comp_type = "Component";
-
-                    tmp = Node(comp.name, _type = comp_type);
-                    parent = self.findNodeByName(comp._parent.name)
-                    if parent is not None:
-                        tmp.parentId = parent.id
-                        self.createLink(parent, tmp)
-                        tmp.parent = parent;
-                    self.addNode(tmp)
+                    self.addNode(comp)
                     self.generate(comp)
         
         self.nodeAmount = len(self.nodes);
@@ -372,7 +379,7 @@ class NodeEditor:
                     if isinstance(comp, Entity):
                         self.entities.append(comp);
 
-    def on_frame(self):
+    def on_frame(self, update = False):
         """
         Main loop of the editor
         """
@@ -380,11 +387,25 @@ class NodeEditor:
             self.wrapee.scene.world.addEntityChild(self.wrapee.scene.world.root, self.to_add); 
             self.to_add = None;
 
+        if update:
+            self.generate();
 
         ed.set_current_editor(self.editor_context); 
         ed.begin("ECSS Node Editor", imgui.ImVec2(0.0, 0.0))
 
         self.display_nodes()
+
+        found = False;
+        changed = False;
+        for node in self.nodes:
+            if ed.is_node_selected(node.id):
+                found = True;
+                if self.highlighted != node:
+                    changed = True;
+                    self.highlighted = node;
+        
+        if not found:
+            self.highlighted = None;
         
         for linkInfo in self.links:
             ed.link(linkInfo.id, linkInfo.input_id, linkInfo.output_id)
@@ -414,3 +435,5 @@ class NodeEditor:
             ed.navigate_to_content(0.0)
 
         self.is_first_frame = False
+
+        return changed, self.highlighted;
