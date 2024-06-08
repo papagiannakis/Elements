@@ -550,7 +550,9 @@ class RenderDecorator(RenderWindow):
             if event.type == sdl2.SDL_MOUSEWHEEL:
                 x = event.wheel.x
                 y = event.wheel.y
-                self.cameraHandling(x,y,height,width)
+                
+                if self.wrapeeWindow.scene._window:
+                    self.cameraHandling(x,y,height,width)
 
             # on_mouse_press
             elif event.type == sdl2.SDL_MOUSEMOTION:
@@ -558,7 +560,8 @@ class RenderDecorator(RenderWindow):
                 if buttons & sdl2.SDL_BUTTON_RMASK:
                     x = -event.motion.xrel  
                     y = event.motion.yrel 
-                    self.cameraHandling(x, y, height, width)               
+                    if self.wrapeeWindow.scene._window:
+                        self.cameraHandling(x, y, height, width)               
             
             #keyboard events
             elif event.type == sdl2.SDL_KEYDOWN:

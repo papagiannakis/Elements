@@ -11,7 +11,7 @@ from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
 from Elements.pyGLV.GUI.Viewer import SDL2Window
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator, IMGUIecssDecoratorBundle
 from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 
 class Scene():
@@ -27,6 +27,7 @@ class Scene():
             print('Creating Scene Singleton Object')
             cls._instance = super(Scene, cls).__new__(cls)
             cls._renderWindow = None
+            cls._window = False;
             cls._gContext = None
             cls._world = ECSSManager() #which also instantiates an EventManager
             cls._buffer = FrameBuffer() #creating a singleton instance of a framebuffer
@@ -65,7 +66,12 @@ class Scene():
             gGUI = ImGUIDecorator(self._renderWindow)
             self._gContext = gGUI
         elif imgui == True and customImGUIdecorator is not None:
-            gGUI = customImGUIdecorator(self._renderWindow)
+            if customImGUIdecorator == IMGUIecssDecoratorBundle:
+                example_name = (''.join(letter for letter in windowTitle if letter.isalnum()));
+                print(example_name)
+                gGUI = customImGUIdecorator(self._renderWindow, exampleName = example_name)
+            else:
+                gGUI = customImGUIdecorator(self._renderWindow)
             self._gContext = gGUI
     
         self._gContext.init()

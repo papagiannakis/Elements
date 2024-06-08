@@ -1,12 +1,10 @@
-from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform,  RenderMesh
 from Elements.pyECSS.Event import Event
 import Elements.pyECSS.math_utilities as util
 import numpy as np
 
-from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
-from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
+from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 scene = None;
@@ -334,7 +332,10 @@ class PointLight(Light):
 
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
-        scene = Scene();
+        global scene
+        if scene is None:
+            from Elements.pyGLV.GL.Scene import Scene;
+            scene = Scene();
         scene.world.createEntity(self);
         scene.world.addComponent(self, self.trans);
 

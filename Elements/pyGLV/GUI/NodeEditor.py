@@ -9,12 +9,15 @@ import Elements.extensions.BasicShapes.BasicShapes as bshapes
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import Component
 from Elements.pyGLV.GUI.Viewer import RenderWindow
+from Elements.definitions import EDITOR_CONFIG_DIR
 
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
 update_needed = True;
 rounding = 5.0;
 padding  = 12.0;
+
+first_run = False;
 
 class IdProvider:
     """A simple utility to obtain unique ids, and to be able to restore them at each frame"""
@@ -96,13 +99,13 @@ class NodeEditor:
     links: List[LinkInfo]
     next_link_id: int = 100
 
-    def __init__(self, wrapee: RenderWindow):
+    def __init__(self, wrapee: RenderWindow, exampleName):
         ID.reset()
         self.wrapee = wrapee;
-        
+        # self.editor_context = ed.create_editor(ed.Config(EDITOR_CONFIG_DIR / exampleName + ".json"));
         self.config = ed.Config();
-        self.config.settings_file = "../../NodeEditor.json"
-        self.editor_context = ed.create_editor();
+        self.config.settings_file = str(EDITOR_CONFIG_DIR / (exampleName + ".json"));
+        self.editor_context = ed.create_editor(self.config);
         self.links = []
         self.selected = None
         self.creation = False
@@ -117,7 +120,7 @@ class NodeEditor:
         self.selected_parent = None;
         self.highlighted = None;
     
-    def addNode(self, comp = None):
+    def addNode(self, comp = None, child = None):
         """
         Adds a new node to the node list
         
@@ -152,6 +155,12 @@ class NodeEditor:
                 parent = self.findNodeByName(comp.parent.name)
                 if parent is not None:
                     tmp.parentId = parent.id
+                    # pos = ed.get_node_position(parent.id)
+                    
+                    children = len(comp.parent._children)
+                    # pos_y = pos.y - (10 * children / 2)
+                    # if child:
+                    #     ed.set_node_position(tmp.id, imgui.ImVec2(pos.x + 20, pos_y + (10 * child)))
                     self.createLink(parent, tmp)
                     tmp.parent = parent;
             self.nodes.append(tmp);
@@ -230,13 +239,15 @@ class NodeEditor:
         if component._children is not None:
             debugIterator = iter(component._children)
             done_traversing = False
+            child = 0
             while not done_traversing:
                 try:
                     comp = next(debugIterator)
                 except StopIteration:
                     done_traversing = True
                 else:
-                    self.addNode(comp)
+                    self.addNode(comp, child)
+                    child += 1;
                     self.generate(comp)
         
         self.nodeAmount = len(self.nodes);
@@ -302,61 +313,6 @@ class NodeEditor:
                                 self.links.remove(link)
                                 break;
 
-    def add_entity_window(self):
-        """
-        Displays an imgui window for adding new entities to the ECSS.
-        """
-        global update_needed
-
-        if update_needed:
-            self.update_entities(self.wrapee.scene.world.root);
-            update_needed = False;
-
-        imgui.text("Name: "); imgui.same_line()
-        _, self.name = imgui.input_text(' ', self.name)
-
-        prev_shape = "Select Shape"
-        if self.shape is not None:
-            prev_shape = self.shape
-
-        imgui.text("Shape: "); imgui.same_line();
-        if imgui.begin_combo("#S", prev_shape):
-            for shape in shapes.keys():
-                _ ,selected = imgui.selectable(shape, self.shape is not None and self.shape == shape)
-                if selected:
-                    self.shape = shape
-            imgui.end_combo()
-                
-        prev_parent = "Select Parent"
-        if self.selected_parent is not None:
-            prev_parent = self.selected_parent.name;
-
-        imgui.text("Parent:"); imgui.same_line();
-        if imgui.begin_combo("#P", prev_parent):
-            for entity in self.entities:
-                _, clicked = imgui.selectable(entity.name, False);
-                if clicked:
-                    self.selected_parent = entity;
-            imgui.end_combo();
-
-        if imgui.button("Add"):
-            
-            if self.name is "":
-                tmp = shapes[self.shape](parent = self.selected_parent);
-            else:
-                tmp = shapes[self.shape](self.name, parent = self.selected_parent);
-            
-            self.name = tmp.name;
-            self.addNode();
-            self.generate(tmp);
-            self.shape = None;
-            self.selected_parent = None;
-            update_needed = True;
-
-            return True;
-        
-        return False;
-
     def update_entities(self, component):
         """
         Updates the ECSS when a new entity is added.
@@ -378,18 +334,15 @@ class NodeEditor:
                 else:
                     if isinstance(comp, Entity):
                         self.entities.append(comp);
+    
+    def set_node_positions(self):
+        pass
+
 
     def on_frame(self, update = False):
         """
         Main loop of the editor
         """
-        if self.to_add is not None:
-            self.wrapee.scene.world.addEntityChild(self.wrapee.scene.world.root, self.to_add); 
-            self.to_add = None;
-
-        if update:
-            self.generate();
-
         ed.set_current_editor(self.editor_context); 
         ed.begin("ECSS Node Editor", imgui.ImVec2(0.0, 0.0))
 
@@ -433,6 +386,8 @@ class NodeEditor:
 
         if self.is_first_frame:
             ed.navigate_to_content(0.0)
+            self.set_node_positions();
+            
 
         self.is_first_frame = False
 

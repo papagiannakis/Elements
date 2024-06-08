@@ -8,6 +8,7 @@ import numpy as np
 from imgui_bundle import imguizmo #type: ignore
 import Elements.pyECSS.math_utilities as util
 import glm
+from Elements.pyGLV.GL.FrameBuffer import FrameBuffer
 
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
@@ -37,10 +38,11 @@ class SceneWindow:
         self.entities = [];
 
         self.to_be_removed = None;
+        self._buffer = FrameBuffer();
     
 
     def mainWindowLoop(self, view, wireframe, selected, currOperation):
-        global update_needed
+        global update_needed, main_window_selected
         
         if update_needed:
             self.entities = [];
@@ -51,6 +53,7 @@ class SceneWindow:
         self.gizmo.currentGizmoOperation = currOperation;
 
         imgui.begin("Scene");
+        self.wrapee.scene._window = imgui.is_window_hovered();
     
         self._buffer.drawFramebuffer(wireframe);
 
@@ -59,7 +62,7 @@ class SceneWindow:
             cameraChange = True;
             view[0], view[1], view[2] = self.gizmo.decompose_look_at();
         else:
-            self.gizmo.setView(np.array(glm.lookAt(view[0], view[2], view[1]), np.float32));
+            self.gizmo.setView(np.array(glm.lookAt(view[0], view[1], view[2]), np.float32));
         
         trsChange, trs = self.gizmo.drawTransformGizmo(selected);
         

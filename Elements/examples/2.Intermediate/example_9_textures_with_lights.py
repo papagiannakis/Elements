@@ -224,14 +224,14 @@ while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    view =  gWindow._myCamera # updates view via the imgui
+    # view =  gWindow._myCamera # updates view via the imgui
 
-    model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)
+    # model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)
     
-    if want_to_rotate:
-        rotate_y += rotation_speed
-    else:
-        model_cube = trans4.l2world
+    # if want_to_rotate:
+    #     rotate_y += rotation_speed
+    # else:
+    #     model_cube = trans4.l2world
 
     scene.world.update_entity_values(rootEntity, winWidth, winHeight, True, Lambientcolor, Lambientstr, LviewPos, Lposition, Lcolor, Lintensity, Mshininess)
 

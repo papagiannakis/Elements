@@ -173,12 +173,14 @@ while running:
     
     view =  gWindow._myCamera # updates view via the imgui
 
-    shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
-    shaderDec4.setUniformVariable(key='model', value=trans4.l2world, mat4=True)
+    # shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    # shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
+    # shaderDec4.setUniformVariable(key='model', value=trans4.l2world, mat4=True)
 
-    shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
+    # shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    # shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
+
+    scene.world.update_entity_values(rootEntity, winWidth, winHeight);
     
    
     scene.world.traverse_visit(renderUpdate, scene.world.root) 

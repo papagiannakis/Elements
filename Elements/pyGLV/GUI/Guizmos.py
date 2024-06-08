@@ -97,7 +97,7 @@ class Gizmos:
         trs_changed = False;
 
         if comp is not None and isinstance(comp, BasicTransform):
-            objectMatrix = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
+            objectMatrix = np.array(glm.transpose(comp.l2world), np.float32) @ idMatrix
             makeMatrixCompatible()
 
             manip_result = self.gizmo.manipulate(
@@ -160,7 +160,7 @@ class Gizmos:
         
         eye[:] *= 4;
 
-        return eye, up, target;
+        return eye, target, up;
 
 
     def reverse_lookat(self):

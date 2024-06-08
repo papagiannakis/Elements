@@ -699,7 +699,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
 
 class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
-    def __init__(self, wrapee: RenderWindow, imguiContext = None):
+    def __init__(self, wrapee: RenderWindow, imguiContext = None, exampleName = None):
         super().__init__(wrapee, imguiContext)
         self.selected = None; # Selected should be a component
 
@@ -719,7 +719,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         self.cameraView = None;
         self.gizmo = Gizmos(self._imguiContext);
 
-        self.node_editor = ed.NodeEditor(self.wrapeeWindow);
+        self.node_editor = ed.NodeEditor(self.wrapeeWindow, exampleName);
         self.shape = None;
         
         self.add_entity = False;
@@ -750,7 +750,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         self.changed, open_node = self.node_editor.on_frame()     
         imgui.end()
 
-        view = [self._eye, self._up, self._target]
+        view = [self._eye, self._target, self._up]
         cameraChange, view, trsChange, components = self.window.mainWindowLoop(view, self._wireframeMode, self.selected, self.gizmo.currentGizmoOperation);
         add, new = self.window.addEntityWindow();
         remove, entity = self.window.removeEntityWindow();
