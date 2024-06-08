@@ -1,12 +1,15 @@
+from __future__ import annotations 
+
 import wgpu
 import glm
 import numpy as np   
 
-from __future__ import annotations
-from Elements.pyECSS.wgpu_components import Component 
-from Elements.pyECSS.wgpu_components import TransformComponent 
-from Elements.pyECSS.wgpu_components import InfoComponent 
-from Elements.pyECSS.wgpu_entity import Entity
+from Elements.pyECSS.wgpu_components import InfoComponent  
+from Elements.pyECSS.wgpu_components import TransformComponent  
+from Elements.pyECSS.systems.wgpu_transform_system import TransformSystem
+
+from Elements.pyECSS.wgpu_entity import Entity  
+from Elements.pyECSS.wgpu_system import System
 
 class Scene():
     """
@@ -19,18 +22,12 @@ class Scene():
     def __new__(cls):
         if cls._instance is None:
             print('Creating Scene Singleton Object')
-            cls._instance = super(Scene, cls).__new__(cls)
-
-            # cls._cammera = None
-            # cls._objects = [] 
-            # cls._canvasWidth = 0 
-            # cls._canvasHeight = 0 
-            # cls._light = None 
+            cls._instance = super(Scene, cls).__new__(cls) 
 
             cls.entity_componets_relation = {}  
             cls.components = {}
-            cls.entities = []
-            cls.systemns = [] 
+            cls.entities:list[Entity] = [] 
+            cls.systems:list[System] = [] 
 
             cls.canvas_width = 0;
             cls.canvas_height = 0;
@@ -42,8 +39,8 @@ class Scene():
 
     def add_entity(self) -> Entity: 
         
-        entity = Entity()
-        self.entities.append(Entity) 
+        entity = Entity() 
+        self.entities.append(entity ) 
         return entity  
     
     def get_entities(self) -> list[Entity]: 
@@ -87,33 +84,15 @@ class Scene():
 
         return component
     
-    def add_system(self, system):
-        pass
+    def add_system(self, system: System):  
 
-    # def set_cammera(self, cam: fps_cammera.cammera):
-    #     self._cammera = cam
+        self.systems.append(system) 
+        system.create(self.entities, self.entity_componets_relation, self.components) 
 
-    # def append_object(self, obj: Object): 
-    #     self._objects.append(obj) 
+    def update(self):  
 
-    # def set_light(self, pos:any):
-    #     self._light = pos;
-
-    # def init(self, device:wgpu.GPUDevice):
-    #     for obj in self._objects: 
-    #         obj.onInit()  
-
-    #     for obj in self._objects: 
-    #         obj.init(device=device) 
-
-    # def update(self, canvas, event):
-    #     self._canvasWidth = canvas._windowWidth
-    #     self._canvasHeight = canvas._windowHeight
-
-    #     self._cammera.update(canvas=canvas, event=event)
-
-    #     for obj in self._objects:
-    #         obj.onUpdate()
+        for system in self.systems:
+            system.update(self.entities, self.entity_componets_relation, self.components)
 
     def scene_debug_dump(self):
         
@@ -134,9 +113,11 @@ if __name__ == "__main__":
     ent2 = s2.add_entity() 
 
     trs = Scene().add_component(ent1, TransformComponent(glm.vec3(1), glm.vec3(1), glm.vec3(1)))
-    info = Scene().add_component(ent2, InfoComponent("SIAROP"))
+    info = Scene().add_component(ent2, InfoComponent("component"))
     Scene().add_component(ent1, info) 
     Scene().add_component(ent2, info)
+
+    Scene().add_system(TransformSystem([TransformComponent]))
 
     if id(s1) == id(s2):
         print("Singleton works, both Scenes contain the same instance.")
