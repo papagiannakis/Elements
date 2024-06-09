@@ -34,17 +34,17 @@ class System(object):
             else:
                 self.on_create(entity, components)
 
-    def update(self, entities, entity_components_relation, components_array): 
-        filtered_entities = self.filter_entities(entities, entity_components_relation) 
+    def update(self, entities, entity_components_relation, components_array, event): 
+        filtered_entities = self.filter_entities(entities, entity_components_relation)
         for entity in filtered_entities:
-            components = self.extract_components(entity, entity_components_relation, components_array)
+            components = self.extract_components(entity, entity_components_relation, components_array) 
             if len(components) == 1:
-                self.on_update(entity, components[0])
-            else:
-                self.on_update(entity, components)
+                self.on_update(entity=entity, components=components[0], event=event)
+            else: 
+                self.on_update(entity=entity, components=components, event=event)
 
     def on_create(self, entity: Entity, components: Component | list[Component]): 
         pass; 
 
-    def on_update(self, entity: Entity, components: Component | list[Component]): 
+    def on_update(self, entity: Entity, components: Component | list[Component], event): 
         pass;

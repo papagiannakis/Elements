@@ -28,9 +28,8 @@ class Scene():
             cls.components = {}
             cls.entities:list[Entity] = [] 
             cls.systems:list[System] = [] 
-
-            cls.canvas_width = 0;
-            cls.canvas_height = 0;
+        
+            cls.primary_camera = None
         return cls._instance
     
     
@@ -89,10 +88,13 @@ class Scene():
         self.systems.append(system) 
         system.create(self.entities, self.entity_componets_relation, self.components) 
 
-    def update(self):  
+    def update(self, event): 
 
         for system in self.systems:
-            system.update(self.entities, self.entity_componets_relation, self.components)
+            system.update(self.entities, self.entity_componets_relation, self.components, event) 
+
+    def set_primary_cam(self, ent:Entity): 
+        self.primary_camera = ent
 
     def scene_debug_dump(self):
         
