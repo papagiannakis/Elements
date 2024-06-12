@@ -93,7 +93,6 @@ class ShadowMapPass:
 
         # command_encoder = self._renderer._device.create_command_encoder()  
 
-        current_texture_view = texture.create_view()
         render_pass = command_encoder.begin_render_pass( 
             color_attachments=[
                 {

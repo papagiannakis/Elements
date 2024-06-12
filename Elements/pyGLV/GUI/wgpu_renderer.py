@@ -9,7 +9,6 @@ from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass
 
 RENDER_PASSES = []
 
-
 class Renderer:
     _instance = None
     
@@ -25,7 +24,6 @@ class Renderer:
             cls._shadowMapDepthTextureView = None
 
         return cls._instance
-    
     
     def __init__(self):
         None; 
