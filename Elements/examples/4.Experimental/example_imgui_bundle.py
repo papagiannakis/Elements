@@ -125,7 +125,7 @@ colorYellow = np.array([
     [1.0, 0.0, 1.0, 1.0]
 ], dtype=np.float32)
 
-colorBlue = np.array([
+colorGreen = np.array([
     [0.0, 1.0, 0.0, 1.0],
     [0.0, 1.0, 0.0, 1.0],
     [0.0, 1.0, 0.0, 1.0],
@@ -136,7 +136,7 @@ colorBlue = np.array([
     [0.0, 1.0, 0.0, 1.0]
 ], dtype=np.float32)
 
-colorGreen = np.array([
+colorBlue = np.array([
     [0.0, 0.0, 1.0, 1.0],
     [0.0, 0.0, 1.0, 1.0],
     [0.0, 0.0, 1.0, 1.0],

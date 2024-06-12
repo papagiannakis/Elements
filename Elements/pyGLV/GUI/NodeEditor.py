@@ -6,10 +6,13 @@ from imgui_bundle import (
     imgui_node_editor as ed, # type: ignore
 )
 import Elements.extensions.BasicShapes.BasicShapes as bshapes
+import numpy as np
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import Component
 from Elements.pyGLV.GUI.Viewer import RenderWindow
-from Elements.definitions import EDITOR_CONFIG_DIR
+from Elements.definitions import EDITOR_CONFIG_DIR, IMAGE_DIR
+import OpenGL.GL as gl
+from PIL import Image
 
 shapes = {"Cube" : bshapes.CubeSpawn, "Sphere" : bshapes.SphereSpawn, "Cylinder" : bshapes.CylinderSpawn, "Cone" : bshapes.ConeSpawn, "Torus" : bshapes.TorusSpawn};
 
@@ -18,6 +21,21 @@ rounding = 5.0;
 padding  = 12.0;
 
 first_run = False;
+frame_counter = 0;
+arrow_texture_id = None;
+
+def generate_image():
+    arrow_image = Image.open(IMAGE_DIR / "arrow.png")
+    arrow_image_data = np.array(arrow_image.convert("RGBA"))
+
+    arrow_texture_id = gl.glGenTextures(1)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, arrow_texture_id)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_S, gl.GL_REPEAT)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_WRAP_T, gl.GL_REPEAT)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MIN_FILTER, gl.GL_LINEAR)
+    gl.glTexParameteri(gl.GL_TEXTURE_2D, gl.GL_TEXTURE_MAG_FILTER, gl.GL_LINEAR)
+    gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, arrow_image.width, arrow_image.height, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, arrow_image_data)
+    gl.glBindTexture(gl.GL_TEXTURE_2D, 0)
 
 class IdProvider:
     """A simple utility to obtain unique ids, and to be able to restore them at each frame"""
@@ -54,6 +72,9 @@ class Node:
         self.creation = None;
         self.parent = None;
         self.type = _type;
+    
+        if first_run:
+            generate_image();
 
     
     def display(self):
@@ -79,11 +100,16 @@ class Node:
         imgui.text_unformatted(self.name);
 
         ed.begin_pin(self.parentPinId, ed.PinKind.input)
+        # imgui.image(arrow_texture_id, imgui.ImVec2(10, 10));
+        # imgui.same_line()
         imgui.text("Parent")
         ed.end_pin()
         imgui.same_line()
+        
         ed.begin_pin(self.childrenPinId, ed.PinKind.output)
         imgui.text("Children")
+        # imgui.same_line()
+        # imgui.image(arrow_texture_id, imgui.ImVec2(10, 10));
         ed.end_pin()
 
         ed.end_node()
@@ -102,9 +128,8 @@ class NodeEditor:
     def __init__(self, wrapee: RenderWindow, exampleName):
         ID.reset()
         self.wrapee = wrapee;
-        # self.editor_context = ed.create_editor(ed.Config(EDITOR_CONFIG_DIR / exampleName + ".json"));
         self.config = ed.Config();
-        self.config.settings_file = str(EDITOR_CONFIG_DIR / (exampleName + ".json"));
+        self.config.settings_file = str(EDITOR_CONFIG_DIR / (exampleName + ".json"))
         self.editor_context = ed.create_editor(self.config);
         self.links = []
         self.selected = None
@@ -156,8 +181,7 @@ class NodeEditor:
                 if parent is not None:
                     tmp.parentId = parent.id
                     # pos = ed.get_node_position(parent.id)
-                    
-                    children = len(comp.parent._children)
+                    # children = len(comp.parent._children)
                     # pos_y = pos.y - (10 * children / 2)
                     # if child:
                     #     ed.set_node_position(tmp.id, imgui.ImVec2(pos.x + 20, pos_y + (10 * child)))
@@ -343,9 +367,9 @@ class NodeEditor:
         """
         Main loop of the editor
         """
+        global frame_counter;
         ed.set_current_editor(self.editor_context); 
         ed.begin("ECSS Node Editor", imgui.ImVec2(0.0, 0.0))
-
         self.display_nodes()
 
         found = False;
@@ -383,12 +407,10 @@ class NodeEditor:
 
         ed.end()
 
-
-        if self.is_first_frame:
-            ed.navigate_to_content(0.0)
-            self.set_node_positions();
-            
-
-        self.is_first_frame = False
+        if frame_counter < 30:
+            ed.navigate_to_content()
+            frame_counter += 1;
+        else:
+            ed.navigate_to_selection(False);
 
         return changed, self.highlighted;
