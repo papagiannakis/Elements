@@ -24,7 +24,7 @@ class ShadowMapPass:
         texture_format = self._renderer._canvasContextFormat
         textureWidth = texture.width; 
         textureHeight = texture.height;
-
+        
         self.colorBlend = [ 
             {   
                 "format": texture_format,

@@ -58,4 +58,32 @@ class CameraControllerComponent(Component):
         self.mouse_sensitivity = mouse_sensitivity
         self.zoom = 45.0
         self.prev_mouse_x = 0.0
-        self.prev_mouse_y = 0.0
+        self.prev_mouse_y = 0.0 
+
+class MeshComponent(Component): 
+    class Type(Enum): 
+        STATIC = 1
+        IMPORT = 2 
+
+    class Buffers(Enum):
+        VERTEX = 1
+        INDEX = 2
+        UV = 3
+        NORMAL = 4 
+        COLOR = 5 
+        TANGENT = 6
+        BITANGENT = 7
+    
+    def __init__(self, mesh_type:Type, import_path=None): 
+        self.vertices = None 
+        self.indices = None
+        self.uvs = None
+        self.normals = None  
+        self.Tangents = None 
+        self.Bitangents = None 
+        self.type = mesh_type 
+        self.import_path = import_path
+        self.buffer_map = {}
+        self.vertices_num = None
+        self.indices_num = None
+  

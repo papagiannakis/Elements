@@ -11,21 +11,23 @@ from Elements.pyECSS.systems.wgpu_transform_system import TransformSystem
 from Elements.pyECSS.systems.wgpu_camera_controller_system import CameraControllerSystem 
 from Elements.pyECSS.systems.wgpu_camera_system import CameraSystem
 
-from Elements.pyECSS.wgpu_components import InfoComponent, TransformComponent, CameraComponent, CameraControllerComponent
+from Elements.pyECSS.wgpu_components import InfoComponent, TransformComponent, CameraComponent, CameraControllerComponent, MeshComponent
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GL.wpgu_scene import Scene
-from Elements.pyGLV.GUI.Input_manager import InputManager
+from Elements.pyGLV.GUI.Input_manager import InputManager 
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache
 
 canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example")
 canvas.init()
 canvas.init_post()
 
 width = canvas._windowWidth
-height = canvas._windowHeight
+height = canvas._windowHeight 
 
 # Create a wgpu device
 adapter = wgpu.gpu.request_adapter(power_preference="high-performance")
 device = adapter.request_device()
+GpuCache().set_adapter_device(device=device, adapter=adapter)
 
 # Prepare present context
 present_context = canvas.get_context()
@@ -43,7 +45,8 @@ Scene().set_primary_cam(camera)
 
 plane = Scene().add_entity() 
 Scene().add_component(plane, InfoComponent("Plane")) 
-Scene().add_component(plane, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1)))
+Scene().add_component(plane, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1))) 
+Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=))
 
 Scene().add_system(TransformSystem([TransformComponent]))
 Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))

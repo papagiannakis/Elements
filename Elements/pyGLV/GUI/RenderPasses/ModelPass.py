@@ -90,7 +90,7 @@ class ModelPass:
                 {
                     "view": current_texture_view,
                     "resolve_target": None,
-                    "clear_value": (0.1, 0.1, 0.1, 1.0),
+                    "clear_value": (0.0, 0.0, 0.0, 1.0),
                     "load_op": wgpu.LoadOp.clear,
                     "store_op": wgpu.StoreOp.store,
                 }

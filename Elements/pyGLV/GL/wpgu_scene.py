@@ -94,7 +94,10 @@ class Scene():
             system.update(self.entities, self.entity_componets_relation, self.components, event) 
 
     def set_primary_cam(self, ent:Entity): 
-        self.primary_camera = ent
+        self.primary_camera = ent 
+
+    def get_primary_cam(self): 
+        return self.primary_camera
 
     def scene_debug_dump(self):
         
