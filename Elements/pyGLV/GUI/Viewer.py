@@ -502,9 +502,9 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
             # print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")  
             
         elif self.wgpu: 
-            if self._need_draw:
-                self._need_draw = False;
-                self._draw_frame_and_present() 
+            # if self._need_draw:
+            #     self._need_draw = False;
+            self._draw_frame_and_present() 
 
         # print(f'{self.getClassName()}: display()')
 

@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import wgpu
 import glm
 import numpy as np   
@@ -10,7 +12,53 @@ from enum import Enum
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
 from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent
 from Elements.pyGLV.GL.wpgu_scene import Scene       
-from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass
+from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
+from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache 
+
+class RenderPassDescriptor: 
+    def __init__(self):  
+        # color attachments
+        self.view = None
+        self.resolve_target = None 
+        self.clear_value = (0.0, 0.0, 0.0, 0.0)
+        self.load_op = wgpu.LoadOp.clear 
+        self.store_op = wgpu.StoreOp.store 
+
+        #depth attachments 
+        self.depth_view = None
+        self.depth_clear_value = 1.0
+        self.depth_load_op = wgpu.LoadOp.clear
+        self.depth_store_op = wgpu.StoreOp.store
+        self.depth_read_only = False
+        self.stencil_clear_value = 0
+        self.stencil_load_op = wgpu.LoadOp.clear
+        self.stencil_store_op = wgpu.StoreOp.store
+        self.stencil_read_only = True
+
+    def generate_color_attachments(self): 
+        return [
+            {
+                "view": self.view,
+                "resolve_target": self.resolve_target,
+                "clear_value": self.clear_value, 
+                "load_op": self.load_op,
+                "store_op": self.store_op,
+            }
+        ]
+
+    def generate_depth_attachments(self): 
+        return {
+            "view": self.depth_view,
+            "depth_clear_value": self.depth_clear_value,
+            "depth_load_op": self.depth_load_op,
+            "depth_store_op": self.depth_store_op,
+            "depth_read_only": self.depth_read_only,
+            "stencil_clear_value": self.stencil_clear_value,
+            "stencil_load_op": self.stencil_load_op,
+            "stencil_store_op": self.stencil_store_op,
+            "stencil_read_only": self.stencil_read_only,
+        }
 
 class Renderer:
     _instance = None
@@ -23,7 +71,7 @@ class Renderer:
             cls.attached_systems = {}
 
             RenderEntity = Scene().add_entity()
-            Scene().add_component(RenderEntity, RenderExclusiveComponent())
+            Scene().add_component(RenderEntity, RenderExclusiveComponent()) 
 
         return cls._instance
     
@@ -34,23 +82,36 @@ class Renderer:
         self.attached_systems.update({name: system})
         system.create(Scene().entities, Scene().entity_componets_relation, Scene().components)  
 
-    def actuate_system(self, name:str):
-        self.attached_systems[name].prepare(Scene().entities, Scene().entity_componets_relation, Scene().components) 
-        self.attached_systems[name].render(Scene().entities, Scene().entity_componets_relation, Scene().components)
+    def actuate_system(self, name:str, command_encoder: wgpu.GPUCommandEncoder, render_pass):
+        self.attached_systems[name].prepare(Scene().entities, Scene().entity_componets_relation, Scene().components, command_encoder) 
+        self.attached_systems[name].render(Scene().entities, Scene().entity_componets_relation, Scene().components, render_pass)
 
-    def init(self, present_context=None):  
-        self._present_context = present_context  
-        self._canvasContextFormat = self._present_context.get_preferred_format(self._device.adapter)   
+    def init(self, present_context, render_texture_format, canvas_size):  
+        GpuCache().present_context = present_context
+        GpuCache().render_texture_format = render_texture_format 
 
-        self.add_system("InitialSystem", InitialPass([RenderExclusiveComponent]))
+        GpuCache().imported_canvas_size = canvas_size
+        GpuCache().active_canvas_size = canvas_size 
 
-    def render(self):  
-        self._canvasContext = self._present_context.get_current_texture();   
-        command_encoder = self._device.create_command_encoder()
+        self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
+        self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
-        self.actuate_system("InitialSystem")
+    def render(self, size:list[int]):    
+        # resize if needed 
+        GpuCache().imported_canvas_size = size
 
-        self._device.queue.submit([command_encoder.finish()]) 
-        self._canvasContext = None;
+        command_encoder : wgpu.GPUCommandEncoder = GpuCache().device.create_command_encoder()
+
+        self.actuate_system("Initial", command_encoder, None)  
+
+        blitDescriptor = RenderPassDescriptor()
+        blitDescriptor.view = GpuCache().present_context.get_current_texture().create_view() 
+        blit_render_pass = command_encoder.begin_render_pass(
+            color_attachments=blitDescriptor.generate_color_attachments()
+        ) 
+        self.actuate_system("BlitToSurface", command_encoder, blit_render_pass) 
+        blit_render_pass.end()
+
+        GpuCache().device.queue.submit([command_encoder.finish()]) 
 
 

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import wgpu
+
 from Elements.pyECSS.wgpu_components import Component
 from Elements.pyECSS.wgpu_components import Entity   
 
@@ -34,29 +36,29 @@ class RenderSystem(object):
             else:
                 self.on_create(entity, components)  
 
-    def prepare(self, entities, entity_components_relation, components_array): 
+    def prepare(self, entities, entity_components_relation, components_array, command_encoder: wgpu.GPUCommandEncoder): 
         filtered_entities = self.filter_entities(entities, entity_components_relation) 
         for entity in filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array)
             if len(components) == 1:
-                self.on_prepare(entity, components[0])
+                self.on_prepare(entity, components[0], command_encoder)
             else:
-                self.on_prepare(entity, components) 
+                self.on_prepare(entity, components, command_encoder) 
 
-    def render(self, entities, entity_components_relation, components_array): 
+    def render(self, entities, entity_components_relation, components_array, render_pass): 
         filtered_entities = self.filter_entities(entities, entity_components_relation)
         for entity in filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array) 
             if len(components) == 1:
-                self.on_render(entity=entity, components=components[0])
+                self.on_render(entity, components[0], render_pass)
             else: 
-                self.on_render(entity=entity, components=components)
+                self.on_render(entity, components, render_pass)
 
     def on_create(self, entity: Entity, components: Component | list[Component]): 
         pass;  
     
-    def on_prepare(self, entity: Entity, components: Component | list[Component]):
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
         pass;
 
-    def on_render(self, entity: Entity, components: Component | list[Component]): 
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass): 
         pass;

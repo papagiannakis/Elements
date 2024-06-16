@@ -10,19 +10,22 @@ from Elements.pyGLV.GUI.Viewer import button_map
 from Elements.pyECSS.systems.wgpu_transform_system import TransformSystem
 from Elements.pyECSS.systems.wgpu_camera_controller_system import CameraControllerSystem 
 from Elements.pyECSS.systems.wgpu_camera_system import CameraSystem
+from Elements.pyECSS.systems.wgpu_mesh_system import MeshSystem 
 
 from Elements.pyECSS.wgpu_components import InfoComponent, TransformComponent, CameraComponent, CameraControllerComponent, MeshComponent
 from Elements.pyECSS.wgpu_entity import Entity
-from Elements.pyGLV.GL.wpgu_scene import Scene
+from Elements.pyGLV.GL.wpgu_scene import Scene 
+
+from Elements.pyGLV.GUI.wgpu_renderer import Renderer
 from Elements.pyGLV.GUI.Input_manager import InputManager 
 from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache
 
 canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example")
 canvas.init()
-canvas.init_post()
+canvas.init_post() 
 
 width = canvas._windowWidth
-height = canvas._windowHeight 
+height = canvas._windowHeight
 
 # Create a wgpu device
 adapter = wgpu.gpu.request_adapter(power_preference="high-performance")
@@ -50,14 +53,23 @@ Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, 
 
 Scene().add_system(TransformSystem([TransformComponent]))
 Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
-Scene().add_system(CameraControllerSystem([CameraControllerComponent, CameraComponent, TransformComponent]))
+Scene().add_system(CameraControllerSystem([CameraControllerComponent, CameraComponent, TransformComponent])) 
+Scene().add_system(MeshSystem([MeshComponent]))
+
+Renderer().init(
+    present_context=present_context,
+    render_texture_format=render_texture_format,
+    canvas_size=[width, height]
+)
 
 while canvas._running:
     event = canvas.event_input_process(); 
-    Scene().update(event)
+    width = canvas._windowWidth
+    height = canvas._windowHeight  
 
-    if canvas._need_draw:
-        canvas.display()
-        canvas.display_post()
+    Scene().update(event) 
+    Renderer().render([width, height]) 
+
+    canvas.display()
 
 canvas.shutdown()

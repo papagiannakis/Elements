@@ -11,7 +11,7 @@ from Elements.pyECSS.wgpu_components import Component, MeshComponent
 
 from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache
 
-class TransformSystem(System):  
+class MeshSystem(System):  
     def compute_tangent_space(self, vertices, normals, uvs, indices):
         num_verts = len(vertices)
         num_faces = len(indices) // 3
