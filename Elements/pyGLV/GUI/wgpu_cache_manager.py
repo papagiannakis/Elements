@@ -19,9 +19,13 @@ class GpuCache:
             cls.device = None 
             cls.adapter = None
 
-            cls.canvas_texture = None
-            cls.canvas_texture_depth = None
-            cls.shadow_depth_texture = None
+            cls.canvas_texture = None 
+            cls.canvas_texture_view = None
+            cls.canvas_texture_depth = None 
+            cls.canvas_texture_depth_view = None 
+
+            cls.shadow_depth_texture = None  
+            cls.shadow_depth_texture_view = None
 
         return cls._instance
     

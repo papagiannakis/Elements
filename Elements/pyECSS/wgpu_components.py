@@ -87,3 +87,6 @@ class MeshComponent(Component):
         self.vertices_num = None
         self.indices_num = None
   
+class RenderExclusiveComponent(Component):
+    def __init__(self):
+        self.active = True

@@ -20,10 +20,7 @@ class ShadowMapPass:
         )
 
     def render(self, command_encoder):  
-        texture = self._renderer._canvasContext
-        texture_format = self._renderer._canvasContextFormat
-        textureWidth = texture.width; 
-        textureHeight = texture.height;
+        texture_format = self._renderer._canvasContextFormat 
         
         self.colorBlend = [ 
             {   

@@ -46,7 +46,7 @@ Scene().set_primary_cam(camera)
 plane = Scene().add_entity() 
 Scene().add_component(plane, InfoComponent("Plane")) 
 Scene().add_component(plane, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1))) 
-Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=))
+Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 
 Scene().add_system(TransformSystem([TransformComponent]))
 Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
