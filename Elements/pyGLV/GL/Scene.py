@@ -23,7 +23,6 @@ class Scene():
     
     def __new__(cls):
         if cls._instance is None:
-            print('Creating Scene Singleton Object')
             cls._instance = super(Scene, cls).__new__(cls)
             cls._renderWindow = None
             cls._gContext = None

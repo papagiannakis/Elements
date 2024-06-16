@@ -56,7 +56,9 @@ class InitialPass(RenderSystem):
         ).is_true()
 
         if GpuCache().imported_canvas_size[0] != GpuCache().active_canvas_size[0] and GpuCache().imported_canvas_size[1] != GpuCache().active_canvas_size[1]: 
-            GpuCache().active_canvas_size = GpuCache().imported_canvas_size 
+            GpuCache().active_canvas_size = GpuCache().imported_canvas_size   
+
+            print(f"Canvas resized to width: {GpuCache().active_canvas_size[0]} and height: {GpuCache().active_canvas_size[1]}")
 
             GpuCache().canvas_texture = GpuCache().device.create_texture( 
                 label="canvas_texture",
