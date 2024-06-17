@@ -1,127 +1,113 @@
 import wgpu
 from PIL import Image
 
-def load_image(path):
-    img = Image.open(path) 
-    data = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
-    width = int(img.width) 
-    height = int(img.height) 
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache
+from dataclasses import dataclass  
+from assertpy import assert_that
 
-    return data, width, height
-
-class TextureDescriptor:
-    def __init__(
-        self,  
-        width:int = 1, 
-        height:int = 1, 
-        depthOrArrayLayers:int = 1, 
-        format:any = wgpu.TextureFormat.rgba8unorm,
-        usage:any = wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
-        sampleCount:int = 1, 
-        mipLevelCount:int = 1,
-        dimension:any = wgpu.TextureDimension.d2
-    ):
-        self.width = width  
-        self.height = height 
-        self.depthOrArrayLayers = depthOrArrayLayers
-        self.format = format
-        self.usage = usage
-        self.sampleCount = sampleCount
-        self.mipLevelCount = mipLevelCount
-        self.dimension = dimension
-
-
+@dataclass
 class Texture:
-    def __init__(self, device:wgpu.GPUDevice, label:str, textureDescriptor:TextureDescriptor=None, context=None, view=None): 
-        self.descriptor = textureDescriptor
-        self.context = any  
-        self.view = view 
-        self.device = device 
-        self.label = label 
-        self.context = context
+    texture: wgpu.GPUTexture = None
+    view: wgpu.GPUTextureView = None 
+    sampler: wgpu.GPUSampler = None 
+    img_bytes: bytes = None 
+    width: int = None 
+    height: int = None
+    array_level: int = None
 
-    def init(self): 
-        if self.context is None:  
-            self.context = self.device.create_texture(
-                label=self.label,
-                size=[self.descriptor.width, self.descriptor.height, self.descriptor.depthOrArrayLayers],
-                sample_count=self.descriptor.sampleCount,
-                format=self.descriptor.format,
-                usage=self.descriptor.usage,
-                mip_level_count=self.descriptor.mipLevelCount,
-                dimension=self.descriptor.dimension,
-            ) 
+class TextureLib():
 
-    def getView(self):
-        if self.view is None:
-            self.view = self.context.create_view() 
-        return self.view 
+    _instance = None
     
-    def writeTexture(self, data:any, width:int, height:int, bytesPerRow:int, depthOrArrayLater:int=1): 
-        self.device.queue.write_texture(
+    def __new__(cls):
+        if cls._instance is None:
+            print('Creating TextureLib Singleton Object')
+            cls._instance = super(TextureLib, cls).__new__(cls) 
+
+            cls.textures = {}   
+            cls.skyBoxes = {}
+
+        return cls._instance
+
+    def __init__(self):
+        None; 
+ 
+    def make_texture(self, name:str, path=None): 
+
+        if self.textures.get(name) is not None:
+            return self.textures.get(name) 
+
+        assert_that((path != None), "Give the path to the texture").is_true()
+        img = Image.open(path) 
+        img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
+
+        width = img.width 
+        height = img.height 
+        size = [width, height, 1] 
+
+        texture: wgpu.GPUTexture = GpuCache().device.create_texture(
+            size=size,
+            usage = wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
+            dimension = wgpu.TextureDimension.d2,
+            format = wgpu.TextureFormat.rgba8unorm,
+            mip_level_count = 1,
+            sample_count = 1,
+        )
+
+        view = texture.create_view() 
+
+        GpuCache().device.queue.write_texture(
             {
-                "texture": self.context, 
+                "texture": texture,
+                "mip_level": 0,
+                "origin": (0, 0, 0)
             },
-            data, 
-            { 
-                "bytes_per_row": bytesPerRow, 
-                "rows_per_image": height
-            }, 
-            [width, height, depthOrArrayLater]
-        ) 
+            img_bytes,
+            {
+                "offset": 0,
+                "bytes_per_row": width * 4,
+                "rows_per_image": height,
+            },
+            size
+        )  
 
+        sampler = GpuCache().device.create_sampler()
 
-class ImportTexture(Texture): 
-    def __init__(self, tag:str, path:str, desc: TextureDescriptor = None): 
-        super().__init__(device=None, label=tag, textureDescriptor=desc)
-        self.tag = tag
-        self.path = path
-        self.descriptor = desc 
+        self.textures.update({name: Texture(texture, view, sampler, img_bytes, width, height, 1)})
 
-    def make(self, device:wgpu.GPUDevice): 
-        self.device = device;  
+    def make_skybox(self, name:str, paths:list=None): 
+        
+        if self.skyBoxes.get(name) is not None: 
+            return self.skyBoxes.get(name)
 
-        if self.descriptor is None: 
-            self.descriptor = TextureDescriptor() 
+        assert_that((paths != None), "Give the path to the texture").is_true() 
 
-        self.data, self.width, self.height = load_image(self.path) 
+        width = [] 
+        height = [] 
+        data = []
 
-        self.descriptor.width = self.width
-        self.descriptor.height = self.height 
+        for path in paths:
+            img = Image.open(path) 
+            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
 
-        self.init() 
-        self.writeTexture(self.data, self.width, self.height, self.width * 4) 
+            width.append(img.width)
+            height.append(img.height) 
+            data.append(img_bytes) 
 
+        bytedata = bytes() 
+        for d in data:
+            bytedata += d 
 
-class CubeMapTexture(Texture):
-    def __init__(self, tag:str, paths:list):
-        super().__init__(device=None, label=tag, textureDescriptor=None)
-        self.tag = tag
-        self.paths = paths 
-        self.descriptor = None 
+        texture: wgpu.GPUTexture = GpuCache().device.create_texture(
+            size=[width[0], height[0], 6],
+            usage = wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
+            dimension = wgpu.TextureDimension.d2,
+            format = wgpu.TextureFormat.rgba8unorm,
+            mip_level_count = 1,
+            sample_count = 1,
+        )
 
-    def make(self, device:wgpu.GPUDevice):
-        self.device = device
-
-        self.data = []
-        self.width = []
-        self.height = [] 
-
-        for path in self.paths:
-            dwh = load_image(path) 
-            self.data.append(dwh[0]) 
-            self.width.append(dwh[1]) 
-            self.height.append(dwh[2])  
-
-        self.descriptor = TextureDescriptor( 
-            usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING,
-            width=self.width[0], 
-            height=self.height[0],
-            depthOrArrayLayers=6, 
-        ) 
-        self.init()
-
-        self.view = self.context.create_view(
+        view = texture.create_view(
             format=wgpu.TextureFormat.rgba8unorm,
             dimension=wgpu.TextureViewDimension.cube,
             aspect=wgpu.TextureAspect.all,
@@ -129,12 +115,30 @@ class CubeMapTexture(Texture):
             mip_level_count=1, 
             base_array_layer=0,
             array_layer_count=6
-        )   
+        ) 
 
-        byteData = bytes()
-        for data in self.data: 
-            byteData += data 
+        GpuCache().device.queue.write_texture(
+            {
+                "texture": texture,
+                "mip_level": 0,
+                "origin": (0, 0, 0)
+            },
+            bytedata,
+            {
+                "offset": 0,
+                "bytes_per_row": width[0] * 4,
+                "rows_per_image": height[0],
+            }, 
+            [width[0], height[0], 6]
+        )  
 
-        self.writeTexture(byteData, self.width[0], self.height[0], self.width[0] * 4, 6)
-            
+        sampler = GpuCache().device.create_sampler()
+
+        self.skyBoxes.update({name: Texture(texture, view, sampler, bytedata, width[0], height[0], 6)}) 
+
+    def get_texture(self, name:str): 
+        return self.textures.get(name)
+             
+    def get_skybox(self, name:str):
+        return self.skyBoxes.get(name)
         
