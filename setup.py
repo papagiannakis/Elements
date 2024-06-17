@@ -32,7 +32,7 @@ setup(
         'wheel',
         'numpy',
         'trimesh', 
-        'scipy==1.12',
+        'scipy',
         'imgui',
         'PyOpenGL',
         'pillow',
