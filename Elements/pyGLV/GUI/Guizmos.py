@@ -1,11 +1,6 @@
-from typing import List, Tuple
-from dataclasses import dataclass
 import numpy as np
-import math
-import munch 
 import glm
 from numpy.typing import NDArray
-from Elements.pyECSS.Component import Component
 from Elements.pyECSS.Component import BasicTransform
 import Elements.pyECSS.math_utilities as util
 
@@ -97,7 +92,7 @@ class Gizmos:
         trs_changed = False;
 
         if comp is not None and isinstance(comp, BasicTransform):
-            objectMatrix = np.array(glm.transpose(comp.l2world), np.float32) @ idMatrix
+            objectMatrix = np.array(glm.transpose(comp._l2world), np.float32) @ idMatrix
             makeMatrixCompatible()
 
             manip_result = self.gizmo.manipulate(
@@ -117,6 +112,7 @@ class Gizmos:
     def drawCameraGizmo(self):
         global firstFrame
         changed = False;
+        self.gizmo.set_orthographic(False);
 
         self.gizmo.set_rect(
             imgui.get_window_pos().x,
@@ -137,13 +133,13 @@ class Gizmos:
 
         view_manip_result = self.gizmo.view_manipulate(
             self._view,
-            50.0,
+            100.0,
             ImVec2(viewManipulateRight - 128, viewManipulateTop),
             ImVec2(128, 128),
-            0x10101010,
+            0x10101010
         )
 
-        if view_manip_result:
+        if view_manip_result.edited:
             changed = True
             cameraView = view_manip_result.value
             self._view = np.array(cameraView, np.float32);
@@ -161,21 +157,3 @@ class Gizmos:
         eye[:] *= 4;
 
         return eye, target, up;
-
-
-    def reverse_lookat(self):
-        _s = self._view[0, 0:3]
-        _u = self._view[1, 0:3]
-        _f = -self._view[2, 0:3]
-
-        tx = self._view[0, 3]
-        ty = self._view[1, 3]
-        tz = self._view[2, 3]
-
-        eye = -np.dot(self._view[:3, :3].T, [tx, ty, tz])
-
-        target = eye + _f
-
-        up = _u / np.linalg.norm(_u)
-
-        return eye, up, target

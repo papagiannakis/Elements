@@ -766,6 +766,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
         if cameraChange:
             self._eye = view[0]
+            print(view[0], view[1]);
             self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
 
             if self._wrapeeWindow.eventManager is not None:
@@ -834,13 +835,12 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
                     entity = self.wrapeeWindow.scene.world.getEntityByName(open_node.name);
                     if entity:
                         comp = entity.getChildByType("BasicTransform");
-                        if comp:
+                        if comp and self.changed and self._wrapeeWindow.eventManager is not None:
                             [x, y, z] = comp.translation
                             self._target = np.array([x,y,z], np.float32);
+                            # self._eye = np.array(self._eye + comp.translation, np.float32);
                             self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
-
-                            if self.changed and self._wrapeeWindow.eventManager is not None:
-                                self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+                            self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
                                 
                 else:
                     self.drawNode(self.wrapeeWindow.scene.world.root, "");

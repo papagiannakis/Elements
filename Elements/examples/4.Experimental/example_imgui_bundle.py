@@ -19,13 +19,18 @@ from Elements.utils.Shortcuts import displayGUI_text
 
 
 example_description = \
-"This example demonstrates the cube map texture, i.e., \n\
-we encapsulate the scene into a huge cube and apply texture to them\n\
-creating the illusion of a scenery. \n\
-You may move the camera using the mouse or the GUI. \n\
-You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
+"This example's aim is to demostrate the latest additions \n\
+to the framework of Elements"
 
+Lposition = util.vec(5.0, 2.0, 2.0) #uniform lightpos
+Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
+Lambientstr = 0.2 #uniform ambientStr
+LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
+Lcolor = util.vec(1.0,1.0,1.0)
+Lintensity = 0.8
+#Material
+Mshininess = 0.8 
+Mcolor = util.vec(0.8, 0.0, 0.8)
 
 winWidth = 1024
 winHeight = 768
@@ -167,37 +172,47 @@ vArraySkybox = scene.world.addComponent(skybox, VertexArray())
 shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
 
 # COLORED CUBES
-mesh4_red.vertex_attributes.append(vertexCube)
-mesh4_red.vertex_attributes.append(colorRed)
-mesh4_red.vertex_index.append(indexCube)
+vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vertexCube , indexCube, colorRed)
+mesh4_red.vertex_attributes.append(vertices)
+mesh4_red.vertex_attributes.append(colors)
+mesh4_red.vertex_attributes.append(normals)
+mesh4_red.vertex_index.append(indices)
 vArray4_red = scene.world.addComponent(red, VertexArray())
-shaderDec4_red = scene.world.addComponent(red, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4_red = scene.world.addComponent(red, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
-mesh4_yellow.vertex_attributes.append(vertexCube)
-mesh4_yellow.vertex_attributes.append(colorYellow)
-mesh4_yellow.vertex_index.append(indexCube)
+vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vertexCube , indexCube, colorYellow)
+mesh4_yellow.vertex_attributes.append(vertices)
+mesh4_yellow.vertex_attributes.append(colors)
+mesh4_yellow.vertex_attributes.append(normals)
+mesh4_yellow.vertex_index.append(indices)
 vArray4_yellow = scene.world.addComponent(yellow, VertexArray())
-shaderDec4_yellow = scene.world.addComponent(yellow, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4_yellow = scene.world.addComponent(yellow, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
-mesh4_blue.vertex_attributes.append(vertexCube)
-mesh4_blue.vertex_attributes.append(colorBlue)
-mesh4_blue.vertex_index.append(indexCube)
+vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vertexCube , indexCube, colorBlue)
+mesh4_blue.vertex_attributes.append(vertices)
+mesh4_blue.vertex_attributes.append(colors)
+mesh4_blue.vertex_attributes.append(normals)
+mesh4_blue.vertex_index.append(indices)
 vArray4_blue = scene.world.addComponent(blue, VertexArray())
-shaderDec4_blue = scene.world.addComponent(blue, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4_blue = scene.world.addComponent(blue, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
-mesh4_green.vertex_attributes.append(vertexCube)
-mesh4_green.vertex_attributes.append(colorGreen)
-mesh4_green.vertex_index.append(indexCube)
+vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vertexCube , indexCube, colorGreen)
+mesh4_green.vertex_attributes.append(vertices)
+mesh4_green.vertex_attributes.append(colors)
+mesh4_green.vertex_attributes.append(normals)
+mesh4_green.vertex_index.append(indices)
 vArray4_green = scene.world.addComponent(green, VertexArray())
-shaderDec4_green = scene.world.addComponent(green, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4_green = scene.world.addComponent(green, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
 
 # TEXTURED CUBE
 vertices, indices, _, normals = norm.generateFlatNormalsMesh(vertexCube , indexCube)
 
-mesh4_uoc.vertex_attributes.append(vertexCube)
-mesh4_uoc.vertex_index.append(indexCube)
+mesh4_uoc.vertex_attributes.append(vertices)
+mesh4_uoc.vertex_attributes.append(normals)
+mesh4_uoc.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
+mesh4_uoc.vertex_index.append(indices)
 vArray4_uoc = scene.world.addComponent(uoc, VertexArray())
-shaderDec4_uoc = scene.world.addComponent(uoc, ShaderGLDecorator(Shader(vertex_source = Shader.TEXTURE_3D_VERT, fragment_source=Shader.TEXTURE_3D_FRAG)))
+shaderDec4_uoc = scene.world.addComponent(uoc, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_PHONG_VERT, fragment_source=Shader.SIMPLE_TEXTURE_PHONG_FRAG)))
 
 
 # MAIN RENDERING LOOP
@@ -243,15 +258,12 @@ back_img = skybox_texture_locations / "back.jpg"
 bottom_img = skybox_texture_locations / "bottom.jpg"
 top_img = skybox_texture_locations / "top.jpg"
 
-
-mat_img = TEXTURE_DIR / "uoc_logo.png"
-
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
-face_data_2 = get_single_texture_faces(mat_img);
-
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
-shaderDec4_uoc.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
+texturePath = TEXTURE_DIR / "uoc_logo.png"
+texture = Texture(texturePath)
+shaderDec4_uoc.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
 while running:
     running = scene.render()
@@ -260,8 +272,8 @@ while running:
     
     view =  gWindow._myCamera # updates view via the imgui
 
-    scene.world.update_entity_values(rootEntity, winWidth, winHeight);
-    
+    # scene.world.update_entity_values(rootEntity, winWidth, winHeight);
+    scene.world.update_entity_values(rootEntity, winWidth, winHeight, True, Lambientcolor, Lambientstr, LviewPos, Lposition, Lcolor, Lintensity, Mshininess)
    
     scene.world.traverse_visit(renderUpdate, scene.world.root) 
     
