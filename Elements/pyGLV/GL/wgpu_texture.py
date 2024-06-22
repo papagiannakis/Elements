@@ -1,7 +1,7 @@
 import wgpu
 from PIL import Image
 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController
 from dataclasses import dataclass  
 from assertpy import assert_that
 
@@ -45,7 +45,7 @@ class TextureLib():
         height = img.height 
         size = [width, height, 1] 
 
-        texture: wgpu.GPUTexture = GpuCache().device.create_texture(
+        texture: wgpu.GPUTexture = GpuController().device.create_texture(
             size=size,
             usage = wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
             dimension = wgpu.TextureDimension.d2,
@@ -56,7 +56,7 @@ class TextureLib():
 
         view = texture.create_view() 
 
-        GpuCache().device.queue.write_texture(
+        GpuController().device.queue.write_texture(
             {
                 "texture": texture,
                 "mip_level": 0,
@@ -71,7 +71,7 @@ class TextureLib():
             size
         )  
 
-        sampler = GpuCache().device.create_sampler()
+        sampler = GpuController().device.create_sampler()
 
         self.textures.update({name: Texture(texture, view, sampler, img_bytes, width, height, 1)})
 
@@ -98,7 +98,7 @@ class TextureLib():
         for d in data:
             bytedata += d 
 
-        texture: wgpu.GPUTexture = GpuCache().device.create_texture(
+        texture: wgpu.GPUTexture = GpuController().device.create_texture(
             size=[width[0], height[0], 6],
             usage = wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
             dimension = wgpu.TextureDimension.d2,
@@ -117,7 +117,7 @@ class TextureLib():
             array_layer_count=6
         ) 
 
-        GpuCache().device.queue.write_texture(
+        GpuController().device.queue.write_texture(
             {
                 "texture": texture,
                 "mip_level": 0,
@@ -132,7 +132,7 @@ class TextureLib():
             [width[0], height[0], 6]
         )  
 
-        sampler = GpuCache().device.create_sampler()
+        sampler = GpuController().device.create_sampler()
 
         self.skyBoxes.update({name: Texture(texture, view, sampler, bytedata, width[0], height[0], 6)}) 
 

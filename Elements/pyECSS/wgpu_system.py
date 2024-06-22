@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from Elements.pyECSS.wgpu_components import Component
-from Elements.pyECSS.wgpu_components import Entity   
+from Elements.pyECSS.wgpu_entity import Entity   
 
 class System(object): 
     def __init__(self, filters: list[type]): 

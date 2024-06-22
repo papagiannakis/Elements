@@ -14,7 +14,7 @@ from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent
 from Elements.pyGLV.GL.wpgu_scene import Scene       
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache 
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController 
 
 class RenderPassDescriptor: 
     def __init__(self):  
@@ -87,31 +87,31 @@ class Renderer:
         self.attached_systems[name].render(Scene().entities, Scene().entity_componets_relation, Scene().components, render_pass)
 
     def init(self, present_context, render_texture_format, canvas_size):  
-        GpuCache().present_context = present_context
-        GpuCache().render_texture_format = render_texture_format 
+        GpuController().present_context = present_context
+        GpuController().render_texture_format = render_texture_format 
 
-        GpuCache().imported_canvas_size = canvas_size
-        GpuCache().active_canvas_size = canvas_size 
+        GpuController().imported_canvas_size = canvas_size
+        GpuController().active_canvas_size = canvas_size 
 
         self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
     def render(self, size:list[int]):    
         # resize if needed 
-        GpuCache().imported_canvas_size = size
+        GpuController().imported_canvas_size = size
 
-        command_encoder : wgpu.GPUCommandEncoder = GpuCache().device.create_command_encoder()
+        command_encoder : wgpu.GPUCommandEncoder = GpuController().device.create_command_encoder()
 
         self.actuate_system("Initial", command_encoder, None)  
 
         blitDescriptor = RenderPassDescriptor()
-        blitDescriptor.view = GpuCache().present_context.get_current_texture().create_view() 
+        blitDescriptor.view = GpuController().present_context.get_current_texture().create_view() 
         blit_render_pass = command_encoder.begin_render_pass(
             color_attachments=blitDescriptor.generate_color_attachments()
         ) 
         self.actuate_system("BlitToSurface", command_encoder, blit_render_pass) 
         blit_render_pass.end()
 
-        GpuCache().device.queue.submit([command_encoder.finish()]) 
+        GpuController().device.queue.submit([command_encoder.finish()]) 
 
 

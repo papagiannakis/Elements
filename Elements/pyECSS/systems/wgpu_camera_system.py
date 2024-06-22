@@ -1,7 +1,5 @@
 from __future__ import annotations 
 
-import glm
-
 from Elements.pyECSS.wgpu_system import System 
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyECSS.wgpu_components import Component, CameraComponent

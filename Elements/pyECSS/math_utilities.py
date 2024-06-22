@@ -298,7 +298,92 @@ def eulerAnglesToRotationMatrix(theta) :
                     [0,                     0,                      0,   1]
                     ])                  
     R = R_z @ R_y @ R_x 
-    return R
+    return R 
+
+def compute_tangent_space(vertices, normals, uvs, indices): 
+    """
+    Computes the tangent and bitangent vectors for a mesh.
+
+    Parameters:
+    -----------
+    vertices : list or numpy.ndarray
+        Vertex positions as 3-tuples or arrays.
+    normals : list or numpy.ndarray
+        Vertex normals as 3-tuples or arrays.
+    uvs : list or numpy.ndarray
+        UV coordinates as 2-tuples or arrays.
+    indices : list or numpy.ndarray
+        Triangle indices referring to the vertices list.
+
+    Returns:
+    --------
+    tangents : numpy.ndarray
+        Tangent vectors for each vertex.
+    bitangents : numpy.ndarray
+        Bitangent vectors for each vertex.
+    """ 
+
+    num_verts = len(vertices)
+    num_faces = len(indices) // 3
+    
+    # Initialize tangent and bitangent arrays
+    tangents = np.zeros((num_verts, 3))
+    bitangents = np.zeros((num_verts, 3))
+    
+    # Iterate over each face
+    for i in range(num_faces):
+        i1, i2, i3 = indices[i * 3], indices[i * 3 + 1], indices[i * 3 + 2]
+        v1, v2, v3 = vertices[i1], vertices[i2], vertices[i3]
+        uv1, uv2, uv3 = uvs[i1], uvs[i2], uvs[i3]
+        
+        delta_pos1 = v2 - v1
+        delta_pos2 = v3 - v1
+        delta_uv1 = uv2 - uv1
+        delta_uv2 = uv3 - uv1
+        
+        # Check for zero division
+        det = delta_uv1[0] * delta_uv2[1] - delta_uv1[1] * delta_uv2[0]
+        if det == 0:
+            continue
+        
+        r = 1.0 / det
+        
+        # Calculate tangent and bitangent for this face
+        tangent = (delta_pos1 * delta_uv2[1] - delta_pos2 * delta_uv1[1]) * r
+        bitangent = (delta_pos2 * delta_uv1[0] - delta_pos1 * delta_uv2[0]) * r
+        
+        # Accumulate tangent and bitangent to each vertex of this face
+        tangents[i1] += tangent
+        tangents[i2] += tangent
+        tangents[i3] += tangent
+        bitangents[i1] += bitangent
+        bitangents[i2] += bitangent
+        bitangents[i3] += bitangent
+    
+    # Gram-Schmidt orthogonalize and normalize the tangent and bitangent vectors
+    for i in range(num_verts):
+        normal = normals[i]
+        tangent = tangents[i]
+        bitangent = bitangents[i]
+        
+        # Gram-Schmidt orthogonalization
+        tangent -= np.dot(normal, tangent) * normal
+        bitangent -= np.dot(normal, bitangent) * normal
+        bitangent -= np.dot(tangent, bitangent) * tangent
+        
+        # Normalize
+        tangent_norm = np.linalg.norm(tangent)
+        bitangent_norm = np.linalg.norm(bitangent)
+        
+        if tangent_norm != 0:
+            tangent /= tangent_norm
+        if bitangent_norm != 0:
+            bitangent /= bitangent_norm
+        
+        tangents[i] = tangent
+        bitangents[i] = bitangent
+    
+    return tangents, bitangents
 
 def lookat(eye, target, up):
     """Utility function to calculate a 4x4 camera lookat matrix, based on the eye, target and up camera vectors:

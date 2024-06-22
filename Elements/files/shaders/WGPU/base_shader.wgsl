@@ -1,36 +1,43 @@
-struct Unirform {
-    projection: mat4x4<f32>,
-    view: mat4x4<f32>,
+struct uniforms {
+    projection: mat4x4f, 
+    view: mat4x4f,
 };
 
-struct ObjectData {
-    model: array<mat4x4<f32>>,
+struct models_storage {
+    model: array<mat4x4f> 
 };
 
-@binding(0) @group(0) var<uniform> ubuffer: Unirform;
-@binding(1) @group(0) var<storage, read> objects: ObjectData;
-@binding(0) @group(1) var myTexture: texture_2d<f32>;
-@binding(1) @group(1) var mySampler: sampler;
+@group(0) @binding(0) var<uniform> ubuffer: uniforms;
+@group(0) @binding(1) var<storage, read> models: models_storage;
+@group(1) @binding(0) var myTexture: texture_2d<f32>;
+@group(1) @binding(1) var mySampler: sampler;
 
-struct Fragment {
-    @builtin(position) Position : vec4<f32>,
-    @location(0) TexCoord : vec2<f32>
-};
+struct VertexInput { 
+    @location(0) a_vertices: vec3f, 
+    @location(1) a_uvs: vec2f,
+    @location(2) a_indices: vec3f,
+}
+struct VertexOutput {
+    @builtin(position) Position: vec4<f32>,
+    @location(0) v_tex: vec2<f32>
+}; 
 
 @vertex
 fn vs_main(
     @builtin(instance_index) ID: u32,
-    @location(0) vertexPostion: vec3<f32>, 
-    @location(1) vertexTexCoord: vec2<f32>) -> Fragment {
+    in: VertexInput
+) -> VertexOutput {
 
-    var output : Fragment;
-    output.Position = ubuffer.projection * ubuffer.view * objects.model[ID] * vec4<f32>(vertexPostion, 1.0); 
-    output.TexCoord = vertexTexCoord;
+    var out: VertexOutput; 
 
-    return output;
+    var model = models.model[ID];
+    out.v_tex = in.a_uvs;
+
+    out.Position = ubuffer.projection * ubuffer.view * model * vec4<f32>(in.a_vertices, 1.0); 
+    return out;
 }
 
 @fragment
-fn fs_main(@location(0) TexCoord : vec2<f32>) -> @location(0) vec4<f32> {
-    return textureSample(myTexture, mySampler, TexCoord); 
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    return textureSample(myTexture, mySampler, in.v_tex); 
 }

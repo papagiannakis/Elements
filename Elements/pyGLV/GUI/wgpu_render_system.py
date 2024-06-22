@@ -3,7 +3,7 @@ from __future__ import annotations
 import wgpu
 
 from Elements.pyECSS.wgpu_components import Component
-from Elements.pyECSS.wgpu_components import Entity   
+from Elements.pyECSS.wgpu_entity import Entity   
 
 class RenderSystem(object): 
     def __init__(self, filters: list[type]): 

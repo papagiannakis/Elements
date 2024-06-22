@@ -5,7 +5,7 @@ from assertpy import assert_that
 from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuCache 
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController 
 
 
 BLIT_SHADER_CODE = """  
@@ -35,7 +35,7 @@ fn fs_main(@builtin(position) fragCoord: vec4<f32>) -> @location(0) vec4<f32> {
 class BlitSurafacePass(RenderSystem): 
 
     def on_create(self, entity: Entity, components: Component | list[Component]): 
-        self.shader = GpuCache().device.create_shader_module(code=BLIT_SHADER_CODE);
+        self.shader = GpuController().device.create_shader_module(code=BLIT_SHADER_CODE);
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
         # We always have two bind groups, so we can play distributing our
@@ -46,7 +46,7 @@ class BlitSurafacePass(RenderSystem):
         bind_groups_entries[0].append(
             {
                 "binding": 0,
-                "resource": GpuCache().canvas_texture_view
+                "resource": GpuController().canvas_texture_view
             } 
         ) 
         bind_groups_layout_entries[0].append(
@@ -63,7 +63,7 @@ class BlitSurafacePass(RenderSystem):
         bind_groups_entries[0].append(
             {
                 "binding": 1, 
-                "resource": GpuCache().canvas_texture_sampler
+                "resource": GpuController().canvas_texture_sampler
             }
         )
         bind_groups_layout_entries[0].append(
@@ -79,16 +79,16 @@ class BlitSurafacePass(RenderSystem):
         bind_groups = []
 
         for entries, layout_entries in zip(bind_groups_entries, bind_groups_layout_entries):
-            bind_group_layout = GpuCache().device.create_bind_group_layout(entries=layout_entries)
+            bind_group_layout = GpuController().device.create_bind_group_layout(entries=layout_entries)
             bind_group_layouts.append(bind_group_layout)
             bind_groups.append(
-                GpuCache().device.create_bind_group(layout=bind_group_layout, entries=entries)
+                GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
             ) 
         self.bind_groups = bind_groups
 
-        pipeline_layout = GpuCache().device.create_pipeline_layout(bind_group_layouts=bind_group_layouts)
+        pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=bind_group_layouts)
 
-        self.render_pipeline = GpuCache().device.create_render_pipeline(
+        self.render_pipeline = GpuController().device.create_render_pipeline(
             layout=pipeline_layout,
             vertex={
                 "module": self.shader,
@@ -107,7 +107,7 @@ class BlitSurafacePass(RenderSystem):
                 "entry_point": "fs_main",
                 "targets": [
                     {
-                        "format": GpuCache().render_texture_format,
+                        "format": GpuController().render_texture_format,
                         "blend": {
                             "alpha": (
                                 wgpu.BlendFactor.one,
