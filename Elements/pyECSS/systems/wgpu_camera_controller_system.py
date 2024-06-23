@@ -18,10 +18,10 @@ class CameraControllerSystem(System):
     def on_create(self, entity: Entity, components: Component | tuple[Component]):
         pass
 
-    def on_update(self, entity: Entity, components: Component | tuple[Component], event):
+    def on_update(self, ts, entity: Entity, components: Component | tuple[Component], event):
         camera_controller, camera, transform = components  
 
-        velocity = camera_controller.movement_speed 
+        velocity = camera_controller.movement_speed * ts
         if InputManager().is_key_pressed('W'):
             transform.translation += camera_controller.front * velocity
         if InputManager().is_key_pressed('S'):
@@ -47,14 +47,14 @@ class CameraControllerSystem(System):
                 camera_controller.prev_mouse_y = y
 
                 if dx > 0:
-                    dx = 50.0 * camera_controller.mouse_sensitivity
+                    dx = 50.0 * camera_controller.mouse_sensitivity * ts
                 elif dx < 0:
-                    dx = -50.0 * camera_controller.mouse_sensitivity
+                    dx = -50.0 * camera_controller.mouse_sensitivity * ts
 
                 if dy > 0:
-                    dy = 50.0 * camera_controller.mouse_sensitivity
+                    dy = 50.0 * camera_controller.mouse_sensitivity * ts
                 elif dy < 0:
-                    dy = -50.0 * camera_controller.mouse_sensitivity
+                    dy = -50.0 * camera_controller.mouse_sensitivity * ts
 
                 camera_controller.yaw += dx
                 camera_controller.pitch += dy

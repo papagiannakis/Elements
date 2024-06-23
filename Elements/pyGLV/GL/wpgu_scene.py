@@ -88,10 +88,10 @@ class Scene():
         self.systems.append(system) 
         system.create(self.entities, self.entity_componets_relation, self.components) 
 
-    def update(self, event): 
+    def update(self, event, ts): 
 
         for system in self.systems:
-            system.update(self.entities, self.entity_componets_relation, self.components, event) 
+            system.update(ts, self.entities, self.entity_componets_relation, self.components, event) 
 
     def set_primary_cam(self, ent:Entity): 
         self.primary_camera = ent 

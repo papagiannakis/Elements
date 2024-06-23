@@ -19,7 +19,7 @@ class TransformSystem(System):
         transform.local_matrix = T * glm.mat4(R) * S
         transform.world_matrix = transform.local_matrix
 
-    def on_update(self, entity: Entity, components: Component | list[Component], event): 
+    def on_update(self, ts, entity: Entity, components: Component | list[Component], event): 
         transform = components
 
         if not transform.static:

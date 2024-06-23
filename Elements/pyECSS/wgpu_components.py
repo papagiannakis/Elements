@@ -49,7 +49,7 @@ class CameraComponent(Component):
             self.projection = glm.perspective(glm.radians(self.fov), self.aspect_ratio, self.near, self.far) 
         else:
             assert_that(self.projection).is_not_none() 
-            
+
         self.view_projection = glm.mat4(1.0)
 
 class CameraControllerComponent(Component):
@@ -102,8 +102,8 @@ class ShaderComponent(Component):
         assert_that(shader_path).is_not_none()
 
         self.pipeline_layout = None 
-        self.bind_group_layouts: list = []  
-        self.bind_group_layouts_entries = [[]]
+        self.bind_group_layouts = []  
+        self.bind_groups = []  
         self.shader_module = None 
         self.shader_path = shader_path
         self.shader_code = None
@@ -116,11 +116,12 @@ class ShaderComponent(Component):
         self.attributes_layout = None 
 
 class MaterialComponent(Component):
-    def __init__(self, primitive=None, color_blend=None):
+    def __init__(self, primitive=None, color_blend=None, depth_stencil=None):
 
-        self.pipeline = None  
+        self.pipeline:wgpu.GPURenderPipeline = None  
         self.primitive = None
-        self.color_blend = None
+        self.color_blend = None 
+        self.depth_stencil = None
 
         if primitive is None:
             self.primitive = {
@@ -133,18 +134,25 @@ class MaterialComponent(Component):
 
         if color_blend is None:
             self.color_blend = { 
-                "blend": {
-                    "alpha": (
-                        wgpu.BlendFactor.one,
-                        wgpu.BlendFactor.zero,
-                        wgpu.BlendOperation.add,
-                    ),
-                    "color": (
-                        wgpu.BlendFactor.one,
-                        wgpu.BlendFactor.zero,
-                        wgpu.BlendOperation.add,
-                    ),
-                },
+                "alpha": (
+                    wgpu.BlendFactor.one,
+                    wgpu.BlendFactor.zero,
+                    wgpu.BlendOperation.add,
+                ),
+                "color": (
+                    wgpu.BlendFactor.one,
+                    wgpu.BlendFactor.zero,
+                    wgpu.BlendOperation.add,
+                ),
             } 
         else: 
-            self.color_blend = color_blend
+            self.color_blend = color_blend 
+
+        if depth_stencil is None: 
+            self.depth_stencil = { 
+                "format": wgpu.TextureFormat.depth32float,
+                "depth_write_enabled": True,
+                "depth_compare": wgpu.CompareFunction.less_equal,
+            } 
+        else:
+            self.depth_stencil = depth_stencil

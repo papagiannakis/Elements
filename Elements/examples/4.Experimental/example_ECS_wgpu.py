@@ -14,7 +14,8 @@ from Elements.pyECSS.systems.wgpu_mesh_system import MeshSystem
 from Elements.pyECSS.systems.wpgu_shader_system import ShderSystem 
 
 from Elements.pyECSS.wgpu_components import * 
-from Elements.pyECSS.wgpu_entity import Entity
+from Elements.pyECSS.wgpu_entity import Entity 
+from Elements.pyECSS.wgpu_time_manager import TimeStepManager
 from Elements.pyGLV.GL.wpgu_scene import Scene 
 
 from Elements.pyGLV.GUI.wgpu_renderer import Renderer
@@ -54,7 +55,7 @@ Scene().set_primary_cam(camera)
 plane = Scene().add_entity() 
 Scene().add_component(plane, InfoComponent("Plane")) 
 Scene().add_component(plane, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True)) 
-Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
+Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "sphere.obj"))
 Scene().add_component(plane, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl")) 
 Scene().add_component(plane, MaterialComponent())
 
@@ -70,25 +71,34 @@ Renderer().init(
     canvas_size=[width, height]
 )
 
-def set_plane_unifroms():
-    global plane
-    shader_comp = Scene().get_component(plane, ShaderComponent)
+def set_plane_unifroms(plane:Entity):
+    camera_ent:Entity = Scene().get_primary_cam()
+
+    camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent)
+    shader_comp: ShaderComponent = Scene().get_component(plane, ShaderComponent)
+    plane_trans: TransformComponent = Scene().get_component(plane, TransformComponent)
 
     GpuController().set_uniform_value(
-        shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=glm.mat4x4(1), mat4x4f=True
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=camera_comp.view, mat4x4f=True
+    ) 
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="projection", uniform_value=glm.transpose(camera_comp.projection), mat4x4f=True
+    ) 
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=plane_trans.world_matrix, mat4x4f=True
     ) 
     GpuController().set_texture_sampler(
         shader_component=shader_comp, texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="3x3")
     )
 
 while canvas._running:
+    ts = TimeStepManager().update()  
     event = canvas.event_input_process(); 
     width = canvas._windowWidth
-    height = canvas._windowHeight  
+    height = canvas._windowHeight   
+    Scene().update(event, ts)  
 
-    Scene().update(event)  
-
-    set_plane_unifroms()
+    set_plane_unifroms(plane)
 
     Renderer().render([width, height]) 
     canvas.display()

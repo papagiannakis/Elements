@@ -22,7 +22,7 @@ class CameraSystem(System):
         elif camera.type == CameraComponent.Type.ORTHOGRAPHIC:
             camera.projection = glm.ortho(-camera.aspect_ratio * camera.zoom_level, camera.aspect_ratio * camera.zoom_level, -camera.zoom_level, camera.zoom_level, camera.near, camera.far)
 
-    def on_update(self, entity: Entity, components: Component | tuple[Component], event):
+    def on_update(self, ts, entity: Entity, components: Component | tuple[Component], event):
         camera, transform = components
 
         if not transform.static:

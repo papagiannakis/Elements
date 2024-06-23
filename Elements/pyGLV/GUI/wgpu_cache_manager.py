@@ -61,37 +61,37 @@ class GpuController:
         if mat4x4f is True: 
             data_size = 16 * 4
             value = np.ascontiguousarray(uniform_value, dtype=np.float32)
-            assert_that(value.nbytes == data_size).is_true()
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true()
 
         elif mat3x3f is True: 
             data_size = 9 * 4
             value = np.ascontiguousarray(uniform_value, dtype=np.float32) 
-            assert_that(value.nbytes == data_size).is_true()
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true()
 
         elif mat2x2f is True:  
             data_size = 4 * 4
             value = np.ascontiguousarray(uniform_value, dtype=np.float32) 
-            assert_that(value.nbytes == data_size).is_true() 
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true() 
 
         elif float4 is True: 
             data_size = 4 * 4
             value = np.ascontiguousarray(uniform_value, dtype=np.float32) 
-            assert_that(value.nbytes == data_size).is_true()
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true()
 
         elif float3 is True: 
             data_size = 3 * 4
             value = np.ascontiguousarray(uniform_value, dtype=np.float32) 
-            assert_that(value.nbytes == data_size).is_true() 
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true() 
 
         elif float2 is True: 
             data_size = 2 * 4
             value = np.ascontiguousarray(uniform_value, dtype=np.float32) 
-            assert_that(value.nbytes == data_size).is_true()
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true()
 
         elif float1 is True:  
             data_size = 4 
             value = np.float32(uniform_value)  
-            assert_that(value.nbytes == data_size).is_true()
+            assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true()
 
         else: 
             assert_that(data_size != 0).is_true()

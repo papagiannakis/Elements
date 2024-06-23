@@ -10,10 +10,11 @@ from enum import Enum
 # from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass 
 
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent
+from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent, MeshComponent, ShaderComponent, MaterialComponent
 from Elements.pyGLV.GL.wpgu_scene import Scene       
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
+from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
 from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController 
 
 class RenderPassDescriptor: 
@@ -95,6 +96,7 @@ class Renderer:
 
         self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
+        self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent]))
 
     def render(self, size:list[int]):    
         # resize if needed 
@@ -103,6 +105,16 @@ class Renderer:
         command_encoder : wgpu.GPUCommandEncoder = GpuController().device.create_command_encoder()
 
         self.actuate_system("Initial", command_encoder, None)  
+
+        meshDescriptor = RenderPassDescriptor() 
+        meshDescriptor.view = GpuController().canvas_texture_view
+        meshDescriptor.depth_view = GpuController().canvas_texture_depth_view
+        mesh_render_pass = command_encoder.begin_render_pass(
+            color_attachments=meshDescriptor.generate_color_attachments(),
+            depth_stencil_attachment=meshDescriptor.generate_depth_attachments()
+        ) 
+        self.actuate_system("MeshPass", command_encoder, mesh_render_pass) 
+        mesh_render_pass.end()
 
         blitDescriptor = RenderPassDescriptor()
         blitDescriptor.view = GpuController().present_context.get_current_texture().create_view() 

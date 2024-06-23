@@ -97,13 +97,22 @@ class ShderSystem(System):
             attr_slot = 0;
             for name, attr_type in matches: 
                 attributes.update({name: {'type': attr_type, 'slot': attr_slot}})  
-                attr_slot += 1 
 
-                attribute_layout.append(self.create_attribute_layout({'type': attr_type, 'slot': attr_slot}))
+                layout = self.create_attribute_layout({'type': attr_type, 'slot': attr_slot})
+                attribute_layout.append(layout) 
+                attr_slot += 1 
 
         return attributes, attribute_layout 
     
-    def make_gpu_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
+    def make_gpu_uniform_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
+        for key, buffer in buffer_map.items(): 
+            gpu_buffer_map.update({
+                key: GpuController().device.create_buffer(
+                    size=buffer['size'], usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
+                )
+            }) 
+
+    def make_gpu_read_only_storage_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
         for key, buffer in buffer_map.items(): 
             gpu_buffer_map.update({
                 key: GpuController().device.create_buffer(
@@ -122,8 +131,8 @@ class ShderSystem(System):
         shader.other_uniform = self.parse_buffer('', shader.shader_code)  
         shader.attributes, shader.attributes_layout = self.parse_attributes(shader.shader_code) 
 
-        self.make_gpu_buffers(shader.uniform_gpu_buffers, shader.uniform_buffers)
-        self.make_gpu_buffers(shader.read_only_storage_gpu_buffers, shader.read_only_storage_buffers)
+        self.make_gpu_uniform_buffers(shader.uniform_gpu_buffers, shader.uniform_buffers)
+        self.make_gpu_read_only_storage_buffers(shader.read_only_storage_gpu_buffers, shader.read_only_storage_buffers)
 
         bind_groups_layout_entries = [[]]
         for name in shader.uniform_buffers.keys(): 
@@ -203,11 +212,12 @@ class ShderSystem(System):
                 }) 
         
         shader.bind_group_layouts = []
-        shader.bind_group_layouts_entries = bind_groups_layout_entries
-        for entries in bind_groups_layout_entries:
-            shader.bind_group_layouts.append(GpuController().device.create_bind_group_layout(entries=entries)) 
+        for layout_entries in bind_groups_layout_entries:
+            shader.bind_group_layouts.append(GpuController().device.create_bind_group_layout(entries=layout_entries)) 
 
-        shader.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=shader.bind_group_layouts)
+        shader.pipeline_layout = GpuController().device.create_pipeline_layout(
+            bind_group_layouts=shader.bind_group_layouts
+        )
  
-    def on_update(self, entity: Entity, components: Component | list[Component], event): 
+    def on_update(self, ts, entity: Entity, components: Component | list[Component], event): 
         pass;

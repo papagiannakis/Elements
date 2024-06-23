@@ -1,137 +1,103 @@
-# import wgpu
-# import glm
-# import numpy as np
+from __future__ import annotations
+import wgpu   
+from assertpy import assert_that
 
-# from Elements.pyGLV.GL.wgpu_meshes import Buffers  
-# from Elements.pyGLV.GL.wgpu_texture import Texture 
-# from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import DEPTH_TEXTURE_SIZE
+from Elements.pyECSS.wgpu_components import Component, MeshComponent, MaterialComponent, ShaderComponent
+from Elements.pyECSS.wgpu_entity import Entity
+from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
+from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController  
 
-# class ModelPass:
-#     def __init__(self, renderer): 
-#         self._renderer = renderer; 
-    
-#     def onInit(self, command_encoder): 
-#         for obj in self._renderer._scene._objects:   
-#             if (self._renderer._shadowMapDepthTexture and hasattr(obj.attachedMaterial.shader, "setShadowMap")):  
-#                 shadow_depth_map = Texture(
-#                     label="ShadowMap",
-#                     device=self._renderer._device, 
-#                     context=self._renderer._shadowMapDepthTexture,
-#                     view = self._renderer._shadowMapDepthTextureView 
-#                 )  
-#                 obj.attachedMaterial.shader.setShadowMap(shadow_depth_map)
+class MeshRenderPass(RenderSystem):
 
-#             obj.attachedMaterial.shader.update(command_encoder=command_encoder)  
+    def make_bind_group(self, shader:ShaderComponent):
+        bind_groups_entries = [[]]
 
-#             for uniformGroup in obj.attachedMaterial.uniformGroups.values():
-#                 uniformGroup.makeBindGroup(device=self._renderer._device) 
+        for name in shader.uniform_buffers.keys(): 
+            if len(bind_groups_entries) <= shader.uniform_buffers[name]['group']:
+                bind_groups_entries.append([]) 
 
-#     def render(self, command_encoder):
-#         texture = self._renderer._canvasContext
-#         texture_format = self._renderer._canvasContextFormat
-#         textureWidth = texture.width; 
-#         textureHeight = texture.height;
+            bind_groups_entries[shader.uniform_buffers[name]['group']].append({
+                "binding": shader.uniform_buffers[name]['binding'], 
+                "resource": {
+                    "buffer": shader.uniform_gpu_buffers[name],
+                    "offset": 0,
+                    "size": shader.uniform_buffers[name]['size']
+                },
+            }) 
 
-#         self.colorBlend = [ 
-#             {   
-#                 "format": texture_format,
-#                 "blend": {
-#                     "alpha": (
-#                         wgpu.BlendFactor.one,
-#                         wgpu.BlendFactor.zero,
-#                         wgpu.BlendOperation.add,
-#                     ),
-#                     "color": (
-#                         wgpu.BlendFactor.one,
-#                         wgpu.BlendFactor.zero,
-#                         wgpu.BlendOperation.add,
-#                     ),
-#                 } 
-#             }
-#         ] 
+        for name in shader.read_only_storage_buffers.keys(): 
+            if len(bind_groups_entries) <= shader.read_only_storage_buffers[name]['group']:
+                bind_groups_entries.append([]) 
 
-#         self.primitive = { 
-#             "topology": wgpu.PrimitiveTopology.triangle_list,
-#             "front_face": wgpu.FrontFace.ccw,
-#             "cull_mode": wgpu.CullMode.none,
-#         } 
+            bind_groups_entries[shader.read_only_storage_buffers[name]['group']].append({
+                "binding": shader.read_only_storage_buffers[name]['binding'], 
+                "resource": {
+                    "buffer": shader.read_only_storage_gpu_buffers[name],
+                    "offset": 0,
+                    "size": shader.read_only_storage_buffers[name]['size']
+                },
+            })
 
-#         self.depth_stencil = {
-#             "format": wgpu.TextureFormat.depth24plus,
-#             "depth_write_enabled": True,
-#             "depth_compare": wgpu.CompareFunction.less_equal,
-#         }
+        for name in shader.other_uniform.keys():
+            if len(bind_groups_entries) <= shader.other_uniform[name]['group']:
+                bind_groups_entries.append([])
+
+            bind_groups_entries[shader.other_uniform[name]['group']].append({
+                "binding": shader.other_uniform[name]['binding'], 
+                "resource": shader.other_uniform[name]['other_resource']
+            })
+
+        shader.bind_groups.clear()
+        for (entries, bind_group_layout) in zip(bind_groups_entries, shader.bind_group_layouts):
+            shader.bind_groups.append(
+                GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
+            )
+
+    def make_pipeline(self, material:MaterialComponent, shader:ShaderComponent):   
+        material.pipeline = GpuController().device.create_render_pipeline(
+            layout=shader.pipeline_layout,
+            vertex={
+                "module": shader.shader_module,
+                "entry_point": "vs_main", 
+                "buffers": shader.attributes_layout 
+            },
+            primitive=material.primitive,
+            depth_stencil=material.depth_stencil,
+            multisample=None,
+            fragment={
+                "module": shader.shader_module,
+                "entry_point": "fs_main",
+                "targets": [
+                    {
+                        "format": wgpu.TextureFormat.rgba8unorm,
+                        "blend": material.color_blend
+                    }
+                ]
+            }
+        )
+
+    def on_create(self, entity: Entity, components: Component | list[Component]): 
+        mesh, material, shader = components 
+
+        assert_that(
+            (type(mesh) == MeshComponent) and
+            (type(material) == MaterialComponent) and
+            (type(shader) == ShaderComponent)
+        ).is_true()
+
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        mesh, material, shader = components  
+
+        self.make_bind_group(shader) 
+        self.make_pipeline(material, shader)
         
-#         depth_texture : wgpu.GPUTexture = self._renderer._device.create_texture(
-#                 label="depth_texture",
-#                 size=[textureWidth, textureHeight, 1],
-#                 mip_level_count=1,
-#                 sample_count=1,
-#                 dimension="2d",
-#                 format=wgpu.TextureFormat.depth24plus,
-#                 usage=wgpu.TextureUsage.RENDER_ATTACHMENT
-#             )
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
+        mesh, material, shader = components   
 
-#         depth_texture_view : wgpu.GPUTextureView = depth_texture.create_view(
-#             label="depth_texture_view",
-#             format=wgpu.TextureFormat.depth24plus,
-#             dimension="2d",
-#             aspect=wgpu.TextureAspect.depth_only,
-#             base_mip_level=0,
-#             mip_level_count=1,
-#             base_array_layer=0,
-#             array_layer_count=1,
-#         )
-
-#         # command_encoder = self._renderer._device.create_command_encoder()  
-#         current_texture_view = texture.create_view()
-#         render_pass = command_encoder.begin_render_pass( 
-#             color_attachments=[
-#                 {
-#                     "view": current_texture_view,
-#                     "resolve_target": None,
-#                     "clear_value": (0.0, 0.0, 0.0, 1.0),
-#                     "load_op": wgpu.LoadOp.clear,
-#                     "store_op": wgpu.StoreOp.store,
-#                 }
-#             ],
-#             depth_stencil_attachment={
-#                     "view": depth_texture_view,
-#                     "depth_clear_value": 1.0,
-#                     "depth_load_op": wgpu.LoadOp.clear,
-#                     "depth_store_op": wgpu.StoreOp.store,
-#                     "depth_read_only": False,
-#                     "stencil_clear_value": 0,
-#                     "stencil_load_op": wgpu.LoadOp.clear,
-#                     "stencil_store_op": wgpu.StoreOp.store,
-#                     "stencil_read_only": True,
-#                 },
-#         )
-
-#         for obj in self._renderer._scene._objects:   
-#             render_pipeline = obj.attachedMaterial.makePipeline(device=self._renderer._device, renderPass=self) 
-
-#             render_pass.set_pipeline(render_pipeline)   
-#             if obj.mesh.hasIndices:
-#                 render_pass.set_index_buffer(obj.mesh.bufferMap[Buffers.INDEX], wgpu.IndexFormat.uint32)  
-
-#                 for attribute in obj.attachedMaterial.shader.attributes.values():
-#                     render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
-
-#                 for group in obj.attachedMaterial.uniformGroups.values(): 
-#                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
-
-#                 render_pass.draw_indexed(obj.mesh.numIndices, obj.instance_count, 0, 0, 0)   
-
-#             else:
-#                 for attribute in obj.attachedMaterial.shader.attributes.values():
-#                     render_pass.set_vertex_buffer(slot=attribute.slot, buffer=obj.mesh.bufferMap[attribute.name])  
-
-#                 for group in obj.attachedMaterial.uniformGroups.values(): 
-#                     render_pass.set_bind_group(group.groupIndex, group.bindGroup, [], 0, 99)  
-
-#                 render_pass.draw(obj.mesh.numVertices, obj.instance_count, 0, 0)     
-
-#         render_pass.end()
-#         # self._renderer._device.queue.submit([command_encoder.finish()]) 
-
+        render_pass.set_pipeline(material.pipeline)
+        render_pass.set_index_buffer(mesh.buffer_map[MeshComponent.Buffers.INDEX.value], wgpu.IndexFormat.uint32) 
+        for name, attr in shader.attributes.items():
+            render_pass.set_vertex_buffer(slot=attr['slot'], buffer=mesh.buffer_map[name])
+        for bind_group_id, bind_group in enumerate(shader.bind_groups):
+            render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
+        render_pass.draw_indexed(mesh.indices_num, 1, 0, 0, 0) 

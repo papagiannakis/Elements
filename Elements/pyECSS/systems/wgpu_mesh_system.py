@@ -61,7 +61,7 @@ class MeshSystem(System):
         if mesh.Bitangents is not None: 
             mesh.buffer_map.update({MeshComponent.Buffers.TANGENT.value: self.createBuffer(mesh.Bitangents)})  
 
-    def on_update(self, entity: Entity, components: Component | list[Component], event):  
+    def on_update(self, ts, entity: Entity, components: Component | list[Component], event):  
         pass 
 
 
