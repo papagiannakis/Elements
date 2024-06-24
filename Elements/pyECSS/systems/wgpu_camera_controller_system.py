@@ -37,7 +37,7 @@ class CameraControllerSystem(System):
                 transform.translation += camera_controller.up * velocity
 
         if event and event.type == EventTypes.MOUSE_MOTION:     
-            if button_map[glfw.MOUSE_BUTTON_2] in event.data["buttons"]:  
+            if InputManager().is_button_pressed(2):
                 x = event.data["x"] 
                 y = event.data["y"]   
 
