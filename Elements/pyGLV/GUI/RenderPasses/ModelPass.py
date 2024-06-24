@@ -5,7 +5,7 @@ from assertpy import assert_that
 from Elements.pyECSS.wgpu_components import Component, MeshComponent, MaterialComponent, ShaderComponent
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController  
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController  
 
 class MeshRenderPass(RenderSystem):
 

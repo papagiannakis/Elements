@@ -23,9 +23,12 @@ fn vs_main(
     in: VertexInput
 ) -> VertexOutput {
 
-    var out: VertexOutput; 
+    var model = transpose(ubuffer.model);
+    var view = transpose(ubuffer.view); 
+    var projection = transpose(ubuffer.projection);
 
-    out.Position = ubuffer.projection * ubuffer.view * ubuffer.model * vec4<f32>(in.a_vertices, 1.0); 
+    var out: VertexOutput; 
+    out.Position = projection * view * model * vec4<f32>(in.a_vertices, 1.0); 
     out.v_tex = in.a_uvs; 
     out.v_position = out.Position.xyz;
     return out;

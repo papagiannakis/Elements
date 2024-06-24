@@ -27,6 +27,12 @@ class InputManager():
         if self.canvas_monitor_instance: 
             return self.canvas_monitor_instance.IsKeyPressed(key)  
         else: 
+            return None 
+
+    def is_button_pressed(self, button): 
+        if self.canvas_monitor_instance: 
+            return self.canvas_monitor_instance.IsButtonPressed(button)  
+        else: 
             return None
     
     def get_mouse_pos(self):  

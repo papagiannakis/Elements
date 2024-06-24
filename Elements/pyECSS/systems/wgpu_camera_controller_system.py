@@ -21,19 +21,20 @@ class CameraControllerSystem(System):
     def on_update(self, ts, entity: Entity, components: Component | tuple[Component], event):
         camera_controller, camera, transform = components  
 
-        velocity = camera_controller.movement_speed * ts
-        if InputManager().is_key_pressed('W'):
-            transform.translation += camera_controller.front * velocity
-        if InputManager().is_key_pressed('S'):
-            transform.translation -= camera_controller.front * velocity
-        if InputManager().is_key_pressed('A'):
-            transform.translation -= camera_controller.right * velocity
-        if InputManager().is_key_pressed('D'):
-            transform.translation += camera_controller.right * velocity 
-        if InputManager().is_key_pressed('E'):
-            transform.translation -= camera_controller.up * velocity
-        if InputManager().is_key_pressed('Q'):
-            transform.translation += camera_controller.up * velocity
+        if InputManager().is_button_pressed(2):
+            velocity = camera_controller.movement_speed * ts
+            if InputManager().is_key_pressed('W'):
+                transform.translation += camera_controller.front * velocity
+            if InputManager().is_key_pressed('S'):
+                transform.translation -= camera_controller.front * velocity
+            if InputManager().is_key_pressed('A'):
+                transform.translation -= camera_controller.right * velocity
+            if InputManager().is_key_pressed('D'):
+                transform.translation += camera_controller.right * velocity 
+            if InputManager().is_key_pressed('E'):
+                transform.translation -= camera_controller.up * velocity
+            if InputManager().is_key_pressed('Q'):
+                transform.translation += camera_controller.up * velocity
 
         if event and event.type == EventTypes.MOUSE_MOTION:     
             if button_map[glfw.MOUSE_BUTTON_2] in event.data["buttons"]:  
@@ -47,14 +48,14 @@ class CameraControllerSystem(System):
                 camera_controller.prev_mouse_y = y
 
                 if dx > 0:
-                    dx = 50.0 * camera_controller.mouse_sensitivity * ts
-                elif dx < 0:
                     dx = -50.0 * camera_controller.mouse_sensitivity * ts
+                elif dx < 0:
+                    dx = 50.0 * camera_controller.mouse_sensitivity * ts
 
                 if dy > 0:
-                    dy = 50.0 * camera_controller.mouse_sensitivity * ts
-                elif dy < 0:
                     dy = -50.0 * camera_controller.mouse_sensitivity * ts
+                elif dy < 0:
+                    dy = 50.0 * camera_controller.mouse_sensitivity * ts
 
                 camera_controller.yaw += dx
                 camera_controller.pitch += dy
@@ -69,10 +70,10 @@ class CameraControllerSystem(System):
                 front.x = glm.cos(glm.radians(camera_controller.yaw)) * glm.cos(glm.radians(camera_controller.pitch))
                 front.y = glm.sin(glm.radians(camera_controller.pitch))
                 front.z = glm.sin(glm.radians(-camera_controller.yaw)) * glm.cos(glm.radians(camera_controller.pitch))
-                camera_controller.front = glm.normalize(front)
+                camera_controller.front = -1 * glm.normalize(front)
 
                 # Update right and up vectors
-                camera_controller.right = glm.normalize(glm.cross(camera_controller.front, -camera_controller.world_up))
-                camera_controller.up = glm.normalize(glm.cross(camera_controller.right, camera_controller.front))
+                camera_controller.right = -1 * glm.normalize(glm.cross(camera_controller.front, -camera_controller.world_up))
+                camera_controller.up = -1 * glm.normalize(glm.cross(camera_controller.right, camera_controller.front))
 
                 transform.rotation += glm.vec3(-dy, dx, 0)

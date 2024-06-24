@@ -29,4 +29,4 @@ class TransformSystem(System):
             
             transform.quaternion = R
             transform.local_matrix = T * glm.mat4(R) * S
-            transform.world_matrix = transform.local_matrix        
+            transform.world_matrix = transform.local_matrix

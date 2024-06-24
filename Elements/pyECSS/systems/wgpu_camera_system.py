@@ -18,7 +18,7 @@ class CameraSystem(System):
         camera.view_projection = camera.projection * camera.view
 
         if camera.type == CameraComponent.Type.PERSPECTIVE:
-            camera.projection = glm.perspective(glm.radians(camera.fov), camera.aspect_ratio, camera.near, camera.far) 
+            camera.projection = glm.perspective(glm.radians(camera.fov), camera.aspect_ratio, camera.near, camera.far)
         elif camera.type == CameraComponent.Type.ORTHOGRAPHIC:
             camera.projection = glm.ortho(-camera.aspect_ratio * camera.zoom_level, camera.aspect_ratio * camera.zoom_level, -camera.zoom_level, camera.zoom_level, camera.near, camera.far)
 
@@ -30,6 +30,6 @@ class CameraSystem(System):
             camera.view_projection = camera.projection * camera.view
         
             if camera.type == CameraComponent.Type.PERSPECTIVE:
-                camera.projection = glm.perspective(glm.radians(camera.fov), camera.aspect_ratio, camera.near, camera.far) 
+                camera.projection = glm.perspective(glm.radians(camera.fov), camera.aspect_ratio, camera.near, camera.far)
             elif camera.type == CameraComponent.Type.ORTHOGRAPHIC:
                 camera.projection = glm.ortho(-camera.aspect_ratio * camera.zoom_level, camera.aspect_ratio * camera.zoom_level, -camera.zoom_level, camera.zoom_level, camera.near, camera.far)

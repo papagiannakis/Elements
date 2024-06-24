@@ -532,6 +532,10 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
     def GetMousePos(self): 
         return self._pointer_pos
     
+    def IsButtonPressed(self, button:int): 
+        _state = True if button in self._pointer_buttons else False  
+        return _state
+    
     def event_input_process(self, running = True):   
         glfw.poll_events()   
         

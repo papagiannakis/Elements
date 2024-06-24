@@ -3,7 +3,7 @@ from __future__ import annotations
 from Elements.pyECSS.wgpu_system import System 
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyECSS.wgpu_components import Component 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController 
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController 
 from Elements.pyGLV.GL.wgpu_shader_types import *
 
 import glm  

@@ -10,7 +10,7 @@ from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyECSS.wgpu_components import Component, MeshComponent 
 from Elements.pyECSS.math_utilities import compute_tangent_space
 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 
 class MeshSystem(System):  
 

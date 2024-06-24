@@ -5,29 +5,47 @@ from assertpy import assert_that
 from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController 
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController 
+from Elements.pyGLV.GL.wgpu_texture import TextureLib, Texture
 
 
 BLIT_SHADER_CODE = """  
 @group(0) @binding(0) var tex: texture_2d<f32>;
 @group(0) @binding(1) var samp: sampler; 
 
+struct VertexOutput { 
+    @builtin(position) Position: vec4<f32>,
+    @location(0) fragCoord: vec2<f32>
+}
+
 @vertex
-fn vs_main(@builtin(vertex_index) vertex_index: u32) -> @builtin(position) vec4<f32> {
-    var positions = array<vec2<f32>, 3>(
+fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
+    var POSITIONS: array<vec2<f32>, 4> = array<vec2<f32>, 4>(
         vec2<f32>(-1.0, -1.0),
-        vec2<f32>(3.0, -1.0),
-        vec2<f32>(-1.0, 3.0)
+        vec2<f32>( 1.0, -1.0),
+        vec2<f32>(-1.0,  1.0),
+        vec2<f32>( 1.0,  1.0)
     );
 
-    var position = positions[vertex_index];
-    return vec4<f32>(position, 0.0, 1.0);
+    var UVS: array<vec2<f32>, 4> = array<vec2<f32>, 4>(
+        vec2<f32>(0.0, 0.0),
+        vec2<f32>(1.0, 0.0),
+        vec2<f32>(0.0, 1.0),
+        vec2<f32>(1.0, 1.0)
+    );
+
+    var out: VertexOutput;
+    let pos = POSITIONS[vertex_index];
+    let vUV = UVS[vertex_index]; 
+
+    out.fragCoord = vUV;
+    out.Position = vec4f(pos, 0.0, 1.0);
+    return out;
 } 
 
 @fragment
-fn fs_main(@builtin(position) fragCoord: vec4<f32>) -> @location(0) vec4<f32> {
-    let uv = fragCoord.xy * 0.5 + vec2<f32>(0.5, 0.5);
-    return textureSample(tex, samp, uv);
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
+    return textureSample(tex, samp, in.fragCoord);
 }
 """
 
@@ -96,7 +114,7 @@ class BlitSurafacePass(RenderSystem):
                 "buffers": [], 
             },
             primitive={
-                "topology": wgpu.PrimitiveTopology.triangle_list,
+                "topology": wgpu.PrimitiveTopology.triangle_strip,
                 "front_face": wgpu.FrontFace.ccw,
                 "cull_mode": wgpu.CullMode.none,
             },
@@ -135,5 +153,5 @@ class BlitSurafacePass(RenderSystem):
         for bind_group_id, bind_group in enumerate(self.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
 
-        render_pass.draw(3, 1, 0, 0) 
+        render_pass.draw(4, 1, 0, 0) 
 

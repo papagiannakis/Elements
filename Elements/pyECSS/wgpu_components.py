@@ -33,7 +33,7 @@ class CameraComponent(Component):
         PERSPECTIVE = 1
         ORTHOGRAPHIC = 2
 
-    def __init__(self, fov, aspect_ratio, near, far, zoom_level, type: Type, primary = True):
+    def __init__(self, fov, aspect_ratio, near, far, zoom_level, type: Type):
         self.zoom_level = zoom_level
         self.fov = fov
         self.near = near
@@ -46,14 +46,14 @@ class CameraComponent(Component):
         if type is CameraComponent.Type.ORTHOGRAPHIC:
             self.projection = glm.ortho(-self.aspect_ratio * self.zoom_level, self.aspect_ratio * self.zoom_level, -self.zoom_level, self.zoom_level, self.near, self.far)
         elif type is CameraComponent.Type.PERSPECTIVE:
-            self.projection = glm.perspective(glm.radians(self.fov), self.aspect_ratio, self.near, self.far) 
+            self.projection = glm.perspective(glm.radians(self.fov), self.aspect_ratio, self.near, self.far)
         else:
             assert_that(self.projection).is_not_none() 
 
         self.view_projection = glm.mat4(1.0)
 
 class CameraControllerComponent(Component):
-    def __init__(self, movement_speed = 3.5, mouse_sensitivity = 1.25):
+    def __init__(self, movement_speed = 1, mouse_sensitivity = 1):
         self.front = glm.vec3(0.0, 0.0, 1.0)
         self.right = glm.vec3(1.0, 0.0, 0.0)
         self.up = glm.vec3(0.0, 1.0, 0.0)

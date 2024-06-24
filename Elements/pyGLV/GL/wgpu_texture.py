@@ -1,7 +1,7 @@
 import wgpu
 from PIL import Image
 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from dataclasses import dataclass  
 from assertpy import assert_that
 

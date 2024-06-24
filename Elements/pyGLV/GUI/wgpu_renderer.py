@@ -15,7 +15,7 @@ from Elements.pyGLV.GL.wpgu_scene import Scene
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
-from Elements.pyGLV.GUI.wgpu_cache_manager import GpuController 
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController 
 
 class RenderPassDescriptor: 
     def __init__(self):  
@@ -95,8 +95,8 @@ class Renderer:
         GpuController().active_canvas_size = canvas_size 
 
         self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
-        self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
         self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent]))
+        self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
     def render(self, size:list[int]):    
         # resize if needed 
@@ -108,7 +108,7 @@ class Renderer:
 
         meshDescriptor = RenderPassDescriptor() 
         meshDescriptor.view = GpuController().canvas_texture_view
-        meshDescriptor.depth_view = GpuController().canvas_texture_depth_view
+        meshDescriptor.depth_view = GpuController().canvas_texture_depth_view 
         mesh_render_pass = command_encoder.begin_render_pass(
             color_attachments=meshDescriptor.generate_color_attachments(),
             depth_stencil_attachment=meshDescriptor.generate_depth_attachments()
