@@ -76,4 +76,4 @@ class CameraControllerSystem(System):
                 camera_controller.right = -1 * glm.normalize(glm.cross(camera_controller.front, -camera_controller.world_up))
                 camera_controller.up = -1 * glm.normalize(glm.cross(camera_controller.right, camera_controller.front))
 
-                transform.rotation += glm.vec3(-dy, dx, 0)
+                transform.rotation += glm.vec3(dy, dx, 0)
