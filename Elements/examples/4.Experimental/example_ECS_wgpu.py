@@ -49,7 +49,7 @@ TextureLib().make_texture(name="building", path=definitions.MODEL_DIR / "strongh
 
 camera = Scene().add_entity() 
 Scene().add_component(camera, InfoComponent("main camera"))
-Scene().add_component(camera, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=False))
+Scene().add_component(camera, TransformComponent(glm.vec3(0, 0, 10), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=False))
 Scene().add_component(camera, CameraComponent(60, 16/9, 0.01, 500, 1.2, CameraComponent.Type.PERSPECTIVE))
 Scene().add_component(camera, CameraControllerComponent())  
 Scene().set_primary_cam(camera) 
@@ -89,7 +89,20 @@ Scene().add_system(MeshSystem([MeshComponent]))
 Scene().add_system(ShderSystem([ShaderComponent]))
 
 
-def set_base_shader_uniforms(ent:Entity, text_name:str):
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(cube, ShaderComponent), texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="3x3")
+)
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(cube2, ShaderComponent), texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="grass")
+) 
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(model, ShaderComponent), texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="Cauterizer")
+) 
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(building, ShaderComponent), texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="building")
+) 
+
+def set_base_shader_uniforms(ent:Entity):
     camera_ent:Entity = Scene().get_primary_cam()
 
     camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent)
@@ -109,15 +122,11 @@ def set_base_shader_uniforms(ent:Entity, text_name:str):
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=model, mat4x4f=True
     ) 
-    GpuController().set_texture_sampler(
-        shader_component=shader_comp, texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name=text_name)
-    )
 
 
 Renderer().init(
     present_context=present_context,
     render_texture_format=render_texture_format,
-    canvas_size=[width, height]
 ) 
 while canvas._running:
     ts = TimeStepManager().update()  
@@ -126,10 +135,10 @@ while canvas._running:
     height = canvas._windowHeight   
     Scene().update(event, ts)  
 
-    set_base_shader_uniforms(cube, "3x3")
-    set_base_shader_uniforms(cube2, "grass")
-    set_base_shader_uniforms(model, "Cauterizer")
-    set_base_shader_uniforms(building, "building")
+    set_base_shader_uniforms(cube)
+    set_base_shader_uniforms(cube2)
+    set_base_shader_uniforms(model)
+    set_base_shader_uniforms(building)
 
     Renderer().render([1920, 1080]) 
     canvas.display()

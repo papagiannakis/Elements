@@ -136,9 +136,12 @@ class TextureLib():
 
         self.skyBoxes.update({name: Texture(texture, view, sampler, bytedata, width[0], height[0], 6)}) 
 
-    def get_texture(self, name:str): 
+    def get_texture(self, name:str) -> Texture: 
         return self.textures.get(name)
              
-    def get_skybox(self, name:str):
-        return self.skyBoxes.get(name)
+    def get_skybox(self, name:str) -> Texture:
+        return self.skyBoxes.get(name) 
+    
+    def append_texture(self, name:str, texture:Texture) -> None:
+        self.textures.update({name: texture})
         

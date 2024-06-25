@@ -15,7 +15,8 @@ from Elements.pyGLV.GL.wpgu_scene import Scene
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
-from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController 
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
+from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 
 class RenderPassDescriptor: 
     def __init__(self):  
@@ -87,12 +88,9 @@ class Renderer:
         self.attached_systems[name].prepare(Scene().entities, Scene().entity_componets_relation, Scene().components, command_encoder) 
         self.attached_systems[name].render(Scene().entities, Scene().entity_componets_relation, Scene().components, render_pass)
 
-    def init(self, present_context, render_texture_format, canvas_size):  
+    def init(self, present_context, render_texture_format):  
         GpuController().present_context = present_context
         GpuController().render_texture_format = render_texture_format 
-
-        GpuController().imported_canvas_size = canvas_size
-        GpuController().active_canvas_size = canvas_size 
 
         self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
         self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent]))
@@ -100,15 +98,14 @@ class Renderer:
 
     def render(self, size:list[int]):    
         # resize if needed 
-        GpuController().imported_canvas_size = size
-
+        GpuController().render_target_size = size
         command_encoder : wgpu.GPUCommandEncoder = GpuController().device.create_command_encoder()
 
         self.actuate_system("Initial", command_encoder, None)  
 
         meshDescriptor = RenderPassDescriptor() 
-        meshDescriptor.view = GpuController().canvas_texture_view
-        meshDescriptor.depth_view = GpuController().canvas_texture_depth_view 
+        meshDescriptor.view = TextureLib().get_texture(name="render_target").view
+        meshDescriptor.depth_view = TextureLib().get_texture(name="render_target_depth").view
         mesh_render_pass = command_encoder.begin_render_pass(
             color_attachments=meshDescriptor.generate_color_attachments(),
             depth_stencil_attachment=meshDescriptor.generate_depth_attachments()

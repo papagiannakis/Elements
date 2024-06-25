@@ -64,7 +64,7 @@ class BlitSurafacePass(RenderSystem):
         bind_groups_entries[0].append(
             {
                 "binding": 0,
-                "resource": GpuController().canvas_texture_view
+                "resource": TextureLib().get_texture(name="render_target").view
             } 
         ) 
         bind_groups_layout_entries[0].append(
@@ -81,7 +81,7 @@ class BlitSurafacePass(RenderSystem):
         bind_groups_entries[0].append(
             {
                 "binding": 1, 
-                "resource": GpuController().canvas_texture_sampler
+                "resource": TextureLib().get_texture(name="render_target").sampler
             }
         )
         bind_groups_layout_entries[0].append(

@@ -6,6 +6,7 @@ from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
+from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib
 
 class InitialPass(RenderSystem):  
     def on_create(self, entity: Entity, components: Component | list[Component]):   
@@ -15,29 +16,29 @@ class InitialPass(RenderSystem):
             "Render exclusive component not detected in the Renderer initialization"
         ).is_true() 
 
-        GpuController().canvas_texture = GpuController().device.create_texture( 
+        canvas_texture: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
-            size=[GpuController().active_canvas_size[0], GpuController().active_canvas_size[1], 1],
+            size=[GpuController().render_target_size[0], GpuController().render_target_size[1], 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
             format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
-        GpuController().canvas_texture_view = GpuController().canvas_texture.create_view() 
-        GpuController().canvas_texture_sampler = GpuController().device.create_sampler()
+        canvas_texture_view: wgpu.GPUTextureView = canvas_texture.create_view() 
+        canvas_texture_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
         
 
-        GpuController().canvas_texture_depth = GpuController().device.create_texture(
+        canvas_texture_depth: wgpu.GPUTexture = GpuController().device.create_texture(
             label="canvas_depth_texture",
-            size=[GpuController().active_canvas_size[0], GpuController().active_canvas_size[1], 1],
+            size=[GpuController().render_target_size[0], GpuController().render_target_size[1], 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
             format=wgpu.TextureFormat.depth32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
-        GpuController().canvas_texture_depth_view = GpuController().canvas_texture_depth.create_view(
+        canvas_texture_depth_view: wgpu.GPUTextureView = canvas_texture_depth.create_view(
             label="canvas_depth_texture_view",
             format=wgpu.TextureFormat.depth32float,
             dimension="2d",
@@ -46,7 +47,23 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             base_array_layer=0,
             array_layer_count=1,
-        )
+        ) 
+        canvas_texture_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler() 
+
+        TextureLib().append_texture(name="render_target", texture=Texture(
+            texture=canvas_texture,
+            view=canvas_texture_view,
+            sampler=canvas_texture_sampler,
+            width=GpuController().render_target_size[0],
+            height=GpuController().render_target_size[1]
+        )) 
+        TextureLib().append_texture(name="render_target_depth", texture=Texture(
+            texture=canvas_texture_depth,
+            view=canvas_texture_depth_view,
+            sampler=canvas_texture_depth_sampler,
+            width=GpuController().render_target_size[0],
+            height=GpuController().render_target_size[1]
+        )) 
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
 
@@ -55,33 +72,40 @@ class InitialPass(RenderSystem):
             "Render exclusive component not detected in the Renderer initialization"
         ).is_true()
 
-        if GpuController().imported_canvas_size[0] != GpuController().active_canvas_size[0] and GpuController().imported_canvas_size[1] != GpuController().active_canvas_size[1]: 
-            GpuController().active_canvas_size = GpuController().imported_canvas_size   
+        target: Texture = TextureLib().get_texture(name="render_target") 
+        target_depth: Texture = TextureLib().get_texture(name="render_target_depth")
 
-            print(f"Canvas resized to width: {GpuController().active_canvas_size[0]} and height: {GpuController().active_canvas_size[1]}")
+        if GpuController().render_target_size[0] != target.width and GpuController().render_target_size[1] != target.height:
+            print(f"Render target resized to width: {target.width} -> {GpuController().render_target_size[0]} and height: {target.height} -> {GpuController().render_target_size[1]}")
 
-            GpuController().canvas_texture = GpuController().device.create_texture( 
+            target.texture = GpuController().device.create_texture( 
                 label="canvas_texture",
-                size=[GpuController().active_canvas_size[0], GpuController().active_canvas_size[1], 1],
+                size=[GpuController().render_target_size[0], GpuController().render_target_size[1], 1],
                 mip_level_count=1,
                 sample_count=1,
                 dimension="2d",
                 format=wgpu.TextureFormat.rgba8unorm,
                 usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
             ) 
-            GpuController().canvas_texture_view = GpuController().canvas_texture.create_view()  
-            GpuController().canvas_texture_sampler = GpuController().device.create_sampler()
+            target.view = target.texture.create_view()
+            TextureLib().append_texture(name="render_target", texture=Texture(
+                texture=target.texture,
+                view=target.view,
+                sampler=target.sampler, 
+                width=GpuController().render_target_size[0],
+                height=GpuController().render_target_size[1]
+            ))
 
-            GpuController().canvas_texture_depth = GpuController().device.create_texture(
+            target_depth.texture = GpuController().device.create_texture(
                 label="canvas_depth_texture",
-                size=[GpuController().active_canvas_size[0], GpuController().active_canvas_size[1], 1],
+                size=[GpuController().render_target_size[0], GpuController().render_target_size[1], 1],
                 mip_level_count=1,
                 sample_count=1,
                 dimension="2d",
                 format=wgpu.TextureFormat.depth32float,
                 usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
             ) 
-            GpuController().canvas_texture_depth_view = GpuController().canvas_texture_depth.create_view(
+            target_depth.view = target_depth.texture.create_view(
                 label="canvas_depth_texture_view",
                 format=wgpu.TextureFormat.depth32float,
                 dimension="2d",
@@ -90,7 +114,14 @@ class InitialPass(RenderSystem):
                 mip_level_count=1,
                 base_array_layer=0,
                 array_layer_count=1,
-            )  
+            )
+            TextureLib().append_texture(name="render_target_depth", texture=Texture(
+                texture=target_depth.texture,
+                view=target_depth.view,
+                sampler=target_depth.sampler, 
+                width=GpuController().render_target_size[0],
+                height=GpuController().render_target_size[1]
+            )) 
 
         else: 
             return

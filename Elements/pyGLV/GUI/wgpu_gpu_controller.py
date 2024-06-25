@@ -18,19 +18,8 @@ class GpuController:
             cls.present_context = None
             cls.render_texture_format = None
 
-            cls.imported_canvas_size: list[int] = None 
-            cls.active_canvas_size: list[int] = None 
-            cls.canvas_texture: wgpu.GPUTexture = None 
-            cls.canvas_texture_view: wgpu.GPUTextureView = None 
-            cls.canvas_texture_sampler: wgpu.GPUSampler = None
-            cls.canvas_texture_depth: wgpu.GPUTexture = None 
-            cls.canvas_texture_depth_view: wgpu.GPUTextureView = None 
-            cls.canvas_texture_depht_sampler: wgpu.GPUSampler = None
-
-            cls.shadow_depth_texture: wgpu.GPUTexture  = None  
-            cls.shadow_depth_texture_view: wgpu.GPUTextureView = None
-            cls.shadow_depth_texture_sampler: wgpu.GPUTextureView = None
-
+            cls.render_target_size: list[int] = [640, 480]
+            
         return cls._instance
     
     def __init__(self):
@@ -95,7 +84,6 @@ class GpuController:
 
         else: 
             assert_that(data_size != 0).is_true()
-            assert_that(value).is_not_none()
 
         queue:wgpu.GPUQueue = self.device.queue; 
         queue.write_buffer(
