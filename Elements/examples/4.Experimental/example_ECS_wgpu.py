@@ -45,7 +45,8 @@ InputManager().set_monitor(canvas)
 TextureLib().make_texture(name="3x3", path=definitions.TEXTURE_DIR / "3x3.jpg") 
 TextureLib().make_texture(name="grass", path=definitions.TEXTURE_DIR / "Texture_Grass.png") 
 TextureLib().make_texture(name="Cauterizer", path=definitions.MODEL_DIR / "Cauterizer" / "cauterizer_low_01_Cauterizer_Blue_AlbedoTransparency.png")
-TextureLib().make_texture(name="building", path=definitions.MODEL_DIR / "stronghold" / "textures" / "texture_building.jpeg")
+TextureLib().make_texture(name="building", path=definitions.MODEL_DIR / "stronghold" / "textures" / "texture_building.jpeg") 
+TextureLib().make_texture(name="plane_texture", path=definitions.TEXTURE_DIR / "dark_wood_texture.jpg")
 
 camera = Scene().add_entity() 
 Scene().add_component(camera, InfoComponent("main camera"))
@@ -66,7 +67,14 @@ Scene().add_component(cube2, InfoComponent("Plane2"))
 Scene().add_component(cube2, TransformComponent(glm.vec3(2, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True)) 
 Scene().add_component(cube2, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(cube2, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl")) 
-Scene().add_component(cube2, MaterialComponent()) 
+Scene().add_component(cube2, MaterialComponent())  
+
+plane = Scene().add_entity() 
+Scene().add_component(plane, InfoComponent("Plane2")) 
+Scene().add_component(plane, TransformComponent(glm.vec3(0, 3, 0), glm.vec3(0, 0, 0), glm.vec3(100, 0.5, 100), static=True)) 
+Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
+Scene().add_component(plane, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl")) 
+Scene().add_component(plane, MaterialComponent()) 
 
 model = Scene().add_entity() 
 Scene().add_component(model, InfoComponent("model")) 
@@ -100,6 +108,9 @@ GpuController().set_texture_sampler(
 ) 
 GpuController().set_texture_sampler(
     shader_component=Scene().get_component(building, ShaderComponent), texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="building")
+) 
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(plane, ShaderComponent), texture_name="myTexture", sampler_name="mySampler", texture=TextureLib().get_texture(name="plane_texture")
 ) 
 
 def set_base_shader_uniforms(ent:Entity):
@@ -138,7 +149,8 @@ while canvas._running:
     set_base_shader_uniforms(cube)
     set_base_shader_uniforms(cube2)
     set_base_shader_uniforms(model)
-    set_base_shader_uniforms(building)
+    set_base_shader_uniforms(building) 
+    set_base_shader_uniforms(plane)
 
     Renderer().render([1920, 1080]) 
     canvas.display()

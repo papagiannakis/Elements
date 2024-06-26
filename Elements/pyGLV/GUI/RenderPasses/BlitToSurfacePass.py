@@ -53,20 +53,9 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 class BlitSurafacePass(RenderSystem): 
 
     def on_create(self, entity: Entity, components: Component | list[Component]): 
-        self.shader = GpuController().device.create_shader_module(code=BLIT_SHADER_CODE);
-
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
-        # We always have two bind groups, so we can play distributing our
-        # resources over these two groups in different configurations.
-        bind_groups_entries = [[]]
+        self.shader = GpuController().device.create_shader_module(code=BLIT_SHADER_CODE); 
+        
         bind_groups_layout_entries = [[]]
-
-        bind_groups_entries[0].append(
-            {
-                "binding": 0,
-                "resource": TextureLib().get_texture(name="render_target").view
-            } 
-        ) 
         bind_groups_layout_entries[0].append(
             {
                 "binding": 0,
@@ -77,6 +66,31 @@ class BlitSurafacePass(RenderSystem):
                 },
             }
         )
+        bind_groups_layout_entries[0].append(
+            {
+                "binding": 1,
+                "visibility": wgpu.ShaderStage.FRAGMENT,
+                "sampler": {"type": wgpu.SamplerBindingType.filtering},
+            }
+        ) 
+        
+        self.bind_group_layouts = [] 
+        for layout_entries in bind_groups_layout_entries:
+            bind_group_layout = GpuController().device.create_bind_group_layout(entries=layout_entries) 
+            self.bind_group_layouts.append(bind_group_layout) 
+            
+        self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
+
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        # We always have two bind groups, so we can play distributing our
+        # resources over these two groups in different configurations.
+        bind_groups_entries = [[]]
+        bind_groups_entries[0].append(
+            {
+                "binding": 0,
+                "resource": TextureLib().get_texture(name="render_target").view
+            } 
+        ) 
 
         bind_groups_entries[0].append(
             {
@@ -84,30 +98,18 @@ class BlitSurafacePass(RenderSystem):
                 "resource": TextureLib().get_texture(name="render_target").sampler
             }
         )
-        bind_groups_layout_entries[0].append(
-            {
-                "binding": 1,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "sampler": {"type": wgpu.SamplerBindingType.filtering},
-            }
-        )
 
         # Create the wgou binding objects
-        bind_group_layouts = []
         bind_groups = []
 
-        for entries, layout_entries in zip(bind_groups_entries, bind_groups_layout_entries):
-            bind_group_layout = GpuController().device.create_bind_group_layout(entries=layout_entries)
-            bind_group_layouts.append(bind_group_layout)
+        for entries, layouts in zip(bind_groups_entries, self.bind_group_layouts):
             bind_groups.append(
-                GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
+                GpuController().device.create_bind_group(layout=layouts, entries=entries)
             ) 
         self.bind_groups = bind_groups
 
-        pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=bind_group_layouts)
-
         self.render_pipeline = GpuController().device.create_render_pipeline(
-            layout=pipeline_layout,
+            layout=self.pipeline_layout,
             vertex={
                 "module": self.shader,
                 "entry_point": "vs_main", 
