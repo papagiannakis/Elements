@@ -26,8 +26,8 @@ class System(object):
         return components
     
     def create(self, entities, entity_components_relation, components_array): 
-        filtered_entities = self.filter_entities(entities, entity_components_relation) 
-        for entity in filtered_entities:
+        self.filtered_entities = self.filter_entities(entities, entity_components_relation) 
+        for entity in self.filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array)
             if len(components) == 1:
                 self.on_create(entity, components[0])
@@ -35,8 +35,7 @@ class System(object):
                 self.on_create(entity, components)
 
     def update(self, ts, entities, entity_components_relation, components_array, event): 
-        filtered_entities = self.filter_entities(entities, entity_components_relation)
-        for entity in filtered_entities:
+        for entity in self.filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array) 
             if len(components) == 1:
                 self.on_update(ts=ts, entity=entity, components=components[0], event=event)

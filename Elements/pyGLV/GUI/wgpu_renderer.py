@@ -82,7 +82,7 @@ class Renderer:
 
     def add_system(self, name:str, system: RenderSystem):  
         self.attached_systems.update({name: system})
-        system.create(Scene().entities, Scene().entity_componets_relation, Scene().components)  
+        system.create(Scene().entities, Scene().entity_componets_relation, Scene().components)   
 
     def actuate_system(self, name:str, command_encoder: wgpu.GPUCommandEncoder, render_pass):
         self.attached_systems[name].prepare(Scene().entities, Scene().entity_componets_relation, Scene().components, command_encoder) 

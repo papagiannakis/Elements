@@ -28,8 +28,8 @@ class RenderSystem(object):
         return components 
     
     def create(self, entities, entity_components_relation, components_array): 
-        filtered_entities = self.filter_entities(entities, entity_components_relation) 
-        for entity in filtered_entities:
+        self.filtered_entities = self.filter_entities(entities, entity_components_relation) 
+        for entity in self.filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array)
             if len(components) == 1:
                 self.on_create(entity, components[0])
@@ -37,8 +37,7 @@ class RenderSystem(object):
                 self.on_create(entity, components)  
 
     def prepare(self, entities, entity_components_relation, components_array, command_encoder: wgpu.GPUCommandEncoder): 
-        filtered_entities = self.filter_entities(entities, entity_components_relation) 
-        for entity in filtered_entities:
+        for entity in self.filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array)
             if len(components) == 1:
                 self.on_prepare(entity, components[0], command_encoder)
@@ -46,8 +45,7 @@ class RenderSystem(object):
                 self.on_prepare(entity, components, command_encoder) 
 
     def render(self, entities, entity_components_relation, components_array, render_pass): 
-        filtered_entities = self.filter_entities(entities, entity_components_relation)
-        for entity in filtered_entities:
+        for entity in self.filtered_entities:
             components = self.extract_components(entity, entity_components_relation, components_array) 
             if len(components) == 1:
                 self.on_render(entity, components[0], render_pass)

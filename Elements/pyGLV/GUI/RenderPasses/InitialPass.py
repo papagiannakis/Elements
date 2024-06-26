@@ -76,7 +76,11 @@ class InitialPass(RenderSystem):
         target_depth: Texture = TextureLib().get_texture(name="render_target_depth")
 
         if GpuController().render_target_size[0] != target.width and GpuController().render_target_size[1] != target.height:
-            print(f"Render target resized to width: {target.width} -> {GpuController().render_target_size[0]} and height: {target.height} -> {GpuController().render_target_size[1]}")
+            if GpuController().render_target_size[0] == 0 and GpuController().render_target_size[1] == 0:
+                GpuController().render_target_size[0] = 128 
+                GpuController().render_target_size[1] = 128
+
+            print(f"Render target resized to width: {target.width} -> {GpuController().render_target_size[0]} and height: {target.height} -> {GpuController().render_target_size[1]}") 
 
             target.texture = GpuController().device.create_texture( 
                 label="canvas_texture",
