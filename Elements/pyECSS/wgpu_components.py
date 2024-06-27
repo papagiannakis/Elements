@@ -113,7 +113,12 @@ class ShaderComponent(Component):
         self.read_only_storage_gpu_buffers = {}
         self.other_uniform = None 
         self.attributes = None 
-        self.attributes_layout = None 
+        self.attributes_layout = None  
+        
+class SkyboxComponent(Component):
+    def __init__(self, name:str, paths:list): 
+        self.paths:list = paths 
+        self.gpu_texture_name:str = name 
 
 class MaterialComponent(Component):
     def __init__(self, primitive=None, color_blend=None, depth_stencil=None):

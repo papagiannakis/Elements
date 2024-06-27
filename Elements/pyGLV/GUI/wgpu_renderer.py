@@ -10,11 +10,12 @@ from enum import Enum
 # from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass 
 
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent, MeshComponent, ShaderComponent, MaterialComponent
+from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent, MeshComponent, ShaderComponent, MaterialComponent, SkyboxComponent
 from Elements.pyGLV.GL.wpgu_scene import Scene       
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
+from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 
@@ -93,6 +94,7 @@ class Renderer:
         GpuController().render_texture_format = render_texture_format 
 
         self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
+        self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
         self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent]))
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
@@ -109,8 +111,12 @@ class Renderer:
         mesh_render_pass = command_encoder.begin_render_pass(
             color_attachments=meshDescriptor.generate_color_attachments(),
             depth_stencil_attachment=meshDescriptor.generate_depth_attachments()
-        ) 
-        self.actuate_system("MeshPass", command_encoder, mesh_render_pass) 
+        )  
+        # first we render the skybox 
+        self.actuate_system("Skybox", command_encoder, mesh_render_pass)  
+        # Then the meshes 
+        self.actuate_system("MeshPass", command_encoder, mesh_render_pass)  
+        # End the texture production
         mesh_render_pass.end()
 
         blitDescriptor = RenderPassDescriptor()

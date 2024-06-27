@@ -12,6 +12,7 @@ from Elements.pyECSS.systems.wgpu_camera_controller_system import CameraControll
 from Elements.pyECSS.systems.wgpu_camera_system import CameraSystem
 from Elements.pyECSS.systems.wgpu_mesh_system import MeshSystem 
 from Elements.pyECSS.systems.wpgu_shader_system import ShderSystem 
+from Elements.pyECSS.systems.wgpu_skybox_system import SkyboxSystem 
 
 from Elements.pyECSS.wgpu_components import * 
 from Elements.pyECSS.wgpu_entity import Entity 
@@ -74,7 +75,7 @@ Scene().add_component(plane, InfoComponent("Plane2"))
 Scene().add_component(plane, TransformComponent(glm.vec3(0, 3, 0), glm.vec3(0, 0, 0), glm.vec3(100, 0.5, 100), static=True)) 
 Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(plane, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl")) 
-Scene().add_component(plane, MaterialComponent()) 
+# Scene().add_component(plane, MaterialComponent()) 
 
 model = Scene().add_entity() 
 Scene().add_component(model, InfoComponent("model")) 
@@ -88,8 +89,22 @@ Scene().add_component(building, InfoComponent("building"))
 Scene().add_component(building, TransformComponent(glm.vec3(0, 2, -4), glm.vec3(0, -90, 180), glm.vec3(0.01, 0.01, 0.01), static=True)) 
 Scene().add_component(building, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "stronghold" / "source" / "building.obj"))
 Scene().add_component(building, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl")) 
-Scene().add_component(building, MaterialComponent()) 
+Scene().add_component(building, MaterialComponent())  
 
+skyPaths = [
+    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "right.png",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "left.png",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "top.png",  #top
+    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "bottom.png",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "back.png",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "front.png",
+]
+
+sky = Scene().add_entity()
+Scene().add_component(sky, InfoComponent("Giati mporw"))
+Scene().add_component(sky, SkyboxComponent("sky", skyPaths))
+
+Scene().add_system(SkyboxSystem([SkyboxComponent]))
 Scene().add_system(TransformSystem([TransformComponent]))
 Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
 Scene().add_system(CameraControllerSystem([CameraControllerComponent, CameraComponent, TransformComponent])) 

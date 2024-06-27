@@ -85,15 +85,15 @@ class MeshRenderPass(RenderSystem):
             (type(shader) == ShaderComponent)
         ).is_true()
 
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
-        mesh, material, shader = components  
-
-        self.make_bind_group(shader) 
-        self.make_pipeline(material, shader)
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):  
+        pass
         
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
         mesh, material, shader = components   
 
+        self.make_bind_group(shader) 
+        self.make_pipeline(material, shader) 
+        
         render_pass.set_pipeline(material.pipeline)
         render_pass.set_index_buffer(mesh.buffer_map[MeshComponent.Buffers.INDEX.value], wgpu.IndexFormat.uint32) 
         for name, attr in shader.attributes.items():
