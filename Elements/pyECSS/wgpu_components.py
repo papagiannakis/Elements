@@ -3,7 +3,8 @@ import wgpu
 
 from enum import Enum 
 from pathlib import Path
-from assertpy import assert_that
+from assertpy import assert_that 
+from Elements.pyECSS.wgpu_entity import Entity
 
 class Component(object):  
     def __init__(self):
@@ -42,7 +43,7 @@ class CameraComponent(Component):
         self.type: CameraComponent.Type = type 
         self.projection = None
 
-        self.view = glm.mat4(1.0)
+        self.view = glm.mat4(1.0) 
         if type is CameraComponent.Type.ORTHOGRAPHIC:
             self.projection = glm.ortho(-self.aspect_ratio * self.zoom_level, self.aspect_ratio * self.zoom_level, -self.zoom_level, self.zoom_level, self.near, self.far)
         elif type is CameraComponent.Type.PERSPECTIVE:
@@ -53,7 +54,7 @@ class CameraComponent(Component):
         self.view_projection = glm.mat4(1.0)
 
 class CameraControllerComponent(Component):
-    def __init__(self, movement_speed = 1, mouse_sensitivity = 1.25):
+    def __init__(self, movement_speed = 1.25, mouse_sensitivity = 1.25):
         self.front = glm.vec3(0.0, 0.0, 1.0)
         self.right = glm.vec3(1.0, 0.0, 0.0)
         self.up = glm.vec3(0.0, 1.0, 0.0)
@@ -160,4 +161,14 @@ class MaterialComponent(Component):
                 "depth_compare": wgpu.CompareFunction.less_equal,
             } 
         else:
-            self.depth_stencil = depth_stencil
+            self.depth_stencil = depth_stencil 
+            
+class LightAffectionComponent(Component): 
+    def __init__(self, light_entity:Entity):
+        self.light = light_entity 
+        
+class LightComponent(Component): 
+    def __init__(self, intensity, direction, color=glm.vec3(1.0, 1.0, 1.0)):   
+        self.intensity = intensity  
+        self.color = color 
+        self.direction = direction

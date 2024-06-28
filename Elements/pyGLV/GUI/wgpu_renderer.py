@@ -10,12 +10,13 @@ from enum import Enum
 # from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass 
 
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyECSS.wgpu_components import Component, RenderExclusiveComponent, MeshComponent, ShaderComponent, MaterialComponent, SkyboxComponent
+from Elements.pyECSS.wgpu_components import *
 from Elements.pyGLV.GL.wpgu_scene import Scene       
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
-from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass
+from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
+from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass 
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 
@@ -93,7 +94,8 @@ class Renderer:
         GpuController().present_context = present_context
         GpuController().render_texture_format = render_texture_format 
 
-        self.add_system("Initial", InitialPass([RenderExclusiveComponent])) 
+        self.add_system("Initial", InitialPass([RenderExclusiveComponent]))  
+        self.add_system("Shadows", ShadowMapPass([LightAffectionComponent, MeshComponent, TransformComponent]))
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
         self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent]))
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
@@ -103,7 +105,17 @@ class Renderer:
         GpuController().render_target_size = size
         command_encoder : wgpu.GPUCommandEncoder = GpuController().device.create_command_encoder()
 
-        self.actuate_system("Initial", command_encoder, None)  
+        self.actuate_system("Initial", command_encoder, None) 
+        
+        shadowDescriptor = RenderPassDescriptor()  
+        shadowDescriptor.view = TextureLib().get_texture(name="shadow_gfx").view
+        shadowDescriptor.depth_view = TextureLib().get_texture(name="shadow_map").view 
+        shadow_render_pass = command_encoder.begin_render_pass(
+            color_attachments=shadowDescriptor.generate_color_attachments(),
+            depth_stencil_attachment=shadowDescriptor.generate_depth_attachments()
+        )
+        self.actuate_system("Shadows", command_encoder, shadow_render_pass)
+        shadow_render_pass.end()
 
         meshDescriptor = RenderPassDescriptor() 
         meshDescriptor.view = TextureLib().get_texture(name="render_target").view
