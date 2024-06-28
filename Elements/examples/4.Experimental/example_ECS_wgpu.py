@@ -75,7 +75,7 @@ Scene().add_component(plane, InfoComponent("Plane2"))
 Scene().add_component(plane, TransformComponent(glm.vec3(0, 3, 0), glm.vec3(0, 0, 0), glm.vec3(100, 0.5, 100), static=True)) 
 Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(plane, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl")) 
-# Scene().add_component(plane, MaterialComponent()) 
+Scene().add_component(plane, MaterialComponent()) 
 
 model = Scene().add_entity() 
 Scene().add_component(model, InfoComponent("model")) 
@@ -92,12 +92,12 @@ Scene().add_component(building, ShaderComponent(shader_path=definitions.SHADER_D
 Scene().add_component(building, MaterialComponent())  
 
 skyPaths = [
-    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "right.png",
-    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "left.png",
-    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "top.png",  #top
-    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "bottom.png",
-    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "back.png",
-    definitions.TEXTURE_DIR / "Skyboxes" / "Day_Sunless" / "front.png",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "front.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "bottom.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "top.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "right.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "left.jpg",
 ]
 
 sky = Scene().add_entity()

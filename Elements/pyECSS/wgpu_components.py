@@ -53,7 +53,7 @@ class CameraComponent(Component):
         self.view_projection = glm.mat4(1.0)
 
 class CameraControllerComponent(Component):
-    def __init__(self, movement_speed = 1, mouse_sensitivity = 1):
+    def __init__(self, movement_speed = 1, mouse_sensitivity = 1.25):
         self.front = glm.vec3(0.0, 0.0, 1.0)
         self.right = glm.vec3(1.0, 0.0, 0.0)
         self.up = glm.vec3(0.0, 1.0, 0.0)
