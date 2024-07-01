@@ -45,12 +45,16 @@ fn vs_main(
 
 @fragment
 fn fs_main(in: VertexOutput) -> @location(0) vec4f { 
-    var depth = in.v_position.z / in.v_position.w;
-    return vec4f(depth, depth, depth, depth); 
+    var depth = in.v_position.z / in.v_position.w; 
+    return vec4f(depth, depth, depth, depth);  
+    //return vec4f(1.0, 0.5, 1.0, 1.0);
 }
 """
 
 class ShadowMapPass(RenderSystem):
+    def __init__(self, filters: list[type]):
+        super().__init__(filters) 
+        self.shader = None
     
     def on_create(self, entity: Entity, components: Component | list[Component]):
         # assert_that(type(components) == SkyboxComponent).is_true()
@@ -60,55 +64,104 @@ class ShadowMapPass(RenderSystem):
             type(components[1]) == MeshComponent and 
             type(components[2]) == TransformComponent 
         ).is_true() 
+
+        light_cache: LightAffectionComponent = components[0]
          
-        # WGSL example
-        shader = GpuController().device.create_shader_module(code=SHADER_CODE);
+        # WGSL example   
+        if self.shader is None:
+            self.shader = GpuController().device.create_shader_module(code=SHADER_CODE);
         
-        self.uniform_buffer: wgpu.GPUBuffer = GpuController().device.create_buffer(
+        light_cache.uniform_gpu_buffer = GpuController().device.create_buffer(
             size=((16 * 4) + (16 * 4) + (16 * 4)), usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
         )
-
-        # We always have two bind groups, so we can play distributing our
-        # resources over these two groups in different configurations.
-        bind_groups_entries = [[]]
+        
         bind_groups_layout_entries = [[]]
-
-        bind_groups_entries[0].append(
-            {
-                "binding": 0,
-                "resource": {
-                    "buffer": self.uniform_buffer,
-                    "offset": 0,
-                    "size": self.uniform_buffer.size,
-                },
-            }
-        )
         bind_groups_layout_entries[0].append(
             {
                 "binding": 0,
                 "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
                 "buffer": {"type": wgpu.BufferBindingType.uniform},
             }
+        )  
+        
+        self.bind_group_layouts = [] 
+        for layout_entries in bind_groups_layout_entries:
+            bind_group_layout = GpuController().device.create_bind_group_layout(entries=layout_entries) 
+            self.bind_group_layouts.append(bind_group_layout) 
+            
+        self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
+
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
+        assert_that(
+            type(components[0]) == LightAffectionComponent and
+            type(components[1]) == MeshComponent and 
+            type(components[2]) == TransformComponent 
+        ).is_true()    
+        cam:Entity = Scene().get_primary_cam()
+        
+        lightAffected: LightAffectionComponent = components[0] 
+        mesh: MeshComponent = components[1] 
+        transform: TransformComponent = components[2] 
+        
+        light: Entity = lightAffected.light
+        light_comp:LightComponent = Scene().get_component(light, LightComponent)  
+        light_cam:CameraComponent = Scene().get_component(light, CameraComponent)
+        
+        light_view = light_cam.view 
+        light_proj = light_cam.projection 
+        model = transform.world_matrix 
+        
+        light_view_data = np.ascontiguousarray(light_view, dtype=np.float32) 
+        light_proj_data = np.ascontiguousarray(light_proj, dtype=np.float32) 
+        model_data = np.ascontiguousarray(model, dtype=np.float32)
+        
+        GpuController().device.queue.write_buffer(
+            buffer=lightAffected.uniform_gpu_buffer,
+            buffer_offset=0,
+            data=light_proj_data,
+            data_offset=0,
+            size=light_proj_data.nbytes
+        )
+        GpuController().device.queue.write_buffer(
+            buffer=lightAffected.uniform_gpu_buffer,
+            buffer_offset=64,
+            data=light_view_data,
+            data_offset=0,
+            size=light_view_data.nbytes
         ) 
+        GpuController().device.queue.write_buffer(
+            buffer=lightAffected.uniform_gpu_buffer,
+            buffer_offset=128,
+            data=model_data,
+            data_offset=0,
+            size=model_data.nbytes
+        )  
+
+        bind_groups_entries = [[]]
+        bind_groups_entries[0].append(
+            {
+                "binding": 0,
+                "resource": {
+                    "buffer": lightAffected.uniform_gpu_buffer,
+                    "offset": 0,
+                    "size": lightAffected.uniform_gpu_buffer.size,
+                },
+            }
+        )
 
         # Create the wgou binding objects
-        bind_group_layouts = []
         bind_groups = []
 
-        for entries, layout_entries in zip(bind_groups_entries, bind_groups_layout_entries):
-            bind_group_layout = GpuController().device.create_bind_group_layout(entries=layout_entries)
-            bind_group_layouts.append(bind_group_layout)
+        for entries, layouts in zip(bind_groups_entries, self.bind_group_layouts):
             bind_groups.append(
-                GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
-            )
+                GpuController().device.create_bind_group(layout=layouts, entries=entries)
+            ) 
 
-        pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=bind_group_layouts)
-        
-        self.bind_groups = bind_groups
-        self.render_pipeline = GpuController().device.create_render_pipeline(
-            layout=pipeline_layout,
+        lightAffected.bind_groups = bind_groups
+        lightAffected.render_pipeline = GpuController().device.create_render_pipeline(
+            layout=self.pipeline_layout,
             vertex={
-                "module": shader,
+                "module": self.shader,
                 "entry_point": "vs_main", 
                 "buffers": [ 
                     {
@@ -132,11 +185,11 @@ class ShadowMapPass(RenderSystem):
             depth_stencil={ 
                 "format": wgpu.TextureFormat.depth32float,
                 "depth_write_enabled": True,
-                "depth_compare": wgpu.CompareFunction.less_equal,
+                "depth_compare": wgpu.CompareFunction.less,
             },            
             multisample=None,
             fragment={
-                "module": shader,
+                "module": self.shader,
                 "entry_point": "fs_main",
                 "targets": [
                     {
@@ -158,68 +211,20 @@ class ShadowMapPass(RenderSystem):
             },
         )
     
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
-        assert_that(
-            type(components[0]) == LightAffectionComponent and
-            type(components[1]) == MeshComponent and 
-            type(components[2]) == TransformComponent 
-        ).is_true()   
-        cam:Entity = Scene().get_primary_cam()
-        
-        lightAffected: LightAffectionComponent = components[0] 
-        mesh: MeshComponent = components[1] 
-        transform: TransformComponent = components[2] 
-        
-        light: Entity = lightAffected.light
-        light_trans:TransformComponent = Scene().get_component(light, TransformComponent)  
-        light_comp:LightComponent = Scene().get_component(light, LightComponent) 
-        camera:CameraComponent = Scene().get_component(cam, CameraComponent)
-        
-        light_view = glm.lookAt(light_trans.get_world_position(), light_comp.direction, glm.vec3(0.0, 1.0, 0.0)) 
-        light_proj = camera.projection  
-        model = transform.world_matrix 
-        
-        light_view_data = np.ascontiguousarray(light_view, dtype=np.float32) 
-        light_proj_data = np.ascontiguousarray(light_proj, dtype=np.float32) 
-        model_data = np.ascontiguousarray(model, dtype=np.float32)
-        
-        GpuController().device.queue.write_buffer(
-            buffer=self.uniform_buffer,
-            buffer_offset=0,
-            data=light_proj_data,
-            data_offset=0,
-            size=light_proj_data.nbytes
-        )
-        GpuController().device.queue.write_buffer(
-            buffer=self.uniform_buffer,
-            buffer_offset=64,
-            data=light_view_data,
-            data_offset=0,
-            size=light_view_data.nbytes
-        ) 
-        GpuController().device.queue.write_buffer(
-            buffer=self.uniform_buffer,
-            buffer_offset=128,
-            data=model_data,
-            data_offset=0,
-            size=model_data.nbytes
-        ) 
-    
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
         assert_that(
             type(components[0]) == LightAffectionComponent and
             type(components[1]) == MeshComponent and 
             type(components[2]) == TransformComponent 
         ).is_true()   
-        
+
         lightAffected: LightAffectionComponent = components[0] 
         mesh: MeshComponent = components[1] 
-        transform: TransformComponent = components[2]  
         
-        render_pass.set_pipeline(self.render_pipeline) 
+        render_pass.set_pipeline(lightAffected.render_pipeline) 
         render_pass.set_index_buffer(mesh.buffer_map[MeshComponent.Buffers.INDEX.value], wgpu.IndexFormat.uint32) 
         render_pass.set_vertex_buffer(slot=0, buffer=mesh.buffer_map[MeshComponent.Buffers.VERTEX.value])
-        for bind_group_id, bind_group in enumerate(self.bind_groups):
+        for bind_group_id, bind_group in enumerate(lightAffected.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
 
         render_pass.draw_indexed(mesh.indices_num, 1, 0, 0) 

@@ -128,7 +128,7 @@ class ShderSystem(System):
 
         shader.uniform_buffers = self.parse_buffer('<uniform>', shader.shader_code) 
         shader.read_only_storage_buffers = self.parse_buffer('<storage, read>', shader.shader_code) 
-        shader.other_uniform = self.parse_buffer('', shader.shader_code)  
+        shader.other_uniform = self.parse_buffer('', shader.shader_code) 
         shader.attributes, shader.attributes_layout = self.parse_attributes(shader.shader_code) 
 
         self.make_gpu_uniform_buffers(shader.uniform_gpu_buffers, shader.uniform_buffers)

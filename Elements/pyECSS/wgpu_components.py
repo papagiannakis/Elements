@@ -54,7 +54,7 @@ class CameraComponent(Component):
         self.view_projection = glm.mat4(1.0)
 
 class CameraControllerComponent(Component):
-    def __init__(self, movement_speed = 1.25, mouse_sensitivity = 1.25):
+    def __init__(self, movement_speed = 1.35, mouse_sensitivity = 1.5):
         self.front = glm.vec3(0.0, 0.0, 1.0)
         self.right = glm.vec3(1.0, 0.0, 0.0)
         self.up = glm.vec3(0.0, 1.0, 0.0)
@@ -166,9 +166,12 @@ class MaterialComponent(Component):
 class LightAffectionComponent(Component): 
     def __init__(self, light_entity:Entity):
         self.light = light_entity 
+        #GPU cache data for light
+        self.uniform_gpu_buffer: wgpu.GPUBuffer = None
+        self.render_pipeline: wgpu.GPURenderPipeline = None
+        self.bind_groups = None
         
 class LightComponent(Component): 
-    def __init__(self, intensity, direction, color=glm.vec3(1.0, 1.0, 1.0)):   
+    def __init__(self, intensity, color=glm.vec3(1.0, 1.0, 1.0)):   
         self.intensity = intensity  
         self.color = color 
-        self.direction = direction

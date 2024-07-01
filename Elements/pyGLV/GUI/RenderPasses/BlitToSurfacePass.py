@@ -88,14 +88,14 @@ class BlitSurafacePass(RenderSystem):
         bind_groups_entries[0].append(
             {
                 "binding": 0,
-                "resource": TextureLib().get_texture(name="shadow_gfx").view
+                "resource": TextureLib().get_texture(name="render_target").view
             } 
         ) 
 
         bind_groups_entries[0].append(
             {
                 "binding": 1, 
-                "resource": TextureLib().get_texture(name="shadow_gfx").sampler
+                "resource": TextureLib().get_texture(name="render_target").sampler
             }
         )
 

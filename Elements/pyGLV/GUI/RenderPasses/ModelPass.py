@@ -2,10 +2,12 @@ from __future__ import annotations
 import wgpu   
 from assertpy import assert_that
 
-from Elements.pyECSS.wgpu_components import Component, MeshComponent, MaterialComponent, ShaderComponent
+from Elements.pyECSS.wgpu_components import * 
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
-from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController  
+from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController   
+from Elements.pyGLV.GL.wpgu_scene import Scene
+from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib
 
 class MeshRenderPass(RenderSystem):
 
@@ -85,8 +87,26 @@ class MeshRenderPass(RenderSystem):
             (type(shader) == ShaderComponent)
         ).is_true()
 
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):  
-        pass
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):   
+        mesh, material, shader = components  
+
+        assert_that(
+            (type(mesh) == MeshComponent) and
+            (type(material) == MaterialComponent) and
+            (type(shader) == ShaderComponent)
+        ).is_true() 
+
+        light_link: LightAffectionComponent = Scene().get_component(entity, LightAffectionComponent) 
+
+        if light_link is None:
+            return 
+        
+        GpuController().set_texture_sampler(
+            shader_component=shader,
+            sampler_name="shadow_sampler",
+            texture_name="shadow_texture",
+            texture=TextureLib().get_texture(name="shadow_map")
+        )
         
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
         mesh, material, shader = components   

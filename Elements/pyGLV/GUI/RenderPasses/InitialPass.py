@@ -48,11 +48,11 @@ class InitialPass(RenderSystem):
             base_array_layer=0,
             array_layer_count=1,
         ) 
-        canvas_texture_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+        canvas_texture_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(compare=wgpu.CompareFunction.less)
        
         shadow_gfx: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
-            size=[512, 512, 1],
+            size=[1024, 1024, 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
@@ -64,7 +64,7 @@ class InitialPass(RenderSystem):
         
         shadow_map: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
-            size=[512, 512, 1],
+            size=[1024, 1024, 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
@@ -81,7 +81,7 @@ class InitialPass(RenderSystem):
             base_array_layer=0,
             array_layer_count=1,
         )  
-        shadow_map_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(compare=wgpu.CompareFunction.less_equal)
+        shadow_map_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(compare=wgpu.CompareFunction.less)
 
         TextureLib().append_texture(name="render_target", texture=Texture(
             texture=canvas_texture,
@@ -101,15 +101,15 @@ class InitialPass(RenderSystem):
             texture=shadow_gfx, 
             view=shadow_gfx_view,
             sampler=shadow_gfx_sampler,
-            width=512,
-            height=512
+            width=1024,
+            height=1024
         ))
         TextureLib().append_texture(name="shadow_map", texture=Texture(
             texture=shadow_map, 
             view=shadow_map_view,
             sampler=shadow_map_sampler, 
-            width=512,
-            height=512
+            width=1024,
+            height=1024
         ))
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
