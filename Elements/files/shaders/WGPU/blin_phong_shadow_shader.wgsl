@@ -90,13 +90,12 @@ fn ShadowCalculation(
     fragPosLightSpace: vec4f,
     bias: f32
 ) -> f32 { 
-    // Perform perspective divide
-    var projCoords: vec2f = fragPosLightSpace.xy; 
-    var projDepth: f32 = fragPosLightSpace.z;
+    // Perform perspective divide 
     // Transform to [0,1] range
-    projCoords = projCoords * vec2(0.5, -0.5) + vec2(0.5);
+    var projCoords: vec2f = fragPosLightSpace.xy  * vec2(0.5, -0.5) + vec2(0.5); 
+    var projDepth: f32 = fragPosLightSpace.z;
     // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    let closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, projCoords.xy);
+    var closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, projCoords.xy);
     // Get depth of current fragment from light's perspective
     let currentDepth: f32 = LinearizeDepth(projDepth, 0.01, 500.0);
     // Check whether current frag pos is in shadow

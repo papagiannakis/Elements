@@ -59,7 +59,7 @@ Scene().set_primary_cam(camera)
 
 light = Scene().add_entity()
 Scene().add_component(light, InfoComponent("light"))
-Scene().add_component(light, TransformComponent(glm.vec3(100, -100, 100), glm.vec3(30, 45, 0), glm.vec3(1, 1, 1), static=False))
+Scene().add_component(light, TransformComponent(glm.vec3(10, -10, 10), glm.vec3(30, 45, 0), glm.vec3(1, 1, 1), static=False))
 Scene().add_component(light, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(light, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl"))
 Scene().add_component(light, MaterialComponent())
