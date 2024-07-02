@@ -98,15 +98,13 @@ class MeshRenderPass(RenderSystem):
 
         light_link: LightAffectionComponent = Scene().get_component(entity, LightAffectionComponent) 
 
-        if light_link is None:
-            return 
-        
-        GpuController().set_texture_sampler(
-            shader_component=shader,
-            sampler_name="shadow_sampler",
-            texture_name="shadow_texture",
-            texture=TextureLib().get_texture(name="shadow_map")
-        )
+        if light_link and light_link.light is not None:
+            GpuController().set_texture_sampler(
+                shader_component=shader,
+                sampler_name="shadow_sampler",
+                texture_name="shadow_texture",
+                texture=TextureLib().get_texture(name="shadow_map")
+            )
         
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
         mesh, material, shader = components   

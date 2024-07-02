@@ -25,7 +25,7 @@ from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 
 from Elements.pyGLV.GL.wgpu_texture import TextureLib
 
-canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example")
+canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example", vsync=None)
 canvas.init()
 
 width = canvas._windowWidth
@@ -53,24 +53,40 @@ TextureLib().make_texture(name="plane_texture", path=definitions.TEXTURE_DIR / "
 camera = Scene().add_entity()
 Scene().add_component(camera, InfoComponent("main camera"))
 Scene().add_component(camera, TransformComponent(glm.vec3(0, 0, 10), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=False))
-Scene().add_component(camera, CameraComponent(60, 16/9, 0.01, 500, 1.2, CameraComponent.Type.PERSPECTIVE))
+Scene().add_component(camera, CameraComponent(60, 16/9, 0.01, 500, 10, CameraComponent.Type.PERSPECTIVE))
 Scene().add_component(camera, CameraControllerComponent())
 Scene().set_primary_cam(camera)
 
 light = Scene().add_entity()
 Scene().add_component(light, InfoComponent("light"))
-Scene().add_component(light, TransformComponent(glm.vec3(5, -5, 5), glm.vec3(20, 45, 0), glm.vec3(1, 1, 1), static=False))
+Scene().add_component(light, TransformComponent(glm.vec3(100, -100, 100), glm.vec3(30, 45, 0), glm.vec3(1, 1, 1), static=False))
 Scene().add_component(light, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(light, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl"))
 Scene().add_component(light, MaterialComponent())
 Scene().add_component(light, LightComponent(intensity=1.0)) 
-Scene().add_component(light, CameraComponent(60, 16/9, 0.01, 500, 1.2, CameraComponent.Type.PERSPECTIVE))
+Scene().add_component(light, CameraComponent(60, 16/9, 0.01, 500, 50, CameraComponent.Type.PERSPECTIVE)) 
+
+building = Scene().add_entity()
+Scene().add_component(building, InfoComponent("building"))
+Scene().add_component(building, TransformComponent(glm.vec3(0, 2, -4), glm.vec3(0, -90, 180), glm.vec3(0.01, 0.01, 0.01), static=True))
+Scene().add_component(building, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "stronghold" / "source" / "building.obj"))
+Scene().add_component(building, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
+Scene().add_component(building, MaterialComponent())
+Scene().add_component(building, LightAffectionComponent(light_entity=light))
+
+plane = Scene().add_entity()
+Scene().add_component(plane, InfoComponent("Plane2"))
+Scene().add_component(plane, TransformComponent(glm.vec3(0, 3, 0), glm.vec3(0, 0, 0), glm.vec3(100, 0.5, 100), static=True))
+Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
+Scene().add_component(plane, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
+Scene().add_component(plane, MaterialComponent())
+Scene().add_component(plane, LightAffectionComponent(light_entity=light)) 
 
 cube = Scene().add_entity()
 Scene().add_component(cube, InfoComponent("Plane"))
 Scene().add_component(cube, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(0.1, 0.1, 0.1), static=True))
 Scene().add_component(cube, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
-Scene().add_component(cube, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "shadow_shader.wgsl"))
+Scene().add_component(cube, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(cube, MaterialComponent())
 Scene().add_component(cube, LightAffectionComponent(light_entity=light))
 
@@ -78,33 +94,17 @@ cube2 = Scene().add_entity()
 Scene().add_component(cube2, InfoComponent("Plane2"))
 Scene().add_component(cube2, TransformComponent(glm.vec3(2, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
 Scene().add_component(cube2, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
-Scene().add_component(cube2, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "shadow_shader.wgsl"))
+Scene().add_component(cube2, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(cube2, MaterialComponent())
 Scene().add_component(cube2, LightAffectionComponent(light_entity=light))
-
-plane = Scene().add_entity()
-Scene().add_component(plane, InfoComponent("Plane2"))
-Scene().add_component(plane, TransformComponent(glm.vec3(0, 3, 0), glm.vec3(0, 0, 0), glm.vec3(100, 0.5, 100), static=True))
-Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
-Scene().add_component(plane, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "shadow_shader.wgsl"))
-Scene().add_component(plane, MaterialComponent())
-Scene().add_component(plane, LightAffectionComponent(light_entity=light))
 
 model = Scene().add_entity()
 Scene().add_component(model, InfoComponent("model"))
 Scene().add_component(model, TransformComponent(glm.vec3(-1, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
 Scene().add_component(model, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "Cauterizer" / "Cauterizer.obj"))
-Scene().add_component(model, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "shadow_shader.wgsl"))
+Scene().add_component(model, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(model, MaterialComponent())
 Scene().add_component(model, LightAffectionComponent(light_entity=light))
-
-building = Scene().add_entity()
-Scene().add_component(building, InfoComponent("building"))
-Scene().add_component(building, TransformComponent(glm.vec3(0, 2, -4), glm.vec3(0, -90, 180), glm.vec3(0.01, 0.01, 0.01), static=True))
-Scene().add_component(building, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "stronghold" / "source" / "building.obj"))
-Scene().add_component(building, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "shadow_shader.wgsl"))
-Scene().add_component(building, MaterialComponent())
-Scene().add_component(building, LightAffectionComponent(light_entity=light))
 
 skyPaths = [
     definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
@@ -142,26 +142,26 @@ GpuController().set_texture_sampler(
     shader_component=Scene().get_component(plane, ShaderComponent), texture_name="albedo_texture", sampler_name="albedo_sampler", texture=TextureLib().get_texture(name="plane_texture")
 )
 
-# def set_base_shader_uniforms(ent:Entity):
-#     camera_ent:Entity = Scene().get_primary_cam()
+def set_base_shader_uniforms(ent:Entity):
+    camera_ent:Entity = Scene().get_primary_cam()
 
-#     camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent)
-#     shader_comp: ShaderComponent = Scene().get_component(ent, ShaderComponent)
-#     plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)
+    camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent)
+    shader_comp: ShaderComponent = Scene().get_component(ent, ShaderComponent)
+    plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)
 
-#     view = camera_comp.view
-#     projection = camera_comp.projection
-#     model = plane_trans.world_matrix
+    view = camera_comp.view
+    projection = camera_comp.projection
+    model = plane_trans.world_matrix
 
-#     GpuController().set_uniform_value(
-#         shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
-#     )
-#     GpuController().set_uniform_value(
-#         shader_component=shader_comp, buffer_name="ubuffer", member_name="projection", uniform_value=projection, mat4x4f=True
-#     )
-#     GpuController().set_uniform_value(
-#         shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=model, mat4x4f=True
-#     )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="projection", uniform_value=projection, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=model, mat4x4f=True
+    )
 
 def set_base_color_shader_uniforms(ent:Entity):
     camera_ent:Entity = Scene().get_primary_cam()
@@ -191,7 +191,8 @@ def set_base_color_shader_uniforms(ent:Entity):
 def set_shadow_shader_uniforms(ent:Entity):
     camera_ent:Entity = Scene().get_primary_cam()
 
-    camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent)
+    camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent) 
+    camera_trans: TransformComponent = Scene().get_component(camera_ent, TransformComponent) 
     shader_comp: ShaderComponent = Scene().get_component(ent, ShaderComponent)
     plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)  
     light_link: LightAffectionComponent = Scene().get_component(ent, LightAffectionComponent) 
@@ -205,7 +206,8 @@ def set_shadow_shader_uniforms(ent:Entity):
     model = plane_trans.world_matrix  
     light_view = light_camera.view 
     light_proj = light_camera.projection 
-    light_pos = light_trans.translation
+    light_pos = light_trans.translation 
+    view_pos = camera_trans.translation 
 
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
@@ -224,6 +226,9 @@ def set_shadow_shader_uniforms(ent:Entity):
     )
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="light_pos", uniform_value=light_pos, float3=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view_pos", uniform_value=view_pos, float3=True
     )
 
 Renderer().init(

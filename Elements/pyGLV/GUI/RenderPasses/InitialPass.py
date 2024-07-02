@@ -48,7 +48,7 @@ class InitialPass(RenderSystem):
             base_array_layer=0,
             array_layer_count=1,
         ) 
-        canvas_texture_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(compare=wgpu.CompareFunction.less)
+        canvas_texture_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
        
         shadow_gfx: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
@@ -81,8 +81,10 @@ class InitialPass(RenderSystem):
             base_array_layer=0,
             array_layer_count=1,
         )  
-        shadow_map_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(compare=wgpu.CompareFunction.less)
+        shadow_map_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
 
+
+        # Appengind the Generated textures To the Texture lib
         TextureLib().append_texture(name="render_target", texture=Texture(
             texture=canvas_texture,
             view=canvas_texture_view,

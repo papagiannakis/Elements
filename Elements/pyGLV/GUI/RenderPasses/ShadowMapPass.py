@@ -25,8 +25,11 @@ struct VertexInput {
 }
 struct VertexOutput {
     @builtin(position) Position: vec4<f32>,
-    @location(0) v_position: vec4<f32> // Added to match the pipeline expectation
 }; 
+struct FragmentOutput { 
+    @builtin(frag_depth) depth: f32,
+    @location(0) color: vec4f,
+};
 
 @vertex
 fn vs_main( 
@@ -38,16 +41,31 @@ fn vs_main(
     var projection = transpose(ubuffer.projection);
 
     var out: VertexOutput; 
-    out.Position = projection * view * model * vec4<f32>(in.a_vertices, 1.0); 
-    out.v_position = out.Position;
+    out.Position = projection * view * model * vec4<f32>(in.a_vertices, 1.0);  
     return out;
 }
 
+fn LinearizeDepth( 
+    depth: f32,
+    near: f32,
+    far: f32
+) -> f32 {  
+
+    let zNdc = 2 * depth - 1; 
+    let zEye = (2 * far * near) / ((far + near) - zNdc * (far - near)); 
+    let linearDepth = (zEye - near) / (far - near);
+    return linearDepth;
+}
+
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4f { 
-    var depth = in.v_position.z / in.v_position.w; 
-    return vec4f(depth, depth, depth, depth);  
-    //return vec4f(1.0, 0.5, 1.0, 1.0);
+fn fs_main(
+    in: VertexOutput
+) -> FragmentOutput { 
+    var out: FragmentOutput; 
+
+    out.depth = LinearizeDepth(in.Position.z, 0.01, 500.0);    
+    out.color = vec4f(out.depth, out.depth, out.depth, out.depth);
+    return out;
 }
 """
 

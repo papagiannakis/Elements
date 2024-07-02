@@ -109,7 +109,8 @@ class Renderer:
         
         shadowDescriptor = RenderPassDescriptor()  
         shadowDescriptor.view = TextureLib().get_texture(name="shadow_gfx").view
-        shadowDescriptor.depth_view = TextureLib().get_texture(name="shadow_map").view 
+        shadowDescriptor.depth_view = TextureLib().get_texture(name="shadow_map").view  
+        shadowDescriptor.clear_value = (1.0, 1.0, 1.0, 1.0)
         shadow_render_pass = command_encoder.begin_render_pass(
             color_attachments=shadowDescriptor.generate_color_attachments(),
             depth_stencil_attachment=shadowDescriptor.generate_depth_attachments()

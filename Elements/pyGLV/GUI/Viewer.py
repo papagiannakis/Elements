@@ -294,7 +294,7 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
     :type RenderWindow: [type]
     """ 
     
-    def __init__(self, *, wgpu:bool = False, windowWidth = None, windowHeight = None, windowTitle = None, scene = None, eventManager = None, openGLveriosn = 4, **kwargs): 
+    def __init__(self, *, wgpu:bool = False, windowWidth = None, windowHeight = None, windowTitle = None, vsync=None, scene = None, eventManager = None, openGLveriosn = 4, **kwargs): 
         """Constructor GLFWWindow for basic GLFW parameters
 
         :param windowWidth: [description], defaults to None
@@ -316,7 +316,8 @@ class GLFWWindow(WgpuAutoGui, WgpuCanvasBase, RenderWindow):
         self.openGLversion = openGLveriosn  
        
         # Enable wgpu rendering 
-        self.wgpu = wgpu
+        self.wgpu = wgpu 
+        self._vsync = bool(vsync)
         
         if windowWidth is None: 
             self._windowWidth = 1024
