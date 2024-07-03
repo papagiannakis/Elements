@@ -63,8 +63,8 @@ fn fs_main(
 ) -> FragmentOutput { 
     var out: FragmentOutput; 
 
-    out.depth = LinearizeDepth(in.Position.z, 0.01, 500.0);    
-    out.color = vec4f(out.depth, out.depth, out.depth, out.depth);
+    out.depth = LinearizeDepth(in.Position.z, 0.01, 500.0); 
+    out.color = vec4f(out.depth, out.depth, out.depth, 1.0);
     return out;
 }
 """
@@ -198,7 +198,7 @@ class ShadowMapPass(RenderSystem):
             primitive={
                 "topology": wgpu.PrimitiveTopology.triangle_list,
                 "front_face": wgpu.FrontFace.ccw,
-                "cull_mode": wgpu.CullMode.none,
+                "cull_mode": wgpu.CullMode.front,
             },
             depth_stencil={ 
                 "format": wgpu.TextureFormat.depth32float,

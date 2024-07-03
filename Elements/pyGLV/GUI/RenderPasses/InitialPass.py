@@ -52,7 +52,7 @@ class InitialPass(RenderSystem):
        
         shadow_gfx: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
-            size=[1024, 1024, 1],
+            size=[2048, 2048, 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
@@ -64,7 +64,7 @@ class InitialPass(RenderSystem):
         
         shadow_map: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
-            size=[1024, 1024, 1],
+            size=[2048, 2048, 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
@@ -103,15 +103,15 @@ class InitialPass(RenderSystem):
             texture=shadow_gfx, 
             view=shadow_gfx_view,
             sampler=shadow_gfx_sampler,
-            width=1024,
-            height=1024
+            width=2048,
+            height=2048
         ))
         TextureLib().append_texture(name="shadow_map", texture=Texture(
             texture=shadow_map, 
             view=shadow_map_view,
             sampler=shadow_map_sampler, 
-            width=1024,
-            height=1024
+            width=2048,
+            height=2048
         ))
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 

@@ -27,8 +27,8 @@ struct VertexOutput {
     @location(3) uv: vec2f
 };   
 
-fn mat4to3(m: mat4x4<f32>) -> mat3x3<f32> {
-    var newMat: mat3x3<f32>;
+fn mat4to3(m: mat4x4f) -> mat3x3f {
+    var newMat: mat3x3f;
 
     newMat[0][0] = m[0][0];
     newMat[0][1] = m[0][1];
@@ -92,23 +92,32 @@ fn ShadowCalculation(
 ) -> f32 { 
     // Perform perspective divide 
     // Transform to [0,1] range
-    var projCoords: vec2f = fragPosLightSpace.xy  * vec2(0.5, -0.5) + vec2(0.5); 
-    var projDepth: f32 = fragPosLightSpace.z;
+    var projCoords = fragPosLightSpace.xyz / fragPosLightSpace.w;  
+    var UVCoords = projCoords.xy * vec2f(0.5, -0.5) + vec2f(0.5, 0.5);
     // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
-    var closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, projCoords.xy);
+    var closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, UVCoords);
     // Get depth of current fragment from light's perspective
-    let currentDepth: f32 = LinearizeDepth(projDepth, 0.01, 500.0);
-    // Check whether current frag pos is in shadow
-    var shadow: f32 = 0.0;
-    if (currentDepth > 1.0) {
-        return shadow;
-    }
+    let currentDepth: f32 = LinearizeDepth(projCoords.z, 0.01, 500.0);
+    // Check whether current frag pos is in shadow 
 
-    if (currentDepth - bias > closestDepth) { 
-        shadow = 1.0; 
+    var visibility = 0.0;
+    let oneOverShadowDepthTextureSize = 1.0 / 2048.0;
+    for (var y = -1; y <= 1; y++) {
+        for (var x = -1; x <= 1; x++) {
+        let offset = vec2f(vec2(x, y)) * oneOverShadowDepthTextureSize;
+            // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
+            var closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, UVCoords + offset);
+            // Get depth of current fragment from light's perspective
+            let currentDepth: f32 = LinearizeDepth(projCoords.z, 0.01, 500.0);
+            // Check whether current frag pos is in shadow 
+            if (currentDepth - bias > closestDepth) { 
+                visibility += 1.0; 
+            }
+        }
     }
-
-    return shadow;
+    visibility /= 9.0; 
+    
+    return visibility;
 }
 
 @vertex
@@ -151,7 +160,7 @@ fn fs_main(
     let light_pos = ubuffer.light_pos; 
     let view_pos = ubuffer.view_pos;
 
-    let ambient = 0.15 * light_color;
+    let ambient = 0.2 * light_color;
 
     let light_dir = normalize(light_pos - in.frag_pos); 
     let diff = max(dot(light_dir, normal), 0.0); 
@@ -162,7 +171,7 @@ fn fs_main(
     let spec = pow(max(dot(normal, hafway_dir), 0.0), 64.0);
     let specular = spec * light_color; 
 
-    let bias = max(0.05 * (1.0 - dot(normal, light_dir)), 0.005);
+    let bias = max(0.0001 * (1.0 - dot(normal, light_dir)), 0.00001);
     let shadow = ShadowCalculation(in.frag_pos_light_space, bias);
     let lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;  
 
