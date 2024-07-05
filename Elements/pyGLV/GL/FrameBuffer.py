@@ -27,6 +27,9 @@ class FrameBuffer:
             self._wireframeMode = False;
     
     def createFrameBuffer(self):
+        """
+        Creates the framebuffer object
+        """
         self.fbo = gl.glGenFramebuffers(1);
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.fbo)
 
@@ -40,6 +43,9 @@ class FrameBuffer:
         
     
     def generateTexture(self):
+        """
+        Generates the texture that is to be bound to the fbo
+        """
         ##--------------- Color Texture --------------------##
         self.textureId = gl.glGenTextures(1);
         
@@ -56,6 +62,9 @@ class FrameBuffer:
 
         
     def generateRenderbuffers(self):
+        """
+        Generates the depth render buffer that is to be bound to the fbo
+        """
         ##---------------- Depth Renderbuffer --------------##
         self.depth_rbo = gl.glGenRenderbuffers(1);
         gl.glBindRenderbuffer(gl.GL_RENDERBUFFER, self.depth_rbo)
@@ -65,6 +74,9 @@ class FrameBuffer:
         gl.glFramebufferRenderbuffer(gl.GL_FRAMEBUFFER, gl.GL_DEPTH_ATTACHMENT, gl.GL_RENDERBUFFER, self.depth_rbo)
 
     def bindFramebuffer(self):
+        """
+        Binds the framebuffer in order to receive all the data for the new texture
+        """
         if self._use:
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.fbo);
             gl.glClearColor(0.0, 0.0, 0.0, 1.0)
@@ -80,10 +92,21 @@ class FrameBuffer:
                 gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
     def unbindFramebuffer(self):
+        """
+        Unbinds the framebuffer
+        """
         if self._use:
             gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, 0);
 
     def rescaleFramebuffer(self, _width, _height):
+        """
+        Rescales the framebuffer to the width and height given as parameters
+
+        :param width: New width to be given to the framebuffer
+        :type width: float
+        :param height: New height to be given to the framebuffer
+        :type height: float
+        """
         gl.glBindFramebuffer(gl.GL_FRAMEBUFFER, self.fbo)
         gl.glBindTexture(gl.GL_TEXTURE_2D, self.textureId);
         gl.glTexImage2D(gl.GL_TEXTURE_2D, 0, gl.GL_RGBA, _width, _height, 0, gl.GL_RGBA, gl.GL_UNSIGNED_BYTE, None);
@@ -100,6 +123,13 @@ class FrameBuffer:
         
         
     def drawFramebuffer(self, wireframe = False): 
+        """
+        Draws the framebuffer to the window that the function is called in, using the wireframe param to determine
+        if the wireframe flag from the UI is checked to alter the way the texture will be drawn.
+
+        :param wireframe: Wireframe flag controller by the checkbox in the GUI.
+        :type wireframe: boolean
+        """
         global first_run
 
         if self._wireframeMode != wireframe:

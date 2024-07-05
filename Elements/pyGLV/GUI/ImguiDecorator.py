@@ -734,8 +734,13 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         self._buffer = FrameBuffer();
 
     def scenegraphVisualiser(self):
-        """display the ECSS in an ImGUI tree node structure
+        """
+        Responsible for rendering all windows in the main dockspace through SceneWindow
+        Displays node editor window seperately
+        Applies transformations of camera when appropriate gizmo is operated
+        Displays the ECSS in an ImGUI tree node structure
         Typically this is a custom widget to be extended in an ImGUIDecorator subclass 
+
         """
         global first_run
 
@@ -766,7 +771,6 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
         if cameraChange:
             self._eye = view[0]
-            print(view[0], view[1]);
             self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
 
             if self._wrapeeWindow.eventManager is not None:
@@ -848,12 +852,18 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
                 
         imgui.end()
 
-
-    def entityManagement(self):
-        pass
             
     def drawNode(self, component, node):
         #create a local iterator of Entity's children
+        """
+        Draws node of given component.
+        If a node is clicked on the node editor, its node is opened.
+
+        :param component: Component of which the node will be drawn
+        :type component: Component
+        :param node: Node that is selected on the node editor
+        :type node: Node
+        """
         if component._children is not None:
             debugIterator = iter(component._children)
             #call print() on all children (Concrete Components or Entities) while there are more children to traverse
@@ -919,15 +929,6 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         process SDL2 basic events and input
         """
         return super().event_input_process()
-    
-    def show_selectable_entities(self):
-        for child in self.wrapeeWindow.scene.world.root._children:
-            _, clicked = imgui.menu_item(child.name, "", False);
-            if clicked:
-                self.to_be_removed = child;
-                return True
-
-        return False
     
     
 

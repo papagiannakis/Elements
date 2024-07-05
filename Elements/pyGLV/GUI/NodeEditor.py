@@ -69,7 +69,6 @@ class Node:
         self.id = ed.NodeId(ID.next_id())
         self.childrenPinId = ed.PinId(ID.next_id())
         self.parentPinId = ed.PinId(ID.next_id())
-        self.creation = None;
         self.parent = None;
         self.type = _type;
     
@@ -133,23 +132,16 @@ class NodeEditor:
         self.editor_context = ed.create_editor(self.config);
         self.links = []
         self.selected = None
-        self.creation = False
         self.nodes = []
-        self.nodeAmount = 0;
-        self.linkAmount = 0;
         self.name = ""
-        self.children = ""
-        self.entities = [];
-        self.shape = None;
-        self.to_add = None;
         self.selected_parent = None;
         self.highlighted = None;
     
-    def addNode(self, comp = None, child = None):
+    def addNode(self, comp = None):
         """
         Adds a new node to the node list
         
-        :param node: [description]
+        :param comp: The component that the new node will be based on. If none, the data stored in the node editor's attributes are used.
         :type node: Node
         """
         if comp is None:
@@ -180,11 +172,6 @@ class NodeEditor:
                 parent = self.findNodeByName(comp.parent.name)
                 if parent is not None:
                     tmp.parentId = parent.id
-                    # pos = ed.get_node_position(parent.id)
-                    # children = len(comp.parent._children)
-                    # pos_y = pos.y - (10 * children / 2)
-                    # if child:
-                    #     ed.set_node_position(tmp.id, imgui.ImVec2(pos.x + 20, pos_y + (10 * child)))
                     self.createLink(parent, tmp)
                     tmp.parent = parent;
             self.nodes.append(tmp);
@@ -193,7 +180,7 @@ class NodeEditor:
         """
         Removes the node correspoding the to component given as a parameter, and its links from the lists
         
-        :param comp: [descprition]
+        :param comp: The component that corresponds to the entity that is to be removed.
         :type comp: Component
         """
         input_id = None;
@@ -225,7 +212,7 @@ class NodeEditor:
         """
         Finds and returns a node by the name given as a parameter, if not found it returns None
 
-        :param name: [description]
+        :param name: Name of the node to be found.
         :type name: str
         """
         for node in self.nodes:
@@ -237,9 +224,9 @@ class NodeEditor:
         """
         Creates and appends a new link to the editor
 
-        :param parent: [description]
+        :param parent: Parent side of the link
         :type parent: LinkId
-        :param child: [description]
+        :param child: Child side of the link
         :type child: LinkId
         """
         self.links.append(LinkInfo(ed.LinkId(ID.next_id()), child.parentPinId, parent.childrenPinId))
@@ -257,7 +244,7 @@ class NodeEditor:
         Used for first time run and for any updates, should any occur in the ECSS.
         Recursive function, beginning from the given component
 
-        :param component: [description]
+        :param component: Component from which the generation of nodes will begin
         :type component: Component
         """
         if component._children is not None:
@@ -270,12 +257,10 @@ class NodeEditor:
                 except StopIteration:
                     done_traversing = True
                 else:
-                    self.addNode(comp, child)
+                    self.addNode(comp)
                     child += 1;
                     self.generate(comp)
         
-        self.nodeAmount = len(self.nodes);
-        self.linkAmount = len(self.links);
 
     def createMode(self):
         """
@@ -337,33 +322,8 @@ class NodeEditor:
                                 self.links.remove(link)
                                 break;
 
-    def update_entities(self, component):
-        """
-        Updates the ECSS when a new entity is added.
-        Recursing function beginning from the given component.
 
-        :param component: [description]
-        :type component: Component
-        """
-        self.entities = [];
-        if component._children is not None:
-            debugIterator = iter(component._children)
-            done_traversing = False
-            while not done_traversing:
-                try:
-                    comp = next(debugIterator)
-                    imgui.indent(10)
-                except StopIteration:
-                    done_traversing = True
-                else:
-                    if isinstance(comp, Entity):
-                        self.entities.append(comp);
-    
-    def set_node_positions(self):
-        pass
-
-
-    def on_frame(self, update = False):
+    def on_frame(self):
         """
         Main loop of the editor
         """

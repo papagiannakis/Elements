@@ -26,7 +26,6 @@ class SceneWindow:
             
         self.gizmo = Gizmos(imguiContext);
         self.changed = None;
-        self.cameraView = None;
         
         self.selected_parent = None;
         self.shape = None;
@@ -42,6 +41,18 @@ class SceneWindow:
     
 
     def mainWindowLoop(self, view, wireframe, selected, currOperation):
+        """
+        Main Loop Method. Responsible for displaying all windows of the main dockspace including the top menu bar.
+
+        :param view: Combination of eye, target and up vectors to be used for the camera gizmo
+        :type view: Tuple
+        :param wireFrame: Wireframe flag controller by the checkbox in the GUI.
+        :type wireFrame: boolean
+        :param selected: Reference to the selected component from the node editor
+        :type selected: Component
+        :param currOperation: Current operation of transformation gizmos (translate, rotate, scale)
+        :type currOperation: imguizmo.imguizmo.OPERATION  
+        """
         global update_needed, main_window_selected
         
         if update_needed:
@@ -60,9 +71,10 @@ class SceneWindow:
         cameraChange = False;
         if self.gizmo.drawCameraGizmo():
             cameraChange = True;
-            view[0], view[1], view[2] = self.gizmo.decompose_look_at();
+            view[0] = self.gizmo.decompose_look_at();
         else:
-            self.gizmo.setView(np.array(glm.lookAt(view[0], view[1], view[2]), np.float32));
+            self.gizmo.setView(np.array(glm.lookAt(view[0], view[1], view[2])));
+            
         
         trsChange, trs = self.gizmo.drawTransformGizmo(selected);
         
@@ -71,16 +83,20 @@ class SceneWindow:
 
         if cameraChange and self.gizmo._cameraSystem is not None:
             camera_trs = imguizmo.im_guizmo.decompose_matrix_to_components(self.gizmo._view);
-            transMat = util.translate(camera_trs.translation[0],camera_trs.translation[1],camera_trs.translation[2])
-            rotMatX = util.rotate((1, 0, 0), camera_trs.rotation[0])
-            rotMatY = util.rotate((0, 1, 0), camera_trs.rotation[1])
-            rotMatZ = util.rotate((0, 0, 1), camera_trs.rotation[2])
+            [x, y, z] = self.gizmo._cameraSystem._children[0]._children[0].translation
+            transMat = util.translate(x,y,z);
+            rotMatX = util.rotate((1, 0, 0), -camera_trs.rotation[0])
+            rotMatY = util.rotate((0, 1, 0), -camera_trs.rotation[1])
+            rotMatZ = util.rotate((0, 0, 1), -camera_trs.rotation[2])
             scaleMat = util.scale(camera_trs.scale[0],camera_trs.scale[1],camera_trs.scale[2])
-            self.gizmo._cameraSystem._children[0]._children[0].trs = util.identity() @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
+            self.gizmo._cameraSystem._children[0]._children[0].trs = util.identity() @ transMat @ rotMatX @ rotMatY @ rotMatZ @ scaleMat
 
         return cameraChange, view, trsChange, imguizmo.im_guizmo.decompose_matrix_to_components(trs)
 
     def mainMenuBar(self):
+        """
+        Displays the main menu bar on top of the main window for accessing the entity management features
+        """
         if imgui.begin_main_menu_bar():
             if imgui.begin_menu("File"):
                 if imgui.begin_menu("Entites"):
@@ -98,6 +114,9 @@ class SceneWindow:
 
 
     def addEntityWindow(self):
+        """
+        Displays the entity addition window. Called when the approppriate tab is clicked through the menu bar
+        """
         global update_needed
         tmp = None;
         add = False;
@@ -150,6 +169,9 @@ class SceneWindow:
         return add, tmp;
         
     def removeEntityWindow(self):
+        """
+        Displays a confirmation dialog when an entity is about to be deleted
+        """
         remove = False;
         node = None;
 
@@ -177,9 +199,9 @@ class SceneWindow:
     def update_entities(self, component):
         """
         Updates the ECSS when a new entity is added.
-        Recursing function beginning from the given component.
+        Recursive function beginning from the given component.
 
-        :param component: [description]
+        :param component: Component from which the update will be initiated
         :type component: Component
         """
         global first_run 
@@ -205,6 +227,12 @@ class SceneWindow:
     
 
     def show_selectable_entities(self, comp: Entity):
+        """
+        Displays a list of all the entities. Recursive beginning with the entity given as a parameter
+
+        :param comp: Entity from which the list will be begin to be put together
+        :type comp: Entity
+        """
         if comp._children is not None:
             for child in comp._children:
                 if isinstance(child, Entity):
