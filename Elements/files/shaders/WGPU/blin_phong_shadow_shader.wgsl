@@ -6,6 +6,7 @@ struct uniforms {
     light_view: mat4x4f, 
     light_proj: mat4x4f,
     light_pos: vec3f,
+    near_far: vec2f
 };
 
 @group(0) @binding(0) var<uniform> ubuffer: uniforms;
@@ -25,7 +26,11 @@ struct VertexOutput {
     @location(1) frag_pos: vec3f, 
     @location(2) frag_norm: vec3f,
     @location(3) uv: vec2f
-};   
+};
+struct FragOutput { 
+    @builtin(frag_depth) depth: f32,
+    @location(0) color: vec4f
+};
 
 fn mat4to3(m: mat4x4f) -> mat3x3f {
     var newMat: mat3x3f;
@@ -152,7 +157,8 @@ fn vs_main(
 @fragment
 fn fs_main(
     in: VertexOutput
-) -> @location(0) vec4<f32> { 
+) -> FragOutput { 
+    var out: FragOutput;
 
     let color = textureSample(albedo_texture, albedo_sampler, in.uv).rgb;
     let normal = normalize(in.frag_norm);
@@ -175,5 +181,7 @@ fn fs_main(
     let shadow = ShadowCalculation(in.frag_pos_light_space, bias);
     let lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;  
 
-    return vec4f(lighting, 1.0);
+    out.depth = LinearizeDepth(in.Position.z, ubuffer.near_far.x, ubuffer.near_far.y); 
+    out.color = vec4f(lighting, 1.0);
+    return out;
 }

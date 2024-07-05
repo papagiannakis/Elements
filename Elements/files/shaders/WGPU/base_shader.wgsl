@@ -1,7 +1,8 @@
 struct uniforms {
     projection: mat4x4f, 
     view: mat4x4f,
-    model: mat4x4f
+    model: mat4x4f,
+    near_far: vec2f
 };
 
 @group(0) @binding(0) var<uniform> ubuffer: uniforms;
@@ -16,7 +17,23 @@ struct VertexOutput {
     @builtin(position) Position: vec4<f32>,
     @location(0) v_tex: vec2<f32>,
     @location(1) v_position: vec3<f32> // Added to match the pipeline expectation
-}; 
+};
+struct FragOutput { 
+    @builtin(frag_depth) depth: f32,
+    @location(0) color: vec4f
+} 
+
+fn LinearizeDepth( 
+    depth: f32,
+    near: f32,
+    far: f32,
+) -> f32 {   
+
+    let zNdc = 2 * depth - 1; 
+    let zEye = (2 * far * near) / ((far + near) - zNdc * (far - near)); 
+    let linearDepth = (zEye - near) / (far - near);
+    return linearDepth;
+}
 
 @vertex
 fn vs_main( 
@@ -35,6 +52,12 @@ fn vs_main(
 }
 
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(myTexture, mySampler, in.v_tex); 
+fn fs_main(
+    in: VertexOutput
+) -> FragOutput { 
+
+    var out: FragOutput; 
+    out.depth = LinearizeDepth(in.Position.z, ubuffer.near_far.x, ubuffer.near_far.y);
+    out.color = textureSample(myTexture, mySampler, in.v_tex);
+    return out; 
 }

@@ -15,7 +15,8 @@ SHADER_CODE = """
 struct uniforms {
     projection: mat4x4f, 
     view: mat4x4f,
-    model: mat4x4f
+    model: mat4x4f,
+    near_far: vec2f
 };
 
 @group(0) @binding(0) var<uniform> ubuffer: uniforms; 
@@ -63,7 +64,7 @@ fn fs_main(
 ) -> FragmentOutput { 
     var out: FragmentOutput; 
 
-    out.depth = LinearizeDepth(in.Position.z, 0.01, 500.0); 
+    out.depth = LinearizeDepth(in.Position.z, ubuffer.near_far.x, ubuffer.near_far.y); 
     out.color = vec4f(out.depth, out.depth, out.depth, 1.0);
     return out;
 }
@@ -90,7 +91,7 @@ class ShadowMapPass(RenderSystem):
             self.shader = GpuController().device.create_shader_module(code=SHADER_CODE);
         
         light_cache.uniform_gpu_buffer = GpuController().device.create_buffer(
-            size=((16 * 4) + (16 * 4) + (16 * 4)), usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
+            size=((16 * 4) + (16 * 4) + (16 * 4) + (4 * 4)), usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
         )
         
         bind_groups_layout_entries = [[]]
@@ -128,10 +129,14 @@ class ShadowMapPass(RenderSystem):
         light_view = light_cam.view 
         light_proj = light_cam.projection 
         model = transform.world_matrix 
+        near = light_cam.near
+        far = light_cam.far 
+        near_far = glm.vec2(near, far)
         
         light_view_data = np.ascontiguousarray(light_view, dtype=np.float32) 
         light_proj_data = np.ascontiguousarray(light_proj, dtype=np.float32) 
         model_data = np.ascontiguousarray(model, dtype=np.float32)
+        near_far_data = np.ascontiguousarray(near_far, dtype=np.float32)
         
         GpuController().device.queue.write_buffer(
             buffer=lightAffected.uniform_gpu_buffer,
@@ -153,6 +158,13 @@ class ShadowMapPass(RenderSystem):
             data=model_data,
             data_offset=0,
             size=model_data.nbytes
+        )  
+        GpuController().device.queue.write_buffer(
+            buffer=lightAffected.uniform_gpu_buffer,
+            buffer_offset=192,
+            data=near_far_data,
+            data_offset=0,
+            size=near_far_data.nbytes
         )  
 
         bind_groups_entries = [[]]

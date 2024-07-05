@@ -59,12 +59,12 @@ Scene().set_primary_cam(camera)
 
 light = Scene().add_entity()
 Scene().add_component(light, InfoComponent("light"))
-Scene().add_component(light, TransformComponent(glm.vec3(5, -5, 5), glm.vec3(30, 45, 0), glm.vec3(1, 1, 1), static=False))
+Scene().add_component(light, TransformComponent(glm.vec3(10, -10, 10), glm.vec3(30, 45, 0), glm.vec3(1, 1, 1), static=False))
 Scene().add_component(light, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(light, ShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl"))
 Scene().add_component(light, MaterialComponent())
 Scene().add_component(light, LightComponent(intensity=1.0)) 
-Scene().add_component(light, CameraComponent(60, 16/9, 0.01, 500, 50, CameraComponent.Type.PERSPECTIVE)) 
+Scene().add_component(light, CameraComponent(60, 16/9, 0.01, 500, 35, CameraComponent.Type.PERSPECTIVE)) 
 
 building = Scene().add_entity()
 Scene().add_component(building, InfoComponent("building"))
@@ -152,6 +152,9 @@ def set_base_shader_uniforms(ent:Entity):
     view = camera_comp.view
     projection = camera_comp.projection
     model = plane_trans.world_matrix
+    near = camera_comp.near
+    far = camera_comp.far
+    near_far = glm.vec2(near, far)
 
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
@@ -161,6 +164,9 @@ def set_base_shader_uniforms(ent:Entity):
     )
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=model, mat4x4f=True
+    ) 
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="near_far", uniform_value=near_far, float2=True
     )
 
 def set_base_color_shader_uniforms(ent:Entity):
@@ -174,6 +180,9 @@ def set_base_color_shader_uniforms(ent:Entity):
     projection = camera_comp.projection
     model = plane_trans.world_matrix
     color = glm.vec3(1.0, 1.0, 1.0)
+    near = camera_comp.near
+    far = camera_comp.far
+    near_far = glm.vec2(near, far)
 
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
@@ -186,6 +195,9 @@ def set_base_color_shader_uniforms(ent:Entity):
     )
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="color", uniform_value=color, float3=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="near_far", uniform_value=near_far, float2=True
     )
 
 def set_shadow_shader_uniforms(ent:Entity):
@@ -207,7 +219,10 @@ def set_shadow_shader_uniforms(ent:Entity):
     light_view = light_camera.view 
     light_proj = light_camera.projection 
     light_pos = light_trans.translation 
-    view_pos = camera_trans.translation 
+    view_pos = camera_trans.translation
+    near = camera_comp.near
+    far = camera_comp.far
+    near_far = glm.vec2(near, far)
 
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
@@ -229,7 +244,11 @@ def set_shadow_shader_uniforms(ent:Entity):
     )
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="view_pos", uniform_value=view_pos, float3=True
+    ) 
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="near_far", uniform_value=near_far, float2=True
     )
+
 
 Renderer().init(
     present_context=present_context,
