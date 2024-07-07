@@ -103,7 +103,7 @@ class MeshRenderPass(RenderSystem):
                 shader_component=shader,
                 sampler_name="shadow_sampler",
                 texture_name="shadow_texture",
-                texture=TextureLib().get_texture(name="shadow_map")
+                texture=TextureLib().get_texture(name="shadow_depth")
             )
         
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 

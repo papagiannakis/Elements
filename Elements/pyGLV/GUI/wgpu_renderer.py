@@ -16,7 +16,8 @@ from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
 from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
-from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass 
+from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass  
+from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 
@@ -97,7 +98,8 @@ class Renderer:
         self.add_system("Initial", InitialPass([RenderExclusiveComponent]))  
         self.add_system("Shadows", ShadowMapPass([LightAffectionComponent, MeshComponent, TransformComponent]))
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
-        self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent]))
+        self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent])) 
+        self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
     def render(self, size:list[int]):    
@@ -109,7 +111,7 @@ class Renderer:
         
         shadowDescriptor = RenderPassDescriptor()  
         shadowDescriptor.view = TextureLib().get_texture(name="shadow_gfx").view
-        shadowDescriptor.depth_view = TextureLib().get_texture(name="shadow_map").view  
+        shadowDescriptor.depth_view = TextureLib().get_texture(name="shadow_depth").view  
         shadowDescriptor.clear_value = (1.0, 1.0, 1.0, 1.0)
         shadow_render_pass = command_encoder.begin_render_pass(
             color_attachments=shadowDescriptor.generate_color_attachments(),
@@ -119,8 +121,8 @@ class Renderer:
         shadow_render_pass.end()
 
         meshDescriptor = RenderPassDescriptor() 
-        meshDescriptor.view = TextureLib().get_texture(name="render_target").view
-        meshDescriptor.depth_view = TextureLib().get_texture(name="render_target_depth").view
+        meshDescriptor.view = TextureLib().get_texture(name="mesh_gfx").view
+        meshDescriptor.depth_view = TextureLib().get_texture(name="mesh_depth").view
         mesh_render_pass = command_encoder.begin_render_pass(
             color_attachments=meshDescriptor.generate_color_attachments(),
             depth_stencil_attachment=meshDescriptor.generate_depth_attachments()
@@ -131,6 +133,15 @@ class Renderer:
         self.actuate_system("MeshPass", command_encoder, mesh_render_pass)  
         # End the texture production
         mesh_render_pass.end()
+
+        fxaaDescriptor = RenderPassDescriptor() 
+        fxaaDescriptor.view = TextureLib().get_texture(name="fxaa_gfx").view
+        assert_that(fxaaDescriptor.view).is_not_none()
+        fxaa_render_pass = command_encoder.begin_render_pass(
+            color_attachments=fxaaDescriptor.generate_color_attachments()
+        ) 
+        self.actuate_system("FXAA", command_encoder, fxaa_render_pass)
+        fxaa_render_pass.end()
 
         blitDescriptor = RenderPassDescriptor()
         blitDescriptor.view = GpuController().present_context.get_current_texture().create_view() 
