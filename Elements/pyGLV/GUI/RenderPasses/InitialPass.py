@@ -40,7 +40,11 @@ class InitialPass(RenderSystem):
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         mesh_gfx_view: wgpu.GPUTextureView = mesh_gfx.create_view() 
-        mesh_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+        mesh_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
+            min_filter=wgpu.FilterMode.linear,
+            mag_filter=wgpu.FilterMode.linear,
+            mipmap_filter=wgpu.FilterMode.linear
+        )
 
         mesh_depth: wgpu.GPUTexture = GpuController().device.create_texture(
             label="canvas_depth_texture",
@@ -169,7 +173,11 @@ class InitialPass(RenderSystem):
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         mesh_gfx_view: wgpu.GPUTextureView = mesh_gfx.create_view() 
-        mesh_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+        mesh_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
+            min_filter=wgpu.FilterMode.linear,
+            mag_filter=wgpu.FilterMode.linear,
+            mipmap_filter=wgpu.FilterMode.linear
+        )
 
         mesh_depth: wgpu.GPUTexture = GpuController().device.create_texture(
             label="canvas_depth_texture",

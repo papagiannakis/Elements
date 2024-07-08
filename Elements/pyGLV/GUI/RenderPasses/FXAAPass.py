@@ -65,6 +65,10 @@ FXAA_SHADER_CODE = """
 
     fn rgb2luma(color: vec3f) -> f32 {
         return sqrt(dot(color, vec3f(0.299, 0.587, 0.114)));
+    }
+
+    fn quality(q: f32) -> f32 {
+        return select(1.0, select(1.5, select(2.0, select(4.0, 8.0, q > 10.0), q > 5.0 && q < 10.0), q == 5.0), q < 5.0);
     } 
 
     // Fragment shader
@@ -79,10 +83,10 @@ FXAA_SHADER_CODE = """
         
         let lumaCenter: f32 = rgb2luma(colorCenter);
 
-        let lumaDown: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(0.0, -inverseScreenSize.y)).rgb);
-        let lumaUp: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(0.0, inverseScreenSize.y)).rgb);
-        let lumaLeft: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(-inverseScreenSize.x, 0.0)).rgb);
-        let lumaRight: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(inverseScreenSize.x, 0.0)).rgb);
+        let lumaDown: f32   = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i( 0,-1)).rgb);
+        let lumaUp: f32     = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i( 0, 1)).rgb);
+        let lumaLeft: f32   = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i(-1, 0)).rgb);
+        let lumaRight: f32  = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i( 1, 0)).rgb);
 
         let lumaMin: f32 = min(lumaCenter, min(min(lumaDown, lumaUp), min(lumaLeft, lumaRight)));
         let lumaMax: f32 = max(lumaCenter, max(max(lumaDown, lumaUp), max(lumaLeft, lumaRight)));
@@ -93,10 +97,10 @@ FXAA_SHADER_CODE = """
             return vec4f(colorCenter, 1.0);
         }
 
-        let lumaDownLeft: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(-inverseScreenSize.x, -inverseScreenSize.y)).rgb);
-        let lumaUpRight: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(inverseScreenSize.x, inverseScreenSize.y)).rgb);
-        let lumaUpLeft: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(-inverseScreenSize.x, inverseScreenSize.y)).rgb);
-        let lumaDownRight: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv + vec2f(inverseScreenSize.x, -inverseScreenSize.y)).rgb);
+        let lumaDownLeft: f32   = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i(-1,-1)).rgb);
+        let lumaUpRight: f32    = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i( 1, 1)).rgb);
+        let lumaUpLeft: f32     = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i(-1, 1)).rgb);
+        let lumaDownRight: f32  = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv, 0.0, vec2i( 1,-1)).rgb);
 
         let lumaDownUp: f32 = lumaDown + lumaUp;
         let lumaLeftRight: f32 = lumaLeft + lumaRight;
@@ -122,7 +126,7 @@ FXAA_SHADER_CODE = """
 
         let gradientScaled: f32 = 0.25 * max(abs(gradient1), abs(gradient2));
 
-        var lumaLocalAverage: f32;
+        var lumaLocalAverage: f32 = 0.0;
         if (is1Steepest) {
             stepLength = -stepLength;
             lumaLocalAverage = 0.5 * (luma1 + lumaCenter);
@@ -139,41 +143,44 @@ FXAA_SHADER_CODE = """
 
         let offset: vec2f = select(vec2f(inverseScreenSize.x, 0.0), vec2f(0.0, inverseScreenSize.y), isHorizontal);
 
-        var uv1: vec2f = currentUv - offset;
-        var uv2: vec2f = currentUv + offset;
+        var uv1: vec2f = currentUv - offset * quality(0.0);
+        var uv2: vec2f = currentUv + offset * quality(0.0);
 
-        var lumaEnd1: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv1).rgb) - lumaLocalAverage;
-        var lumaEnd2: f32 = rgb2luma(textureSample(screenTexture, screenSampler, uv2).rgb) - lumaLocalAverage;
+        var lumaEnd1: f32 = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv1, 0.0).rgb);
+        var lumaEnd2: f32 = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv2, 0.0).rgb);
+        lumaEnd1 -= lumaLocalAverage;
+        lumaEnd2 -= lumaLocalAverage;
 
         var reached1: bool = abs(lumaEnd1) >= gradientScaled;
         var reached2: bool = abs(lumaEnd2) >= gradientScaled;
+        var reachedBoth: bool = reached1 && reached2;
 
         if (!reached1) {
-            uv1 -= offset;
+            uv1 -= offset * quality(1.0);
         }
         if (!reached2) {
-            uv2 += offset;
+            uv2 += offset * quality(1.0);
         }
-
-        var reachedBoth: bool = reached1 && reached2;
 
         if (!reachedBoth) {
             for (var i: i32 = 2; i < ITERATIONS; i++) {
                 if (!reached1) {
-                    lumaEnd1 = rgb2luma(textureSample(screenTexture, screenSampler, uv1).rgb) - lumaLocalAverage;
+                    lumaEnd1 = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv1, 0.0).rgb);
+                    lumaEnd1 = lumaEnd1 - lumaLocalAverage;
                 }
                 if (!reached2) {
-                    lumaEnd2 = rgb2luma(textureSample(screenTexture, screenSampler, uv2).rgb) - lumaLocalAverage;
+                    lumaEnd2 = rgb2luma(textureSampleLevel(screenTexture, screenSampler, uv2, 0.0).rgb);
+                    lumaEnd2 = lumaEnd2 - lumaLocalAverage;
                 }
                 reached1 = abs(lumaEnd1) >= gradientScaled;
                 reached2 = abs(lumaEnd2) >= gradientScaled;
                 reachedBoth = reached1 && reached2;
 
                 if (!reached1) {
-                    uv1 -= offset;
+                    uv1 -= offset * quality(1.0);
                 }
                 if (!reached2) {
-                    uv2 += offset;
+                    uv2 += offset * quality(1.0);
                 }
 
                 if (reachedBoth) {
@@ -214,7 +221,7 @@ FXAA_SHADER_CODE = """
             finalUv.x += finalOffset * stepLength;
         }
 
-        let finalColor: vec3f = textureSample(screenTexture, screenSampler, finalUv).rgb;
+        let finalColor: vec3f = textureSampleLevel(screenTexture, screenSampler, finalUv, 0.0).rgb;
         return vec4f(finalColor, 1.0);
     }
 """
