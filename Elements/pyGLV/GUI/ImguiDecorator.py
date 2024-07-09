@@ -733,6 +733,12 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         
         self._buffer = FrameBuffer();
 
+    def updateCamera(self):
+        self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
+
+        if self._wrapeeWindow.eventManager is not None:
+            self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+
     def scenegraphVisualiser(self):
         """
         Responsible for rendering all windows in the main dockspace through SceneWindow
@@ -771,10 +777,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
         if cameraChange:
             self._eye = view[0]
-            self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
-
-            if self._wrapeeWindow.eventManager is not None:
-                self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+            self.updateCamera();
             
 
         if trsChange:
