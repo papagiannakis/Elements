@@ -14,7 +14,8 @@ from Elements.pyECSS.wgpu_components import *
 from Elements.pyGLV.GL.wpgu_scene import Scene       
 from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass 
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
-from Elements.pyGLV.GUI.RenderPasses.ModelPass import MeshRenderPass 
+from Elements.pyGLV.GUI.RenderPasses.ForwardPass import ForwardRenderPass
+from Elements.pyGLV.GUI.RenderPasses.DeferedGeometryPass import DeferedGeometryPass 
 from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
 from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass  
 from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
@@ -98,7 +99,8 @@ class Renderer:
         self.add_system("Initial", InitialPass([RenderExclusiveComponent]))  
         self.add_system("Shadows", ShadowMapPass([LightAffectionComponent, MeshComponent, TransformComponent]))
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
-        self.add_system("MeshPass", MeshRenderPass([MeshComponent, MaterialComponent, ShaderComponent])) 
+        self.add_system("DeferedGeometry", DeferedGeometryPass([DeferedShaderComponent, MeshComponent, TransformComponent]))
+        self.add_system("ForwardPass", ForwardRenderPass([MeshComponent, MaterialComponent, ForwardShaderComponent])) 
         self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
@@ -120,19 +122,50 @@ class Renderer:
         self.actuate_system("Shadows", command_encoder, shadow_render_pass)
         shadow_render_pass.end()
 
-        meshDescriptor = RenderPassDescriptor() 
-        meshDescriptor.view = TextureLib().get_texture(name="mesh_gfx").view
-        meshDescriptor.depth_view = TextureLib().get_texture(name="mesh_depth").view
-        mesh_render_pass = command_encoder.begin_render_pass(
-            color_attachments=meshDescriptor.generate_color_attachments(),
-            depth_stencil_attachment=meshDescriptor.generate_depth_attachments()
+        deferedGeomDescriptor = RenderPassDescriptor() 
+        deferedGeomDescriptor.depth_view = TextureLib().get_texture(name="world_depth").view
+        geometry_render_pass = command_encoder.begin_render_pass(
+            color_attachments=[
+                {
+                    "view": TextureLib().get_texture(name="g_position_gfx").view,
+                    "resolve_target": None,
+                    "clear_value": (0.0, 0.0, 0.0, 0.0), 
+                    "load_op": wgpu.LoadOp.clear,
+                    "store_op": wgpu.StoreOp.store,
+                },
+                {
+                    "view": TextureLib().get_texture(name="g_normal_gfx").view,
+                    "resolve_target": None,
+                    "clear_value": (0.0, 0.0, 0.0, 0.0), 
+                    "load_op": wgpu.LoadOp.clear,
+                    "store_op": wgpu.StoreOp.store,
+                },
+                {
+                    "view": TextureLib().get_texture(name="g_color_gfx").view,
+                    "resolve_target": None,
+                    "clear_value": (0.0, 0.0, 0.0, 0.0), 
+                    "load_op": wgpu.LoadOp.clear,
+                    "store_op": wgpu.StoreOp.store,
+                }, 
+            ],
+            depth_stencil_attachment=deferedGeomDescriptor.generate_depth_attachments()
+        )  
+        self.actuate_system("DeferedGeometry", command_encoder, geometry_render_pass)
+        geometry_render_pass.end()
+
+        worldDescriptor = RenderPassDescriptor() 
+        worldDescriptor.view = TextureLib().get_texture(name="world_gfx").view
+        worldDescriptor.depth_view = TextureLib().get_texture(name="world_depth").view
+        world_render_pass = command_encoder.begin_render_pass(
+            color_attachments=worldDescriptor.generate_color_attachments(),
+            depth_stencil_attachment=worldDescriptor.generate_depth_attachments()
         )  
         # first we render the skybox 
-        self.actuate_system("Skybox", command_encoder, mesh_render_pass)  
+        self.actuate_system("Skybox", command_encoder, world_render_pass)  
         # Then the meshes 
-        self.actuate_system("MeshPass", command_encoder, mesh_render_pass)  
+        self.actuate_system("ForwardPass", command_encoder, world_render_pass)  
         # End the texture production
-        mesh_render_pass.end()
+        world_render_pass.end()
 
         fxaaDescriptor = RenderPassDescriptor() 
         fxaaDescriptor.view = TextureLib().get_texture(name="fxaa_gfx").view

@@ -103,7 +103,8 @@ fn ShadowCalculation(
     var closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, UVCoords);
     // Get depth of current fragment from light's perspective
     let currentDepth: f32 = LinearizeDepth(projCoords.z, 0.01, 500.0);
-    // Check whether current frag pos is in shadow 
+    // Check whether current frag pos is in shadow
+    let near_far = ubuffer.near_far;
 
     var visibility = 0.0;
     let oneOverShadowDepthTextureSize = 1.0 / 2048.0;
@@ -113,7 +114,7 @@ fn ShadowCalculation(
             // Get closest depth value from light's perspective (using [0,1] range fragPosLight as coords)
             var closestDepth: f32 = textureSample(shadow_texture, shadow_sampler, UVCoords + offset);
             // Get depth of current fragment from light's perspective
-            let currentDepth: f32 = LinearizeDepth(projCoords.z, 0.01, 500.0);
+            let currentDepth: f32 = LinearizeDepth(projCoords.z, near_far.x, near_far.y);
             // Check whether current frag pos is in shadow 
             if (currentDepth - bias > closestDepth) { 
                 visibility += 1.0; 

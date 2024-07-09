@@ -48,8 +48,6 @@ class CameraComponent(Component):
             self.projection = glm.ortho(-self.aspect_ratio * self.zoom_level, self.aspect_ratio * self.zoom_level, -self.zoom_level, self.zoom_level, self.near, self.far)
         elif type is CameraComponent.Type.PERSPECTIVE:
             self.projection = glm.perspective(glm.radians(self.fov), self.aspect_ratio, self.near, self.far)
-        else:
-            assert_that(self.projection).is_not_none() 
 
         self.view_projection = glm.mat4(1.0)
 
@@ -98,13 +96,13 @@ class RenderExclusiveComponent(Component):
     def __init__(self):
         self.active = True 
 
-class ShaderComponent(Component): 
+class ForwardShaderComponent(Component): 
     def __init__(self, shader_path:Path):
         assert_that(shader_path).is_not_none()
 
         self.pipeline_layout = None 
         self.bind_group_layouts = []  
-        self.bind_groups = []  
+        self.bind_groups = []
         self.shader_module = None 
         self.shader_path = shader_path
         self.shader_code = None
@@ -113,8 +111,29 @@ class ShaderComponent(Component):
         self.read_only_storage_buffers = None
         self.read_only_storage_gpu_buffers = {}
         self.other_uniform = None 
-        self.attributes = None 
+        self.attributes = None
         self.attributes_layout = None  
+
+class DeferedShaderComponent(Component): 
+    def __init__(self, shader_path:Path, diffuse_texture:str):
+        assert_that(shader_path).is_not_none()
+
+        self.pipeline_layout = None 
+        self.bind_group_layouts = []  
+        self.bind_groups = []
+        self.shader_module = None 
+        self.shader_path = shader_path
+        self.shader_fragment_module = None
+        self.shader_vertex_module = None
+        self.shader_fragment_code = None 
+        self.shader_vertex_code = None
+        self.uniform_buffers = None
+        self.uniform_gpu_buffers = {} 
+        self.read_only_storage_buffers = None
+        self.read_only_storage_gpu_buffers = {}
+        self.other_uniform = None 
+        self.diffuse_texture = diffuse_texture
+        self.g_uniform_buffer: wgpu.GPUBuffer = None 
         
 class SkyboxComponent(Component):
     def __init__(self, name:str, paths:list): 

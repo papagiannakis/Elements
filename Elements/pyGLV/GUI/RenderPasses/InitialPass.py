@@ -18,6 +18,42 @@ class InitialPass(RenderSystem):
 
         self.render_size = GpuController().render_target_size
 
+        g_position_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        g_position_gfx_view: wgpu.GPUTextureView = g_position_gfx.create_view() 
+        g_position_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+
+        g_normal_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        g_normal_gfx_view: wgpu.GPUTextureView = g_normal_gfx.create_view() 
+        g_normal_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+
+        g_color_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        g_color_gfx_view: wgpu.GPUTextureView = g_color_gfx.create_view() 
+        g_color_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+
         fxaa_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
             size=[self.render_size[0], self.render_size[1], 1],
@@ -30,7 +66,7 @@ class InitialPass(RenderSystem):
         fxaa_gfx_view: wgpu.GPUTextureView = fxaa_gfx.create_view() 
         fxaa_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
 
-        mesh_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+        world_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
             size=[self.render_size[0], self.render_size[1], 1],
             mip_level_count=1,
@@ -39,14 +75,14 @@ class InitialPass(RenderSystem):
             format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
-        mesh_gfx_view: wgpu.GPUTextureView = mesh_gfx.create_view() 
-        mesh_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
+        world_gfx_view: wgpu.GPUTextureView = world_gfx.create_view() 
+        world_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
             min_filter=wgpu.FilterMode.linear,
             mag_filter=wgpu.FilterMode.linear,
             mipmap_filter=wgpu.FilterMode.linear
         )
 
-        mesh_depth: wgpu.GPUTexture = GpuController().device.create_texture(
+        world_depth: wgpu.GPUTexture = GpuController().device.create_texture(
             label="canvas_depth_texture",
             size=[self.render_size[0], self.render_size[1], 1],
             mip_level_count=1,
@@ -55,7 +91,7 @@ class InitialPass(RenderSystem):
             format=wgpu.TextureFormat.depth32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
-        mesh_depth_view: wgpu.GPUTextureView = mesh_depth.create_view(
+        world_depth_view: wgpu.GPUTextureView = world_depth.create_view(
             label="canvas_depth_texture_view",
             format=wgpu.TextureFormat.depth32float,
             dimension="2d",
@@ -65,7 +101,7 @@ class InitialPass(RenderSystem):
             base_array_layer=0,
             array_layer_count=1,
         ) 
-        mesh_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+        world_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
        
         shadow_gfx: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
@@ -109,17 +145,38 @@ class InitialPass(RenderSystem):
             width=self.render_size[0],
             height=self.render_size[1]
         ))
-        TextureLib().append_texture(name="mesh_gfx", texture=Texture(
-            texture=mesh_gfx,
-            view=mesh_gfx_view,
-            sampler=mesh_gfx_sampler,
+        TextureLib().append_texture(name="g_position_gfx", texture=Texture(
+            texture=g_position_gfx,
+            view=g_position_gfx_view,
+            sampler=g_position_gfx_sampler,
             width=self.render_size[0],
             height=self.render_size[1]
         )) 
-        TextureLib().append_texture(name="mesh_depth", texture=Texture(
-            texture=mesh_depth,
-            view=mesh_depth_view,
-            sampler=mesh_depth_sampler,
+        TextureLib().append_texture(name="g_normal_gfx", texture=Texture(
+            texture=g_normal_gfx,
+            view=g_normal_gfx_view,
+            sampler=g_normal_gfx_sampler,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        ))
+        TextureLib().append_texture(name="g_color_gfx", texture=Texture(
+            texture=g_color_gfx,
+            view=g_color_gfx_view,
+            sampler=g_color_gfx_sampler,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        ))
+        TextureLib().append_texture(name="world_gfx", texture=Texture(
+            texture=world_gfx,
+            view=world_gfx_view,
+            sampler=world_gfx_sampler,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        )) 
+        TextureLib().append_texture(name="world_depth", texture=Texture(
+            texture=world_depth,
+            view=world_depth_view,
+            sampler=world_depth_sampler,
             width=self.render_size[0],
             height=self.render_size[1]
         ))  
@@ -163,7 +220,43 @@ class InitialPass(RenderSystem):
         fxaa_gfx_view: wgpu.GPUTextureView = fxaa_gfx.create_view() 
         fxaa_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
 
-        mesh_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+        g_position_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        g_position_gfx_view: wgpu.GPUTextureView = g_position_gfx.create_view() 
+        g_position_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+
+        g_normal_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        g_normal_gfx_view: wgpu.GPUTextureView = g_normal_gfx.create_view() 
+        g_normal_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+
+        g_color_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        g_color_gfx_view: wgpu.GPUTextureView = g_color_gfx.create_view() 
+        g_color_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler()
+
+        world_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
             size=[self.render_size[0], self.render_size[1], 1],
             mip_level_count=1,
@@ -172,14 +265,14 @@ class InitialPass(RenderSystem):
             format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
-        mesh_gfx_view: wgpu.GPUTextureView = mesh_gfx.create_view() 
-        mesh_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
+        world_gfx_view: wgpu.GPUTextureView = world_gfx.create_view() 
+        world_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
             min_filter=wgpu.FilterMode.linear,
             mag_filter=wgpu.FilterMode.linear,
             mipmap_filter=wgpu.FilterMode.linear
         )
 
-        mesh_depth: wgpu.GPUTexture = GpuController().device.create_texture(
+        world_depth: wgpu.GPUTexture = GpuController().device.create_texture(
             label="canvas_depth_texture",
             size=[self.render_size[0], self.render_size[1], 1],
             mip_level_count=1,
@@ -188,7 +281,7 @@ class InitialPass(RenderSystem):
             format=wgpu.TextureFormat.depth32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
-        mesh_depth_view: wgpu.GPUTextureView = mesh_depth.create_view(
+        world_depth_view: wgpu.GPUTextureView = world_depth.create_view(
             label="canvas_depth_texture_view",
             format=wgpu.TextureFormat.depth32float,
             dimension="2d",
@@ -198,7 +291,7 @@ class InitialPass(RenderSystem):
             base_array_layer=0,
             array_layer_count=1,
         ) 
-        mesh_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler() 
+        world_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler() 
 
         TextureLib().append_texture(name="fxaa_gfx", texture=Texture(
             texture=fxaa_gfx,
@@ -207,17 +300,38 @@ class InitialPass(RenderSystem):
             width=self.render_size[0],
             height=self.render_size[1]
         ))
-        TextureLib().append_texture(name="mesh_gfx", texture=Texture(
-            texture=mesh_gfx,
-            view=mesh_gfx_view,
-            sampler=mesh_gfx_sampler, 
+        TextureLib().append_texture(name="g_position_gfx", texture=Texture(
+            texture=g_position_gfx,
+            view=g_position_gfx_view,
+            sampler=g_position_gfx_sampler,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        )) 
+        TextureLib().append_texture(name="g_normal_gfx", texture=Texture(
+            texture=g_normal_gfx,
+            view=g_normal_gfx_view,
+            sampler=g_normal_gfx_sampler,
             width=self.render_size[0],
             height=self.render_size[1]
         ))
-        TextureLib().append_texture(name="mesh_depth", texture=Texture(
-            texture=mesh_depth,
-            view=mesh_depth_view,
-            sampler=mesh_depth_sampler, 
+        TextureLib().append_texture(name="g_color_gfx", texture=Texture(
+            texture=g_color_gfx,
+            view=g_color_gfx_view,
+            sampler=g_color_gfx_sampler,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        ))
+        TextureLib().append_texture(name="world_gfx", texture=Texture(
+            texture=world_gfx,
+            view=world_gfx_view,
+            sampler=world_gfx_sampler, 
+            width=self.render_size[0],
+            height=self.render_size[1]
+        ))
+        TextureLib().append_texture(name="world_depth", texture=Texture(
+            texture=world_depth,
+            view=world_depth_view,
+            sampler=world_depth_sampler, 
             width=self.render_size[0],
             height=self.render_size[1]
         )) 

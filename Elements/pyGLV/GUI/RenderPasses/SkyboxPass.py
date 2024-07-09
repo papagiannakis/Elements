@@ -138,7 +138,7 @@ class SkyboxPass(RenderSystem):
             },
             depth_stencil={ 
                 "format": wgpu.TextureFormat.depth32float,
-                "depth_write_enabled": True,
+                "depth_write_enabled": False,
                 "depth_compare": wgpu.CompareFunction.less_equal,
             },            
             multisample=None,

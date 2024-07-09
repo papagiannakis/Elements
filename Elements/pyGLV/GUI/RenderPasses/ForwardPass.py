@@ -9,9 +9,9 @@ from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wpgu_scene import Scene
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib
 
-class MeshRenderPass(RenderSystem):
+class ForwardRenderPass(RenderSystem):
 
-    def make_bind_group(self, shader:ShaderComponent):
+    def make_bind_group(self, shader:ForwardShaderComponent):
         bind_groups_entries = [[]]
 
         for name in shader.uniform_buffers.keys(): 
@@ -55,7 +55,7 @@ class MeshRenderPass(RenderSystem):
                 GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
             )
 
-    def make_pipeline(self, material:MaterialComponent, shader:ShaderComponent):   
+    def make_pipeline(self, material:MaterialComponent, shader:ForwardShaderComponent):   
         material.pipeline = GpuController().device.create_render_pipeline(
             layout=shader.pipeline_layout,
             vertex={
@@ -72,7 +72,7 @@ class MeshRenderPass(RenderSystem):
                 "targets": [
                     {
                         "format": wgpu.TextureFormat.rgba8unorm,
-                        "blend": material.color_blend
+                        "blend": material.color_blend 
                     }
                 ]
             }
@@ -84,7 +84,7 @@ class MeshRenderPass(RenderSystem):
         assert_that(
             (type(mesh) == MeshComponent) and
             (type(material) == MaterialComponent) and
-            (type(shader) == ShaderComponent)
+            (type(shader) == ForwardShaderComponent)
         ).is_true()
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):   
@@ -93,7 +93,7 @@ class MeshRenderPass(RenderSystem):
         assert_that(
             (type(mesh) == MeshComponent) and
             (type(material) == MaterialComponent) and
-            (type(shader) == ShaderComponent)
+            (type(shader) == ForwardShaderComponent)
         ).is_true() 
 
         light_link: LightAffectionComponent = Scene().get_component(entity, LightAffectionComponent) 

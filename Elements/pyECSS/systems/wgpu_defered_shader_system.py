@@ -2,16 +2,56 @@ from __future__ import annotations
 
 from Elements.pyECSS.wgpu_system import System 
 from Elements.pyECSS.wgpu_entity import Entity
-from Elements.pyECSS.wgpu_components import Component 
+from Elements.pyECSS.wgpu_components import * 
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController 
 from Elements.pyGLV.GL.wgpu_shader_types import *
 
 import glm  
 import re 
 import wgpu 
-import sys
+import sys  
+from assertpy import assert_that
 
-class ShderSystem(System): 
+VERTEX_SHADER_CODE = """ 
+struct VertexOutput { 
+    @builtin(position) Position: vec4<f32>,
+    @location(0) uv: vec2<f32>
+}
+
+@vertex
+fn vs_main(
+    @builtin(vertex_index) vertex_index: u32
+) -> VertexOutput {  
+
+    var POSITIONS = array<vec2<f32>, 6>(
+        vec2<f32>(-1.0, -1.0), // bottom-left
+        vec2<f32>( 1.0, -1.0), // bottom-right
+        vec2<f32>(-1.0,  1.0), // top-left
+        vec2<f32>(-1.0,  1.0), // top-left
+        vec2<f32>( 1.0, -1.0), // bottom-right
+        vec2<f32>( 1.0,  1.0)  // top-right
+    );
+
+    var UVS = array<vec2<f32>, 6>(
+        vec2<f32>(0.0, 1.0), // bottom-left
+        vec2<f32>(1.0, 1.0), // bottom-right
+        vec2<f32>(0.0, 0.0), // top-left
+        vec2<f32>(0.0, 0.0), // top-left
+        vec2<f32>(1.0, 1.0), // bottom-right
+        vec2<f32>(1.0, 0.0)  // top-right
+    );
+
+    var out: VertexOutput;
+    let pos = POSITIONS[vertex_index];
+    let vUV = UVS[vertex_index]; 
+
+    out.uv = vUV;
+    out.Position = vec4f(pos, 0.0, 1.0);
+    return out;
+} 
+""" 
+
+class ForwardShaderSystem(System): 
 
     def ShaderLoader(self, file):
         try:
@@ -21,20 +61,6 @@ class ShderSystem(System):
             sys.exit()
         with f:
             return f.read() 
-
-
-    def create_attribute_layout(self, attr:dict): 
-        return  {
-                    "array_stride": SHADER_ATTRIBUTE_TYPES[attr['type']],
-                    "step_mode": wgpu.VertexStepMode.vertex,
-                    "attributes": [
-                        {
-                            "format": SHADER_ATTRIBUTE_STRIDE[attr['type']],
-                            "offset": 0,
-                            "shader_location": attr['slot'],
-                        },
-                    ],
-                } 
 
     # add the length of each member
     def parse_buffer(self, buffer_type: str, shader_code):
@@ -74,36 +100,6 @@ class ShderSystem(System):
 
         return buffers
 
-   # make the attribute layout  
-    def parse_attributes(self, shader_code): 
-        # Regular expression to match the VertexInput struct
-        struct_pattern = r'struct\s+VertexInput\s*\{([^}]*)\}'
-
-        attributes = {} 
-        attribute_layout = []
-
-        # Find the VertexInput struct
-        struct_match = re.search(struct_pattern, shader_code)
-        if struct_match: 
-            struct_body = struct_match.group(1)
-
-            # Regular expression to match attributes ignoring @location
-            attribute_pattern = r'@location\(\d+\)\s+(\w+)\s*:\s*(\w+(?:<\w+>)?);?'
-
-            # Find all matches in the struct body
-            matches = re.findall(attribute_pattern, struct_body)
-
-            # Print the results 
-            attr_slot = 0;
-            for name, attr_type in matches: 
-                attributes.update({name: {'type': attr_type, 'slot': attr_slot}})  
-
-                layout = self.create_attribute_layout({'type': attr_type, 'slot': attr_slot})
-                attribute_layout.append(layout) 
-                attr_slot += 1 
-
-        return attributes, attribute_layout 
-    
     def make_gpu_uniform_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
         for key, buffer in buffer_map.items(): 
             gpu_buffer_map.update({
@@ -121,15 +117,17 @@ class ShderSystem(System):
             })
  
     def on_create(self, entity: Entity, components: Component | list[Component]): 
-        shader = components
+        shader = components 
 
-        shader.shader_code = self.ShaderLoader(shader.shader_path)
-        shader.shader_module = GpuController().device.create_shader_module(code=shader.shader_code)
+        assert_that(type(shader) == DeferedShaderComponent).is_true()
 
-        shader.uniform_buffers = self.parse_buffer('<uniform>', shader.shader_code) 
-        shader.read_only_storage_buffers = self.parse_buffer('<storage, read>', shader.shader_code) 
-        shader.other_uniform = self.parse_buffer('', shader.shader_code) 
-        shader.attributes, shader.attributes_layout = self.parse_attributes(shader.shader_code) 
+        shader.shader_fragment_code = self.ShaderLoader(shader.shader_fragment_code)
+        shader.shader_fragment_module = GpuController().device.create_shader_module(code=shader.shader_fragment_code) 
+        shader.shader_vertex_module = GpuController().device.create_shader_module(code=VERTEX_SHADER_CODE)
+
+        shader.uniform_buffers = self.parse_buffer('<uniform>', shader.shader_fragment_code) 
+        shader.read_only_storage_buffers = self.parse_buffer('<storage, read>', shader.shader_fragment_code) 
+        shader.other_uniform = self.parse_buffer('', shader.shader_fragment_code) 
 
         self.make_gpu_uniform_buffers(shader.uniform_gpu_buffers, shader.uniform_buffers)
         self.make_gpu_read_only_storage_buffers(shader.read_only_storage_gpu_buffers, shader.read_only_storage_buffers)
