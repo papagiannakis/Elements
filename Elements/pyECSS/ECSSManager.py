@@ -238,9 +238,9 @@ class ECSSManager():
         Changes the parent of the entity given as a parameter,
         and uses the other entity from parameters as the new parent
 
-        :param entity_parent: [description]
+        :param entity_parent: Entity that will be the new parent
         :type entity_parent: Entity
-        :param entity_child: [description]
+        :param entity_child: Entity of which the parent will be set to the first parameter
         :type entity_child: Entity
         """
 
@@ -259,7 +259,7 @@ class ECSSManager():
         """
         Returns the entity that goes by the given name, if not found it returns None
 
-        :param name: [description] 
+        :param name: Name according to which we want to find the entity
         :type name: str
         """
         for entity in self.entities:
@@ -271,7 +271,7 @@ class ECSSManager():
         """
         Returns the component that goes by the given name, if not found it returns None
 
-        :param name: [description] 
+        :param name: Name according to which we want to find the component
         :type name: str
         """
         for comp in self.components:
@@ -287,29 +287,29 @@ class ECSSManager():
         """
         Updates the values needed for the display of the entities.
 
-        :param entity: [description]
+        :param entity: Entity of which the uniforms will be updated
         :type entity: Entity
-        :param winWidth: [description]
+        :param winWidth: Window width
         :type winWidth: Integer
-        :param winHeight: [description]
+        :param winHeight: Window height 
         :type winHeight: Integer
-        :param Phong: [description]
+        :param Phong: Flag denoting the use of Bling-Phong shaders
         :type Phong: Boolean
-        :param Lambientcolor: [description]
+        :param Lambientcolor: Light Ambient Color
         :type Lambientcolor: Array of Float
-        :param Lambientstr: [description]
+        :param Lambientstr: Light Ambient String
         :type Lambientstr: Float
-        :param LviewPos: [description]
+        :param LviewPos: Light View Position
         :type LviewPos: Array of Float
-        :param Lposition: [description]
+        :param Lposition: Light Source Position
         :type Lposition: Array of Float
-        :param Lcolor: [description]
+        :param Lcolor: Light Color
         :type Lcolor: Array of Float
-        :param Lintensity: [description]
+        :param Lintensity: Light Intensity
         :type Lintensity: Float
-        :param Mshininess: [description]
+        :param Mshininess: Material Shininess
         :type Mshininess: Float
-        :param Mcolor: [description]
+        :param Mcolor: Material Color
         :type Mcolor:
         """
 
