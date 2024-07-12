@@ -11,7 +11,6 @@ from Elements.pyGLV.GL.wgpu_texture import TextureLib, Texture
 
 BLIT_SHADER_CODE = """  
 @group(0) @binding(0) var tex: texture_2d<f32>;
-@group(0) @binding(1) var samp: sampler; 
 
 struct VertexOutput { 
     @builtin(position) Position: vec4<f32>,
@@ -44,8 +43,11 @@ fn vs_main(@builtin(vertex_index) vertex_index: u32) -> VertexOutput {
 } 
 
 @fragment
-fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-    return textureSample(tex, samp, in.fragCoord);
+fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> { 
+    var texture_size = textureDimensions(tex, 0); 
+    var texture_coord = in.fragCoord * vec2f(texture_size); 
+    var coord = vec2u(u32(texture_coord.x), u32(texture_coord.y));
+    return textureLoad(tex, coord, 0);
 }
 """
 
@@ -66,13 +68,6 @@ class BlitSurafacePass(RenderSystem):
                 },
             }
         )
-        bind_groups_layout_entries[0].append(
-            {
-                "binding": 1,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "sampler": {"type": wgpu.SamplerBindingType.filtering},
-            }
-        ) 
         
         self.bind_group_layouts = [] 
         for layout_entries in bind_groups_layout_entries:
@@ -91,13 +86,6 @@ class BlitSurafacePass(RenderSystem):
                 "resource": TextureLib().get_texture(name="fxaa_gfx").view
             } 
         ) 
-
-        bind_groups_entries[0].append(
-            {
-                "binding": 1, 
-                "resource": TextureLib().get_texture(name="fxaa_gfx").sampler
-            }
-        )
 
         # Create the wgou binding objects
         bind_groups = []

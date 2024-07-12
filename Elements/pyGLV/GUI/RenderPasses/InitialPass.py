@@ -24,15 +24,10 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
+            format=wgpu.TextureFormat.rgba32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_position_gfx_view: wgpu.GPUTextureView = g_position_gfx.create_view() 
-        g_position_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            min_filter=wgpu.FilterMode.linear,
-            mag_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.nearest
-        )
 
         g_normal_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -40,15 +35,10 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
+            format=wgpu.TextureFormat.rgba32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_normal_gfx_view: wgpu.GPUTextureView = g_normal_gfx.create_view() 
-        g_normal_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            min_filter=wgpu.FilterMode.linear,
-            mag_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.nearest
-        )
 
         g_color_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -56,15 +46,10 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
+            format=wgpu.TextureFormat.rgba32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_color_gfx_view: wgpu.GPUTextureView = g_color_gfx.create_view() 
-        g_color_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            min_filter=wgpu.FilterMode.linear,
-            mag_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.nearest
-        )
 
         fxaa_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -117,7 +102,7 @@ class InitialPass(RenderSystem):
        
         shadow_gfx: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
-            size=[2048, 2048, 1],
+            size=[1028, 1028, 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
@@ -129,7 +114,7 @@ class InitialPass(RenderSystem):
         
         shadow_depth: wgpu.GPUTexture = GpuController().device.create_texture(
             label="shadow_texture",
-            size=[2048, 2048, 1],
+            size=[1028, 1028, 1],
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
@@ -160,21 +145,21 @@ class InitialPass(RenderSystem):
         TextureLib().append_texture(name="g_position_gfx", texture=Texture(
             texture=g_position_gfx,
             view=g_position_gfx_view,
-            sampler=g_position_gfx_sampler,
+            sampler=None,
             width=self.render_size[0],
             height=self.render_size[1]
         )) 
         TextureLib().append_texture(name="g_normal_gfx", texture=Texture(
             texture=g_normal_gfx,
             view=g_normal_gfx_view,
-            sampler=g_normal_gfx_sampler,
+            sampler=None,
             width=self.render_size[0],
             height=self.render_size[1]
         ))
         TextureLib().append_texture(name="g_color_gfx", texture=Texture(
             texture=g_color_gfx,
             view=g_color_gfx_view,
-            sampler=g_color_gfx_sampler,
+            sampler=None,
             width=self.render_size[0],
             height=self.render_size[1]
         ))
@@ -196,15 +181,15 @@ class InitialPass(RenderSystem):
             texture=shadow_gfx, 
             view=shadow_gfx_view,
             sampler=shadow_gfx_sampler,
-            width=2048,
-            height=2048
+            width=1028,
+            height=1028
         ))
         TextureLib().append_texture(name="shadow_depth", texture=Texture(
             texture=shadow_depth, 
             view=shadow_depth_view,
             sampler=shadow_depth_sampler, 
-            width=2048,
-            height=2048
+            width=1028,
+            height=1028
         ))
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
@@ -238,15 +223,10 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
+            format=wgpu.TextureFormat.rgba32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_position_gfx_view: wgpu.GPUTextureView = g_position_gfx.create_view() 
-        g_position_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            min_filter=wgpu.FilterMode.linear,
-            mag_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.nearest
-        )
 
         g_normal_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -254,15 +234,10 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
+            format=wgpu.TextureFormat.rgba32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_normal_gfx_view: wgpu.GPUTextureView = g_normal_gfx.create_view() 
-        g_normal_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            min_filter=wgpu.FilterMode.linear,
-            mag_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.nearest
-        )
 
         g_color_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -270,15 +245,10 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
+            format=wgpu.TextureFormat.rgba32float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_color_gfx_view: wgpu.GPUTextureView = g_color_gfx.create_view() 
-        g_color_gfx_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            min_filter=wgpu.FilterMode.linear,
-            mag_filter=wgpu.FilterMode.linear,
-            mipmap_filter=wgpu.FilterMode.nearest
-        )
 
         world_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -327,21 +297,21 @@ class InitialPass(RenderSystem):
         TextureLib().append_texture(name="g_position_gfx", texture=Texture(
             texture=g_position_gfx,
             view=g_position_gfx_view,
-            sampler=g_position_gfx_sampler,
+            sampler=None,
             width=self.render_size[0],
             height=self.render_size[1]
         )) 
         TextureLib().append_texture(name="g_normal_gfx", texture=Texture(
             texture=g_normal_gfx,
             view=g_normal_gfx_view,
-            sampler=g_normal_gfx_sampler,
+            sampler=None,
             width=self.render_size[0],
             height=self.render_size[1]
         ))
         TextureLib().append_texture(name="g_color_gfx", texture=Texture(
             texture=g_color_gfx,
             view=g_color_gfx_view,
-            sampler=g_color_gfx_sampler,
+            sampler=None,
             width=self.render_size[0],
             height=self.render_size[1]
         ))

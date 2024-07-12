@@ -99,7 +99,18 @@ class GpuController:
         shader_component,
         texture_name, 
         sampler_name,
-        texture
-    ): 
-        shader_component.other_uniform[texture_name]['other_resource'] = texture.view
-        shader_component.other_uniform[sampler_name]['other_resource'] = texture.sampler
+        texture,
+        texture_only=False,
+        sampler_only=False
+    ):  
+        
+        if texture_only is True:   
+            assert_that(texture.view).is_not_none()
+            shader_component.other_uniform[texture_name]['other_resource'] = texture.view 
+        elif sampler_only is True:
+            assert_that(texture.sampler).is_not_none()
+            shader_component.other_uniform[sampler_name]['other_resource'] = texture.sampler
+        else:
+            assert_that(texture.view and texture.sampler).is_not_none()
+            shader_component.other_uniform[texture_name]['other_resource'] = texture.view
+            shader_component.other_uniform[sampler_name]['other_resource'] = texture.sampler

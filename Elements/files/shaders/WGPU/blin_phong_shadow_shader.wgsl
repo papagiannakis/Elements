@@ -107,7 +107,7 @@ fn ShadowCalculation(
     let near_far = ubuffer.near_far;
 
     var visibility = 0.0;
-    let oneOverShadowDepthTextureSize = 1.0 / 2048.0;
+    let oneOverShadowDepthTextureSize = 1.0 / f32(textureDimensions(shadow_texture, 0).x);
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
         let offset = vec2f(vec2(x, y)) * oneOverShadowDepthTextureSize;

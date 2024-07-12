@@ -100,19 +100,22 @@ class DeferedLightPass(RenderSystem):
             shader_component=shader,
             sampler_name="g_position_sampler",
             texture_name="g_position_texture",
-            texture=TextureLib().get_texture(name="g_position_gfx")
+            texture=TextureLib().get_texture(name="g_position_gfx"),
+            texture_only=True
         )
         GpuController().set_texture_sampler(
             shader_component=shader,
             sampler_name="g_normal_sampler",
             texture_name="g_normal_texture",
-            texture=TextureLib().get_texture(name="g_normal_gfx")
+            texture=TextureLib().get_texture(name="g_normal_gfx"),
+            texture_only=True
         )
         GpuController().set_texture_sampler(
             shader_component=shader,
             sampler_name="g_color_sampler",
             texture_name="g_color_texture",
-            texture=TextureLib().get_texture(name="g_color_gfx")
+            texture=TextureLib().get_texture(name="g_color_gfx"),
+            texture_only=True
         )
 
         light_link: LightAffectionComponent = Scene().get_component(entity, LightAffectionComponent) 

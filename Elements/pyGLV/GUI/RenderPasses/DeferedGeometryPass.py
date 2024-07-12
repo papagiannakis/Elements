@@ -277,15 +277,15 @@ class DeferedGeometryPass(RenderSystem):
                 "entry_point": "fs_main",
                 "targets": [
                     {
-                        "format": wgpu.TextureFormat.rgba16float,
+                        "format": wgpu.TextureFormat.rgba32float,
                         "blend": None
                     },
                     {
-                        "format": wgpu.TextureFormat.rgba16float,
+                        "format": wgpu.TextureFormat.rgba32float,
                         "blend": None
                     },
                     {
-                        "format": wgpu.TextureFormat.rgba16float,
+                        "format": wgpu.TextureFormat.rgba32float,
                         "blend": None
                     }
                 ],

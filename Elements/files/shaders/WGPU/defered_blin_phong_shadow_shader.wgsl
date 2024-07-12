@@ -11,13 +11,10 @@ struct uniforms {
 
 @group(0) @binding(0) var<uniform> ubuffer:     uniforms;
 @group(1) @binding(0) var g_position_texture:   texture_2d<f32>;
-@group(1) @binding(1) var g_position_sampler:   sampler;
-@group(1) @binding(2) var g_normal_texture:     texture_2d<f32>;
-@group(1) @binding(3) var g_normal_sampler:     sampler;
-@group(1) @binding(4) var g_color_texture:      texture_2d<f32>;
-@group(1) @binding(5) var g_color_sampler:      sampler;
-@group(1) @binding(6) var shadow_texture:       texture_depth_2d;
-@group(1) @binding(7) var shadow_sampler:       sampler;
+@group(1) @binding(1) var g_normal_texture:     texture_2d<f32>;
+@group(1) @binding(2) var g_color_texture:      texture_2d<f32>;
+@group(1) @binding(3) var shadow_texture:       texture_depth_2d;
+@group(1) @binding(4) var shadow_sampler:       sampler;
 
 struct VertexOutput { 
     @builtin(position) Position: vec4<f32>,
@@ -103,7 +100,7 @@ fn ShadowCalculation(
     let near_far = ubuffer.near_far;
 
     var visibility = 0.0;
-    let oneOverShadowDepthTextureSize = 1.0 / 2048.0;
+    let oneOverShadowDepthTextureSize = 1.0 / f32(textureDimensions(shadow_texture, 0).x);
     for (var y = -1; y <= 1; y++) {
         for (var x = -1; x <= 1; x++) {
         let offset = vec2f(vec2(x, y)) * oneOverShadowDepthTextureSize;
@@ -126,7 +123,17 @@ fn ShadowCalculation(
 fn fs_main(
     in: VertexOutput
 ) -> FragOutput {
-    var uv = in.uv;
+    var pos_size = textureDimensions(g_position_texture, 0); 
+    var pos_coord = in.uv * vec2f(pos_size); 
+    var pos_texel = vec2u(u32(pos_coord.x), u32(pos_coord.y)); 
+
+    var norm_size = textureDimensions(g_normal_texture, 0); 
+    var norm_coord = in.uv * vec2f(norm_size); 
+    var norm_texel = vec2u(u32(norm_coord.x), u32(norm_coord.y)); 
+
+    var color_size = textureDimensions(g_color_texture, 0); 
+    var color_coord = in.uv * vec2f(color_size); 
+    var color_texel = vec2u(u32(color_coord.x), u32(color_coord.y));
 
     var model = transpose(ubuffer.model);
     var view = transpose(ubuffer.view); 
@@ -136,9 +143,9 @@ fn fs_main(
     var near = ubuffer.near_far.x;
     var far = ubuffer.near_far.y;
 
-    var frag_pos = textureSample(g_position_texture, g_position_sampler, uv).xyz;
-    var frag_norm = textureSample(g_normal_texture, g_normal_sampler, uv).xyz;
-    var frag_color = textureSample(g_color_texture, g_color_sampler, uv).xyz;
+    var frag_pos = textureLoad(g_position_texture, pos_texel, 0).xyz;
+    var frag_norm = textureLoad(g_normal_texture, norm_texel, 0).xyz;
+    var frag_color = textureLoad(g_color_texture, color_texel, 0).xyz; 
     var frag_pos_from_light = light_proj * light_view * vec4f(frag_pos, 1.0);
 
     var out: FragOutput;
@@ -163,7 +170,7 @@ fn fs_main(
     let shadow = ShadowCalculation(frag_pos_from_light, bias);
     let lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * frag_color;  
 
-    out.depth = textureSample(g_normal_texture, g_normal_sampler, uv).a; 
+    out.depth = textureLoad(g_normal_texture, norm_texel, 0).a; 
     out.color = vec4f(lighting, 1.0);
     return out;
 }
