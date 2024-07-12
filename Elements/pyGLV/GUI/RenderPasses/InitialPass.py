@@ -24,7 +24,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba8unorm,
+            format=wgpu.TextureFormat.rgba16float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_position_gfx_view: wgpu.GPUTextureView = g_position_gfx.create_view() 
@@ -40,7 +40,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba8unorm,
+            format=wgpu.TextureFormat.rgba16float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_normal_gfx_view: wgpu.GPUTextureView = g_normal_gfx.create_view() 
@@ -56,7 +56,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba8unorm,
+            format=wgpu.TextureFormat.rgba16float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_color_gfx_view: wgpu.GPUTextureView = g_color_gfx.create_view() 
@@ -238,7 +238,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba8unorm,
+            format=wgpu.TextureFormat.rgba16float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_position_gfx_view: wgpu.GPUTextureView = g_position_gfx.create_view() 
@@ -254,7 +254,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba8unorm,
+            format=wgpu.TextureFormat.rgba16float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_normal_gfx_view: wgpu.GPUTextureView = g_normal_gfx.create_view() 
@@ -270,7 +270,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba8unorm,
+            format=wgpu.TextureFormat.rgba16float,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
         ) 
         g_color_gfx_view: wgpu.GPUTextureView = g_color_gfx.create_view() 
