@@ -30,7 +30,7 @@ from OpenGL.GL import GL_LINES
 from Elements.utils.Shortcuts import displayGUI_text
 
 
-class TestScene(unittest.TestCase):
+class TestIMGUIBundle(unittest.TestCase):
     """Main body of Scene Unit Test class
 
     """
@@ -62,14 +62,14 @@ class TestScene(unittest.TestCase):
         
         # Scenegraph with Entities, Components
         self.rootEntity = self.scene.world.createEntity(Entity(name="RooT"))
-        self.entityCam1 = self.scene.world.createEntity(Entity(name="entityCam1"))
-        self.scene.world.addEntityChild(self.rootEntity, self.entityCam1)
-        self.trans1 = self.scene.world.addComponent(self.entityCam1, BasicTransform(name="trans1", trs=util.identity()))
+        # self.entityCam1 = self.scene.world.createEntity(Entity(name="entityCam1"))
+        # self.scene.world.addEntityChild(self.rootEntity, self.entityCam1)
+        # self.trans1 = self.scene.world.addComponent(self.entityCam1, BasicTransform(name="trans1", trs=util.identity()))
         
-        self.entityCam2 = self.scene.world.createEntity(Entity(name="entityCam2"))
-        self.scene.world.addEntityChild(self.entityCam1, self.entityCam2)
-        self.trans2 = self.scene.world.addComponent(self.entityCam2, BasicTransform(name="trans2", trs=util.identity()))
-        self.orthoCam = self.scene.world.addComponent(self.entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
+        # self.entityCam2 = self.scene.world.createEntity(Entity(name="entityCam2"))
+        # self.scene.world.addEntityChild(self.entityCam1, self.entityCam2)
+        # self.trans2 = self.scene.world.addComponent(self.entityCam2, BasicTransform(name="trans2", trs=util.identity()))
+        # self.orthoCam = self.scene.world.addComponent(self.entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
         
         self.node4 = self.scene.world.createEntity(Entity(name="node4"))
         self.scene.world.addEntityChild(self.rootEntity, self.node4)
@@ -184,147 +184,6 @@ class TestScene(unittest.TestCase):
     
         print("TestScene:test_init END".center(100, '-'))
 
-
-    def test_axes(self):
-        """
-        test_axes
-        """
-        print("TestScene:test_axes START".center(100, '-'))
-        
-        model = util.translate(0.0,0.0,0.0)
-        eye = util.vec(0.5, 0.5, 0.5)
-        target = util.vec(0,0,0)
-        up = util.vec(0.0, 1.0, 0.0)
-        view = util.lookat(eye, target, up)
-        
-        projMat = util.ortho(-5.0, 5.0, -5.0, 5.0, 0.1, 100.0)
-        
-        mvpMat = projMat @ view @ model 
-        
-        self.shaderDec_axes = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-        self.shaderDec_axes.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-        self.axes_mesh.vertex_attributes.append(self.vertexAxes) 
-        self.axes_mesh.vertex_attributes.append(self.colorAxes)
-        self.axes_mesh.vertex_index.append(self.indexAxes)
-        self.axes_vArray = self.scene.world.addComponent(self.axes, VertexArray(primitive=GL_LINES)) # note the primitive change
-
-        running = True
-        # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_axes", customImGUIdecorator = IMGUIecssDecoratorBundle);
-        self.assertIsInstance(self.scene.gContext, IMGUIecssDecoratorBundle);
-
-        self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
-        
-        message = "This should be a Scene with simple colored axes. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
-
-        while running:
-            running = self.scene.render()
-            displayGUI_text(message)
-            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            self.scene.render_post()
-            
-        self.scene.shutdown()
-        
-        print("TestScene:test_axes END".center(100, '-'))
-
-
-    def test_renderTriangle(self):
-        """
-        First time to test a RenderSystem in a Scene with Shader and VertexArray components
-        """
-        print("TestScene:test_render START".center(100, '-'))
-        
-        # decorated components and systems with sample, default pass-through shader
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, Shader())
-        # attach that simple triangle in a RenderMesh
-        self.mesh4.vertex_attributes.append(self.vertexData) 
-        self.mesh4.vertex_attributes.append(self.colorVertexData)
-        self.mesh4.vertex_index.append(self.index)
-        self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-
-        
-        ## ADD AXES TO THIS MESH ##
-        self.axes = self.scene.world.createEntity(Entity(name="axes"))
-        self.scene.world.addEntityChild(self.rootEntity, self.axes)
-        self.axes_trans = self.scene.world.addComponent(self.axes, BasicTransform(name="axes_trans", trs=util.identity()))
-        self.axes_mesh = self.scene.world.addComponent(self.axes, RenderMesh(name="axes_mesh"))
-        self.shaderDec_axes = self.scene.world.addComponent(self.axes, Shader())
-        self.axes_mesh.vertex_attributes.append(self.vertexAxes) 
-        self.axes_mesh.vertex_attributes.append(self.colorAxes)
-        self.axes_mesh.vertex_index.append(self.indexAxes)
-        self.axes_vArray = self.scene.world.addComponent(self.axes, VertexArray(primitive=GL_LINES)) # note the primitive change
-
-
-        # MAIN RENDERING LOOP
-        running = True
-        
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements test_renderTriangle")
-        self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
-        
-        message = "This should be a Scene with a simple colored triangle. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
-        while running:
-            running = self.scene.render()
-            displayGUI_text(message)
-            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            self.scene.render_post()
-            
-        self.scene.shutdown()
-        
-        print("TestScene:test_renderTriangle END".center(100, '-')) 
-
-
-    def test_renderCube(self):
-        """
-        First time to test a RenderSystem in a Scene with Shader and VertexArray components
-        """
-        print("TestScene:test_renderCube START".center(100, '-'))
-        
-        model = util.translate(0.0,0.0,0.5)
-        eye = util.vec(1.0, 1.0, 1.0)
-        target = util.vec(0,0,0)
-        up = util.vec(0.0, 1.0, 0.0)
-        view = util.lookat(eye, target, up)
-        
-        # projMat = util.perspective(120.0, 1.33, 0.1, 100.0)
-        projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -0.5, 10.0)
-
-        mvpMat =  projMat @ view @ model
-        
-        ## ADD CUBE ##
-        # attach a simple cube in a RenderMesh so that VertexArray can pick it up
-        self.mesh4.vertex_attributes.append(self.vertexCube)
-        self.mesh4.vertex_attributes.append(self.colorCube)
-        self.mesh4.vertex_index.append(self.indexCube)
-        self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-        # decorated components and systems with sample, default pass-through shader with uniform MVP
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-        self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-        
-        self.scene.world.print()
-
-        
-        running = True
-        # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
-        
-        # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
-        # needs an active GL context
-        self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
-        
-        message = "This should be a Scene with a simple colored cube. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
-
-        while running:
-            running = self.scene.render()
-            displayGUI_text(message)
-            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            self.scene.render_post()
-            
-        self.scene.shutdown()
-        
-        print("TestScene:test_renderCube END".center(100, '-'))
-
     def test_addEntity(self):
         """
         Add Entity after the example has been initiated
@@ -421,7 +280,7 @@ class TestScene(unittest.TestCase):
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene")
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
@@ -446,7 +305,7 @@ class TestScene(unittest.TestCase):
 
     def test_cameraMovement(self):
         """
-        Moving animation on set intervals to test camera and gizmo movement
+        Moving animation on set intervals to test gizmo movement
         """
         print("TestScene:test_cameraMovement START".center(100, '-'))
         
@@ -481,7 +340,7 @@ class TestScene(unittest.TestCase):
         # needs an active GL context
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
-        message = "This should be an empty Scene as the cube is removed dynamically after being spawn. \
+        message = "In this example, you should be seeing the camera gizmo move around \
                   \nCamera movement is NOT possible. Hit ESC or close the window to exit."
         cnt = 0;
         currEye = 0;
@@ -492,18 +351,18 @@ class TestScene(unittest.TestCase):
             self.scene.world.update_entity_values(self.scene.world.root, 1024, 768)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             self.scene.render_post()
-            # cnt += 1
-            # if cnt == 30:
-            #     cnt = 0;
-            #     currEye += 1;
-            #     self.scene.gContext._eye = np.array(self.eyes[currEye], np.float32);
-            #     self.scene.gContext._updateCamera.value = np.array(util.lookat(self.scene.gContext._eye, self.scene.gContext._target, self.scene.gContext._up), np.float32)
-
-            #     if self.scene.gContext._wrapeeWindow.eventManager is not None:
-            #         self.scene.gContext.wrapeeWindow.eventManager.notify(self.scene.gContext, self.scene.gContext._updateCamera)
+            cnt += 1
+            if cnt == 50:
+                cnt = 0;
+                currEye += 1;
+                if currEye > (len(self.eyes) - 1):
+                    currEye = 0;
+                self.scene.gContext._eye = np.array(self.eyes[currEye], np.float32);
+                self.scene.gContext.updateCamera();
 
             
         self.scene.shutdown()
         
         print("TestScene:test_cameraMovement END".center(100, '-'))
+
  
