@@ -63,7 +63,7 @@ class BlitSurafacePass(RenderSystem):
                 "binding": 0,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
                 "texture": {  
-                    "sample_type": wgpu.TextureSampleType.float,
+                    "sample_type": wgpu.TextureSampleType.unfilterable_float,
                     "view_dimension": wgpu.TextureViewDimension.d2,
                 },
             }
