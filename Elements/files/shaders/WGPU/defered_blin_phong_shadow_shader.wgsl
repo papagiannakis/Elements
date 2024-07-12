@@ -9,24 +9,20 @@ struct uniforms {
     near_far: vec2f
 };
 
-@group(0) @binding(0) var<uniform> ubuffer: uniforms;
-@group(1) @binding(0) var albedo_texture: texture_2d<f32>;
-@group(1) @binding(1) var albedo_sampler: sampler;
-@group(1) @binding(2) var shadow_texture: texture_depth_2d;
-@group(1) @binding(3) var shadow_sampler: sampler;
+@group(0) @binding(0) var<uniform> ubuffer:     uniforms;
+@group(1) @binding(0) var g_position_texture:   texture_2d<f32>;
+@group(1) @binding(1) var g_position_sampler:   sampler;
+@group(1) @binding(2) var g_normal_texture:     texture_2d<f32>;
+@group(1) @binding(3) var g_normal_sampler:     sampler;
+@group(1) @binding(4) var g_color_texture:      texture_2d<f32>;
+@group(1) @binding(5) var g_color_sampler:      sampler;
+@group(1) @binding(6) var shadow_texture:       texture_depth_2d;
+@group(1) @binding(7) var shadow_sampler:       sampler;
 
-struct VertexInput {
-    @location(0) a_vertices: vec3f, 
-    @location(1) a_uvs: vec2f,
-    @location(2) a_normals: vec3f
+struct VertexOutput { 
+    @builtin(position) Position: vec4<f32>,
+    @location(0) uv: vec2<f32>
 }
-struct VertexOutput {
-    @builtin(position) Position: vec4f, 
-    @location(0) frag_pos_light_space: vec4f,
-    @location(1) frag_pos: vec3f, 
-    @location(2) frag_norm: vec3f,
-    @location(3) uv: vec2f
-};
 struct FragOutput { 
     @builtin(frag_depth) depth: f32,
     @location(0) color: vec4f
@@ -126,63 +122,48 @@ fn ShadowCalculation(
     return visibility;
 }
 
-@vertex
-fn vs_main( 
-    in: VertexInput
-) -> VertexOutput {
-
-    var out: VertexOutput;   
+@fragment
+fn fs_main(
+    in: VertexOutput
+) -> FragOutput {
+    var uv = in.uv;
 
     var model = transpose(ubuffer.model);
     var view = transpose(ubuffer.view); 
     var projection = transpose(ubuffer.projection); 
     var light_view = transpose(ubuffer.light_view);
-    var light_proj = transpose(ubuffer.light_proj);
+    var light_proj = transpose(ubuffer.light_proj); 
+    var near = ubuffer.near_far.x;
+    var far = ubuffer.near_far.y;
 
-    let frag_pos = (model * vec4f(in.a_vertices, 1.0)).xyz;
-    let normal = transpose(inverse_mat3(mat4to3(model))) * in.a_normals;
-    let light_view_proj = light_proj * light_view;
-    let camera_view_proj = projection * view;
-    let pos_from_light = light_view_proj * vec4f(frag_pos, 1.0); 
-    let pos_from_cam = camera_view_proj * vec4f(frag_pos, 1.0);
+    var frag_pos = textureSample(g_position_texture, g_position_sampler, uv).xyz;
+    var frag_norm = textureSample(g_normal_texture, g_normal_sampler, uv).xyz;
+    var frag_color = textureSample(g_color_texture, g_color_sampler, uv).xyz;
+    var frag_pos_from_light = light_proj * light_view * vec4f(frag_pos, 1.0);
 
-    out.Position = pos_from_cam;
-    out.frag_pos = frag_pos;
-    out.frag_norm = normal;  
-    out.uv = in.a_uvs;
-    out.frag_pos_light_space = pos_from_light;
-
-    return out;
-}  
-
-@fragment
-fn fs_main(
-    in: VertexOutput
-) -> FragOutput { 
     var out: FragOutput;
 
-    let color = textureSample(albedo_texture, albedo_sampler, in.uv).rgb;
-    let normal = normalize(in.frag_norm);
+    let normal = normalize(transpose(inverse_mat3(mat4to3(ubuffer.model))) * frag_norm);
     let light_color = vec3f(1.0);
     let light_pos = ubuffer.light_pos; 
     let view_pos = ubuffer.view_pos;
 
     let ambient = 0.2 * light_color;
 
-    let light_dir = normalize(light_pos - in.frag_pos); 
+    let light_dir = normalize(light_pos - frag_pos); 
     let diff = max(dot(light_dir, normal), 0.0); 
     let diffuse = diff * light_color;
 
-    let view_dir = normalize(view_pos - in.frag_pos);
+    let view_dir = normalize(view_pos - frag_pos);
     let hafway_dir = normalize(light_dir + view_dir);
     let spec = pow(max(dot(normal, hafway_dir), 0.0), 64.0);
     let specular = spec * light_color; 
 
     let bias = max(0.0005 * (1.0 - dot(normal, light_dir)), 0.00001);
-    let shadow = ShadowCalculation(in.frag_pos_light_space, bias);
-    let lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;  
+    let shadow = ShadowCalculation(frag_pos_from_light, bias);
+    let lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * frag_color;  
 
-    out.depth = LinearizeDepth(in.Position.z, ubuffer.near_far.x, ubuffer.near_far.y); 
+    out.depth = textureSample(g_normal_texture, g_normal_sampler, uv).a; 
     out.color = vec4f(lighting, 1.0);
     return out;
 }

@@ -20,6 +20,10 @@ struct VSOutput {
   @builtin(position) position: vec4f,
   @location(0) pos: vec4f,
 };
+struct FragOutput { 
+    @builtin(frag_depth) depth: f32,
+    @location(0) color: vec4f
+};
  
 @group(0) @binding(0) var<uniform> uni: Uniforms;
 @group(0) @binding(1) var ourTexture: texture_cube<f32>;
@@ -37,9 +41,14 @@ struct VSOutput {
   return vsOut;
 }
 
-@fragment fn fs_main(vsOut: VSOutput) -> @location(0) vec4f {
+@fragment fn fs_main(vsOut: VSOutput) -> FragOutput {
+  var out: FragOutput;
   let t = transpose(uni.viewDirectionProjectionInverse) * vsOut.pos;
-  return textureSample(ourTexture, ourSampler, normalize(t.xyz / t.w) * vec3f(-1, 1, 1));
+  var color = textureSample(ourTexture, ourSampler, normalize(t.xyz / t.w) * vec3f(-1, 1, 1)); 
+
+  out.depth = 1.0;
+  out.color = color;
+  return out;
 }
 """
 
@@ -138,7 +147,7 @@ class SkyboxPass(RenderSystem):
             },
             depth_stencil={ 
                 "format": wgpu.TextureFormat.depth32float,
-                "depth_write_enabled": False,
+                "depth_write_enabled": True,
                 "depth_compare": wgpu.CompareFunction.less_equal,
             },            
             multisample=None,

@@ -128,18 +128,7 @@ class BlitSurafacePass(RenderSystem):
                 "targets": [
                     {
                         "format": GpuController().render_texture_format,
-                        "blend": {
-                            "alpha": (
-                                wgpu.BlendFactor.one,
-                                wgpu.BlendFactor.zero,
-                                wgpu.BlendOperation.add,
-                            ),
-                            "color": (
-                                wgpu.BlendFactor.one,
-                                wgpu.BlendFactor.zero,
-                                wgpu.BlendOperation.add,
-                            ),
-                        },
+                        "blend": None
                     }
                 ],
             },

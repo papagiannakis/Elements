@@ -5,10 +5,6 @@ import glm
 import numpy as np   
 from enum import Enum
 
-# from Elements.pyGLV.GL.wgpu_meshes import Buffers 
-# from Elements.pyGLV.GUI.RenderPasses.ModelPass import ModelPass 
-# from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass 
-
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
 from Elements.pyECSS.wgpu_components import *
 from Elements.pyGLV.GL.wpgu_scene import Scene       
@@ -16,6 +12,7 @@ from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ForwardPass import ForwardRenderPass
 from Elements.pyGLV.GUI.RenderPasses.DeferedGeometryPass import DeferedGeometryPass 
+from Elements.pyGLV.GUI.RenderPasses.DeferedLightPass import DeferedLightPass
 from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
 from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass  
 from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
@@ -27,7 +24,7 @@ class RenderPassDescriptor:
         # color attachments
         self.view = None
         self.resolve_target = None 
-        self.clear_value = (0.0, 0.0, 0.0, 0.0)
+        self.clear_value = (0.0, 0.0, 0.0, 1.0)
         self.load_op = wgpu.LoadOp.clear 
         self.store_op = wgpu.StoreOp.store 
 
@@ -99,7 +96,8 @@ class Renderer:
         self.add_system("Initial", InitialPass([RenderExclusiveComponent]))  
         self.add_system("Shadows", ShadowMapPass([LightAffectionComponent, MeshComponent, TransformComponent]))
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
-        self.add_system("DeferedGeometry", DeferedGeometryPass([DeferedShaderComponent, MeshComponent, TransformComponent]))
+        self.add_system("DeferedGeometry", DeferedGeometryPass([DeferedShaderComponent, MeshComponent, TransformComponent])) 
+        self.add_system("DeferedLight", DeferedLightPass([MeshComponent, MaterialComponent, DeferedShaderComponent]))
         self.add_system("ForwardPass", ForwardRenderPass([MeshComponent, MaterialComponent, ForwardShaderComponent])) 
         self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
@@ -129,21 +127,21 @@ class Renderer:
                 {
                     "view": TextureLib().get_texture(name="g_position_gfx").view,
                     "resolve_target": None,
-                    "clear_value": (0.0, 0.0, 0.0, 0.0), 
+                    "clear_value": (0.0, 0.0, 0.0, 1.0), 
                     "load_op": wgpu.LoadOp.clear,
                     "store_op": wgpu.StoreOp.store,
                 },
                 {
                     "view": TextureLib().get_texture(name="g_normal_gfx").view,
                     "resolve_target": None,
-                    "clear_value": (0.0, 0.0, 0.0, 0.0), 
+                    "clear_value": (0.0, 0.0, 0.0, 1.0), 
                     "load_op": wgpu.LoadOp.clear,
                     "store_op": wgpu.StoreOp.store,
                 },
                 {
                     "view": TextureLib().get_texture(name="g_color_gfx").view,
                     "resolve_target": None,
-                    "clear_value": (0.0, 0.0, 0.0, 0.0), 
+                    "clear_value": (0.0, 0.0, 0.0, 1.0), 
                     "load_op": wgpu.LoadOp.clear,
                     "store_op": wgpu.StoreOp.store,
                 }, 
@@ -159,17 +157,17 @@ class Renderer:
         world_render_pass = command_encoder.begin_render_pass(
             color_attachments=worldDescriptor.generate_color_attachments(),
             depth_stencil_attachment=worldDescriptor.generate_depth_attachments()
-        )  
-        # first we render the skybox 
-        self.actuate_system("Skybox", command_encoder, world_render_pass)  
-        # Then the meshes 
-        self.actuate_system("ForwardPass", command_encoder, world_render_pass)  
-        # End the texture production
+        )   
+        # completing the pass of the deferred elemenets and fill the depth buffer
+        self.actuate_system("DeferedLight", command_encoder, world_render_pass)   
+        # baised on the filled depth buffer start drawing the forward rendered elements
+        self.actuate_system("ForwardPass", command_encoder, world_render_pass) 
+        # complete the pass with the skybox
+        self.actuate_system("Skybox", command_encoder, world_render_pass)
         world_render_pass.end()
 
         fxaaDescriptor = RenderPassDescriptor() 
         fxaaDescriptor.view = TextureLib().get_texture(name="fxaa_gfx").view
-        assert_that(fxaaDescriptor.view).is_not_none()
         fxaa_render_pass = command_encoder.begin_render_pass(
             color_attachments=fxaaDescriptor.generate_color_attachments()
         ) 

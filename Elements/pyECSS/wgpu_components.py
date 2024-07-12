@@ -131,9 +131,13 @@ class DeferedShaderComponent(Component):
         self.uniform_gpu_buffers = {} 
         self.read_only_storage_buffers = None
         self.read_only_storage_gpu_buffers = {}
-        self.other_uniform = None 
+        self.other_uniform = None
+
+        # Geometry stage buffers 
         self.diffuse_texture = diffuse_texture
-        self.g_uniform_buffer: wgpu.GPUBuffer = None 
+        self.g_uniform_buffer: wgpu.GPUBuffer = None  
+        self.g_bind_group: wgpu.GPUBindGroup = None
+        self.g_pipeline: wgpu.GPURenderPipeline = None
         
 class SkyboxComponent(Component):
     def __init__(self, name:str, paths:list): 

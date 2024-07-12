@@ -61,7 +61,7 @@ FXAA_SHADER_CODE = """
     const EDGE_THRESHOLD_MIN: f32 = 0.0312;
     const EDGE_THRESHOLD_MAX: f32 = 0.125;
     const ITERATIONS: i32 = 29;
-    const SUBPIXEL_QUALITY: f32 = 0.45; 
+    const SUBPIXEL_QUALITY: f32 = 0.75; 
 
     fn rgb2luma(color: vec3f) -> f32 {
         return sqrt(dot(color, vec3f(0.299, 0.587, 0.114)));
@@ -270,7 +270,7 @@ class FXAAPass(RenderSystem):
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
 
-        mesh_gfx = TextureLib().get_texture(name="world_gfx") 
+        world_gfx = TextureLib().get_texture(name="world_gfx") 
         inverse_width = 1 / GpuController().render_target_size[0]
         inverse_height = 1 / GpuController().render_target_size[1]
         inverse_render_resolution = glm.vec2(inverse_width, inverse_height)   
@@ -300,14 +300,14 @@ class FXAAPass(RenderSystem):
         bind_groups_entries[0].append(
             {
                 "binding": 1,
-                "resource": mesh_gfx.view
+                "resource": world_gfx.view
             } 
         ) 
 
         bind_groups_entries[0].append(
             {
                 "binding": 2, 
-                "resource": mesh_gfx.sampler
+                "resource": world_gfx.sampler
             }
         )
 

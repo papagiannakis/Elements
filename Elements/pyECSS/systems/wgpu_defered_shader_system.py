@@ -51,7 +51,7 @@ fn vs_main(
 } 
 """ 
 
-class ForwardShaderSystem(System): 
+class DeferedShaderSystem(System): 
 
     def ShaderLoader(self, file):
         try:
@@ -117,11 +117,11 @@ class ForwardShaderSystem(System):
             })
  
     def on_create(self, entity: Entity, components: Component | list[Component]): 
-        shader = components 
+        shader:DeferedShaderComponent = components 
 
         assert_that(type(shader) == DeferedShaderComponent).is_true()
 
-        shader.shader_fragment_code = self.ShaderLoader(shader.shader_fragment_code)
+        shader.shader_fragment_code = self.ShaderLoader(shader.shader_path)
         shader.shader_fragment_module = GpuController().device.create_shader_module(code=shader.shader_fragment_code) 
         shader.shader_vertex_module = GpuController().device.create_shader_module(code=VERTEX_SHADER_CODE)
 
