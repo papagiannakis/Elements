@@ -12,9 +12,10 @@ from Elements.pyGLV.GUI.RenderPasses.InitialPass import InitialPass
 from Elements.pyGLV.GUI.RenderPasses.BlitToSurfacePass import BlitSurafacePass 
 from Elements.pyGLV.GUI.RenderPasses.ForwardPass import ForwardRenderPass
 from Elements.pyGLV.GUI.RenderPasses.DeferedGeometryPass import DeferedGeometryPass 
-from Elements.pyGLV.GUI.RenderPasses.DeferedLightPass import DeferedLightPass
+from Elements.pyGLV.GUI.RenderPasses.DeferedLightPass import DeferedLightPass 
+from Elements.pyGLV.GUI.RenderPasses.SSAONoisePass import SSAONoisePass 
 from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
-from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass  
+from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass   
 from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
@@ -97,6 +98,7 @@ class Renderer:
         self.add_system("Shadows", ShadowMapPass([ShadowAffectionComponent, MeshComponent, TransformComponent]))
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
         self.add_system("DeferedGeometry", DeferedGeometryPass([DeferedShaderComponent, MeshComponent, TransformComponent])) 
+        self.add_system("SSAONoise", SSAONoisePass([RenderExclusiveComponent]))
         self.add_system("DeferedLight", DeferedLightPass([MeshComponent, MaterialComponent, DeferedShaderComponent]))
         self.add_system("ForwardPass", ForwardRenderPass([MeshComponent, MaterialComponent, ForwardShaderComponent])) 
         self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
@@ -149,7 +151,11 @@ class Renderer:
             depth_stencil_attachment=deferedGeomDescriptor.generate_depth_attachments()
         )  
         self.actuate_system("DeferedGeometry", command_encoder, geometry_render_pass)
-        geometry_render_pass.end()
+        geometry_render_pass.end() 
+
+        ssao_noise_pass = command_encoder.begin_compute_pass() 
+        self.actuate_system("SSAONoise", command_encoder, ssao_noise_pass)
+        ssao_noise_pass.end()
 
         worldDescriptor = RenderPassDescriptor() 
         worldDescriptor.view = TextureLib().get_texture(name="world_gfx").view

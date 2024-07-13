@@ -241,7 +241,7 @@ class ShadowMapPass(RenderSystem):
             },
         )
     
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder): 
         assert_that(
             type(components[0]) == ShadowAffectionComponent and
             type(components[1]) == MeshComponent and 

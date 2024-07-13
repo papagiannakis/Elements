@@ -18,6 +18,24 @@ class InitialPass(RenderSystem):
 
         self.render_size = GpuController().render_target_size
 
+        ssao_noise: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[4, 4, 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba16float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING | wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.COPY_SRC
+        ) 
+        ssao_noise_view: wgpu.GPUTextureView = ssao_noise.create_view()
+        ssao_noise_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
+            address_mode_u=wgpu.AddressMode.repeat,
+            address_mode_v=wgpu.AddressMode.repeat,
+            address_mode_w=wgpu.AddressMode.repeat,
+            min_filter=wgpu.FilterMode.nearest,
+            mag_filter=wgpu.FilterMode.nearest
+        )
+
         g_position_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
             size=[self.render_size[0], self.render_size[1], 1],
@@ -135,6 +153,13 @@ class InitialPass(RenderSystem):
 
 
         # Appengind the Generated textures To the Texture lib
+        TextureLib().append_texture(name="ssao_noise_gfx", texture=Texture(
+            texture=ssao_noise,
+            view=ssao_noise_view,
+            sampler=ssao_noise_sampler,
+            width=4,
+            height=4
+        ))
         TextureLib().append_texture(name="fxaa_gfx", texture=Texture(
             texture=fxaa_gfx,
             view=fxaa_gfx_view,
@@ -330,5 +355,5 @@ class InitialPass(RenderSystem):
             height=self.render_size[1]
         )) 
  
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass:wgpu.GPURenderPassEncoder): 
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder): 
         pass

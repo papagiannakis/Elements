@@ -194,7 +194,7 @@ class SkyboxPass(RenderSystem):
             size=inv_view_proj_data.nbytes
         )
     
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder):
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
         render_pass.set_pipeline(self.render_pipeline) 
         for bind_group_id, bind_group in enumerate(self.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)

@@ -38,6 +38,6 @@ SHADER_ATTRIBUTE_TYPES = {
     'vec2i' : 2 * I32,
     'vec3f' : 3 * F32,
     'vec3i' : 3 * I32,
-    'vec4f' :4 * F32,
-    'vec4i' :4* I32, 
+    'vec4f' : 4 * F32,
+    'vec4i' : 4 * I32, 
 } 

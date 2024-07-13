@@ -106,7 +106,7 @@ class ForwardRenderPass(RenderSystem):
                 texture=TextureLib().get_texture(name="shadow_depth")
             )
         
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder): 
         mesh, material, shader = components   
 
         self.make_bind_group(shader) 
