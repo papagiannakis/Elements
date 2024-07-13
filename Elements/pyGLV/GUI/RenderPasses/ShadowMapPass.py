@@ -4,7 +4,7 @@ import glm
 import numpy as np
 from assertpy import assert_that
 
-from Elements.pyECSS.wgpu_components import Component, LightComponent, MeshComponent, LightAffectionComponent, CameraComponent, TransformComponent, InfoComponent
+from Elements.pyECSS.wgpu_components import Component, LightComponent, MeshComponent, ShadowAffectionComponent, CameraComponent, TransformComponent, InfoComponent
 from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController 
@@ -79,12 +79,12 @@ class ShadowMapPass(RenderSystem):
         # assert_that(type(components) == SkyboxComponent).is_true()
         # skybox: SkyboxComponent = components  
         assert_that(
-            type(components[0]) == LightAffectionComponent and
+            type(components[0]) == ShadowAffectionComponent and
             type(components[1]) == MeshComponent and 
             type(components[2]) == TransformComponent 
         ).is_true() 
 
-        light_cache: LightAffectionComponent = components[0]
+        light_cache: ShadowAffectionComponent = components[0]
          
         # WGSL example   
         if self.shader is None:
@@ -112,13 +112,13 @@ class ShadowMapPass(RenderSystem):
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
         assert_that(
-            type(components[0]) == LightAffectionComponent and
+            type(components[0]) == ShadowAffectionComponent and
             type(components[1]) == MeshComponent and 
             type(components[2]) == TransformComponent 
         ).is_true()    
         cam:Entity = Scene().get_primary_cam()
         
-        lightAffected: LightAffectionComponent = components[0] 
+        lightAffected: ShadowAffectionComponent = components[0] 
         mesh: MeshComponent = components[1] 
         transform: TransformComponent = components[2] 
         
@@ -243,12 +243,12 @@ class ShadowMapPass(RenderSystem):
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder): 
         assert_that(
-            type(components[0]) == LightAffectionComponent and
+            type(components[0]) == ShadowAffectionComponent and
             type(components[1]) == MeshComponent and 
             type(components[2]) == TransformComponent 
         ).is_true()   
 
-        lightAffected: LightAffectionComponent = components[0] 
+        lightAffected: ShadowAffectionComponent = components[0] 
         mesh: MeshComponent = components[1] 
         
         render_pass.set_pipeline(lightAffected.render_pipeline) 

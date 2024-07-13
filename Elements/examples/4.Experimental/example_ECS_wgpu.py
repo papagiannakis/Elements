@@ -46,6 +46,7 @@ TextureLib().make_texture(name="grass", path=definitions.TEXTURE_DIR / "Texture_
 TextureLib().make_texture(name="Cauterizer", path=definitions.MODEL_DIR / "Cauterizer" / "cauterizer_low_01_Cauterizer_Blue_AlbedoTransparency.png")
 TextureLib().make_texture(name="building", path=definitions.MODEL_DIR / "stronghold" / "textures" / "texture_building.jpeg")
 TextureLib().make_texture(name="plane_texture", path=definitions.TEXTURE_DIR / "dark_wood_texture.jpg")
+TextureLib().make_texture(name="white", path=definitions.MODEL_DIR / "sponza" / "white.jpg")
 # TextureLib().make_texture(name="earth", path=definitions.TEXTURE_DIR / "earth.jpg")
 
 camera = Scene().add_entity()
@@ -66,12 +67,20 @@ Scene().add_component(light, CameraComponent(60, 16/9, 0.01, 500, 35, CameraComp
 
 building = Scene().add_entity()
 Scene().add_component(building, InfoComponent("building"))
-Scene().add_component(building, TransformComponent(glm.vec3(0, 2, -4), glm.vec3(0, -90, 180), glm.vec3(0.01, 0.01, 0.01), static=True))
+Scene().add_component(building, TransformComponent(glm.vec3(0, 2, -5), glm.vec3(0, -90, 180), glm.vec3(0.01, 0.01, 0.01), static=True))
 Scene().add_component(building, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "stronghold" / "source" / "building.obj"))
 # Scene().add_component(building, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(building, DeferedShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "defered_blin_phong_shadow_shader.wgsl", diffuse_texture="building"))
 Scene().add_component(building, MaterialComponent())
-Scene().add_component(building, LightAffectionComponent(light_entity=light))
+Scene().add_component(building, ShadowAffectionComponent(light_entity=light))
+
+sponza = Scene().add_entity() 
+Scene().add_component(sponza, TransformComponent(glm.vec3(-6, 2.5, 5), glm.vec3(0, -120, 180), glm.vec3(0.002, 0.002 ,0.002), static=True)) 
+Scene().add_component(sponza, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "sponza" / "sponza.obj"))
+# Scene().add_component(sponza, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shader.wgsl")) 
+Scene().add_component(sponza, DeferedShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "defered_blin_phong_shader.wgsl", diffuse_texture="white")) 
+Scene().add_component(sponza, MaterialComponent())
+Scene().add_component(sponza, LightAffectionComponent(light_entity=light))
 
 plane = Scene().add_entity()
 Scene().add_component(plane, InfoComponent("Plane2"))
@@ -79,7 +88,7 @@ Scene().add_component(plane, TransformComponent(glm.vec3(0, 3, 0), glm.vec3(0, 0
 Scene().add_component(plane, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(plane, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(plane, MaterialComponent())
-Scene().add_component(plane, LightAffectionComponent(light_entity=light)) 
+Scene().add_component(plane, ShadowAffectionComponent(light_entity=light)) 
 
 cube = Scene().add_entity()
 Scene().add_component(cube, InfoComponent("Plane"))
@@ -87,7 +96,7 @@ Scene().add_component(cube, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0,
 Scene().add_component(cube, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(cube, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(cube, MaterialComponent())
-Scene().add_component(cube, LightAffectionComponent(light_entity=light))
+Scene().add_component(cube, ShadowAffectionComponent(light_entity=light))
 
 cube2 = Scene().add_entity()
 Scene().add_component(cube2, InfoComponent("Plane2"))
@@ -95,7 +104,7 @@ Scene().add_component(cube2, TransformComponent(glm.vec3(2, 0, 0), glm.vec3(0, 0
 Scene().add_component(cube2, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
 Scene().add_component(cube2, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(cube2, MaterialComponent())
-Scene().add_component(cube2, LightAffectionComponent(light_entity=light))
+Scene().add_component(cube2, ShadowAffectionComponent(light_entity=light))
 
 model = Scene().add_entity()
 Scene().add_component(model, InfoComponent("model"))
@@ -103,7 +112,7 @@ Scene().add_component(model, TransformComponent(glm.vec3(-1, 0, 0), glm.vec3(0, 
 Scene().add_component(model, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "Cauterizer" / "Cauterizer.obj"))
 Scene().add_component(model, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(model, MaterialComponent())
-Scene().add_component(model, LightAffectionComponent(light_entity=light))
+Scene().add_component(model, ShadowAffectionComponent(light_entity=light))
 
 skyPaths = [
     definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
@@ -141,6 +150,9 @@ GpuController().set_texture_sampler(
 GpuController().set_texture_sampler(
     shader_component=Scene().get_component(plane, ForwardShaderComponent), texture_name="albedo_texture", sampler_name="albedo_sampler", texture=TextureLib().get_texture(name="plane_texture")
 )
+# GpuController().set_texture_sampler(
+#     shader_component=Scene().get_component(sponza, ForwardShaderComponent), texture_name="albedo_texture", sampler_name="albedo_sampler", texture=TextureLib().get_texture(name="white")
+# )
 
 def set_base_shader_uniforms(ent:Entity):
     camera_ent:Entity = Scene().get_primary_cam()
@@ -207,6 +219,55 @@ def set_shadow_shader_uniforms(ent:Entity):
     camera_trans: TransformComponent = Scene().get_component(camera_ent, TransformComponent) 
     shader_comp: ForwardShaderComponent = Scene().get_component(ent, ForwardShaderComponent)
     plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)  
+    light_link: ShadowAffectionComponent = Scene().get_component(ent, ShadowAffectionComponent) 
+
+    light:Entity = light_link.light 
+    light_camera:CameraComponent = Scene().get_component(light, CameraComponent)
+    light_trans:TransformComponent = Scene().get_component(light, TransformComponent)
+
+    view = camera_comp.view
+    projection = camera_comp.projection
+    model = plane_trans.world_matrix  
+    light_view = light_camera.view 
+    light_proj = light_camera.projection 
+    light_pos = light_trans.translation 
+    view_pos = camera_trans.translation
+    near = camera_comp.near
+    far = camera_comp.far
+    near_far = glm.vec2(near, far)
+
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="projection", uniform_value=projection, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=model, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="light_view", uniform_value=light_view, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="light_proj", uniform_value=light_proj, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="light_pos", uniform_value=light_pos, float3=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view_pos", uniform_value=view_pos, float3=True
+    ) 
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="near_far", uniform_value=near_far, float2=True
+    ) 
+
+def set_blin_phong_shader_uniforms(ent:Entity):
+    camera_ent:Entity = Scene().get_primary_cam()
+
+    camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent) 
+    camera_trans: TransformComponent = Scene().get_component(camera_ent, TransformComponent) 
+    shader_comp: ForwardShaderComponent = Scene().get_component(ent, ForwardShaderComponent)
+    plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)  
     light_link: LightAffectionComponent = Scene().get_component(ent, LightAffectionComponent) 
 
     light:Entity = light_link.light 
@@ -256,6 +317,55 @@ def set_defered_shadow_shader_uniforms(ent:Entity):
     camera_trans: TransformComponent = Scene().get_component(camera_ent, TransformComponent) 
     shader_comp: DeferedShaderComponent = Scene().get_component(ent, DeferedShaderComponent)
     plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)  
+    light_link: ShadowAffectionComponent = Scene().get_component(ent, ShadowAffectionComponent) 
+
+    light:Entity = light_link.light 
+    light_camera:CameraComponent = Scene().get_component(light, CameraComponent)
+    light_trans:TransformComponent = Scene().get_component(light, TransformComponent)
+
+    view = camera_comp.view
+    projection = camera_comp.projection
+    model = plane_trans.world_matrix  
+    light_view = light_camera.view 
+    light_proj = light_camera.projection 
+    light_pos = light_trans.translation 
+    view_pos = camera_trans.translation
+    near = camera_comp.near
+    far = camera_comp.far
+    near_far = glm.vec2(near, far)
+
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view", uniform_value=view, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="projection", uniform_value=projection, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="model", uniform_value=model, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="light_view", uniform_value=light_view, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="light_proj", uniform_value=light_proj, mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="light_pos", uniform_value=light_pos, float3=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="view_pos", uniform_value=view_pos, float3=True
+    ) 
+    GpuController().set_uniform_value(
+        shader_component=shader_comp, buffer_name="ubuffer", member_name="near_far", uniform_value=near_far, float2=True
+    ) 
+
+def set_defered_blin_phong_shader_uniforms(ent:Entity):
+    camera_ent:Entity = Scene().get_primary_cam()
+
+    camera_comp: CameraComponent = Scene().get_component(camera_ent, CameraComponent) 
+    camera_trans: TransformComponent = Scene().get_component(camera_ent, TransformComponent) 
+    shader_comp: DeferedShaderComponent = Scene().get_component(ent, DeferedShaderComponent)
+    plane_trans: TransformComponent = Scene().get_component(ent, TransformComponent)  
     light_link: LightAffectionComponent = Scene().get_component(ent, LightAffectionComponent) 
 
     light:Entity = light_link.light 
@@ -296,8 +406,7 @@ def set_defered_shadow_shader_uniforms(ent:Entity):
     ) 
     GpuController().set_uniform_value(
         shader_component=shader_comp, buffer_name="ubuffer", member_name="near_far", uniform_value=near_far, float2=True
-    )
-
+    ) 
 
 Renderer().init(
     present_context=present_context,
@@ -313,6 +422,8 @@ while canvas._running:
     set_shadow_shader_uniforms(cube)
     set_shadow_shader_uniforms(cube2)
     set_shadow_shader_uniforms(model)
+    # set_blin_phong_shader_uniforms(sponza) 
+    set_defered_blin_phong_shader_uniforms(sponza)
     set_base_color_shader_uniforms(light)
     # set_base_shader_uniforms(building) 
     # set_shadow_shader_uniforms(building) 

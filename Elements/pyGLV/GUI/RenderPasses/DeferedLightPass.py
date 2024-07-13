@@ -118,7 +118,7 @@ class DeferedLightPass(RenderSystem):
             texture_only=True
         )
 
-        light_link: LightAffectionComponent = Scene().get_component(entity, LightAffectionComponent) 
+        light_link: ShadowAffectionComponent = Scene().get_component(entity, ShadowAffectionComponent) 
         if light_link and light_link.light is not None:
             GpuController().set_texture_sampler(
                 shader_component=shader,

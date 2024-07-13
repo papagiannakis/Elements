@@ -94,7 +94,7 @@ class Renderer:
         GpuController().render_texture_format = render_texture_format 
 
         self.add_system("Initial", InitialPass([RenderExclusiveComponent]))  
-        self.add_system("Shadows", ShadowMapPass([LightAffectionComponent, MeshComponent, TransformComponent]))
+        self.add_system("Shadows", ShadowMapPass([ShadowAffectionComponent, MeshComponent, TransformComponent]))
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
         self.add_system("DeferedGeometry", DeferedGeometryPass([DeferedShaderComponent, MeshComponent, TransformComponent])) 
         self.add_system("DeferedLight", DeferedLightPass([MeshComponent, MaterialComponent, DeferedShaderComponent]))

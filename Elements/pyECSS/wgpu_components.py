@@ -186,13 +186,17 @@ class MaterialComponent(Component):
         else:
             self.depth_stencil = depth_stencil 
             
-class LightAffectionComponent(Component): 
+class ShadowAffectionComponent(Component): 
     def __init__(self, light_entity:Entity):
         self.light = light_entity 
         #GPU cache data for light
         self.uniform_gpu_buffer: wgpu.GPUBuffer = None
         self.render_pipeline: wgpu.GPURenderPipeline = None
-        self.bind_groups = None
+        self.bind_groups = None 
+
+class LightAffectionComponent(Component): 
+    def __init__(self, light_entity:Entity):
+        self.light = light_entity 
         
 class LightComponent(Component): 
     def __init__(self, intensity, color=glm.vec3(1.0, 1.0, 1.0)):   

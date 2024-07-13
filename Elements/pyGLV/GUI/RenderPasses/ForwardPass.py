@@ -96,7 +96,7 @@ class ForwardRenderPass(RenderSystem):
             (type(shader) == ForwardShaderComponent)
         ).is_true() 
 
-        light_link: LightAffectionComponent = Scene().get_component(entity, LightAffectionComponent) 
+        light_link: ShadowAffectionComponent = Scene().get_component(entity, ShadowAffectionComponent) 
 
         if light_link and light_link.light is not None:
             GpuController().set_texture_sampler(
