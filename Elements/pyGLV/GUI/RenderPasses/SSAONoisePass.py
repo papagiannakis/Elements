@@ -9,8 +9,6 @@ from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyGLV.GUI.wgpu_render_system import RenderSystem 
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
-from Elements.pyECSS.wpgu_random_generator import RandomGenerator
-
 
 SSAO_NOISE_SHADER = """ 
 @group(0) @binding(0) var<storage, read> rotationBuffer : array<vec4<f32>>;
@@ -61,20 +59,14 @@ class SSAONoisePass(RenderSystem):
         ssao_noise_rotations = [] 
         for i in range(1, 16):
             rotation = glm.vec4(
-                RandomGenerator().get_random() * 2.0 - 1.0,
-                RandomGenerator().get_random() * 2.0 - 1.0,
+                np.random.random() * 2.0 - 1.0,
+                np.random.random() * 2.0 - 1.0,
                 0.0, 
-                1.0
+                1.0 
             ) 
             ssao_noise_rotations.append(np.ascontiguousarray(rotation, dtype=np.float32))  
 
-        ssao_noise_rotations_data = np.vstack(ssao_noise_rotations, dtype=np.float32)  
-
-        # world_gfx = TextureLib().get_texture(name="world_gfx") 
-        # inverse_width = 1 / GpuController().render_target_size[0]
-        # inverse_height = 1 / GpuController().render_target_size[1]
-        # inverse_render_resolution = glm.vec2(inverse_width, inverse_height)   
-        # inverse_render_resolution_data = np.ascontiguousarray(inverse_render_resolution, dtype=np.float32)  
+        ssao_noise_rotations_data = np.vstack(ssao_noise_rotations, dtype=np.float32)
 
         GpuController().device.queue.write_buffer(
             buffer=self.storage,

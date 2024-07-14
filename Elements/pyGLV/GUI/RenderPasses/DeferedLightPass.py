@@ -117,9 +117,16 @@ class DeferedLightPass(RenderSystem):
             texture=TextureLib().get_texture(name="g_color_gfx"),
             texture_only=True
         )
+        GpuController().set_texture_sampler(
+            shader_component=shader,
+            sampler_name="ssao_sampler",
+            texture_name="ssao_texture",
+            texture=TextureLib().get_texture(name="ssao_gfx"),
+            texture_only=True
+        )
 
         light_link: ShadowAffectionComponent = Scene().get_component(entity, ShadowAffectionComponent) 
-        if light_link and light_link.light is not None:
+        if light_link and light_link.light is not None: 
             GpuController().set_texture_sampler(
                 shader_component=shader,
                 sampler_name="shadow_sampler",

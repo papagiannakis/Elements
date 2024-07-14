@@ -13,8 +13,9 @@ struct uniforms {
 @group(1) @binding(0) var g_position_texture:   texture_2d<f32>;
 @group(1) @binding(1) var g_normal_texture:     texture_2d<f32>;
 @group(1) @binding(2) var g_color_texture:      texture_2d<f32>;
-@group(1) @binding(3) var shadow_texture:       texture_depth_2d;
-@group(1) @binding(4) var shadow_sampler:       sampler;
+@group(1) @binding(3) var ssao_texture:         texture_2d<f32>;
+@group(1) @binding(4) var shadow_texture:       texture_depth_2d;
+@group(1) @binding(5) var shadow_sampler:       sampler;
 
 struct VertexOutput { 
     @builtin(position) Position: vec4<f32>,
@@ -146,6 +147,8 @@ fn fs_main(
     var frag_pos = textureLoad(g_position_texture, pos_texel, 0).xyz;
     var frag_norm = textureLoad(g_normal_texture, norm_texel, 0).xyz;
     var frag_color = textureLoad(g_color_texture, color_texel, 0).xyz; 
+    // var frag_color = vec3f(0.9);
+    var frag_occlusion = textureLoad(ssao_texture, pos_texel, 0).x;
     var frag_pos_from_light = light_proj * light_view * vec4f(frag_pos, 1.0);
 
     var out: FragOutput;
@@ -155,7 +158,7 @@ fn fs_main(
     let light_pos = ubuffer.light_pos; 
     let view_pos = ubuffer.view_pos;
 
-    let ambient = 0.2 * light_color;
+    let ambient = vec3f(0.3 * light_color * frag_occlusion);
 
     let light_dir = normalize(light_pos - frag_pos); 
     let diff = max(dot(light_dir, normal), 0.0); 
@@ -163,7 +166,7 @@ fn fs_main(
 
     let view_dir = normalize(view_pos - frag_pos);
     let hafway_dir = normalize(light_dir + view_dir);
-    let spec = pow(max(dot(normal, hafway_dir), 0.0), 64.0);
+    let spec = pow(max(dot(normal, hafway_dir), 0.0), 8.0);
     let specular = spec * light_color; 
 
     let bias = max(0.0005 * (1.0 - dot(normal, light_dir)), 0.00001);

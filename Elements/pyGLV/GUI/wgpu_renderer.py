@@ -14,6 +14,7 @@ from Elements.pyGLV.GUI.RenderPasses.ForwardPass import ForwardRenderPass
 from Elements.pyGLV.GUI.RenderPasses.DeferedGeometryPass import DeferedGeometryPass 
 from Elements.pyGLV.GUI.RenderPasses.DeferedLightPass import DeferedLightPass 
 from Elements.pyGLV.GUI.RenderPasses.SSAONoisePass import SSAONoisePass 
+from Elements.pyGLV.GUI.RenderPasses.SSAOPass import SSAOPass 
 from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
 from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass   
 from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
@@ -99,6 +100,7 @@ class Renderer:
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
         self.add_system("DeferedGeometry", DeferedGeometryPass([DeferedShaderComponent, MeshComponent, TransformComponent])) 
         self.add_system("SSAONoise", SSAONoisePass([RenderExclusiveComponent]))
+        self.add_system("SSAO", SSAOPass([RenderExclusiveComponent]))
         self.add_system("DeferedLight", DeferedLightPass([MeshComponent, MaterialComponent, DeferedShaderComponent]))
         self.add_system("ForwardPass", ForwardRenderPass([MeshComponent, MaterialComponent, ForwardShaderComponent])) 
         self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
@@ -155,7 +157,15 @@ class Renderer:
 
         ssao_noise_pass = command_encoder.begin_compute_pass() 
         self.actuate_system("SSAONoise", command_encoder, ssao_noise_pass)
-        ssao_noise_pass.end()
+        ssao_noise_pass.end() 
+
+        ssaoDescriptor = RenderPassDescriptor() 
+        ssaoDescriptor.view = TextureLib().get_texture(name="ssao_gfx").view 
+        ssao_render_pass = command_encoder.begin_render_pass(
+            color_attachments=ssaoDescriptor.generate_color_attachments()
+        ) 
+        self.actuate_system("SSAO", command_encoder, ssao_render_pass) 
+        ssao_render_pass.end()
 
         worldDescriptor = RenderPassDescriptor() 
         worldDescriptor.view = TextureLib().get_texture(name="world_gfx").view

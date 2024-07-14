@@ -16,7 +16,18 @@ class InitialPass(RenderSystem):
             "Render exclusive component not detected in the Renderer initialization"
         ).is_true()   
 
-        self.render_size = GpuController().render_target_size
+        self.render_size = GpuController().render_target_size 
+
+        ssao: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        ssao_view: wgpu.GPUTextureView = ssao.create_view() 
 
         ssao_noise: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -153,6 +164,13 @@ class InitialPass(RenderSystem):
 
 
         # Appengind the Generated textures To the Texture lib
+        TextureLib().append_texture(name="ssao_gfx", texture=Texture(
+            texture=ssao,
+            view=ssao_view,
+            sampler=None,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        ))
         TextureLib().append_texture(name="ssao_noise_gfx", texture=Texture(
             texture=ssao_noise,
             view=ssao_noise_view,
@@ -229,6 +247,17 @@ class InitialPass(RenderSystem):
 
         print(f"Render target resized to width: {self.render_size[0]} -> {GpuController().render_target_size[0]} and height: {self.render_size[1]} -> {GpuController().render_target_size[1]}")    
         self.render_size = GpuController().render_target_size
+
+        ssao: wgpu.GPUTexture = GpuController().device.create_texture( 
+            label="canvas_texture",
+            size=[self.render_size[0], self.render_size[1], 1],
+            mip_level_count=1,
+            sample_count=1,
+            dimension="2d",
+            format=wgpu.TextureFormat.rgba32float,
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+        ) 
+        ssao_view: wgpu.GPUTextureView = ssao.create_view() 
 
         fxaa_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -312,6 +341,13 @@ class InitialPass(RenderSystem):
         ) 
         world_depth_sampler: wgpu.GPUSampler = GpuController().device.create_sampler() 
 
+        TextureLib().append_texture(name="ssao_gfx", texture=Texture(
+            texture=ssao,
+            view=ssao_view,
+            sampler=None,
+            width=self.render_size[0],
+            height=self.render_size[1]
+        ))
         TextureLib().append_texture(name="fxaa_gfx", texture=Texture(
             texture=fxaa_gfx,
             view=fxaa_gfx_view,
