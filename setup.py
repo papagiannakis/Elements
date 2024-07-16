@@ -44,7 +44,6 @@ setup(
         'usd-core',
         'jupyter',
         'scikit-spatial',
-        'bezier',
         'clifford',
         'trimesh',
         'pyganja',
