@@ -34,6 +34,7 @@ setup(
         'scipy',
         'imgui',
         'imgui-bundle',
+        'PyGLM',
         'PyOpenGL',
         'pillow',
         'PyOpenGL_accelerate',
