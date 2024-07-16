@@ -33,7 +33,7 @@ setup(
         'numpy',
         'scipy',
         'imgui',
-        'imgui-bundle',
+        'imgui-bundle==1.3.0',
         'PyGLM',
         'PyOpenGL',
         'pillow',
