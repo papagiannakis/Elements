@@ -14,6 +14,7 @@ from Elements.pyGLV.GUI.RenderPasses.ForwardPass import ForwardRenderPass
 from Elements.pyGLV.GUI.RenderPasses.DeferedGeometryPass import DeferedGeometryPass 
 from Elements.pyGLV.GUI.RenderPasses.DeferedLightPass import DeferedLightPass 
 from Elements.pyGLV.GUI.RenderPasses.SSAOPass import SSAOPass 
+from Elements.pyGLV.GUI.RenderPasses.SSAOBlurPass import SSAOBlurPass 
 from Elements.pyGLV.GUI.RenderPasses.SkyboxPass import SkyboxPass 
 from Elements.pyGLV.GUI.RenderPasses.ShadowMapPass import ShadowMapPass   
 from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
@@ -99,6 +100,7 @@ class Renderer:
         self.add_system("Skybox", SkyboxPass([SkyboxComponent]))
         self.add_system("DeferedGeometry", DeferedGeometryPass([MeshComponent, MaterialComponent, DeferedShaderComponent, TransformComponent])) 
         self.add_system("SSAO", SSAOPass([RenderExclusiveComponent]))
+        self.add_system("SSAOBlur", SSAOBlurPass([RenderExclusiveComponent]))
         self.add_system("DeferedLight", DeferedLightPass([MeshComponent, MaterialComponent, DeferedShaderComponent]))
         self.add_system("ForwardPass", ForwardRenderPass([MeshComponent, MaterialComponent, ForwardShaderComponent])) 
         self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
@@ -152,10 +154,14 @@ class Renderer:
         )  
         self.actuate_system("DeferedGeometry", command_encoder, geometry_render_pass)
         geometry_render_pass.end()  
-        
+
         ssao_pass = command_encoder.begin_compute_pass() 
         self.actuate_system("SSAO", command_encoder, ssao_pass)  
         ssao_pass.end()
+
+        ssao_blur_pass = command_encoder.begin_compute_pass() 
+        self.actuate_system("SSAOBlur", command_encoder, ssao_blur_pass)  
+        ssao_blur_pass.end()
 
         worldDescriptor = RenderPassDescriptor() 
         worldDescriptor.view = TextureLib().get_texture(name="world_gfx").view

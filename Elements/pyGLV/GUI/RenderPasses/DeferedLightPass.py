@@ -121,7 +121,7 @@ class DeferedLightPass(RenderSystem):
             shader_component=shader,
             sampler_name="ssao_sampler",
             texture_name="ssao_texture",
-            texture=TextureLib().get_texture(name="ssao_gfx"),
+            texture=TextureLib().get_texture(name="ssao_blur_gfx"),
             texture_only=True
         )
 

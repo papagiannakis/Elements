@@ -128,7 +128,12 @@ class SSAOPass(RenderSystem):
         
         return np.array(vectors, dtype=np.float32)
 
-    def on_create(self, entity: Entity, components: Component | list[Component]):  
+    def on_create(self, entity: Entity, components: Component | list[Component]): 
+        assert_that(
+            (type(components) == RenderExclusiveComponent), 
+            f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"
+        ).is_true()
+
         TextureLib().create_noise_texture(name="ssao_noise_gfx", config={
             "width": SSAO_NOISE_TEXTURE_SIZE,
             "height": SSAO_NOISE_TEXTURE_SIZE,
@@ -206,8 +211,6 @@ class SSAOPass(RenderSystem):
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
 
-        screen_size = np.ascontiguousarray(glm.vec2(GpuController().render_target_size), dtype=np.float32)
-
         cam = Scene().get_primary_cam() 
         cam_comp: CameraComponent = Scene().get_component(cam, CameraComponent) 
         view = glm.transpose(cam_comp.view)
@@ -271,34 +274,6 @@ class SSAOPass(RenderSystem):
             data_offset=0,
             size=noise_offset.nbytes
         )
-        # GpuController().device.queue.write_buffer(
-        #     buffer=self.uniform,
-        #     buffer_offset=176,
-        #     data=noise_offset,
-        #     data_offset=0,
-        #     size=noise_offset.nbytes
-        # )
-        # GpuController().device.queue.write_buffer(
-        #     buffer=self.uniform,
-        #     buffer_offset=192,
-        #     data=sample_count,
-        #     data_offset=0,
-        #     size=sample_count.nbytes
-        # )
-        # GpuController().device.queue.write_buffer(
-        #     buffer=self.uniform,
-        #     buffer_offset=196,
-        #     data=radius,
-        #     data_offset=0,
-        #     size=radius.nbytes
-        # )
-        # GpuController().device.queue.write_buffer(
-        #     buffer=self.uniform,
-        #     buffer_offset=200,
-        #     data=bias,
-        #     data_offset=0,
-        #     size=bias.nbytes
-        # )
 
         # We always have two bind groups, so we can play distributing our
         # resources over these two groups in different configurations.
@@ -361,10 +336,7 @@ class SSAOPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
-        assert_that(
-            (type(components) == RenderExclusiveComponent), 
-            f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"
-        ).is_true()
+
         screen_size = GpuController().render_target_size
 
         work_group_count_x = np.ceil(screen_size[0] / SSAO_WORK_GROUP_SIZE[0]).astype(int)
