@@ -87,12 +87,13 @@ fn fs_main(
 
 class DeferedGeometryPass(RenderSystem): 
 
-    def on_create(self, entity: Entity, components: Component | list[Component]):
-        shader, mesh, transform = components 
+    def on_create(self, entity: Entity, components: Component | list[Component]): 
+        mesh, material, shader, transform = components
 
         assert_that( 
-            type(shader) == DeferedShaderComponent and
             type(mesh) == MeshComponent and
+            type(shader) == DeferedShaderComponent and 
+            type(material) == MaterialComponent and
             type(transform) == TransformComponent
         ).is_true()
 
@@ -136,11 +137,12 @@ class DeferedGeometryPass(RenderSystem):
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
-        shader, mesh, transform = components 
+        mesh, material, shader, transform = components
 
         assert_that( 
-            type(shader) == DeferedShaderComponent and
             type(mesh) == MeshComponent and
+            type(shader) == DeferedShaderComponent and 
+            type(material) == MaterialComponent and
             type(transform) == TransformComponent
         ).is_true() 
 
@@ -293,11 +295,12 @@ class DeferedGeometryPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
-        shader, mesh, transform = components 
+        mesh, material, shader, transform = components
 
         assert_that( 
-            type(shader) == DeferedShaderComponent and
             type(mesh) == MeshComponent and
+            type(shader) == DeferedShaderComponent and 
+            type(material) == MaterialComponent and
             type(transform) == TransformComponent
         ).is_true()
 

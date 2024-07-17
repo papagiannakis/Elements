@@ -25,27 +25,9 @@ class InitialPass(RenderSystem):
             sample_count=1,
             dimension="2d",
             format=wgpu.TextureFormat.rgba32float,
-            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING
         ) 
         ssao_view: wgpu.GPUTextureView = ssao.create_view() 
-
-        ssao_noise: wgpu.GPUTexture = GpuController().device.create_texture( 
-            label="canvas_texture",
-            size=[4, 4, 1],
-            mip_level_count=1,
-            sample_count=1,
-            dimension="2d",
-            format=wgpu.TextureFormat.rgba16float,
-            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING | wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.COPY_SRC
-        ) 
-        ssao_noise_view: wgpu.GPUTextureView = ssao_noise.create_view()
-        ssao_noise_sampler: wgpu.GPUSampler = GpuController().device.create_sampler(
-            address_mode_u=wgpu.AddressMode.repeat,
-            address_mode_v=wgpu.AddressMode.repeat,
-            address_mode_w=wgpu.AddressMode.repeat,
-            min_filter=wgpu.FilterMode.nearest,
-            mag_filter=wgpu.FilterMode.nearest
-        )
 
         g_position_gfx: wgpu.GPUTexture = GpuController().device.create_texture( 
             label="canvas_texture",
@@ -171,13 +153,6 @@ class InitialPass(RenderSystem):
             width=self.render_size[0],
             height=self.render_size[1]
         ))
-        TextureLib().append_texture(name="ssao_noise_gfx", texture=Texture(
-            texture=ssao_noise,
-            view=ssao_noise_view,
-            sampler=ssao_noise_sampler,
-            width=4,
-            height=4
-        ))
         TextureLib().append_texture(name="fxaa_gfx", texture=Texture(
             texture=fxaa_gfx,
             view=fxaa_gfx_view,
@@ -255,7 +230,7 @@ class InitialPass(RenderSystem):
             sample_count=1,
             dimension="2d",
             format=wgpu.TextureFormat.rgba32float,
-            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING
+            usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING
         ) 
         ssao_view: wgpu.GPUTextureView = ssao.create_view() 
 

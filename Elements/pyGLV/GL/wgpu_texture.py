@@ -1,4 +1,5 @@
-import wgpu
+import wgpu 
+import numpy as np
 from PIL import Image
 
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
@@ -143,5 +144,58 @@ class TextureLib():
         return self.skyBoxes.get(name) 
     
     def append_texture(self, name:str, texture:Texture) -> None:
-        self.textures.update({name: texture})
+        self.textures.update({name: texture})  
+
+    def create_noise_texture(self, name:str, config): 
+        ''' 
+        Creating a Rg32Float noise texture and store it in the texture library
+        CAUSION: no sampler will be created as the noise texure can
+        be used in multiple senarios
+
+        config stracture:
+
+        config = {
+
+            "width": int,\n
+            "height": int,\n
+            "depth_or_array_layers": int,\n
+        }
+
+        texture_format Rg32float
+        '''
+
+        # Generate random noise data
+        noise_data = np.random.uniform(-1.0, 1.0, (config["height"], config["width"], 2)).astype(np.float32)
+        noise_data = noise_data.tobytes()  # Convert to bytes
+
+        # Calculate bytes per row
+        bytes_per_row = config["width"] * 2 * np.dtype(np.float32).itemsize
+
+        # Create the texture
+        texture: wgpu.GPUTexture = GpuController().device.create_texture(
+            size=[config["width"], config["height"], config["depth_or_array_layers"]],
+            dimension=wgpu.TextureDimension.d2,
+            format=wgpu.TextureFormat.rg32float,
+            usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING,
+        ) 
+        texture_view = texture.create_view()
+
+        # Write the noise data to the texture 
+        GpuController().device.queue.write_texture(
+            {
+                "texture": texture,
+                "mip_level": 0,
+                "origin": (0, 0, 0)
+            },
+            noise_data,
+            {
+                "offset": 0,
+                "bytes_per_row": bytes_per_row,
+                "rows_per_image": config["height"],
+            },
+            [config["width"], config["height"], config["depth_or_array_layers"]],
+        )
+
+        self.textures.update({name: Texture(texture, texture_view, None, None, config["width"], config["height"], config["depth_or_array_layers"])})
+
         

@@ -12,154 +12,174 @@ from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 from Elements.pyGLV.GL.wpgu_scene import Scene
 
-SSAO_NOISE_SHADER = """ 
-struct Uniforms {  
-    projection: mat4x4f,
-    screen_size: vec2f,
-    near_far: vec2f
-}; 
+SSAO_NOISE_TEXTURE_SIZE = 64 
+SSAO_SAMPLE_COUNT = 64
+SSAO_WORK_GROUP_SIZE = [8, 8]
 
-@group(0) @binding(0) var<uniform> ubuffer: Uniforms;
-@group(0) @binding(1) var<storage, read> kernel: array<vec4f>;
-@group(0) @binding(2) var gPosition: texture_2d<f32>;
-@group(0) @binding(3) var gNormal: texture_2d<f32>;
-@group(0) @binding(4) var noise: texture_2d<f32>;
-@group(0) @binding(5) var noise_sampler: sampler; 
+SSAO_SHADER = """ 
+const SAMPLE_COUNT:u32 = 64; 
+const RADIUS:f32 = 1.0; 
+const BIAS:f32 = 0.01;
 
-struct VertexOutput { 
-    @builtin(position) Position: vec4<f32>,
-    @location(0) uv: vec2<f32>
+struct Uniforms {
+    view_matrix: mat4x4<f32>,
+    projection: mat4x4<f32>,
+    uv_to_view_space_add: vec2<f32>,
+    uv_to_view_space_mul: vec2<f32>,
+    depth_add_mul: vec2<f32>,
+    noise_offset: vec2<u32>,
+};
+
+struct Samples {
+    data: array<vec4<f32>>,
+};
+
+@group(0) @binding(0) var<uniform> uniforms: Uniforms;
+@group(0) @binding(1) var<storage, read> samples: Samples;
+@group(0) @binding(2) var r_output_texture: texture_storage_2d<rgba32float, write>;
+@group(0) @binding(3) var r_normal_texture: texture_2d<f32>;
+@group(0) @binding(4) var r_noise_texture: texture_2d<f32>;
+
+fn screen_space_depth_to_view_space_z(d: f32) -> f32 {
+    return uniforms.depth_add_mul.y / (uniforms.depth_add_mul.x - d);
 }
 
-@vertex
-fn vs_main(
-    @builtin(vertex_index) vertex_index: u32
-) -> VertexOutput {  
-
-    var POSITIONS = array<vec2<f32>, 6>(
-        vec2<f32>(-1.0, -1.0), // bottom-left
-        vec2<f32>( 1.0, -1.0), // bottom-right
-        vec2<f32>(-1.0,  1.0), // top-left
-        vec2<f32>(-1.0,  1.0), // top-left
-        vec2<f32>( 1.0, -1.0), // bottom-right
-        vec2<f32>( 1.0,  1.0)  // top-right
-    );
-
-    var UVS = array<vec2<f32>, 6>(
-        vec2<f32>(0.0, 1.0), // bottom-left
-        vec2<f32>(1.0, 1.0), // bottom-right
-        vec2<f32>(0.0, 0.0), // top-left
-        vec2<f32>(0.0, 0.0), // top-left
-        vec2<f32>(1.0, 1.0), // bottom-right
-        vec2<f32>(1.0, 0.0)  // top-right
-    );
-
-    var out: VertexOutput;
-    let pos = POSITIONS[vertex_index];
-    let vUV = UVS[vertex_index]; 
-
-    out.uv = vUV;
-    out.Position = vec4f(pos, 0.0, 1.0);
-    return out;
-}  
-
-fn LinearizeDepth( 
-    depth: f32,
-    near: f32,
-    far: f32
-) -> f32 {  
-
-    let zNdc = 2 * depth - 1; 
-    let zEye = (2 * far * near) / ((far + near) - zNdc * (far - near)); 
-    let linearDepth = (zEye - near) / (far - near);
-    return linearDepth;
+fn uv_to_view_space_position(uv: vec2<f32>, depth: f32) -> vec3<f32> {
+    let z = screen_space_depth_to_view_space_z(depth);
+    return vec3<f32>((uv * uniforms.uv_to_view_space_mul + uniforms.uv_to_view_space_add) * -z, z);
 }
 
-@fragment
-fn fs_main(
-    in: VertexOutput
-) -> @location(0) vec4f { 
+fn load_random_vec(frag_coord: vec2<u32>) -> vec3<f32> {
+    let p = (frag_coord + uniforms.noise_offset) % vec2<u32>(textureDimensions(r_noise_texture));
+    return vec3<f32>(textureLoad(r_noise_texture, vec2<i32>(p), 0).xy, 0.0);
+}
 
-    var pos_coord = in.uv * ubuffer.screen_size; 
-    var pos_texel = vec2u(u32(pos_coord.x), u32(pos_coord.y));
+@compute @workgroup_size(8, 8)
+fn main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>) {
+    let size = vec2<u32>(textureDimensions(r_output_texture));
+    let frag_coord = global_invocation_id.xy;
 
-    var noise_scale = vec2f(ubuffer.screen_size.x / 4.0, ubuffer.screen_size.y / 4.0);
-
-    var frag_pos = textureLoad(gPosition, pos_texel, 0).xyz;
-    var frag_normal = normalize(textureLoad(gNormal, pos_texel, 0).xyz);
-    var random_vec = textureSample(noise, noise_sampler, in.uv * noise_scale).xyz;
-
-    var tangent = normalize(random_vec - frag_normal * dot(random_vec, frag_normal));
-    var bitangent = cross(frag_normal, tangent);
-    var TBN = mat3x3f(tangent, bitangent, frag_normal);
-
-    var occlusion = 0.0; 
-    var radius = 0.5;
-
-    for (var i = 0; i < 128; i++) { 
-        var sample_pos = TBN * kernel[i].xyz;
-        sample_pos = frag_pos + sample_pos * radius; 
-
-        var offset = vec4f(sample_pos, 1.0);
-        offset = transpose(ubuffer.projection) * offset; 
-        var offset_ndc = offset.xyz;
-        var offset_zero_one = offset_ndc.xyz * 0.5 + 0.5;
-
-        var smaple_depth = textureLoad(gPosition, vec2u(u32(offset_zero_one.x), u32(offset_zero_one.y)), 0).z; 
-        var range_check = smoothstep(0.0, 1.0, radius / abs(frag_pos.z - smaple_depth));
-        var depth_check: bool = (smaple_depth >= sample_pos.z + 0.025);
-        occlusion = occlusion + (select(1.0, 0.0, depth_check) * range_check);
+    if (!all(frag_coord < size)) {
+        return;
     }
 
-    occlusion = 1.0 - (occlusion / 128.0);
-    return vec4f(occlusion, occlusion, occlusion, occlusion);
+    let depth = textureLoad(r_normal_texture, vec2<i32>(frag_coord), 0).a;
+    if (depth == 1.0) {
+        textureStore(r_output_texture, vec2<i32>(frag_coord), vec4<f32>(1.0, 1.0, 1.0, 1.0));
+        return;
+    }
+
+    let frag_uv = (vec2<f32>(frag_coord) + 0.5) / vec2<f32>(size);
+    let view_pos = uv_to_view_space_position(frag_uv, depth);
+    let normal = mat3x3<f32>(uniforms.view_matrix[0].xyz, uniforms.view_matrix[1].xyz, uniforms.view_matrix[2].xyz)
+        * textureLoad(r_normal_texture, vec2<i32>(frag_coord), 0).xyz;
+    let random_vec = load_random_vec(frag_coord);
+
+    let tangent = normalize(random_vec - normal * dot(random_vec, normal));
+    let bitangent = cross(normal, tangent);
+    let tbn = mat3x3<f32>(tangent, bitangent, normal);
+
+    var occlusion = 0.0;
+    for (var i = 0u; i < SAMPLE_COUNT; i = i + 1u) {
+        let sample_vec = RADIUS * (tbn * samples.data[i].xyz);
+        let sample_pos = view_pos + sample_vec;
+
+        let sample_clip_pos = uniforms.projection * vec4<f32>(sample_pos, 1.0);
+        let sample_ndc = sample_clip_pos.xy / sample_clip_pos.w;
+        let sample_uv = sample_ndc * vec2<f32>(0.5, -0.5) + 0.5;
+        var sample_coords = vec2<i32>(floor(sample_uv * vec2<f32>(size)));
+        sample_coords = clamp(sample_coords, vec2<i32>(0), vec2<i32>(size) - 1);
+
+        let sample_depth = textureLoad(r_normal_texture, sample_coords, 0).a;
+        if (sample_depth == 1.0) {
+            continue;
+        }
+
+        let z = screen_space_depth_to_view_space_z(sample_depth);
+        let range_check = smoothstep(0.0, 1.0, RADIUS / abs(view_pos.z - z));
+        occlusion = occlusion + select(0.0, 1.0, z >= sample_pos.z + BIAS) * range_check;
+    }
+
+    occlusion = 1.0 - (occlusion / f32(SAMPLE_COUNT));
+    textureStore(
+        r_output_texture,
+        vec2<i32>(frag_coord),
+        vec4<f32>(occlusion, occlusion, occlusion, occlusion)
+    );
 }
 """
 
-class SSAOPass(RenderSystem): 
+class SSAOPass(RenderSystem):   
 
-    # def lerp(self, a, b, f):
-    #     return a + f * (b - a)
+    def get_sample_vectors(self, count: int) -> np.ndarray:
+        vectors = []
+        for i in range(count):
+            lng = np.random.uniform(0.0, 2.0 * np.pi)
+            lat = np.arccos(np.random.uniform(0.0, 1.0))
+            r = np.sqrt((i + 1) / count)
+            
+            vector = [
+                r * np.cos(lng) * np.sin(lat),
+                r * np.sin(lng) * np.sin(lat),
+                r * np.cos(lat),
+                0.0
+            ]
+            vectors.append(vector)
+        
+        return np.array(vectors, dtype=np.float32)
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
-        self.shader = GpuController().device.create_shader_module(code=SSAO_NOISE_SHADER);  
+    def on_create(self, entity: Entity, components: Component | list[Component]):  
+        TextureLib().create_noise_texture(name="ssao_noise_gfx", config={
+            "width": SSAO_NOISE_TEXTURE_SIZE,
+            "height": SSAO_NOISE_TEXTURE_SIZE,
+            "depth_or_array_layers": 1
+        })
 
-        self.storage: wgpu.GPUBuffer = GpuController().device.create_buffer(
-            size=(4 * 4) * 128, usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_DST
-        )
+        self.shader = GpuController().device.create_shader_module(code=SSAO_SHADER);  
+
         self.uniform: wgpu.GPUBuffer = GpuController().device.create_buffer(
-            size=((16 * 4) + (4 * 4) + (4 * 4)), usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
+            size=((16 * 4) + (16 * 4) + (4 * 4) + (4 * 4) + (4 * 4) + (4 * 4)), usage=wgpu.BufferUsage.UNIFORM | wgpu.BufferUsage.COPY_DST
+        ) 
+
+        # sample kernel
+        self.sample_storage: wgpu.GPUBuffer = GpuController().device.create_buffer(
+            size=(4 * 4) * SSAO_SAMPLE_COUNT, usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_DST
         )
+        kernel_samples = self.get_sample_vectors(SSAO_SAMPLE_COUNT)
+        GpuController().device.queue.write_buffer(
+            buffer=self.sample_storage,
+            buffer_offset=0,
+            data=kernel_samples,
+            data_offset=0,
+            size=kernel_samples.nbytes
+        )  
         
         bind_groups_layout_entries = [[]]   
         bind_groups_layout_entries[0].append(
             {
                 "binding": 0,
-                "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
+                "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {"type": wgpu.BufferBindingType.uniform},
             }
         ) 
         bind_groups_layout_entries[0].append(
             {
                 "binding": 1,
-                "visibility": wgpu.ShaderStage.VERTEX | wgpu.ShaderStage.FRAGMENT,
+                "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {"type": wgpu.BufferBindingType.read_only_storage},
             }
         ) 
         bind_groups_layout_entries[0].append(
             {
                 "binding": 2,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "texture": {  
-                    "sample_type": wgpu.TextureSampleType.unfilterable_float,
-                    "view_dimension": wgpu.TextureViewDimension.d2,
-                },
+                "visibility": wgpu.ShaderStage.COMPUTE,
+                "storage_texture": {"access": wgpu.StorageTextureAccess.write_only, "format": wgpu.TextureFormat.rgba32float},
             }
-        )
+        ) 
         bind_groups_layout_entries[0].append(
             {
                 "binding": 3,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
+                "visibility": wgpu.ShaderStage.COMPUTE,
                 "texture": {  
                     "sample_type": wgpu.TextureSampleType.unfilterable_float,
                     "view_dimension": wgpu.TextureViewDimension.d2,
@@ -169,18 +189,11 @@ class SSAOPass(RenderSystem):
         bind_groups_layout_entries[0].append(
             {
                 "binding": 4,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
+                "visibility": wgpu.ShaderStage.COMPUTE,
                 "texture": {  
-                    "sample_type": wgpu.TextureSampleType.float,
+                    "sample_type": wgpu.TextureSampleType.unfilterable_float,
                     "view_dimension": wgpu.TextureViewDimension.d2,
                 },
-            }
-        )
-        bind_groups_layout_entries[0].append(
-            {
-                "binding": 5,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "sampler": {"type": wgpu.SamplerBindingType.filtering},
             }
         )
         
@@ -193,61 +206,99 @@ class SSAOPass(RenderSystem):
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
 
-        ssao_kernel_samples = [] 
-        for i in range(1, 128):
-            sample = glm.vec3(
-                np.random.random() * 2.0 - 1.0,
-                np.random.random() * 2.0 - 1.0,
-                np.random.random() 
-            )  
-            sample = glm.normalize(sample) 
-            sample *= np.random.random() 
-            scale = float(i) / 64.0
-            # scale = self.lerp(0.1, 1.0, scale * scale)  
-            scale = 0.1 + (scale * scale) * (1.0 - 0.1)
-            sample *= scale
-            sample = glm.vec4(sample, 1.0)
-
-            ssao_kernel_samples.append(np.ascontiguousarray(sample, dtype=np.float32))  
-
-        ssao_kernel_samples_data = np.vstack(ssao_kernel_samples, dtype=np.float32)  
-
-        GpuController().device.queue.write_buffer(
-            buffer=self.storage,
-            buffer_offset=0,
-            data=ssao_kernel_samples_data,
-            data_offset=0,
-            size=ssao_kernel_samples_data.nbytes
-        ) 
-
         screen_size = np.ascontiguousarray(glm.vec2(GpuController().render_target_size), dtype=np.float32)
 
         cam = Scene().get_primary_cam() 
-        cam_comp: CameraComponent = Scene().get_component(cam, CameraComponent)
-        projection = np.ascontiguousarray(cam_comp.projection, dtype=np.float32)
-        near_far = np.ascontiguousarray(glm.vec2(cam_comp.near, cam_comp.far), dtype=np.float32)
+        cam_comp: CameraComponent = Scene().get_component(cam, CameraComponent) 
+        view = glm.transpose(cam_comp.view)
+        projection = glm.transpose(cam_comp.projection)  
+        
+        noise_offset = np.ascontiguousarray(glm.vec2(0, 0), dtype=np.uint32)  
+
+        tan_half_fov_x = 1.0 / projection[0][0]
+        tan_half_fov_y = 1.0 / projection[1][1]
+ 
+        uv_to_view_space_mul = np.ascontiguousarray(glm.vec2(tan_half_fov_x * 2.0, tan_half_fov_y * -2.0), dtype=np.float32)
+        uv_to_view_space_add = np.ascontiguousarray(glm.vec2(tan_half_fov_x * -1.0, tan_half_fov_y), dtype=np.float32)
+
+        # depth_add = np.float32(-projection[2][2])
+        # depth_mul = np.float32(projection[3][2]) 
+
+        depth_add_mul = np.ascontiguousarray(glm.vec2(-projection[2][2], projection[3][2]), dtype=np.float32)
+
+        view = np.ascontiguousarray(view, dtype=np.float32)
+        projection = np.ascontiguousarray(projection, dtype=np.float32) 
 
         GpuController().device.queue.write_buffer(
             buffer=self.uniform,
             buffer_offset=0,
-            data=projection,
+            data=view,
             data_offset=0,
-            size=projection.nbytes
+            size=view.nbytes
         ) 
         GpuController().device.queue.write_buffer(
             buffer=self.uniform,
             buffer_offset=64,
-            data=screen_size,
+            data=projection,
             data_offset=0,
-            size=screen_size.nbytes
+            size=projection.nbytes
         )
         GpuController().device.queue.write_buffer(
             buffer=self.uniform,
-            buffer_offset=80,
-            data=near_far,
+            buffer_offset=128,
+            data=uv_to_view_space_add,
             data_offset=0,
-            size=near_far.nbytes
+            size=uv_to_view_space_add.nbytes
         )
+        GpuController().device.queue.write_buffer(
+            buffer=self.uniform,
+            buffer_offset=144,
+            data=uv_to_view_space_mul,
+            data_offset=0,
+            size=uv_to_view_space_mul.nbytes
+        )
+        GpuController().device.queue.write_buffer(
+            buffer=self.uniform,
+            buffer_offset=160,
+            data=depth_add_mul,
+            data_offset=0,
+            size=depth_add_mul.nbytes
+        )
+        GpuController().device.queue.write_buffer(
+            buffer=self.uniform,
+            buffer_offset=176,
+            data=noise_offset,
+            data_offset=0,
+            size=noise_offset.nbytes
+        )
+        # GpuController().device.queue.write_buffer(
+        #     buffer=self.uniform,
+        #     buffer_offset=176,
+        #     data=noise_offset,
+        #     data_offset=0,
+        #     size=noise_offset.nbytes
+        # )
+        # GpuController().device.queue.write_buffer(
+        #     buffer=self.uniform,
+        #     buffer_offset=192,
+        #     data=sample_count,
+        #     data_offset=0,
+        #     size=sample_count.nbytes
+        # )
+        # GpuController().device.queue.write_buffer(
+        #     buffer=self.uniform,
+        #     buffer_offset=196,
+        #     data=radius,
+        #     data_offset=0,
+        #     size=radius.nbytes
+        # )
+        # GpuController().device.queue.write_buffer(
+        #     buffer=self.uniform,
+        #     buffer_offset=200,
+        #     data=bias,
+        #     data_offset=0,
+        #     size=bias.nbytes
+        # )
 
         # We always have two bind groups, so we can play distributing our
         # resources over these two groups in different configurations.
@@ -266,16 +317,16 @@ class SSAOPass(RenderSystem):
             {
                 "binding": 1,
                 "resource": {
-                    "buffer": self.storage,
+                    "buffer": self.sample_storage,
                     "offset": 0,
-                    "size": self.storage.size,
+                    "size": self.sample_storage.size,
                 },
             }
         )
         bind_groups_entries[0].append(
             {
                 "binding": 2,
-                "resource": TextureLib().get_texture(name="g_position_gfx").view
+                "resource": TextureLib().get_texture(name="ssao_gfx").view
             } 
         ) 
 
@@ -291,12 +342,6 @@ class SSAOPass(RenderSystem):
                 "resource": TextureLib().get_texture(name="ssao_noise_gfx").view
             }
         ) 
-        bind_groups_entries[0].append(
-            {
-                "binding": 5, 
-                "resource": TextureLib().get_texture(name="ssao_noise_gfx").sampler
-            }
-        )
 
         # Create the wgou binding objects
         bind_groups = []
@@ -307,30 +352,12 @@ class SSAOPass(RenderSystem):
             ) 
         self.bind_groups = bind_groups 
 
-        self.render_pipeline = GpuController().device.create_render_pipeline(
+        self.render_pipeline = GpuController().device.create_compute_pipeline(
             layout=self.pipeline_layout,
-            vertex={
+            compute={
                 "module": self.shader,
-                "entry_point": "vs_main", 
-                "buffers": [], 
-            },
-            primitive={
-                "topology": wgpu.PrimitiveTopology.triangle_list,
-                "front_face": wgpu.FrontFace.ccw,
-                "cull_mode": wgpu.CullMode.none,
-            },
-            depth_stencil=None,            
-            multisample=None,
-            fragment={
-                "module": self.shader,
-                "entry_point": "fs_main",
-                "targets": [
-                    {
-                        "format": wgpu.TextureFormat.rgba32float,
-                        "blend": None 
-                    }
-                ],
-            },
+                "entry_point": "main"
+            }
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
@@ -338,9 +365,13 @@ class SSAOPass(RenderSystem):
             (type(components) == RenderExclusiveComponent), 
             f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"
         ).is_true()
+        screen_size = GpuController().render_target_size
+
+        work_group_count_x = np.ceil(screen_size[0] / SSAO_WORK_GROUP_SIZE[0]).astype(int)
+        work_group_count_y = np.ceil(screen_size[1] / SSAO_WORK_GROUP_SIZE[1]).astype(int)
 
         render_pass.set_pipeline(self.render_pipeline) 
         for bind_group_id, bind_group in enumerate(self.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
 
-        render_pass.draw(6, 1, 0, 0) 
+        render_pass.dispatch_workgroups(work_group_count_x, work_group_count_y, 1)
