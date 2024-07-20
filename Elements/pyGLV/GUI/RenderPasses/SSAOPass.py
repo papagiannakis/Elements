@@ -12,14 +12,14 @@ from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 from Elements.pyGLV.GL.wpgu_scene import Scene
 
-SSAO_NOISE_TEXTURE_SIZE = 64 
-SSAO_SAMPLE_COUNT = 64
+SSAO_NOISE_TEXTURE_SIZE = 128 
+SSAO_SAMPLE_COUNT = 32
 SSAO_WORK_GROUP_SIZE = [8, 8]
 
 SSAO_SHADER = """ 
-const SAMPLE_COUNT:u32 = 64; 
-const RADIUS:f32 = 1.0; 
-const BIAS:f32 = 0.01;
+const SAMPLE_COUNT:u32 = 32; 
+const RADIUS:f32 = 1.5; 
+const BIAS:f32 = 0.025;
 
 struct Uniforms {
     view_matrix: mat4x4<f32>,

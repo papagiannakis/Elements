@@ -175,8 +175,6 @@ class SSAOBlurPass(RenderSystem):
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
 
-        screen_size = np.ascontiguousarray(glm.vec2(GpuController().render_target_size), dtype=np.float32)
-
         cam = Scene().get_primary_cam() 
         cam_comp: CameraComponent = Scene().get_component(cam, CameraComponent) 
         projection = glm.transpose(cam_comp.projection)  
