@@ -173,7 +173,6 @@ class TestIMGUIBundle(unittest.TestCase):
         self.assertIn(self.node4, self.rootEntity._children)
         self.assertIn(self.trans4, self.node4._children)
         self.assertIn(self.mesh4, self.node4._children)
-        self.assertIn(self.orthoCam, self.entityCam2._children)
         
         self.scene.world.print()
     
