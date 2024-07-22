@@ -169,6 +169,7 @@ class SceneWindow:
         return add, tmp;
         
     def removeEntityWindow(self):
+        global update_needed;
         """
         Displays a confirmation dialog when an entity is about to be deleted
         """
@@ -187,6 +188,7 @@ class SceneWindow:
                 if yes:
                     self.to_be_removed.parent.remove(self.to_be_removed);
                     remove = True;
+                    update_needed = True;
                     node = self.to_be_removed;
                 
                 self.to_be_removed = None;
