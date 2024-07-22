@@ -7,7 +7,7 @@ from Elements.pyECSS.Component import BasicTransform,  Camera, RenderMesh
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
+from Elements.pyGLV.GUI.ImguiDecorator import IMGUIecssDecoratorBundle
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -153,7 +153,7 @@ terrain_mesh.vertex_index.append(indexTerrain)
 
 running = True
 scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, 
-           windowTitle = "Elements: Textures example", customImGUIdecorator = ImGUIecssDecorator, 
+           windowTitle = "Elements: Textures example 2", customImGUIdecorator = IMGUIecssDecoratorBundle, 
            openGLversion = 4)
 scene.world.traverse_visit(initUpdate, scene.world.root)
 

@@ -109,7 +109,7 @@ vertexCube, indexCube, _ = norm.generateUniqueVertices(vertexCube,indexCube)
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Cube Mapping Example", customImGUIdecorator = IMGUIecssDecoratorBundle, openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements Framebuffer Example", customImGUIdecorator = IMGUIecssDecoratorBundle, openGLversion = 4)
 
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes

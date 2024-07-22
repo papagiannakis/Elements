@@ -32,28 +32,23 @@ from OpenGL.GL import GL_LINES
 from Elements.utils.Shortcuts import displayGUI_text
 
 
-class TestIMGUIBundle(unittest.TestCase):
+class TestEntityManagement(unittest.TestCase):
     """Main body of Scene Unit Test class
 
     """
     def setUp(self):
         """
-        Common setup for all unit tests
+        Common setup for all imgui bundle unit tests
         
         Scenegraph for unit tests:
         
         root
-            |---------------------------|           
-            entityCam1,                 node4,      
-            |-------|                    |--------------|----------|--------------|           
-            trans1, entityCam2           trans4,        mesh4,     shaderDec4     vArray4
-                    |                               
-                    ortho, trans2                   
-                                                                
-                                                                
-            
+            |          
+            node4   
+            |--------------|----------|--------------|           
+            trans4,        mesh4,     shaderDec4     vArray4                                          
+                                                                                                           
         """
-        
 
         self.s1 = Scene()
         self.scene = Scene()
@@ -136,29 +131,11 @@ class TestIMGUIBundle(unittest.TestCase):
                           4,5,6, 4,6,7,
                           5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
      
-        
-        
+    
         # Systems
         self.transUpdate = self.scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
         self.renderUpdate = self.scene.world.createSystem(RenderGLShaderSystem())
         self.initUpdate = self.scene.world.createSystem(InitGLShaderSystem())
-
-        self.eyes = [
-            [2.8, 2.8, 0],
-            [2.3, 2.3, -2.3],
-            [0, 2.8, -2.8],
-            [-2.3, 2.3, -2.3],
-            [-2.8, 2.8, 0],
-            [-2.3, 2.3, 2.3],
-            [0, 2.8, 2.8],
-            [2.3, 2.3, 2.3]
-        ]
-
-        self.operations = [
-            imguizmo.im_guizmo.OPERATION.translate,
-            imguizmo.im_guizmo.OPERATION.rotate,
-            imguizmo.im_guizmo.OPERATION.scale,
-        ]
 
     def test_init(self):
         """
@@ -296,136 +273,3 @@ class TestIMGUIBundle(unittest.TestCase):
         self.scene.shutdown()
         
         print("TestScene:test_removeEntity END".center(100, '-'))
-
-    def test_cameraMovement(self):
-        """
-        Moving animation on set intervals to test gizmo movement
-        """
-        print("TestScene:test_cameraMovement START".center(100, '-'))
-        
-        model = util.translate(0.0,0.0,0.5)
-        eye = util.vec(1.0, 1.0, 1.0)
-        target = util.vec(0,0,0)
-        up = util.vec(0.0, 1.0, 0.0)
-        view = util.lookat(eye, target, up)
-
-        projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -0.5, 10.0)
-
-        mvpMat =  projMat @ view @ model
-        
-        ## ADD CUBE ##
-        # attach a simple cube in a RenderMesh so that VertexArray can pick it up
-        self.mesh4.vertex_attributes.append(self.vertexCube)
-        self.mesh4.vertex_attributes.append(self.colorCube)
-        self.mesh4.vertex_index.append(self.indexCube)
-        self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-        # decorated components and systems with sample, default pass-through shader with uniform MVP
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-        self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-        
-        self.scene.world.print()
-
-        running = True
-        # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
-        
-        # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
-        # needs an active GL context
-        self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
-        
-        message = "In this example, you should be seeing the camera gizmo move around \
-                  \nCamera movement is NOT possible. Hit ESC or close the window to exit."
-        cnt = 0;
-        currEye = 0;
-        while running:
-            running = self.scene.render()
-            displayGUI_text(message)
-            # self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root)
-            # self.scene.world.update_entity_values(self.scene.world.root, 1024, 768)
-            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            self.scene.render_post()
-            cnt += 1
-            if cnt == 50:
-                cnt = 0;
-                currEye += 1;
-                if currEye > (len(self.eyes) - 1):
-                    currEye = 0;
-                self.scene.gContext._eye = np.array(self.eyes[currEye], np.float32);
-                self.scene.gContext.updateCamera();
-
-            
-        self.scene.shutdown()
-        
-        print("TestScene:test_cameraMovement END".center(100, '-'))
-
-    def test_gizmosCycle(self):
-        """
-        Moving animation on set intervals to test gizmo movement
-        """
-        print("TestScene:test_cameraMovement START".center(100, '-'))
-        
-        model = util.translate(0.0,0.0,0.5)
-        eye = util.vec(1.0, 1.0, 1.0)
-        target = util.vec(0,0,0)
-        up = util.vec(0.0, 1.0, 0.0)
-        view = util.lookat(eye, target, up)
-
-        projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -0.5, 10.0)
-
-        mvpMat =  projMat @ view @ model
-        
-        ## ADD CUBE ##
-        # attach a simple cube in a RenderMesh so that VertexArray can pick it up
-        self.mesh4.vertex_attributes.append(self.vertexCube)
-        self.mesh4.vertex_attributes.append(self.colorCube)
-        self.mesh4.vertex_index.append(self.indexCube)
-        self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-        # decorated components and systems with sample, default pass-through shader with uniform MVP
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
-        self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-        
-        self.scene.world.print()
-
-        running = True
-        # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
-        
-        # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
-        # needs an active GL context
-        self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
-        
-        message = "In this example, you should be seeing the transformation gizmos cycling\
-                  \nCamera movement is NOT possible. Hit ESC or close the window to exit."
-        cnt = 0;
-        currOperation = 0;
-        done = False;
-    
-        while running:
-            if not done and len(self.scene.gContext.node_editor.nodes) > 0:
-                self.scene.gContext.node_editor.highlighed = self.scene.gContext.node_editor.findNodeByName(self.trans4.name);
-                ed.select_node(self.scene.gContext.node_editor.highlighed.id);
-                done = True;
-            
-            running = self.scene.render()
-            displayGUI_text(message)
-            # self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root)
-            # self.scene.world.update_entity_values(self.scene.world.root, 1024, 768)
-            self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
-            self.scene.render_post()
-            cnt += 1
-            if cnt == 50:
-                cnt = 0;
-                currOperation += 1;
-                if currOperation > 2:
-                    currOperation = 0;
-                self.scene.gContext.gizmo.currentGizmoOperation = self.operations[currOperation];
-
-            
-        self.scene.shutdown()
-        
-        print("TestScene:test_cameraMovement END".center(100, '-'))
-
-
- 
