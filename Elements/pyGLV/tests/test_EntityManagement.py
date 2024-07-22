@@ -186,7 +186,7 @@ class TestEntityManagement(unittest.TestCase):
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Add Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
@@ -251,7 +251,7 @@ class TestEntityManagement(unittest.TestCase):
 
         running = True
         # MAIN RENDERING LOOP
-        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
+        self.scene.init(imgui=True, windowWidth = 1024, windowHeight = 768, windowTitle = "Elements Remove Cube Scene", customImGUIdecorator=IMGUIecssDecoratorBundle)
         
         # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
         # needs an active GL context
