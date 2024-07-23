@@ -9,16 +9,26 @@ struct uniforms {
     near_far: vec2f
 };
 
-@group(0) @binding(0) var<uniform> ubuffer:     uniforms;
-@group(1) @binding(0) var g_position_texture:   texture_2d<f32>;
-@group(1) @binding(1) var g_normal_texture:     texture_2d<f32>;
-@group(1) @binding(2) var g_color_texture:      texture_2d<f32>;
-@group(1) @binding(3) var ssao_texture:         texture_2d<f32>;
+@group(0) @binding(0) var<uniform> ubuffer: uniforms;
+@group(1) @binding(0) var diffuse_texture: texture_2d<f32>;
+@group(1) @binding(1) var diffuse_sampler: sampler;  
+@group(1) @binding(2) var normal_texture: texture_2d<f32>; 
+@group(1) @binding(3) var normal_sampler: sampler; 
 
-struct VertexOutput { 
-    @builtin(position) Position: vec4<f32>,
-    @location(0) uv: vec2<f32>
+struct VertexInput {
+    @location(0) a_vertices: vec3f, 
+    @location(1) a_uvs: vec2f,
+    @location(2) a_normals: vec3f,
+    @location(3) a_tangents: vec3f,
+    @location(4) a_bitangents: vec3f
 }
+struct VertexOutput {
+    @builtin(position) Position: vec4f, 
+    @location(0) frag_pos_light_space: vec4f,
+    @location(1) frag_pos: vec3f, 
+    @location(2) uv: vec2f,
+    @location(3) TBN: mat3x3f
+};
 struct FragOutput { 
     @builtin(frag_depth) depth: f32,
     @location(0) color: vec4f
@@ -83,57 +93,68 @@ fn LinearizeDepth(
     return linearDepth;
 }
 
-@fragment
-fn fs_main(
-    in: VertexOutput
-) -> FragOutput {
-    var pos_size = textureDimensions(g_position_texture, 0); 
-    var pos_coord = in.uv * vec2f(pos_size); 
-    var pos_texel = vec2u(u32(pos_coord.x), u32(pos_coord.y)); 
+@vertex
+fn vs_main( 
+    in: VertexInput
+) -> VertexOutput {
 
-    var norm_size = textureDimensions(g_normal_texture, 0); 
-    var norm_coord = in.uv * vec2f(norm_size); 
-    var norm_texel = vec2u(u32(norm_coord.x), u32(norm_coord.y)); 
-
-    var color_size = textureDimensions(g_color_texture, 0); 
-    var color_coord = in.uv * vec2f(color_size); 
-    var color_texel = vec2u(u32(color_coord.x), u32(color_coord.y));
+    var out: VertexOutput;   
 
     var model = transpose(ubuffer.model);
     var view = transpose(ubuffer.view); 
     var projection = transpose(ubuffer.projection); 
     var light_view = transpose(ubuffer.light_view);
     var light_proj = transpose(ubuffer.light_proj); 
-    var near = ubuffer.near_far.x;
-    var far = ubuffer.near_far.y;
 
-    var frag_pos = textureLoad(g_position_texture, pos_texel, 0).xyz;
-    var frag_norm = textureLoad(g_normal_texture, norm_texel, 0).xyz;
-    var frag_color = textureLoad(g_color_texture, color_texel, 0).xyz; 
-    var frag_occlusion = textureLoad(ssao_texture, pos_texel, 0).x;
-    var frag_pos_from_light = light_proj * light_view * vec4f(frag_pos, 1.0);
+    let T = normalize((model, vec4f(a_tangents, 0.0)).xyz);
+    let B = normalize((model, vec4f(a_bitangents, 0.0)).xyz);
+    let N = normalize((model, vec4f(a_normals, 0.0)).xyz);
+    let TBN = transpose(mat3x3f(T, B, N));
 
-    var out: FragOutput;
+    let frag_pos = (model * vec4f(in.a_vertices, 1.0)).xyz;
+    let light_view_proj = light_proj * light_view;
+    let camera_view_proj = projection * view;
+    let pos_from_light = light_view_proj * vec4f(frag_pos, 1.0); 
+    let pos_from_cam = camera_view_proj * vec4f(frag_pos, 1.0); 
 
-    let normal = normalize(transpose(inverse_mat3(mat4to3(ubuffer.model))) * frag_norm);
+    out.Position = pos_from_cam;
+    out.frag_pos = frag_pos;
+    out.frag_norm = normal;  
+    out.uv = in.a_uvs;
+    out.frag_pos_light_space = pos_from_light; 
+    out.TBN = TBN;
+
+    return out;
+}  
+
+@fragment
+fn fs_main(
+    in: VertexOutput
+) -> FragOutput { 
+    var out: FragOutput;  
+
+    let color = textureSample(diffuse_texture, diffuse_sampler, in.uv).rgb; 
+    var normal = textureSample(normal_texture, normal_sampler, in.uv).rgb; 
+    normal = normalize(normal * 2.0 - 1.0);
+    // let normal = normalize(in.frag_norm);
     let light_color = vec3f(1.0);
     let light_pos = ubuffer.light_pos; 
     let view_pos = ubuffer.view_pos;
 
-    let ambient = vec3f(0.3 * frag_color * frag_occlusion);
+    let ambient = 0.2 * light_color;
 
-    let light_dir = normalize(light_pos - frag_pos); 
+    let light_dir = in.TBN * normalize(light_pos - in.frag_pos); 
     let diff = max(dot(light_dir, normal), 0.0); 
     let diffuse = diff * light_color;
 
-    let view_dir = normalize(view_pos - frag_pos);
+    let view_dir = in.TBN * normalize(view_pos - in.frag_pos);
     let hafway_dir = normalize(light_dir + view_dir);
-    let spec = pow(max(dot(normal, hafway_dir), 0.0), 8.0);
+    let spec = pow(max(dot(normal, hafway_dir), 0.0), 64.0);
     let specular = spec * light_color; 
 
-    let lighting = (ambient + diffuse + specular) * frag_color;  
+    let lighting = (ambient + diffuse + specular) * color;  
 
-    out.depth = textureLoad(g_normal_texture, norm_texel, 0).a; 
+    out.depth = LinearizeDepth(in.Position.z, ubuffer.near_far.x, ubuffer.near_far.y); 
     out.color = vec4f(lighting, 1.0);
     return out;
 }

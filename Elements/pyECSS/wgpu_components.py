@@ -77,7 +77,7 @@ class MeshComponent(Component):
         NORMAL = "a_normals"
         COLOR = "a_colors" 
         TANGENT = "a_tangents"
-        BITANGENT = "a_bytangents"
+        BITANGENT = "a_bitangents"
     
     def __init__(self, mesh_type:Type, import_path=None): 
         self.vertices = None 
@@ -114,8 +114,8 @@ class ForwardShaderComponent(Component):
         self.attributes = None
         self.attributes_layout = None  
 
-class DeferedShaderComponent(Component): 
-    def __init__(self, shader_path:Path, diffuse_texture:str):
+class DeferredLightComponent(Component): 
+    def __init__(self, shader_path:Path):
         assert_that(shader_path).is_not_none()
 
         self.pipeline_layout = None 
@@ -134,10 +134,17 @@ class DeferedShaderComponent(Component):
         self.other_uniform = None
 
         # Geometry stage buffers 
-        self.diffuse_texture = diffuse_texture
+        # self.diffuse_texture = diffuse_texture
+        # self.g_uniform_buffer: wgpu.GPUBuffer = None  
+        # self.g_bind_group: wgpu.GPUBindGroup = None
+        # self.g_pipeline: wgpu.GPURenderPipeline = None 
+
+class DeferrdGeometryComponent(Component): 
+    def __init__(self, diffuse_texture:str):
+        self.diffuse_texture = diffuse_texture 
         self.g_uniform_buffer: wgpu.GPUBuffer = None  
         self.g_bind_group: wgpu.GPUBindGroup = None
-        self.g_pipeline: wgpu.GPURenderPipeline = None
+        self.g_pipeline: wgpu.GPURenderPipeline = None 
         
 class SkyboxComponent(Component):
     def __init__(self, name:str, paths:list): 

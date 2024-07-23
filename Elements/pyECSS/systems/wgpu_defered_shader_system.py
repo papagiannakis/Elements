@@ -51,7 +51,7 @@ fn vs_main(
 } 
 """ 
 
-class DeferedShaderSystem(System): 
+class DeferedLightShaderSystem(System): 
 
     def ShaderLoader(self, file):
         try:
@@ -117,9 +117,9 @@ class DeferedShaderSystem(System):
             })
  
     def on_create(self, entity: Entity, components: Component | list[Component]): 
-        shader:DeferedShaderComponent = components 
+        shader:DeferredLightComponent = components 
 
-        assert_that(type(shader) == DeferedShaderComponent).is_true()
+        assert_that(type(shader) == DeferredLightComponent).is_true()
 
         shader.shader_fragment_code = self.ShaderLoader(shader.shader_path)
         shader.shader_fragment_module = GpuController().device.create_shader_module(code=shader.shader_fragment_code) 

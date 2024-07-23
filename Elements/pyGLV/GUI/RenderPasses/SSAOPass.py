@@ -36,7 +36,7 @@ struct Samples {
 
 @group(0) @binding(0) var<uniform> uniforms: Uniforms;
 @group(0) @binding(1) var<storage, read> samples: Samples;
-@group(0) @binding(2) var r_output_texture: texture_storage_2d<rgba32float, write>;
+@group(0) @binding(2) var r_output_texture: texture_storage_2d<rgba8unorm, write>;
 @group(0) @binding(3) var r_normal_texture: texture_2d<f32>;
 @group(0) @binding(4) var r_noise_texture: texture_2d<f32>;
 
@@ -178,7 +178,7 @@ class SSAOPass(RenderSystem):
             {
                 "binding": 2,
                 "visibility": wgpu.ShaderStage.COMPUTE,
-                "storage_texture": {"access": wgpu.StorageTextureAccess.write_only, "format": wgpu.TextureFormat.rgba32float},
+                "storage_texture": {"access": wgpu.StorageTextureAccess.write_only, "format": wgpu.TextureFormat.rgba8unorm},
             }
         ) 
         bind_groups_layout_entries[0].append(

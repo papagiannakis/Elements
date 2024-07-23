@@ -24,7 +24,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba32float,
+            format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING
         ) 
         ssao_view: wgpu.GPUTextureView = ssao.create_view() 
@@ -35,7 +35,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba32float,
+            format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING
         ) 
         ssao_blur_view: wgpu.GPUTextureView = ssao_blur.create_view() 
@@ -247,7 +247,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba32float,
+            format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING
         ) 
         ssao_view: wgpu.GPUTextureView = ssao.create_view()
@@ -258,7 +258,7 @@ class InitialPass(RenderSystem):
             mip_level_count=1,
             sample_count=1,
             dimension="2d",
-            format=wgpu.TextureFormat.rgba32float,
+            format=wgpu.TextureFormat.rgba8unorm,
             usage=wgpu.TextureUsage.RENDER_ATTACHMENT | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.STORAGE_BINDING
         ) 
         ssao_blur_view: wgpu.GPUTextureView = ssao_blur.create_view()  

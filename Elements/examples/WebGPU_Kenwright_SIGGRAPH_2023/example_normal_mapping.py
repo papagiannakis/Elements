@@ -13,7 +13,7 @@ from Elements.pyECSS.systems.wgpu_camera_system import CameraSystem
 from Elements.pyECSS.systems.wgpu_mesh_system import MeshSystem
 from Elements.pyECSS.systems.wpgu_forward_shader_system import ForwardShaderSystem
 from Elements.pyECSS.systems.wgpu_skybox_system import SkyboxSystem
-from Elements.pyECSS.systems.wgpu_defered_shader_system import DeferedShaderSystem
+from Elements.pyECSS.systems.wgpu_defered_shader_system import DeferedLightShaderSystem
 
 from Elements.pyECSS.wgpu_components import *
 from Elements.pyECSS.wgpu_entity import Entity
@@ -60,11 +60,11 @@ Scene().add_component(light, CameraComponent(60, 16/9, 0.01, 500, 35, CameraComp
 
 model = Scene().add_entity()
 Scene().add_component(model, InfoComponent("model"))
-Scene().add_component(model, TransformComponent(glm.vec3(1, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
-Scene().add_component(model, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "Cauterizer" / "Cauterizer.obj"))
+Scene().add_component(model, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
+Scene().add_component(model, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube" / "source" / "cube.obj"))
 Scene().add_component(model, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shadow_shader.wgsl"))
 Scene().add_component(model, MaterialComponent())
-Scene().add_component(model, ShadowAffectionComponent(light_entity=light))
+Scene().add_component(model, LightAffectionComponent(light_entity=light))
 
 skyPaths = [
     definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
@@ -84,7 +84,7 @@ Scene().add_system(TransformSystem([TransformComponent]))
 Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
 Scene().add_system(CameraControllerSystem([CameraControllerComponent, CameraComponent, TransformComponent]))
 Scene().add_system(MeshSystem([MeshComponent]))
-Scene().add_system(DeferedShaderSystem([DeferedShaderComponent]))
+Scene().add_system(DeferedLightShaderSystem([DeferredLightComponent]))
 Scene().add_system(ForwardShaderSystem([ForwardShaderComponent]))
 
 

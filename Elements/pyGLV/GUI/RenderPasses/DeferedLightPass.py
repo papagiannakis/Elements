@@ -11,7 +11,7 @@ from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib
 
 class DeferedLightPass(RenderSystem):
 
-    def make_bind_group(self, shader:DeferedShaderComponent):
+    def make_bind_group(self, shader:DeferredLightComponent):
         bind_groups_entries = [[]]
 
         for name in shader.uniform_buffers.keys(): 
@@ -55,7 +55,7 @@ class DeferedLightPass(RenderSystem):
                 GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
             )
 
-    def make_pipeline(self, material:MaterialComponent, shader:DeferedShaderComponent):   
+    def make_pipeline(self, material:MaterialComponent, shader:DeferredLightComponent):   
         material.pipeline = GpuController().device.create_render_pipeline(
             layout=shader.pipeline_layout,
             vertex={
@@ -79,21 +79,19 @@ class DeferedLightPass(RenderSystem):
         )
 
     def on_create(self, entity: Entity, components: Component | list[Component]): 
-        mesh, material, shader = components 
+        material, shader = components 
 
         assert_that(
-            (type(mesh) == MeshComponent) and
             (type(material) == MaterialComponent) and
-            (type(shader) == DeferedShaderComponent)
+            (type(shader) == DeferredLightComponent)
         ).is_true()
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):   
-        mesh, material, shader = components  
+        material, shader = components  
 
         assert_that(
-            (type(mesh) == MeshComponent) and
             (type(material) == MaterialComponent) and
-            (type(shader) == DeferedShaderComponent)
+            (type(shader) == DeferredLightComponent)
         ).is_true() 
 
         GpuController().set_texture_sampler(
@@ -135,7 +133,7 @@ class DeferedLightPass(RenderSystem):
             )
         
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder): 
-        mesh, material, shader = components     
+        material, shader = components     
         
         self.make_bind_group(shader) 
         self.make_pipeline(material, shader) 
