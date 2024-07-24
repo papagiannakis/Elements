@@ -38,7 +38,6 @@ GpuController().set_adapter_device(device=device, adapter=adapter)
 present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)
-
 InputManager().set_monitor(canvas)
 
 TextureLib().make_texture(name="3x3", path=definitions.TEXTURE_DIR / "3x3.jpg")

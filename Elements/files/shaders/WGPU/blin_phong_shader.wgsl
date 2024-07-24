@@ -3,15 +3,13 @@ struct uniforms {
     view: mat4x4f,
     model: mat4x4f,
     view_pos: vec3f,
-    light_view: mat4x4f, 
-    light_proj: mat4x4f,
     light_pos: vec3f,
     near_far: vec2f
 };
 
 @group(0) @binding(0) var<uniform> ubuffer: uniforms;
-@group(1) @binding(0) var albedo_texture: texture_2d<f32>;
-@group(1) @binding(1) var albedo_sampler: sampler; 
+@group(1) @binding(0) var diffuse_texture: texture_2d<f32>;
+@group(1) @binding(1) var diffuse_sampler: sampler; 
 
 struct VertexInput {
     @location(0) a_vertices: vec3f, 
@@ -20,10 +18,9 @@ struct VertexInput {
 }
 struct VertexOutput {
     @builtin(position) Position: vec4f, 
-    @location(0) frag_pos_light_space: vec4f,
-    @location(1) frag_pos: vec3f, 
-    @location(2) frag_norm: vec3f,
-    @location(3) uv: vec2f
+    @location(0) frag_pos: vec3f, 
+    @location(1) frag_norm: vec3f,
+    @location(2) uv: vec2f
 };
 struct FragOutput { 
     @builtin(frag_depth) depth: f32,
@@ -99,21 +96,16 @@ fn vs_main(
     var model = transpose(ubuffer.model);
     var view = transpose(ubuffer.view); 
     var projection = transpose(ubuffer.projection); 
-    var light_view = transpose(ubuffer.light_view);
-    var light_proj = transpose(ubuffer.light_proj);
 
     let frag_pos = (model * vec4f(in.a_vertices, 1.0)).xyz;
     let normal = transpose(inverse_mat3(mat4to3(model))) * in.a_normals;
-    let light_view_proj = light_proj * light_view;
     let camera_view_proj = projection * view;
-    let pos_from_light = light_view_proj * vec4f(frag_pos, 1.0); 
     let pos_from_cam = camera_view_proj * vec4f(frag_pos, 1.0);
 
     out.Position = pos_from_cam;
     out.frag_pos = frag_pos;
     out.frag_norm = normal;  
     out.uv = in.a_uvs;
-    out.frag_pos_light_space = pos_from_light;
 
     return out;
 }  
@@ -124,7 +116,7 @@ fn fs_main(
 ) -> FragOutput { 
     var out: FragOutput;
 
-    let color = textureSample(albedo_texture, albedo_sampler, in.uv).rgb;
+    let color = textureSample(diffuse_texture, diffuse_sampler, in.uv).rgb;
     let normal = normalize(in.frag_norm);
     let light_color = vec3f(1.0);
     let light_pos = ubuffer.light_pos; 
