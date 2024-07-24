@@ -733,7 +733,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
         
         self._buffer = FrameBuffer();
 
-    def updateCamera(self):
+    def updateCameraValue(self):
         self._updateCamera.value = np.array(util.lookat(self._eye, self._target, self._up), np.float32)
 
         if self._wrapeeWindow.eventManager is not None:
@@ -777,7 +777,7 @@ class IMGUIecssDecoratorBundle(ImGUIDecorator):
 
         if cameraChange:
             self._eye = view[0]
-            self.updateCamera();
+            self.updateCameraValue();
             
 
         if trsChange:
