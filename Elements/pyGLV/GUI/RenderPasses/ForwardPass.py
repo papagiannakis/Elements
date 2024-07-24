@@ -111,7 +111,9 @@ class ForwardRenderPass(RenderSystem):
 
         self.make_bind_group(shader) 
         self.make_pipeline(material, shader) 
-        
+
+        # print("stage: forward pass")
+
         render_pass.set_pipeline(material.pipeline)
         render_pass.set_index_buffer(mesh.buffer_map[MeshComponent.Buffers.INDEX.value], wgpu.IndexFormat.uint32) 
         for name, attr in shader.attributes.items():

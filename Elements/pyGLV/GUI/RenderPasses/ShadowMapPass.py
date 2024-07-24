@@ -250,7 +250,9 @@ class ShadowMapPass(RenderSystem):
 
         lightAffected: ShadowAffectionComponent = components[0] 
         mesh: MeshComponent = components[1] 
-        
+
+        # print("stage: shadow pass") 
+
         render_pass.set_pipeline(lightAffected.render_pipeline) 
         render_pass.set_index_buffer(mesh.buffer_map[MeshComponent.Buffers.INDEX.value], wgpu.IndexFormat.uint32) 
         render_pass.set_vertex_buffer(slot=0, buffer=mesh.buffer_map[MeshComponent.Buffers.VERTEX.value])

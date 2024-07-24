@@ -40,6 +40,8 @@ render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)
 InputManager().set_monitor(canvas) 
 
+TextureLib().make_texture(name="grass", path=definitions.TEXTURE_DIR / "Texture_Grass.png")
+
 camera = Scene().add_entity()
 Scene().add_component(camera, InfoComponent("main camera"))
 Scene().add_component(camera, TransformComponent(glm.vec3(0, 0, 10), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=False))
@@ -51,8 +53,21 @@ model = Scene().add_entity()
 Scene().add_component(model, InfoComponent("model"))
 Scene().add_component(model, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
 Scene().add_component(model, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube" / "source" / "cube.obj"))
-Scene().add_component(model, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl"))
-Scene().add_component(model, MaterialComponent())
+Scene().add_component(model, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl"))
+Scene().add_component(model, MaterialComponent()) 
+
+skyPaths = [
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "front.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "bottom.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "top.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "right.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "left.jpg",
+]
+
+sky = Scene().add_entity()
+Scene().add_component(sky, InfoComponent("cubemap"))
+Scene().add_component(sky, SkyboxComponent("sky", skyPaths))
 
 Scene().add_system(SkyboxSystem([SkyboxComponent]))
 Scene().add_system(TransformSystem([TransformComponent]))
@@ -60,7 +75,14 @@ Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
 Scene().add_system(CameraControllerSystem([CameraControllerComponent, CameraComponent, TransformComponent]))
 Scene().add_system(MeshSystem([MeshComponent]))
 Scene().add_system(DeferedLightShaderSystem([DeferredLightComponent]))
-Scene().add_system(ForwardShaderSystem([ForwardShaderComponent]))
+Scene().add_system(ForwardShaderSystem([ForwardShaderComponent])) 
+
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(model, ForwardShaderComponent), 
+    texture_name="diffuse_texture", 
+    sampler_name="diffuse_sampler", 
+    texture=TextureLib().get_texture(name="grass")
+)
 
 def update_uniforms(ent: Entity): 
     cam: Entity = Scene().get_primary_cam() 
@@ -70,7 +92,6 @@ def update_uniforms(ent: Entity):
     cam: CameraComponent = Scene().get_component(cam, CameraComponent)
     
     near_far = glm.vec2(cam.near, cam.far) 
-    color = glm.vec3(0.4, 1.0, 0.4)
     model = transform.world_matrix
     view = cam.view 
     projection = cam.projection
@@ -95,13 +116,6 @@ def update_uniforms(ent: Entity):
         member_name="model",
         uniform_value=model,
         mat4x4f=True
-    )
-    GpuController().set_uniform_value(
-        shader_component=shader,
-        buffer_name="ubuffer",
-        member_name="color",
-        uniform_value=color,
-        float3=True
     )
     GpuController().set_uniform_value(
         shader_component=shader,

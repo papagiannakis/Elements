@@ -128,6 +128,8 @@ class BlitSurafacePass(RenderSystem):
             f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"
         ).is_true()
 
+        # print("stage: bliting")
+
         render_pass.set_pipeline(self.render_pipeline) 
         for bind_group_id, bind_group in enumerate(self.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)

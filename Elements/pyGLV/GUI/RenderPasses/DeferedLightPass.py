@@ -137,7 +137,9 @@ class DeferedLightPass(RenderSystem):
         
         self.make_bind_group(shader) 
         self.make_pipeline(material, shader) 
-        
+
+        # print("stage: Deferred Lighing")
+
         render_pass.set_pipeline(material.pipeline)
         for bind_group_id, bind_group in enumerate(shader.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99) 

@@ -326,7 +326,9 @@ class DeferedGeometryPass(RenderSystem):
             type(geom) == DeferrdGeometryComponent and 
             type(material) == MaterialComponent and
             type(transform) == TransformComponent
-        ).is_true()
+        ).is_true() 
+
+        # print("stage: Deferred Geometry")
 
         render_pass.set_pipeline(geom.g_pipeline) 
         render_pass.set_index_buffer(mesh.buffer_map[MeshComponent.Buffers.INDEX.value], wgpu.IndexFormat.uint32) 

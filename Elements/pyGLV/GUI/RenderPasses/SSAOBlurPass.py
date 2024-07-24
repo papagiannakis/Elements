@@ -247,7 +247,9 @@ class SSAOBlurPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
-        
+
+        # print("stage: SSAO blur pass")
+
         screen_size = GpuController().render_target_size
 
         work_group_count_x = np.ceil(screen_size[0] / SSAO_WORK_GROUP_SIZE[0]).astype(int)

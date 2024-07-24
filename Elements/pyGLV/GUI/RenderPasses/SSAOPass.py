@@ -336,6 +336,8 @@ class SSAOPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
+        
+        # print("stage: SSAO pass")
 
         screen_size = GpuController().render_target_size
 

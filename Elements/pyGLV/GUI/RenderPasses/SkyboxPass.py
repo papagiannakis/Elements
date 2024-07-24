@@ -195,6 +195,9 @@ class SkyboxPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
+        
+        # print("stage: cubemap")
+
         render_pass.set_pipeline(self.render_pipeline) 
         for bind_group_id, bind_group in enumerate(self.bind_groups):
             render_pass.set_bind_group(bind_group_id, bind_group, [], 0, 99)
