@@ -6,8 +6,8 @@ struct uniforms {
 };
 
 @group(0) @binding(0) var<uniform> ubuffer: uniforms;
-@group(1) @binding(0) var myTexture: texture_2d<f32>;
-@group(1) @binding(1) var mySampler: sampler;
+@group(1) @binding(0) var diffuse_texture: texture_2d<f32>;
+@group(1) @binding(1) var diffuse_sampler: sampler;
 
 struct VertexInput {
     @location(0) a_vertices: vec3f, 
@@ -58,6 +58,6 @@ fn fs_main(
 
     var out: FragOutput; 
     out.depth = LinearizeDepth(in.Position.z, ubuffer.near_far.x, ubuffer.near_far.y);
-    out.color = textureSample(myTexture, mySampler, in.v_tex);
+    out.color = textureSample(diffuse_texture, diffuse_sampler, in.v_tex);
     return out; 
 }

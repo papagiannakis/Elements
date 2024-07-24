@@ -340,7 +340,8 @@ def deferred_phong_uniforms(ent: Entity, light: Entity):
 
 Renderer().init(
     present_context=present_context,
-    render_texture_format=render_texture_format,
+    render_texture_format=render_texture_format, 
+    SSAO=True
 )
 while canvas._running:
     ts = TimeStepManager().update()

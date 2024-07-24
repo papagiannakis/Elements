@@ -91,7 +91,10 @@ class Renderer:
         self.attached_systems[name].prepare(Scene().entities, Scene().entity_componets_relation, Scene().components, command_encoder) 
         self.attached_systems[name].render(Scene().entities, Scene().entity_componets_relation, Scene().components, render_pass)
 
-    def init(self, present_context, render_texture_format):  
+    def init(self, present_context, render_texture_format, SSAO=False):   
+        # settings
+        self.SSAO = SSAO
+
         GpuController().present_context = present_context
         GpuController().render_texture_format = render_texture_format 
 
@@ -155,13 +158,14 @@ class Renderer:
         self.actuate_system("DeferedGeometry", command_encoder, geometry_render_pass)
         geometry_render_pass.end()  
 
-        ssao_pass = command_encoder.begin_compute_pass() 
-        self.actuate_system("SSAO", command_encoder, ssao_pass)  
-        ssao_pass.end()
+        if self.SSAO == True:
+            ssao_pass = command_encoder.begin_compute_pass() 
+            self.actuate_system("SSAO", command_encoder, ssao_pass)  
+            ssao_pass.end()
 
-        ssao_blur_pass = command_encoder.begin_compute_pass() 
-        self.actuate_system("SSAOBlur", command_encoder, ssao_blur_pass)  
-        ssao_blur_pass.end()
+            ssao_blur_pass = command_encoder.begin_compute_pass() 
+            self.actuate_system("SSAOBlur", command_encoder, ssao_blur_pass)  
+            ssao_blur_pass.end()
 
         worldDescriptor = RenderPassDescriptor() 
         worldDescriptor.view = TextureLib().get_texture(name="world_gfx").view
