@@ -1,254 +1,203 @@
-struct Uniforms {
-    proj: mat4x4f,
-    view: mat4x4f,
-    view_pos: vec4f,
-    light_pos: vec4f
+struct VertexInput {
+    @location(0) a_vertices: vec3f,
+    @location(1) a_normals: vec3f,
+    @location(2) a_uvs: vec2f,
+    @location(3) a_tangents: vec3f,
+    @location(4) a_bitangents: vec3f
+};
+struct VertexOutput {
+    @builtin(position) v_Position: vec4<f32>,
+    @location(0) v_TexCoord : vec2<f32>,
+    @location(1) v_TangentViewPos : vec3<f32>,
+    @location(2) v_TangentFragPos : vec3<f32>,
+    @location(3) v_TangentLightPos0 : vec3<f32>,
 };
 
-struct ModelData {
-    model: array<mat4x4f>
-} 
+struct UniformData {
+    viewMatrix: mat4x4f,
+    projectionMatrix: mat4x4f, 
+    modelMatrix: mat4x4f,
+    objectColor: vec4f,
+    viewPosition: vec4f,
+    lightPositions: vec4f,
+    lightColors: vec4f
+};
 
-struct NormalData { 
-    normal: array<mat4x4f>
-}
-
-// struct Fragment {
-//     @builtin(position) Position: vec4f,
-//     @location(0) frag_pos: vec3f,
-//     @location(1) tex_coords: vec2f,
-//     @location(2) tangent_light_pos: vec3f,
-//     @location(3) tangent_view_pos: vec3f,
-//     @location(4) tangent_frag_pos: vec3f
-// } 
-
-struct Fragment { 
-    @builtin(position) Position: vec4f, 
-    @location(0) tex_coords: vec2f,
-    @location(1) cam_dir: vec3f, 
-    @location(2) light_dir: vec3f,
-    @location(3) attenuation: f32
-} 
-
-struct POM_out { 
-    tex: vec2f,
-    depth: f32
-}
-
-@binding(0) @group(0) var<uniform> ubuffer: Uniforms;
-@binding(1) @group(0) var<storage, read> models: ModelData; 
-@binding(2) @group(0) var<storage, read> normals: NormalData;
-
-@binding(0) @group(1) var diffuse_texture: texture_2d<f32>;
-@binding(1) @group(1) var normal_texture: texture_2d<f32>;
-@binding(2) @group(1) var spec_texture: texture_2d<f32>;
-@binding(3) @group(1) var filter_sampler: sampler;
-
-fn Mat3x3(
-    in: mat4x4f
-) -> mat3x3f {
-
-    return mat3x3f(
-        in[0].xyz,
-        in[1].xyz,
-        in[2].xyz
-    );
-}
-
-// fn simpleParallaxMapping(
-//     tex_coords: vec2f,
-//     view_dir: vec3f
-// ) -> vec2f {
-
-//     var height = textureSample(bump_texture, filter_sampler, tex_coords).r;
-//     var p = view_dir.xy / view_dir.z * (height * height_scale);
-
-//     return vec2f(tex_coords - p);
-// }
-
-fn POM( 
-    cam_dir: vec3f, 
-    tex_coords: vec2f, 
-) -> POM_out { 
-
-    var out: POM_out;
-    out.depth = 0.0; 
-
-    var samples = mix(30.0, 5.0, abs(dot(vec3f(0.0, 0.0, 1.0), cam_dir))); 
-    // var samples = 30.0;
-    var sample_dist = 1.0 / samples;
-    var curr_depth = 0.0; 
-
-    var offset_tex_coord = 0.1 * (cam_dir.xy / (cam_dir.z * samples)); 
-
-    var current_tex_coords = tex_coords;
-    var depth_from_mesh = textureSample(normal_texture, filter_sampler, current_tex_coords.xy).a; 
-
-    while(depth_from_mesh > curr_depth) 
-    { 
-        curr_depth = curr_depth + 1.0;
-        current_tex_coords = current_tex_coords - offset_tex_coord;
-        depth_from_mesh = textureSample(normal_texture, filter_sampler, current_tex_coords.xy).a;
-    } 
-
-    var prev_tex_coords = current_tex_coords + offset_tex_coord; 
-
-    var after_intersection = depth_from_mesh - curr_depth;
-    var before_intersection = textureSample(normal_texture, filter_sampler, prev_tex_coords.xy).a - curr_depth + sample_dist; 
-
-    var ratio = after_intersection / (after_intersection - before_intersection); 
-
-    var final_tex = prev_tex_coords * ratio + current_tex_coords * (1.0 - ratio);
-    var frag_depth = curr_depth + before_intersection * ratio + after_intersection * (1.0 - ratio); 
-
-    out.depth = frag_depth;
-    out.tex = final_tex; 
-
-    return out;
-} 
-
-fn self_occlusion(
-    ligh_dir: vec3f,
-    tex_coords: vec2f, 
-    initial_depth: f32
-) -> f32 { 
-
-    var coefficient = 0.0; 
-    var occlusion_samples = 0.0;
-    var new_coefficient = 0.0;
-
-    var samples = 30.0;
-    var sample_dist = initial_depth / samples;
-    var offset_tex_coord = 0.1 * (ligh_dir.xy / (ligh_dir.z * samples)); 
-
-    var curr_depth = initial_depth - sample_dist;
-    var current_tex_coords = tex_coords + offset_tex_coord;
-    var depth_from_mesh = textureSample(normal_texture, filter_sampler, current_tex_coords.xy).a; 
-    var steps = 1.0; 
-
-    while (curr_depth > 0.0) 
-    { 
-        if (depth_from_mesh < curr_depth) 
-        { 
-            occlusion_samples = occlusion_samples + 1.0;
-            new_coefficient = (curr_depth - depth_from_mesh) * (1.0 - steps / samples); 
-            coefficient = max(coefficient, new_coefficient);
-        } 
-
-        curr_depth = curr_depth - sample_dist;
-        current_tex_coords = current_tex_coords + offset_tex_coord; 
-        depth_from_mesh = textureSample(normal_texture, filter_sampler, current_tex_coords.xy).a; 
-        steps = steps + 1.0;
-    } 
-
-    if (occlusion_samples < 1.0) 
-    { 
-        coefficient = 1.0;
-    } 
-    else  
-    { 
-        coefficient = 1.0 - coefficient;
-    } 
-
-    return coefficient;
-}
+@group(0) @binding(0) var<uniform> u_UniformData: UniformData;
+@group(1) @binding(0) var u_AlbedoTexture: texture_2d<f32>;
+@group(1) @binding(1) var u_AlbedoSampler: sampler;
+@group(1) @binding(2) var u_NormalMap: texture_2d<f32>;
+@group(1) @binding(3) var u_NormalSampler: sampler;
+@group(1) @binding(4) var u_DisplacementMap: texture_2d<f32>;
+@group(1) @binding(5) var u_DisplacementSampler: sampler;
 
 @vertex
 fn vs_main(
-    @builtin(instance_index) ID: u32,
-    @location(0) a_pos: vec3f,
-    @location(1) a_normal: vec3f,
-    @location(2) a_tex: vec2f,
-    @location(3) a_tangent: vec3f,
-    @location(4) a_bitangent: vec3f
-) -> Fragment {
+    @builtin(instance_index) ID: u32, 
+    in: VertexInput
+) -> VertexOutput {
+    let modelMat3x3 = mat3x3f(
+        u_UniformData.modelMatrix[0].xyz, 
+        u_UniformData.modelMatrix[1].xyz, 
+        u_UniformData.modelMatrix[2].xyz
+    );
+    var normalMatrix: mat3x3f = transpose(modelMat3x3);
 
-    var model = models.model[ID]; 
-    var norm_mat = Mat3x3(normals.normal[ID]);
+    var T: vec3f = normalize(normalMatrix * in.a_tangents);
+    var B: vec3f = normalize(normalMatrix * in.a_bitangents);
+    var N: vec3f = normalize(normalMatrix * in.a_normals);
 
-    // var T = normalize(Mat3x3(model) * a_tangent);
-    // var B = normalize(Mat3x3(model) * a_bitangent);
-    // var N = normalize(Mat3x3(model) * a_normal);
-    // var TBN = transpose(mat3x3f(T, B, N));
-    // // var TBN = mat3x3f(T, B, N); 
+    // Re-orthogonalize T with respect to N
+    T = normalize(T - dot(T, N) * N);
 
-    var N = normalize(norm_mat * a_normal); 
-    var T = normalize(norm_mat * a_tangent);
-    T = normalize(T - (dot(N, T) * N));
-    var B = normalize(norm_mat * a_bitangent);
+    var TBN: mat3x3f = transpose(mat3x3f(T, B, N));
 
-    if (dot(cross(N, T), B) < 0.0) 
-    { 
-        T = T * (-1.0);
-    } 
+    var out: VertexOutput;
+    var mvp: mat4x4f = u_UniformData.projectionMatrix * u_UniformData.viewMatrix * u_UniformData.modelMatrix;
+    out.v_Position = mvp * vec4<f32>(in.a_vertices, 1.0);
+    out.v_TexCoord = in.a_uvs;
+    out.v_TangentViewPos = TBN * u_UniformData.viewPosition.xyz;
+    out.v_TangentFragPos = TBN * (u_UniformData.modelMatrix * vec4f(in.a_vertices, 1.0)).xyz;
 
-    var TBN = transpose(mat3x3f(T, B, N)); 
+    out.v_TangentLightPos0 = TBN * u_UniformData.lightPositions.xyz;
 
-    var position = ((ubuffer.view * model) * vec4f(a_pos, 1.0)).xyz; 
-    var radius = 50.0; 
-    var dist = length(((ubuffer.view * model) * ubuffer.light_pos).xyz - position);
-
-    var out: Fragment; 
-    out.cam_dir = TBN * (normalize(ubuffer.view_pos.xyz - position)); 
-    out.light_dir = TBN * (normalize(ubuffer.light_pos.xyz - position)); 
-    out.tex_coords = a_tex;
-    out.attenuation = 1.0 / (1.0 + ((2.0 / radius) * dist) + ((1.0 / (radius * radius)) * (dist * dist))); 
-
-    out.Position = (ubuffer.proj * (ubuffer.view * model)) * vec4f(a_pos, 1.0);
     return out;
+}
+
+const heightScale: f32 = 0.1;
+
+fn ParallaxOcclusionMapping(texCoords: vec2f, viewDir: vec3f, fragDepth: ptr<function, f32>) -> vec2f
+{
+    // number of depth layers
+    let minLayers: f32 = 8.0;
+    let maxLayers: f32 = 32.0;
+    var numLayers: f32 = mix(maxLayers, minLayers, abs(dot(vec3(0.0, 0.0, 1.0), viewDir)));
+    // calculate the size of each layer
+    var layerDepth: f32 = 1.0 / numLayers;
+    // depth of current layer
+    var currentLayerDepth: f32 = 0.0;
+    // the amount to shift the texture coordinates per layer (from vector P)
+    var P: vec2f = viewDir.xy / viewDir.z * heightScale; 
+    var deltaTexCoords: vec2f = P / numLayers;
+    // get initial values
+    var currentTexCoords: vec2f = texCoords;
+    var currentDepthMapValue: f32 = textureSample(u_DisplacementMap, u_DisplacementSampler, currentTexCoords).r;
+
+    while (currentLayerDepth < currentDepthMapValue)
+    {
+        // shift texture coordinates along direction of P
+        currentTexCoords -= deltaTexCoords;
+        // get depthmap value at current texture coordinates
+        currentDepthMapValue = textureSample(u_DisplacementMap, u_DisplacementSampler, currentTexCoords).r;  
+        // get depth of next layer
+        currentLayerDepth += layerDepth;  
+    }
+    
+    // get texture coordinates before collision (reverse operations)
+    var prevTexCoords: vec2f = currentTexCoords + deltaTexCoords;
+
+    // get depth after and before collision for linear interpolation
+    var afterDepth: f32 = currentDepthMapValue - currentLayerDepth;
+    var beforeDepth: f32 = textureSample(u_DisplacementMap, u_DisplacementSampler, prevTexCoords).r - currentLayerDepth + layerDepth;
+ 
+    // interpolation of texture coordinates
+    var weight: f32 = afterDepth / (afterDepth - beforeDepth);
+    var finalTexCoords: vec2f = prevTexCoords * weight + currentTexCoords * (1.0 - weight);
+	*(fragDepth) = currentLayerDepth + beforeDepth * weight + afterDepth * (1.0 - weight);
+
+    return finalTexCoords;
+}
+
+fn SelfOcclusion(lightDir: vec3f, texCoord: vec2f, initialDepth: f32) -> f32
+{
+	var coefficient: f32 = 0.0;
+	var occludedSamples: f32 = 0.0;
+	var newCoefficient: f32 = 0.0;
+ 
+	var samples: f32 = 30.0;
+	var sampleDist: f32 = initialDepth / samples;
+	var offsetTexCoord: vec2f = 0.1 * (lightDir.xy / (lightDir.z * samples));
+ 
+	var currentDepth: f32 = initialDepth - sampleDist;
+	var currentTexCoord: vec2f = texCoord + offsetTexCoord;
+	var depthFromMesh: f32 = textureSample(u_NormalMap, u_NormalSampler, currentTexCoord).a;
+	var steps: f32 = 1.0;
+ 
+	while (currentDepth > 0.0)
+	{
+		if (depthFromMesh < currentDepth)
+		{
+			occludedSamples += 1.0;
+			newCoefficient = (currentDepth - depthFromMesh) * (1.0 - steps / samples);
+			coefficient = max(coefficient, newCoefficient);
+		}
+		currentDepth -= sampleDist;
+		currentTexCoord += offsetTexCoord;
+		depthFromMesh = textureSample(u_NormalMap, u_NormalSampler, currentTexCoord).a;
+		steps += 1.0;
+	}
+ 
+	if (occludedSamples < 1.0) {
+		coefficient = 1.0;
+	} else {
+		coefficient = 1.0 - coefficient;
+    }
+
+	return coefficient;
 }
 
 @fragment
 fn fs_main(
-    @location(0) tex_coords: vec2f,
-    @location(1) cam_dir: vec3f, 
-    @location(2) light_dir: vec3f,
-    @location(3) attenuation: f32
-) -> @location(0) vec4f {
- 
-    // var offset_tex_coord = POM(cam_dir, tex_coords, frag_depth);   
-    var parallax = POM(cam_dir, tex_coords); 
-    var frag_depth = parallax.depth;
-    var offset_tex_coord = parallax.tex;
-    var light_color = vec3f(1.0, 1.0, 1.0);
+    in: VertexOutput
+) -> @location(0) vec4<f32> {
+    var fragDepth: f32 = 0.0;
+    var camDir: vec3<f32> = normalize(in.v_TangentViewPos - in.v_TangentFragPos);
+    var offsetTexCoord: vec2f = ParallaxOcclusionMapping(in.v_TexCoord, camDir, &(fragDepth));
 
-    if (offset_tex_coord.x > 1.0 || offset_tex_coord.y > 1.0 || offset_tex_coord.x < 0.0 || offset_tex_coord.y < 0.0) 
-    { 
-        discard;
-    } 
+    if (offsetTexCoord.x > 1.0 || offsetTexCoord.y > 1.0 || offsetTexCoord.x < 0.0 || offsetTexCoord.y < 0.0) {
+    	discard;
+    }
 
-    var albedo = textureSample(diffuse_texture, filter_sampler, offset_tex_coord.xy).rgb;
-    var normals = normalize(textureSample(normal_texture, filter_sampler, offset_tex_coord.xy).rgb * 2.0 - 1.0); 
-    var spec = textureSample(spec_texture, filter_sampler, offset_tex_coord.xy).r; 
+    var textureColor: vec4<f32> = textureSample(u_AlbedoTexture, u_AlbedoSampler, offsetTexCoord);
 
-    var AO = 0.9; 
-    var roughness = 0.7;  
+    var normal: vec3f = textureSample(u_NormalMap, u_NormalSampler, offsetTexCoord).rgb;
 
-    var diffuse = vec3f(0.0);
-    var specular = vec3f(0.0); 
-    var ambient = vec3f(0.0);
-    var occlusion = 0.0; 
+    normal = normalize(normal);
+    var diffuse: vec3<f32> = vec3<f32>(0.0);
+    var specular: vec3<f32> = vec3<f32>(0.0);
+    var ambient: vec3<f32> = vec3<f32>(0.0);
 
-    for (var i = 0; i < 1; i = i + 1) 
-    { 
-        var half_angle = normalize(cam_dir + light_dir); 
-        var n_dot_l = clamp(dot(normals, light_dir), 0.0, 1.0);
-        var n_dot_h = clamp(dot(normals, half_angle), 0.0, 1.0); 
+    var ambientCoefficient: f32 = 0.1;
+    var u_Glossiness: f32 = 3.0;
+    var occlusion: f32 = 0.0;
 
-        var specular_highlight = pow(n_dot_h, 1.0 - roughness); 
-        var S = spec * (light_color * specular_highlight); 
-        var D = (1.0 - roughness) * (light_color * n_dot_l); 
+    var tangentLightPos: vec3f = in.v_TangentLightPos0;
 
-        occlusion = occlusion + self_occlusion(light_dir, offset_tex_coord, frag_depth);
-        diffuse = diffuse + (D * attenuation); 
-        specular = specular + (S * attenuation); 
-        ambient = ambient + (light_color * attenuation);
-    } 
+    // ambient
+    ambient = ambient + u_UniformData.lightColors.rgb * 0.5;
 
-    var ambience = (0.01 * ambient) * AO; 
+    // diffuse
+    var lightDir: vec3<f32> = normalize(tangentLightPos - in.v_TangentFragPos);
+    var diff: f32 = max(dot(lightDir, normal), 0.0);
+    var D: vec3<f32> = diff * u_UniformData.lightColors.rgb * 0.5;
+    diffuse = diffuse + D;
 
-    var Blinn_Phong = occlusion * (ambience + diffuse + specular); 
-    var final_color = albedo * Blinn_Phong; 
-    //final_color = pow(final_color, vec3f(1.0 / 2.2)); 
-    return vec4f(final_color, 1.0);
+    // specular
+    var halfwayDir: vec3<f32> = normalize(lightDir + camDir);
+    var spec: f32 = pow(max(dot(normal, halfwayDir), 0.0), 32.0) * u_Glossiness;
+    var S: vec3<f32> = u_UniformData.lightColors.rgb * spec * 0.5;
+    specular = specular + S;
+
+    occlusion += SelfOcclusion(tangentLightPos, offsetTexCoord, fragDepth);
+
+    ambient = ambientCoefficient * ambient;
+
+    var BlinnPhong: vec3<f32> = occlusion * (ambient + diffuse + specular);
+    var finalColor: vec3<f32> = textureColor.rgb * BlinnPhong;
+    finalColor = pow(finalColor, vec3<f32>(1.0 / 1.2));
+
+    // gamma correct
+    let physicalColor = pow(finalColor * u_UniformData.objectColor.rgb, vec3<f32>(2.2));
+    
+    return vec4f(physicalColor.r, physicalColor.g, physicalColor.b, textureColor.a);
 }

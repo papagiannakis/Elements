@@ -79,7 +79,8 @@ class GpuController:
 
         elif float1 is True:  
             data_size = 4 
-            value = np.float32(uniform_value)  
+            value = np.float32(uniform_value)   
+            print(f"value data size:{value.nbytes}, and data size should be {data_size}")
             assert_that((value.nbytes == data_size), f"value data size:{value.nbytes}, and data size should be {data_size}").is_true()
 
         else: 

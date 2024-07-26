@@ -3,9 +3,8 @@ struct uniforms {
     view: mat4x4f,
     model: mat4x4f,
     view_pos: vec3f,
-    light_view: mat4x4f, 
-    light_proj: mat4x4f,
     light_pos: vec3f,
+    light_color: vec3f,
     near_far: vec2f
 };
 
@@ -24,10 +23,11 @@ struct VertexInput {
 }
 struct VertexOutput {
     @builtin(position) Position: vec4f, 
-    @location(0) frag_pos_light_space: vec4f,
-    @location(1) frag_pos: vec3f, 
-    @location(2) uv: vec2f,
-    @location(3) TBN: mat3x3f
+    @location(0) frag_pos: vec3f,
+    @location(1) uv: vec2f, 
+    @location(2) T: vec3f,
+    @location(3) B: vec3f,
+    @location(4) N: vec3f,
 };
 struct FragOutput { 
     @builtin(frag_depth) depth: f32,
@@ -103,26 +103,22 @@ fn vs_main(
     var model = transpose(ubuffer.model);
     var view = transpose(ubuffer.view); 
     var projection = transpose(ubuffer.projection); 
-    var light_view = transpose(ubuffer.light_view);
-    var light_proj = transpose(ubuffer.light_proj); 
 
-    let T = normalize((model, vec4f(a_tangents, 0.0)).xyz);
-    let B = normalize((model, vec4f(a_bitangents, 0.0)).xyz);
-    let N = normalize((model, vec4f(a_normals, 0.0)).xyz);
-    let TBN = transpose(mat3x3f(T, B, N));
+    let T = normalize((model * vec4f(in.a_tangents, 0.0)).xyz);
+    let B = normalize((model * vec4f(in.a_bitangents, 0.0)).xyz);
+    let N = normalize((model * vec4f(in.a_normals, 0.0)).xyz);
+    // let TBN = transpose(mat3x3f(T, B, N));
 
     let frag_pos = (model * vec4f(in.a_vertices, 1.0)).xyz;
-    let light_view_proj = light_proj * light_view;
     let camera_view_proj = projection * view;
-    let pos_from_light = light_view_proj * vec4f(frag_pos, 1.0); 
     let pos_from_cam = camera_view_proj * vec4f(frag_pos, 1.0); 
 
     out.Position = pos_from_cam;
     out.frag_pos = frag_pos;
-    out.frag_norm = normal;  
-    out.uv = in.a_uvs;
-    out.frag_pos_light_space = pos_from_light; 
-    out.TBN = TBN;
+    out.uv = in.a_uvs; 
+    out.T = T;
+    out.B = B;
+    out.N = N;
 
     return out;
 }  
@@ -133,21 +129,23 @@ fn fs_main(
 ) -> FragOutput { 
     var out: FragOutput;  
 
+    let TBN = transpose(mat3x3f(in.T, in.B, in.N));
+
     let color = textureSample(diffuse_texture, diffuse_sampler, in.uv).rgb; 
     var normal = textureSample(normal_texture, normal_sampler, in.uv).rgb; 
     normal = normalize(normal * 2.0 - 1.0);
     // let normal = normalize(in.frag_norm);
-    let light_color = vec3f(1.0);
+    let light_color = ubuffer.light_color;
     let light_pos = ubuffer.light_pos; 
     let view_pos = ubuffer.view_pos;
 
     let ambient = 0.2 * light_color;
 
-    let light_dir = in.TBN * normalize(light_pos - in.frag_pos); 
+    let light_dir = TBN * normalize(light_pos - in.frag_pos); 
     let diff = max(dot(light_dir, normal), 0.0); 
     let diffuse = diff * light_color;
 
-    let view_dir = in.TBN * normalize(view_pos - in.frag_pos);
+    let view_dir = TBN * normalize(view_pos - in.frag_pos);
     let hafway_dir = normalize(light_dir + view_dir);
     let spec = pow(max(dot(normal, hafway_dir), 0.0), 64.0);
     let specular = spec * light_color; 

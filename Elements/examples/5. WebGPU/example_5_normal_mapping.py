@@ -38,32 +38,53 @@ GpuController().set_adapter_device(device=device, adapter=adapter)
 present_context = canvas.get_context()
 render_texture_format = present_context.get_preferred_format(device.adapter)
 present_context.configure(device=device, format=render_texture_format)
-InputManager().set_monitor(canvas) 
+InputManager().set_monitor(canvas)
 
-TextureLib().make_texture(name="grass", path=definitions.TEXTURE_DIR / "Texture_Grass.png")
+TextureLib().make_texture(name="diffuse", path=definitions.MODEL_DIR / "cube" / "textures" / "brickwall.jpg")
+TextureLib().make_texture(name="normal", path=definitions.MODEL_DIR / "cube" / "textures" / "brickwall_normal.jpg")
 
 camera = Scene().add_entity()
 Scene().add_component(camera, InfoComponent("main camera"))
 Scene().add_component(camera, TransformComponent(glm.vec3(0, 0, 10), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=False))
 Scene().add_component(camera, CameraComponent(60, 16/9, 0.01, 500, 10, CameraComponent.Type.PERSPECTIVE))
 Scene().add_component(camera, CameraControllerComponent())
-Scene().set_primary_cam(camera) 
+Scene().set_primary_cam(camera)
 
 light = Scene().add_entity()
-Scene().add_component(light, InfoComponent("model"))
-Scene().add_component(light, TransformComponent(glm.vec3(5, -10, 5), glm.vec3(0, 0, 0), glm.vec3(0.3, 0.3, 0.3), static=True))
-Scene().add_component(light, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube" / "source" / "cube.obj"))
-Scene().add_component(light, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl")) 
-Scene().add_component(light, LightComponent(intensity=1.0, color=glm.vec3(1.0, 1.0, 0.5)))
+Scene().add_component(light, InfoComponent("light"))
+Scene().add_component(light, TransformComponent(glm.vec3(10, -10, 10), glm.vec3(30, 0, 0), glm.vec3(0.3, 0.3, 0.3), static=False))
+Scene().add_component(light, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube-sphere" / "cube.obj"))
+Scene().add_component(light, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl"))
 Scene().add_component(light, MaterialComponent())
+Scene().add_component(light, LightComponent(intensity=1.0, color=glm.vec3(1.0, 1.0, 0.9))) 
 
 model = Scene().add_entity()
 Scene().add_component(model, InfoComponent("model"))
-Scene().add_component(model, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
+Scene().add_component(model, TransformComponent(glm.vec3(0, 0, 0), glm.vec3(140, -10, 0), glm.vec3(1, 1, 1), static=True))
 Scene().add_component(model, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube" / "source" / "cube.obj"))
-Scene().add_component(model, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "blin_phong_shader.wgsl")) 
-Scene().add_component(model, LightAffectionComponent(light_entity=light))
+Scene().add_component(model, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "normal_mapping.wgsl"))
 Scene().add_component(model, MaterialComponent())
+Scene().add_component(model, LightAffectionComponent(light_entity=light))
+
+model2 = Scene().add_entity()
+Scene().add_component(model2, InfoComponent("model"))
+Scene().add_component(model2, TransformComponent(glm.vec3(5, 0, 0), glm.vec3(140, 10, 0), glm.vec3(1, 1, 1), static=True))
+Scene().add_component(model2, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube" / "source" / "cube.obj"))
+Scene().add_component(model2, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_shader.wgsl"))
+Scene().add_component(model2, MaterialComponent())
+
+skyPaths = [
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "front.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "bottom.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "top.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "right.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "left.jpg",
+]
+
+sky = Scene().add_entity()
+Scene().add_component(sky, InfoComponent("cubemap"))
+Scene().add_component(sky, SkyboxComponent("sky", skyPaths))
 
 Scene().add_system(SkyboxSystem([SkyboxComponent]))
 Scene().add_system(TransformSystem([TransformComponent]))
@@ -71,13 +92,27 @@ Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
 Scene().add_system(CameraControllerSystem([CameraControllerComponent, CameraComponent, TransformComponent]))
 Scene().add_system(MeshSystem([MeshComponent]))
 Scene().add_system(DeferedLightShaderSystem([DeferredLightComponent]))
-Scene().add_system(ForwardShaderSystem([ForwardShaderComponent])) 
+Scene().add_system(ForwardShaderSystem([ForwardShaderComponent]))
 
 GpuController().set_texture_sampler(
     shader_component=Scene().get_component(model, ForwardShaderComponent), 
     texture_name="diffuse_texture", 
     sampler_name="diffuse_sampler", 
-    texture=TextureLib().get_texture(name="grass")
+    texture=TextureLib().get_texture(name="diffuse")
+)
+
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(model, ForwardShaderComponent), 
+    texture_name="normal_texture", 
+    sampler_name="normal_sampler", 
+    texture=TextureLib().get_texture(name="normal")
+)
+
+GpuController().set_texture_sampler(
+    shader_component=Scene().get_component(model2, ForwardShaderComponent), 
+    texture_name="diffuse_texture", 
+    sampler_name="diffuse_sampler", 
+    texture=TextureLib().get_texture(name="diffuse")
 )
 
 def update_light_uniforms(ent: Entity): 
@@ -139,7 +174,8 @@ def update_model_uniforms(ent: Entity):
     cam_trans: TransformComponent = Scene().get_component(cam, TransformComponent)
 
     light_link: LightAffectionComponent = Scene().get_component(ent, LightAffectionComponent) 
-    light_trans: TransformComponent = Scene().get_component(light_link.light, TransformComponent)
+    light_trans: TransformComponent = Scene().get_component(light_link.light, TransformComponent) 
+    light_comp: LightComponent = Scene().get_component(light_link.light, LightComponent)
     
     near_far = glm.vec2(cam_comp.near, cam_comp.far) 
     model = transform.world_matrix
@@ -147,6 +183,7 @@ def update_model_uniforms(ent: Entity):
     projection = cam_comp.projection
     view_pos = cam_trans.translation
     light_pos = light_trans.translation
+    light_color = light_comp.color
 
     GpuController().set_uniform_value(
         shader_component=shader,
@@ -190,7 +227,54 @@ def update_model_uniforms(ent: Entity):
         uniform_value=near_far,
         float2=True
     )
+    GpuController().set_uniform_value(
+        shader_component=shader,
+        buffer_name="ubuffer",
+        member_name="light_color",
+        uniform_value=light_color,
+        float3=True
+    )
 
+def update_model2_uniforms(ent: Entity): 
+    cam: Entity = Scene().get_primary_cam() 
+
+    transform: TransformComponent = Scene().get_component(ent, TransformComponent)   
+    shader: ForwardShaderComponent = Scene().get_component(ent, ForwardShaderComponent)
+    cam: CameraComponent = Scene().get_component(cam, CameraComponent)
+    
+    near_far = glm.vec2(cam.near, cam.far) 
+    model = transform.world_matrix
+    view = cam.view 
+    projection = cam.projection
+
+    GpuController().set_uniform_value(
+        shader_component=shader,
+        buffer_name="ubuffer",
+        member_name="projection",
+        uniform_value=projection,
+        mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader,
+        buffer_name="ubuffer",
+        member_name="view",
+        uniform_value=view,
+        mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader,
+        buffer_name="ubuffer",
+        member_name="model",
+        uniform_value=model,
+        mat4x4f=True
+    )
+    GpuController().set_uniform_value(
+        shader_component=shader,
+        buffer_name="ubuffer",
+        member_name="near_far",
+        uniform_value=near_far,
+        float2=True
+    )
 
 Renderer().init(
     present_context=present_context,
@@ -203,8 +287,9 @@ while canvas._running:
     height = canvas._windowHeight
     Scene().update(event, ts)
 
-    update_light_uniforms(light)
+    update_light_uniforms(light) 
     update_model_uniforms(model)
+    update_model2_uniforms(model2)
 
     Renderer().render([width, height])
     canvas.display()

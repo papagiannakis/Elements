@@ -32,13 +32,20 @@ class TextureLib():
 
     def __init__(self):
         None; 
+    
+    def calculate_aligned_bytes_per_row(self, width, bytes_per_pixel):
+        bytes_per_row = width * bytes_per_pixel
+        aligned_bytes_per_row = ((bytes_per_row + 255) // 256) * 256
+        return aligned_bytes_per_row
  
-    def make_texture(self, name:str, path=None): 
+    def make_texture(self, name:str, path=None, format=wgpu.TextureFormat.rgba8unorm): 
 
         if self.textures.get(name) is not None:
             return self.textures.get(name) 
 
-        assert_that((path != None), "Give the path to the texture").is_true()
+        assert_that((path != None), "Give the path to the texture").is_true() 
+        assert_that((format == wgpu.TextureFormat.rgba8unorm) or (format == wgpu.TextureFormat.rgba16float)).is_true()
+
         img = Image.open(path) 
         img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
 
@@ -50,7 +57,7 @@ class TextureLib():
             size=size,
             usage = wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.TEXTURE_BINDING | wgpu.TextureUsage.RENDER_ATTACHMENT,
             dimension = wgpu.TextureDimension.d2,
-            format = wgpu.TextureFormat.rgba8unorm,
+            format = format,
             mip_level_count = 1,
             sample_count = 1,
         )
