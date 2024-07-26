@@ -30,7 +30,7 @@ fn fs_main(
     // var pos_texel = vec2u(u32(pos_coord.x), u32(pos_coord.y)); 
     var pos_texel = vec2u(pos_coord);  
 
-    let light_color = vec3f(1.0, 1.0, 0.5);
+    let light_color = vec3f(1.0, 1.0, 0.8);
 
     var near = ubuffer.near_far.x;
     var far = ubuffer.near_far.y;
@@ -38,9 +38,8 @@ fn fs_main(
     var frag_pos = textureLoad(g_position_texture, pos_texel, 0).xyz;
     var frag_norm = textureLoad(g_normal_texture, pos_texel, 0).xyz;
     var frag_color = textureLoad(g_color_texture, pos_texel, 0).xyz; 
-    var frag_occlusion = textureLoad(ssao_texture, pos_texel, 0).x; 
 
-    var lighting = frag_color * frag_occlusion * 0.6;
+    var lighting = frag_color * 0.6;
     // var lighting = frag_color * 0.3;
     var view_dir = normalize(ubuffer.view_pos - frag_pos); 
 
