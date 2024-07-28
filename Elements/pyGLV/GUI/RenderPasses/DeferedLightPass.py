@@ -10,8 +10,19 @@ from Elements.pyGLV.GL.wpgu_scene import Scene
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib
 
 class DeferedLightPass(RenderSystem):
+    """
+    Render system for performing a deferred lighting pass, which involves 
+    rendering lighting information based on previously rendered geometry data.
+    """    
 
     def make_bind_group(self, shader:DeferredLightComponent):
+        """
+        Creates bind groups for the shader based on its uniform buffers, read-only 
+        storage buffers, and other uniform resources.
+
+        :param shader: The shader component containing the buffers and layouts.
+        """
+
         bind_groups_entries = [[]]
 
         for name in shader.uniform_buffers.keys(): 
@@ -55,7 +66,14 @@ class DeferedLightPass(RenderSystem):
                 GpuController().device.create_bind_group(layout=bind_group_layout, entries=entries)
             )
 
-    def make_pipeline(self, material:MaterialComponent, shader:DeferredLightComponent):   
+    def make_pipeline(self, material:MaterialComponent, shader:DeferredLightComponent):
+        """
+        Creates a render pipeline for the material using the given shader.
+
+        :param material: The material component containing pipeline configuration.
+        :param shader: The shader component containing the shader modules and layouts.
+        """
+
         material.pipeline = GpuController().device.create_render_pipeline(
             layout=shader.pipeline_layout,
             vertex={
@@ -78,7 +96,14 @@ class DeferedLightPass(RenderSystem):
             }
         )
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Ensures the correct components are provided.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+        
         material, shader = components 
 
         assert_that(
@@ -86,7 +111,15 @@ class DeferedLightPass(RenderSystem):
             (type(shader) == DeferredLightComponent)
         ).is_true()
 
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):   
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
+
         material, shader = components  
 
         assert_that(
@@ -132,7 +165,15 @@ class DeferedLightPass(RenderSystem):
                 texture=TextureLib().get_texture(name="shadow_depth")
             )
         
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder): 
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
+        """
+        Called during rendering to execute the deferred lighting pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
+
         material, shader = components     
         
         self.make_bind_group(shader) 

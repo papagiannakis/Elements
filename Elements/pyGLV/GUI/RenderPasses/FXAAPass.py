@@ -226,9 +226,20 @@ fn fs_main(
 }
 """
 
-class FXAAPass(RenderSystem): 
+class FXAAPass(RenderSystem):
+    """
+    Render system for performing a Fast Approximate Anti-Aliasing (FXAA) pass.
+    """ 
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Initializes the shader, uniform buffer,
+        bind group layouts, and pipeline layout.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """        
+
         self.shader = GpuController().device.create_shader_module(code=FXAA_SHADER_CODE);  
 
         self.uniform_buffer: wgpu.GPUBuffer = GpuController().device.create_buffer(
@@ -269,6 +280,13 @@ class FXAAPass(RenderSystem):
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
 
         world_gfx = TextureLib().get_texture(name="world_gfx") 
         inverse_width = 1 / GpuController().render_target_size[0]
@@ -357,7 +375,15 @@ class FXAAPass(RenderSystem):
             },
         )
     
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
+        """
+        Called during rendering to execute the FXAA pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
+
         assert_that(
             (type(components) == RenderExclusiveComponent), 
             f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"

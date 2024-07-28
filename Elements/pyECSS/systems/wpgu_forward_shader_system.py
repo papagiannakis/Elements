@@ -11,9 +11,19 @@ import re
 import wgpu 
 import sys
 
-class ForwardShaderSystem(System): 
+class ForwardShaderSystem(System):
+    """
+    The system responsible for loading, parsing, and managing shaders for forward rendering.
+    """ 
 
     def ShaderLoader(self, file):
+        """
+        Loads the shader code from a file.
+
+        :param file: Path to the shader file.
+        :return: Shader code as a string.
+        """
+
         try:
             f = open(file, 'r')
         except OSError:
@@ -23,7 +33,14 @@ class ForwardShaderSystem(System):
             return f.read() 
 
 
-    def create_attribute_layout(self, attr:dict): 
+    def create_attribute_layout(self, attr:dict):
+        """
+        Creates the attribute layout for a shader attribute.
+
+        :param attr: A dictionary containing attribute type and slot.
+        :return: Attribute layout dictionary.
+        """
+
         return  {
                     "array_stride": SHADER_ATTRIBUTE_TYPES[attr['type']],
                     "step_mode": wgpu.VertexStepMode.vertex,
@@ -38,6 +55,14 @@ class ForwardShaderSystem(System):
 
     # add the length of each member
     def parse_buffer(self, buffer_type: str, shader_code):
+        """
+        Parses buffer declarations in the shader code.
+
+        :param buffer_type: The type of buffer to parse (e.g., '<uniform>', '<storage, read>').
+        :param shader_code: The shader code to parse.
+        :return: A dictionary of buffers with their properties.
+        """
+
         pattern = re.compile(r"@group\((\d+)\) @binding\((\d+)\) var" + re.escape(buffer_type) + r" (\w+):\s*(\w+(?:\<.*?\>)?);")
         matches = pattern.findall(shader_code)
 
@@ -75,7 +100,14 @@ class ForwardShaderSystem(System):
         return buffers
 
    # make the attribute layout  
-    def parse_attributes(self, shader_code): 
+    def parse_attributes(self, shader_code):
+        """
+        Parses attribute declarations in the shader code.
+
+        :param shader_code: The shader code to parse.
+        :return: A tuple containing a dictionary of attributes and a list of attribute layouts.
+        """
+
         # Regular expression to match the VertexInput struct
         struct_pattern = r'struct\s+VertexInput\s*\{([^}]*)\}'
 
@@ -105,6 +137,13 @@ class ForwardShaderSystem(System):
         return attributes, attribute_layout 
     
     def make_gpu_uniform_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
+        """
+        Creates GPU buffers for uniform buffers.
+
+        :param gpu_buffer_map: Dictionary to store GPU buffers.
+        :param buffer_map: Dictionary of buffer properties.
+        """
+
         for key, buffer in buffer_map.items(): 
             gpu_buffer_map.update({
                 key: GpuController().device.create_buffer(
@@ -113,6 +152,13 @@ class ForwardShaderSystem(System):
             }) 
 
     def make_gpu_read_only_storage_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
+        """
+        Creates GPU buffers for read-only storage buffers.
+
+        :param gpu_buffer_map: Dictionary to store GPU buffers.
+        :param buffer_map: Dictionary of buffer properties.
+        """
+
         for key, buffer in buffer_map.items(): 
             gpu_buffer_map.update({
                 key: GpuController().device.create_buffer(
@@ -121,6 +167,13 @@ class ForwardShaderSystem(System):
             })
  
     def on_create(self, entity: Entity, components: Component | list[Component]): 
+        """
+        Initializes the shader component for an entity.
+
+        :param entity: The entity being created.
+        :param components: The components associated with the entity, expected to include a shader component.
+        """
+
         shader = components
 
         shader.shader_code = self.ShaderLoader(shader.shader_path)
@@ -220,4 +273,13 @@ class ForwardShaderSystem(System):
         )
  
     def on_update(self, ts, entity: Entity, components: Component | list[Component], event): 
+        """
+        Updates the shader component for an entity.
+
+        :param ts: Time step for the update.
+        :param entity: The entity being updated.
+        :param components: The components associated with the entity.
+        :param event: The event triggering the update.
+        """
+
         pass;

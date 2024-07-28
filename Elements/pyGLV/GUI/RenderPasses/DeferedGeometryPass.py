@@ -87,9 +87,20 @@ fn fs_main(
 }
 """
 
-class DeferedGeometryPass(RenderSystem): 
+class DeferedGeometryPass(RenderSystem):
+    """
+    Render system for performing a deferred geometry pass, which involves
+    rendering geometry information into multiple render targets.
+    """ 
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Sets up the shader, buffers, and pipeline layout.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+
         mesh, material, geom, transform = components
 
         assert_that( 
@@ -139,6 +150,14 @@ class DeferedGeometryPass(RenderSystem):
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
+
         mesh, material, geom, transform = components
 
         assert_that( 
@@ -319,6 +338,14 @@ class DeferedGeometryPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
+        """
+        Called during rendering to execute the deferred geometry pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
+
         mesh, material, geom, transform = components
 
         assert_that( 

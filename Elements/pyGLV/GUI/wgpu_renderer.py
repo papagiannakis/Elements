@@ -21,8 +21,16 @@ from Elements.pyGLV.GUI.RenderPasses.FXAAPass import FXAAPass
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 from Elements.pyGLV.GL.wgpu_texture import Texture, TextureLib 
 
-class RenderPassDescriptor: 
+class RenderPassDescriptor:
+    """
+    Class to describe the configuration for a render pass, including color and depth attachments.
+    """    
+
     def __init__(self):  
+        """
+        Initialize the render pass descriptor with default values for color and depth attachments.
+        """
+
         # color attachments
         self.view = None
         self.resolve_target = None 
@@ -42,6 +50,12 @@ class RenderPassDescriptor:
         self.stencil_read_only = True
 
     def generate_color_attachments(self): 
+        """
+        Generate the color attachments configuration for the render pass.
+
+        :return: List of dictionaries containing color attachment settings.
+        """
+
         return [
             {
                 "view": self.view,
@@ -53,6 +67,12 @@ class RenderPassDescriptor:
         ]
 
     def generate_depth_attachments(self): 
+        """
+        Generate the depth attachments configuration for the render pass.
+
+        :return: Dictionary containing depth attachment settings.
+        """
+
         return {
             "view": self.depth_view,
             "depth_clear_value": self.depth_clear_value,
@@ -66,6 +86,10 @@ class RenderPassDescriptor:
         }
 
 class Renderer:
+    """
+    Singleton class to manage the rendering process, including initialization and execution of render passes.
+    """
+
     _instance = None
     
     def __new__(cls):
@@ -84,14 +108,37 @@ class Renderer:
         None; 
 
     def add_system(self, name:str, system: RenderSystem):  
+        """
+        Add a rendering system to the renderer and initialize it with the current scene data.
+
+        :param name: Name of the system.
+        :param system: Instance of the RenderSystem to add.
+        """
+
         self.attached_systems.update({name: system})
         system.create(Scene().entities, Scene().entity_componets_relation, Scene().components)   
 
     def actuate_system(self, name:str, command_encoder: wgpu.GPUCommandEncoder, render_pass):
+        """
+        Actuate the specified system to prepare and render using the given command encoder and render pass.
+
+        :param name: Name of the system to actuate.
+        :param command_encoder: The GPU command encoder.
+        :param render_pass: The render pass to use for rendering.
+        """
+
         self.attached_systems[name].prepare(Scene().entities, Scene().entity_componets_relation, Scene().components, command_encoder) 
         self.attached_systems[name].render(Scene().entities, Scene().entity_componets_relation, Scene().components, render_pass)
 
-    def init(self, present_context, render_texture_format, SSAO=False):   
+    def init(self, present_context, render_texture_format, SSAO=False):
+        """
+        Initialize the renderer with the specified context and format, and add default rendering systems.
+
+        :param present_context: The presentation context for rendering.
+        :param render_texture_format: The format of the render texture.
+        :param SSAO: Boolean to enable or disable Screen Space Ambient Occlusion (SSAO).
+        """        
+
         # settings
         self.SSAO = SSAO
 
@@ -109,7 +156,13 @@ class Renderer:
         self.add_system("FXAA", FXAAPass([RenderExclusiveComponent]))
         self.add_system("BlitToSurface", BlitSurafacePass([RenderExclusiveComponent]))
 
-    def render(self, size:list[int]):    
+    def render(self, size:list[int]):
+        """
+        Perform the rendering process, executing all attached systems and rendering passes.
+
+        :param size: List of two integers specifying the width and height of the render target.
+        """
+                
         # resize if needed 
         GpuController().render_target_size = size
         command_encoder : wgpu.GPUCommandEncoder = GpuController().device.create_command_encoder()

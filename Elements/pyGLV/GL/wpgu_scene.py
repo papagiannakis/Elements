@@ -13,10 +13,9 @@ from Elements.pyECSS.wgpu_system import System
 
 class Scene():
     """
-    Singleton Scene that assembles ECSSManager and Viewer classes together for Scene authoring
-    in pyglGA. It also brings together the new extensions to pyglGA: Shader, VertexArray and 
-    RenderMeshDecorators
+    Singleton class to manage entities, components, and systems in a scene.
     """
+
     _instance = None
     
     def __new__(cls):
@@ -37,22 +36,47 @@ class Scene():
         None; 
 
     def add_entity(self) -> Entity: 
-        
+        """
+        Adds a new entity to the scene.
+
+        :return: The newly created entity.
+        """
+                
         entity = Entity() 
         self.entities.append(entity ) 
         return entity  
     
-    def get_entities(self) -> list[Entity]: 
+    def get_entities(self) -> list[Entity]:
+        """
+        Retrieves all entities in the scene.
+
+        :return: List of entities.
+        """
+
         return self.entities
     
     def has_component(self, ent:Entity, component_type:type) -> bool:
+        """
+        Checks if an entity has a specific component type.
+
+        :param ent: The entity to check.
+        :param component_type: The type of the component to check for.
+        :return: True if the entity has the component, False otherwise.
+        """
 
         return (ent.id in self.entity_componets_relation and
                 component_type in self.entity_componets_relation.get(ent.id) and
                 self.entity_componets_relation[ent.id][component_type] != None and
                 self.components[component_type][self.entity_componets_relation[ent.id][component_type]] != None) 
     
-    def get_component(self, ent:Entity, component_type:type):
+    def get_component(self, ent:Entity, component_type:type): 
+        """
+        Retrieves a component of a specific type from an entity.
+
+        :param ent: The entity to get the component from.
+        :param component_type: The type of the component to retrieve.
+        :return: The component if it exists, None otherwise.
+        """
 
         if self.has_component(ent=ent, component_type=component_type) == False:
             return None; 
@@ -61,6 +85,13 @@ class Scene():
         return self.components[component_type][index]
 
     def add_component(self, ent:Entity, component):
+        """
+        Adds a component to an entity.
+
+        :param ent: The entity to add the component to.
+        :param component: The component to add.
+        :return: The added component.
+        """        
 
         if ent.id not in self.entity_componets_relation:
             self.entity_componets_relation[ent.id] = {} 
@@ -83,23 +114,49 @@ class Scene():
 
         return component
     
-    def add_system(self, system: System):  
+    def add_system(self, system: System):
+        """
+        Adds a system to the scene.
+
+        :param system: The system to add.
+        """  
 
         self.systems.append(system) 
         system.create(self.entities, self.entity_componets_relation, self.components) 
 
-    def update(self, event, ts): 
+    def update(self, event, ts):
+        """
+        Updates all systems in the scene.
+
+        :param event: The event to process.
+        :param ts: The timestep for the update.
+        """  
 
         for system in self.systems:
             system.update(ts, self.entities, self.entity_componets_relation, self.components, event) 
 
-    def set_primary_cam(self, ent:Entity): 
+    def set_primary_cam(self, ent:Entity):
+        """
+        Sets the primary camera entity.
+
+        :param ent: The entity to set as the primary camera.
+        """
+
         self.primary_camera = ent 
 
-    def get_primary_cam(self): 
+    def get_primary_cam(self):
+        """
+        Retrieves the primary camera entity.
+
+        :return: The primary camera entity.
+        """
+
         return self.primary_camera
 
     def scene_debug_dump(self):
+        """
+        Dumps the debug information of the scene, printing all entities and their components.
+        """
         
         for id in self.entity_componets_relation.keys():
             for c_type in self.entity_componets_relation[id].keys(): 
@@ -107,6 +164,9 @@ class Scene():
                 component = self.components[c_type][index] 
 
                 print(f'Entity id:{id} component:{component}')
+
+
+
 
 if __name__ == "__main__":
     # The client singleton code.

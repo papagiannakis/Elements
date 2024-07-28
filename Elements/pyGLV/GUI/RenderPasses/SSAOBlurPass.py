@@ -117,8 +117,19 @@ fn blur_y(@builtin(global_invocation_id) global_invocation_id: vec3<u32>) {
 """
 
 class SSAOBlurPass(RenderSystem):   
+    """
+    Render system for performing SSAO (Screen Space Ambient Occlusion) blur.
+    """
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Initializes the shader, uniform buffer,
+        bind group layouts, bind groups, and pipeline layout for the SSAO blur pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+
         assert_that(
             (type(components) == RenderExclusiveComponent), 
             f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"
@@ -174,6 +185,13 @@ class SSAOBlurPass(RenderSystem):
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
 
         cam = Scene().get_primary_cam() 
         cam_comp: CameraComponent = Scene().get_component(cam, CameraComponent) 
@@ -247,6 +265,13 @@ class SSAOBlurPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
+        """
+        Called during rendering to execute the SSAO blur pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
 
         # print("stage: SSAO blur pass")
 

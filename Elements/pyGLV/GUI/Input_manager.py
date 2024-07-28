@@ -2,10 +2,10 @@ from __future__ import annotations
 
 class InputManager():
     """
-    Singleton Scene that assembles ECSSManager and Viewer classes together for Scene authoring
-    in pyglGA. It also brings together the new extensions to pyglGA: Shader, VertexArray and 
-    RenderMeshDecorators
+    Singleton class to manage input from the user. Provides methods to check key and button states
+    and to get the mouse position.
     """
+
     _instance = None
     
     def __new__(cls):
@@ -21,21 +21,47 @@ class InputManager():
         None;  
 
     def set_monitor(self, instance): 
+        """
+        Set the canvas monitor instance that provides input state information.
+
+        :param instance: The canvas monitor instance.
+        """
+
         self.canvas_monitor_instance = instance
 
     def is_key_pressed(self, key): 
+        """
+        Check if a key is pressed.
+
+        :param key: The key to check.
+        :return: True if the key is pressed, False otherwise, or None if the monitor is not set.
+        """
+
         if self.canvas_monitor_instance: 
             return self.canvas_monitor_instance.IsKeyPressed(key)  
         else: 
             return None 
 
     def is_button_pressed(self, button): 
+        """
+        Check if a mouse button is pressed.
+
+        :param button: The mouse button to check.
+        :return: True if the button is pressed, False otherwise, or None if the monitor is not set.
+        """
+
         if self.canvas_monitor_instance: 
             return self.canvas_monitor_instance.IsButtonPressed(button)  
         else: 
             return None
     
     def get_mouse_pos(self):  
+        """
+        Get the current mouse position.
+
+        :return: Tuple of (x, y) coordinates of the mouse position, or None if the monitor is not set.
+        """
+
         if self.canvas_monitor_instance:
             return self.canvas_monitor_instance.GetMousePos() 
         else: 

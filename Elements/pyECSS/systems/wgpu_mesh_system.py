@@ -13,8 +13,18 @@ from Elements.pyECSS.math_utilities import compute_tangent_space
 from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 
 class MeshSystem(System):  
+    """
+    The system responsible for managing meshes.
+    """
 
     def import_mesh(self, path:str):
+        """
+        Imports a mesh from the given file path.
+
+        :param path: The path to the mesh file.
+        :return: A tuple containing the indices, vertices, UVs, normals, tangents, and bitangents of the mesh.
+        """ 
+
         mesh = trimesh.load(file_obj=path, force='mesh')  
 
         vertices = np.ascontiguousarray(mesh.vertices, dtype=np.float32) 
@@ -28,19 +38,40 @@ class MeshSystem(System):
 
         return indices, vertices, uvs, normals, tangents, bitangent
     
-    def createBuffer(self, data:np.ndarray): 
+    def createBuffer(self, data:np.ndarray):
+        """
+        Creates a GPU buffer with the given data.
+
+        :param data: The data to be stored in the buffer.
+        :return: The created GPU buffer.
+        """ 
+
         buffer = GpuController().device.create_buffer_with_data(
             data=data, usage=wgpu.BufferUsage.VERTEX
         )  
         return buffer
     
     def createIndexBuffer(self, data:np.ndarray):
+        """
+        Creates a GPU index buffer with the given data.
+
+        :param data: The data to be stored in the buffer.
+        :return: The created GPU index buffer.
+        """
+
         buffer = GpuController().device.create_buffer_with_data(
             data=data, usage=wgpu.BufferUsage.INDEX
         )   
         return buffer
  
     def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Initializes the mesh component for an entity.
+
+        :param entity: The entity being created.
+        :param components: The components associated with the entity, expected to include a mesh component.
+        """
+
         mesh = components 
 
         if mesh.type is MeshComponent.Type.IMPORT and mesh.import_path is not None:
@@ -61,7 +92,15 @@ class MeshSystem(System):
         if mesh.Bitangents is not None: 
             mesh.buffer_map.update({MeshComponent.Buffers.BITANGENT.value: self.createBuffer(mesh.Bitangents)})  
 
-    def on_update(self, ts, entity: Entity, components: Component | list[Component], event):  
+    def on_update(self, ts, entity: Entity, components: Component | list[Component], event):
+        """
+        Updates the mesh component for an entity. This method currently does nothing and is a placeholder for future updates.
+
+        :param ts: Time step for the update.
+        :param entity: The entity being updated.
+        :param components: The components associated with the entity.
+        :param event: The event triggering the update.
+        """
         pass 
 
 

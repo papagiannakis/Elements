@@ -71,11 +71,23 @@ fn fs_main(
 """
 
 class ShadowMapPass(RenderSystem):
+    """
+    Render system for performing shadow map rendering.
+    """
+
     def __init__(self, filters: list[type]):
         super().__init__(filters) 
         self.shader = None
     
     def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Initializes the shader, uniform buffer,
+        bind group layouts, and pipeline layout for shadow mapping.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+
         # assert_that(type(components) == SkyboxComponent).is_true()
         # skybox: SkyboxComponent = components  
         assert_that(
@@ -110,7 +122,15 @@ class ShadowMapPass(RenderSystem):
             
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
+
         assert_that(
             type(components[0]) == ShadowAffectionComponent and
             type(components[1]) == MeshComponent and 
@@ -241,7 +261,15 @@ class ShadowMapPass(RenderSystem):
             },
         )
     
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder): 
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
+        """
+        Called during rendering to execute the shadow map pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
+
         assert_that(
             type(components[0]) == ShadowAffectionComponent and
             type(components[1]) == MeshComponent and 

@@ -53,8 +53,18 @@ fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
 
 
 class BlitSurafacePass(RenderSystem): 
+    """
+    Render system for performing a blit surface pass, which is used to copy the final image to the framebuffer.
+    """
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Sets up the shader and pipeline layout.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+                
         self.shader = GpuController().device.create_shader_module(code=BLIT_SHADER_CODE); 
         
         bind_groups_layout_entries = [[]]
@@ -76,7 +86,15 @@ class BlitSurafacePass(RenderSystem):
             
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
-    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+    def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
+
         # We always have two bind groups, so we can play distributing our
         # resources over these two groups in different configurations.
         bind_groups_entries = [[]]
@@ -122,7 +140,15 @@ class BlitSurafacePass(RenderSystem):
             },
         )
     
-    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
+    def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
+        """
+        Called during rendering to execute the blit pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
+
         assert_that(
             (type(components) == RenderExclusiveComponent), 
             f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"

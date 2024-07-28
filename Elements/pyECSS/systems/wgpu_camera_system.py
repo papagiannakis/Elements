@@ -8,10 +8,19 @@ import glm
 
 class CameraSystem(System):
     """
-    The system responsible for the cameras.
+    The system responsible for managing camera components and updating their view and projection matrices.
     """
 
-    def on_create(self, entity: Entity, components: Component | tuple[Component]):
+    def on_create(self, entity: Entity, components: Component | tuple[Component]): 
+        """
+        Initialize the camera component when the entity is created.
+        
+        This sets up the initial view and projection matrices for the camera.
+
+        :param entity: The entity being created.
+        :param components: The components associated with the entity, expected to include a camera and transform component.
+        """
+
         camera, transform = components
         
         camera.view = glm.inverse(transform.world_matrix)
@@ -24,6 +33,17 @@ class CameraSystem(System):
         camera.view_projection = camera.projection * camera.view
 
     def on_update(self, ts, entity: Entity, components: Component | tuple[Component], event):
+        """
+        Update the camera's view and projection matrices based on the entity's transform.
+
+        This recalculates the view and projection matrices if the transform is not static.
+
+        :param ts: Time step for the update.
+        :param entity: The entity being updated.
+        :param components: The components associated with the entity, expected to include a camera and transform component.
+        :param event: The event triggering the update (unused in this method).
+        """
+        
         camera, transform = components
 
         if not transform.static:

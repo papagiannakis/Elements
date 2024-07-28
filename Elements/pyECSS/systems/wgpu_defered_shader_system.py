@@ -52,8 +52,18 @@ fn vs_main(
 """ 
 
 class DeferedLightShaderSystem(System): 
+    """
+    The system responsible for managing deferred light shaders.
+    """
 
-    def ShaderLoader(self, file):
+    def ShaderLoader(self, file): 
+        """
+        Loads the shader code from a file.
+
+        :param file: The path to the shader file.
+        :return: The shader code as a string.
+        """ 
+
         try:
             f = open(file, 'r')
         except OSError:
@@ -64,6 +74,14 @@ class DeferedLightShaderSystem(System):
 
     # add the length of each member
     def parse_buffer(self, buffer_type: str, shader_code):
+        """
+        Parses the shader code to find buffers of a specific type.
+
+        :param buffer_type: The type of buffer to parse (e.g., '<uniform>', '<storage, read>').
+        :param shader_code: The shader code to parse.
+        :return: A dictionary containing buffer details.
+        """
+
         pattern = re.compile(r"@group\((\d+)\) @binding\((\d+)\) var" + re.escape(buffer_type) + r" (\w+):\s*(\w+(?:\<.*?\>)?);")
         matches = pattern.findall(shader_code)
 
@@ -101,6 +119,13 @@ class DeferedLightShaderSystem(System):
         return buffers
 
     def make_gpu_uniform_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
+        """
+        Creates GPU uniform buffers based on the parsed buffer map.
+
+        :param gpu_buffer_map: The dictionary to store GPU buffer objects.
+        :param buffer_map: The parsed buffer map containing buffer details.
+        """
+
         for key, buffer in buffer_map.items(): 
             gpu_buffer_map.update({
                 key: GpuController().device.create_buffer(
@@ -109,6 +134,13 @@ class DeferedLightShaderSystem(System):
             }) 
 
     def make_gpu_read_only_storage_buffers(self, gpu_buffer_map:dict, buffer_map:dict):
+        """
+        Creates GPU read-only storage buffers based on the parsed buffer map.
+
+        :param gpu_buffer_map: The dictionary to store GPU buffer objects.
+        :param buffer_map: The parsed buffer map containing buffer details.
+        """
+
         for key, buffer in buffer_map.items(): 
             gpu_buffer_map.update({
                 key: GpuController().device.create_buffer(
@@ -116,7 +148,14 @@ class DeferedLightShaderSystem(System):
                 )
             })
  
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Initializes the deferred light shader component for an entity.
+
+        :param entity: The entity being created.
+        :param components: The components associated with the entity, expected to include a deferred light shader component.
+        """
+
         shader:DeferredLightComponent = components 
 
         assert_that(type(shader) == DeferredLightComponent).is_true()
@@ -217,5 +256,14 @@ class DeferedLightShaderSystem(System):
             bind_group_layouts=shader.bind_group_layouts
         )
  
-    def on_update(self, ts, entity: Entity, components: Component | list[Component], event): 
+    def on_update(self, ts, entity: Entity, components: Component | list[Component], event):
+        """
+        Updates the deferred light shader component for an entity. This method currently does nothing and is a placeholder for future updates.
+
+        :param ts: Time step for the update.
+        :param entity: The entity being updated.
+        :param components: The components associated with the entity.
+        :param event: The event triggering the update.
+        """
+
         pass;

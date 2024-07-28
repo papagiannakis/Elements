@@ -4,7 +4,11 @@ import numpy as np
 from enum import Enum
 from assertpy import assert_that
 
-class GpuController:
+class GpuController: 
+    """
+    Singleton class to manage GPU resources such as devices, adapters, uniform values and textures.
+    """
+
     _instance = None
     
     def __new__(cls, *args, **kwargs):
@@ -26,23 +30,45 @@ class GpuController:
         None;  
 
     def set_adapter_device(self, adapter, device):
+        """
+        Set the adapter and device for the GPU.
+
+        :param adapter: The GPU adapter.
+        :param device: The GPU device.
+        """        
+        
         self.device = device
         self.adapter = adapter 
 
     def set_uniform_value(
-            self, 
-            shader_component,  
-            buffer_name:str,
-            member_name:str,
-            uniform_value,  
-            mat2x2f=False,
-            mat4x4f=False, 
-            mat3x3f=False,  
-            float1=False,  
-            float2=False,
-            float3=False,  
-            float4=False,
+        self, 
+        shader_component,  
+        buffer_name:str,
+        member_name:str,
+        uniform_value,  
+        mat2x2f=False,
+        mat4x4f=False, 
+        mat3x3f=False,  
+        float1=False,  
+        float2=False,
+        float3=False,  
+        float4=False,
     ): 
+        """
+        Set the value of a uniform in a shader.
+
+        :param shader_component: The shader component containing the uniform.
+        :param buffer_name: The name of the buffer.
+        :param member_name: The name of the uniform member.
+        :param uniform_value: The value to set.
+        :param mat2x2f: True if the value is a 2x2 matrix.
+        :param mat4x4f: True if the value is a 4x4 matrix.
+        :param mat3x3f: True if the value is a 3x3 matrix.
+        :param float1: True if the value is a single float.
+        :param float2: True if the value is a 2-component float vector.
+        :param float3: True if the value is a 3-component float vector.
+        :param float4: True if the value is a 4-component float vector.
+        """
 
         data_size = 0
         value = None
@@ -104,6 +130,16 @@ class GpuController:
         texture_only=False,
         sampler_only=False
     ):  
+        """
+        Set the texture and sampler for a shader.
+
+        :param shader_component: The shader component containing the texture and sampler.
+        :param texture_name: The name of the texture.
+        :param sampler_name: The name of the sampler.
+        :param texture: The texture object.
+        :param texture_only: True if only the texture should be set.
+        :param sampler_only: True if only the sampler should be set.
+        """        
         
         if texture_only is True:   
             assert_that(texture.view).is_not_none()

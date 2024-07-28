@@ -7,8 +7,18 @@ from Elements.pyECSS.wgpu_entity import Entity
 from Elements.pyECSS.wgpu_components import Component
 
 class TransformSystem(System): 
- 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    """
+    The system responsible for managing and updating transform components.
+    """
+
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Initializes the transform component for an entity.
+
+        :param entity: The entity being created.
+        :param components: The components associated with the entity, expected to include a transform component.
+        """
+
         transform = components
 
         T = glm.translate(glm.mat4(1.0), glm.vec3(transform.translation.x, transform.translation.y, transform.translation.z))
@@ -19,7 +29,16 @@ class TransformSystem(System):
         transform.local_matrix = T * glm.mat4(R) * S
         transform.world_matrix = transform.local_matrix
 
-    def on_update(self, ts, entity: Entity, components: Component | list[Component], event): 
+    def on_update(self, ts, entity: Entity, components: Component | list[Component], event):
+        """
+        Updates the transform component for an entity.
+
+        :param ts: Time step for the update.
+        :param entity: The entity being updated.
+        :param components: The components associated with the entity.
+        :param event: The event triggering the update.
+        """
+
         transform = components
 
         if not transform.static:

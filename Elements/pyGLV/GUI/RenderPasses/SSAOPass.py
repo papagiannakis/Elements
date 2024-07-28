@@ -109,9 +109,19 @@ fn main(@builtin(global_invocation_id) global_invocation_id: vec3<u32>) {
 }
 """
 
-class SSAOPass(RenderSystem):   
+class SSAOPass(RenderSystem):
+    """
+    Render system for performing SSAO (Screen Space Ambient Occlusion).
+    """     
 
     def get_sample_vectors(self, count: int) -> np.ndarray:
+        """
+        Generates sample vectors for SSAO kernel.
+
+        :param count: Number of sample vectors to generate.
+        :return: An array of sample vectors.
+        """
+
         vectors = []
         for i in range(count):
             lng = np.random.uniform(0.0, 2.0 * np.pi)
@@ -128,7 +138,15 @@ class SSAOPass(RenderSystem):
         
         return np.array(vectors, dtype=np.float32)
 
-    def on_create(self, entity: Entity, components: Component | list[Component]): 
+    def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Initializes the shader, uniform buffers,
+        sample kernel, bind group layouts, and pipeline layout for the SSAO pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+
         assert_that(
             (type(components) == RenderExclusiveComponent), 
             f"Only accepted entiy/component in blit stage is {RenderExclusiveComponent}"
@@ -210,6 +228,13 @@ class SSAOPass(RenderSystem):
         self.pipeline_layout = GpuController().device.create_pipeline_layout(bind_group_layouts=self.bind_group_layouts)
 
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder): 
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
 
         cam = Scene().get_primary_cam() 
         cam_comp: CameraComponent = Scene().get_component(cam, CameraComponent) 
@@ -336,7 +361,14 @@ class SSAOPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):   
-        
+        """
+        Called to render the SSAO pass. Configures the pipeline and dispatches the compute workgroups.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render or compute pass encoder.
+        """        
+
         # print("stage: SSAO pass")
 
         screen_size = GpuController().render_target_size

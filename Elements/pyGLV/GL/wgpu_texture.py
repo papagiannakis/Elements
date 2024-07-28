@@ -7,7 +7,11 @@ from dataclasses import dataclass
 from assertpy import assert_that
 
 @dataclass
-class Texture:
+class Texture: 
+    """
+    A data class to store texture properties and resources.
+    """ 
+
     texture: wgpu.GPUTexture = None
     view: wgpu.GPUTextureView = None 
     sampler: wgpu.GPUSampler = None 
@@ -17,6 +21,9 @@ class Texture:
     array_level: int = None
 
 class TextureLib():
+    """
+    Singleton class to manage textures and skyboxes.
+    """    
 
     _instance = None
     
@@ -34,11 +41,26 @@ class TextureLib():
         None; 
     
     def calculate_aligned_bytes_per_row(self, width, bytes_per_pixel):
+        """
+        Calculates the aligned bytes per row for texture data.
+
+        :param width: Width of the texture.
+        :param bytes_per_pixel: Number of bytes per pixel.
+        :return: Aligned bytes per row.
+        """
+    
         bytes_per_row = width * bytes_per_pixel
         aligned_bytes_per_row = ((bytes_per_row + 255) // 256) * 256
         return aligned_bytes_per_row
  
-    def make_texture(self, name:str, path=None, format=wgpu.TextureFormat.rgba8unorm): 
+    def make_texture(self, name:str, path=None, format=wgpu.TextureFormat.rgba8unorm):
+        """
+        Creates and stores a texture from an image file.
+
+        :param name: Name of the texture.
+        :param path: Path to the image file.
+        :param format: Texture format (default is rgba8unorm).
+        """
 
         if self.textures.get(name) is not None:
             return self.textures.get(name) 
@@ -83,7 +105,13 @@ class TextureLib():
 
         self.textures.update({name: Texture(texture, view, sampler, img_bytes, width, height, 1)})
 
-    def make_skybox(self, name:str, paths:list=None): 
+    def make_skybox(self, name:str, paths:list=None):
+        """
+        Creates and stores a skybox texture from multiple image files.
+
+        :param name: Name of the skybox.
+        :param paths: List of paths to the image files.
+        """
         
         if self.skyBoxes.get(name) is not None: 
             return self.skyBoxes.get(name)
@@ -144,13 +172,34 @@ class TextureLib():
 
         self.skyBoxes.update({name: Texture(texture, view, sampler, bytedata, width[0], height[0], 6)}) 
 
-    def get_texture(self, name:str) -> Texture: 
+    def get_texture(self, name:str) -> Texture:
+        """
+        Retrieves a texture by name.
+
+        :param name: Name of the texture.
+        :return: Texture object.
+        """
+
         return self.textures.get(name)
              
     def get_skybox(self, name:str) -> Texture:
+        """
+        Retrieves a skybox by name.
+
+        :param name: Name of the skybox.
+        :return: Texture object.
+        """
+
         return self.skyBoxes.get(name) 
     
     def append_texture(self, name:str, texture:Texture) -> None:
+        """
+        Adds a texture to the library.
+
+        :param name: Name of the texture.
+        :param texture: Texture object to add.
+        """
+        
         self.textures.update({name: texture})  
 
     def create_noise_texture(self, name:str, config): 

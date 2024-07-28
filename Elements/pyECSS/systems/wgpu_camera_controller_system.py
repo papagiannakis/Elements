@@ -12,13 +12,28 @@ from Elements.pyGLV.GUI.Viewer import EventTypes, button_map
 
 class CameraControllerSystem(System):
     """
-    The system responsible for the cameras.
+    System responsible for handling camera controls.
     """
 
-    def on_create(self, entity: Entity, components: Component | tuple[Component]):
+    def on_create(self, entity: Entity, components: Component | tuple[Component]): 
+        """
+        Initialize the camera controller system for the given entity.
+        
+        :param entity: The entity being created.
+        :param components: The components associated with the entity.
+        """
         pass
 
     def on_update(self, ts, entity: Entity, components: Component | tuple[Component], event):
+        """
+        Update the camera position and orientation based on user input.
+
+        :param ts: Time step for the update.
+        :param entity: The entity being updated.
+        :param components: The components associated with the entity.
+        :param event: The event triggering the update.
+        """
+
         camera_controller, camera, transform = components  
 
         if InputManager().is_button_pressed(2):

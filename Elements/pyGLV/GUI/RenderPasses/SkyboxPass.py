@@ -53,8 +53,19 @@ struct FragOutput {
 """
 
 class SkyboxPass(RenderSystem):
+    """
+    Render system for rendering a skybox.
+    """
     
     def on_create(self, entity: Entity, components: Component | list[Component]):
+        """
+        Called when the render system is created. Initializes the shader, uniform buffer,
+        bind group layouts, bind groups, and pipeline layout for the skybox.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        """
+
         assert_that(type(components) == SkyboxComponent).is_true()
         skybox: SkyboxComponent = components 
          
@@ -175,6 +186,14 @@ class SkyboxPass(RenderSystem):
         )
     
     def on_prepare(self, entity: Entity, components: Component | list[Component], command_encoder: wgpu.GPUCommandEncoder):
+        """
+        Called before rendering to prepare the resources and pipeline state.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param command_encoder: The command encoder to record commands.
+        """
+
         cam:Entity = Scene().get_primary_cam()
         
         camera:CameraComponent = Scene().get_component(cam, CameraComponent)
@@ -195,7 +214,13 @@ class SkyboxPass(RenderSystem):
         )
     
     def on_render(self, entity: Entity, components: Component | list[Component], render_pass: wgpu.GPURenderPassEncoder | wgpu.GPUComputePassEncoder):
-        
+        """
+        Called during rendering to execute the skybox pass.
+
+        :param entity: The entity associated with this render system.
+        :param components: The components associated with this render system.
+        :param render_pass: The render pass encoder to record rendering commands.
+        """
         # print("stage: cubemap")
 
         render_pass.set_pipeline(self.render_pipeline) 
