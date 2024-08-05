@@ -8,6 +8,7 @@ from typing import Tuple
 import OpenGL.GL as gl
 from PIL import Image
 
+
 class Texture:
     """
     This Class is used for initializing simple 2D textures
@@ -80,6 +81,8 @@ class Texture:
     def unbind(self):
         gl.glDeleteTextures(1, self._texture)
 
+
+         
 
 class texture_data:
     """

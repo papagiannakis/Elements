@@ -161,7 +161,10 @@ class System(ABC):
     def apply2RenderWindow(self, renderWindow, event = None):
         pass
     
-    def apply2SDLWindow(self, sdlWindow, event = None):
+    # def apply2SDLWindow(self, sdlWindow, event = None):
+    #     pass 
+    
+    def apply2GLFWWindow(self, GLFWwindow, event = None):
         pass
     
     def apply2RenderDecorator(self, renderDecorator, event = None):

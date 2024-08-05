@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window
+from Elements.pyGLV.GUI.Viewer import GLFWWindow
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
 
 class Scene():
@@ -23,7 +23,6 @@ class Scene():
     
     def __new__(cls):
         if cls._instance is None:
-            print('Creating Scene Singleton Object')
             cls._instance = super(Scene, cls).__new__(cls)
             cls._renderWindow = None
             cls._gContext = None
@@ -48,14 +47,16 @@ class Scene():
         return self._world
     
     
-    def init(self, sdl2 = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None, 
+    def init(self, glfw = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None, 
             customImGUIdecorator = None, openGLversion = 4):
         """call the init() of all systems attached to this Scene based on the Visitor pattern
         """
         #init Viewer GUI subsystem with just SDL2 window or also an ImGUI decorators
-        if sdl2 == True:
+        if glfw == True:
             #create a basic SDL2 RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
-            self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
+            # self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
+            # self._gContext = self._renderWindow 
+            self._renderWindow = GLFWWindow(windowHeight=windowHeight, windowWidth=windowWidth, windowTitle=windowTitle, scene=self, openGLveriosn=openGLversion)
             self._gContext = self._renderWindow
         
         if imgui == True and customImGUIdecorator == None:

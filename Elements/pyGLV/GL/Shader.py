@@ -826,4 +826,14 @@ class RenderGLShaderSystem(System):
         vertexArray.update()
         compShader.disableShader()
         
-        # print (f'\nMain shader GL render within {self.getClassName()}::render() \n')
+        # print (f'\nMain shader GL render within {self.getClassName()}::render() \n') 
+      
+        
+def ShaderLoader(file):
+    try:
+        f = open(file, 'r')
+    except OSError:
+        print ("Could not open/read fragment shader file:", file)
+        sys.exit()
+    with f:
+        return f.read()  
