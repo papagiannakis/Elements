@@ -66,6 +66,19 @@ Scene().add_component(building, MeshComponent(mesh_type=MeshComponent.Type.IMPOR
 Scene().add_component(building, DeferrdGeometryComponent(diffuse_texture="building"))
 Scene().add_component(building, MaterialComponent())
 
+skyPaths = [
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "back.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "front.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "bottom.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "top.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "right.jpg",
+    definitions.TEXTURE_DIR / "Skyboxes" / "Sea" / "left.jpg",
+]
+
+sky = Scene().add_entity()
+Scene().add_component(sky, InfoComponent("cubemap"))
+Scene().add_component(sky, SkyboxComponent("sky", skyPaths))
+
 Scene().add_system(SkyboxSystem([SkyboxComponent]))
 Scene().add_system(TransformSystem([TransformComponent]))
 Scene().add_system(CameraSystem([CameraComponent, TransformComponent]))
