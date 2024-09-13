@@ -1,4 +1,5 @@
-from random import random, randint
+from random import random, randint 
+import os
 import wgpu
 import glm
 import numpy as np
@@ -26,17 +27,21 @@ from Elements.pyGLV.GUI.wgpu_gpu_controller import GpuController
 
 from Elements.pyGLV.GL.wgpu_texture import TextureLib
 
+# os.environ["WGPU_BACKEND_TYPE"] = "D3D12"
+# os.environ["RUST_BACKTRACE"] = "1"
+
 canvas = GLFWWindow(windowHeight=800, windowWidth=1280, wgpu=True, windowTitle="Wgpu Example", vsync=None)
 canvas.init()
 
-# Create a wgpu device
-adapter = wgpu.gpu.request_adapter(power_preference="high-performance")
+# Create a wgpu device 
+adapter: wgpu.GPUAdapter = wgpu.gpu.request_adapter(power_preference="high-performance") 
+print(adapter.request_adapter_info()) 
 device = adapter.request_device()
 GpuController().set_adapter_device(device=device, adapter=adapter)
 
 # Prepare present context
-present_context = canvas.get_context()
-render_texture_format = present_context.get_preferred_format(device.adapter)
+present_context:wgpu.GPUCanvasContext = canvas.get_context() 
+render_texture_format = present_context.get_preferred_format(adapter)  
 present_context.configure(device=device, format=render_texture_format)
 InputManager().set_monitor(canvas) 
 
@@ -51,7 +56,7 @@ Scene().set_primary_cam(camera)
 
 light = Scene().add_entity()
 Scene().add_component(light, InfoComponent("model"))
-Scene().add_component(light, TransformComponent(glm.vec3(5, -10, 5), glm.vec3(0, 0, 0), glm.vec3(0.3, 0.3, 0.3), static=True))
+Scene().add_component(light, TransformComponent(glm.vec3(50, -70, 5), glm.vec3(0, 0, 0), glm.vec3(1, 1, 1), static=True))
 Scene().add_component(light, MeshComponent(mesh_type=MeshComponent.Type.IMPORT, import_path=definitions.MODEL_DIR / "cube" / "source" / "cube.obj"))
 Scene().add_component(light, ForwardShaderComponent(shader_path=definitions.SHADER_DIR / "WGPU" / "base_color_shader.wgsl")) 
 Scene().add_component(light, LightComponent(intensity=1.0, color=glm.vec3(1.0, 1.0, 0.5)))
@@ -198,7 +203,7 @@ while canvas._running:
     update_uniforms(deferred_light)
     update_light_uniforms(light)
 
-    Renderer().render([width, height])
+    Renderer().render([1920, 1080])
     canvas.display()
 
 canvas.shutdown()

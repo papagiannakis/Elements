@@ -54,6 +54,53 @@ fn LinearizeDepth(
     return linearDepth;
 }
 
+fn mat4to3(m: mat4x4f) -> mat3x3f {
+    var newMat: mat3x3f;
+
+    newMat[0][0] = m[0][0];
+    newMat[0][1] = m[0][1];
+    newMat[0][2] = m[0][2];
+    newMat[1][0] = m[1][0];
+    newMat[1][1] = m[1][1];
+    newMat[1][2] = m[1][2];
+    newMat[2][0] = m[2][0];
+    newMat[2][1] = m[2][1];
+    newMat[2][2] = m[2][2];
+
+    return newMat;
+}
+
+fn inverse_mat3(m: mat3x3f) -> mat3x3f {
+    let m00 = m[0][0];
+    let m01 = m[0][1];
+    let m02 = m[0][2];
+    let m10 = m[1][0];
+    let m11 = m[1][1];
+    let m12 = m[1][2];
+    let m20 = m[2][0];
+    let m21 = m[2][1];
+    let m22 = m[2][2];
+
+    let b01 =  m22 * m11 - m12 * m21;
+    let b11 = -m22 * m10 + m12 * m20;
+    let b21 =  m21 * m10 - m11 * m20;
+
+    let invDet = 1.0 / (m00 * b01 + m01 * b11 + m02 * b21);
+
+    var newDst: mat3x3f;
+    newDst[0][0] = b01 * invDet;
+    newDst[0][1] = (-m22 * m01 + m02 * m21) * invDet;
+    newDst[0][2] = ( m12 * m01 - m02 * m11) * invDet;
+    newDst[1][0] = b11 * invDet;
+    newDst[1][1] = ( m22 * m00 - m02 * m20) * invDet;
+    newDst[1][2] = (-m12 * m00 + m02 * m10) * invDet;
+    newDst[2][0] = b21 * invDet;
+    newDst[2][1] = (-m21 * m00 + m01 * m20) * invDet;
+    newDst[2][2] = ( m11 * m00 - m01 * m10) * invDet;
+
+    return newDst;
+}
+
 @vertex 
 fn vs_main( 
     in: VertexInput
@@ -66,7 +113,7 @@ fn vs_main(
     out.Position = projection * view * model * vec4f(in.a_vertices, 1.0);
     out.pos = model * vec4f(in.a_vertices, 1.0);
     out.uv = in.a_uvs;
-    out.normal = in.a_normals;
+    out.normal = transpose(inverse_mat3(mat4to3(model))) * in.a_normals;
     return out;
 }
 
