@@ -24,30 +24,35 @@ struct FragOutput {
 fn fs_main(
     in: VertexOutput
 ) -> FragOutput { 
-    var out: FragOutput;
+    var out: FragOutput; 
 
     var pos_coord = in.uv * ubuffer.screen_size; 
     // var pos_texel = vec2u(u32(pos_coord.x), u32(pos_coord.y)); 
-    var pos_texel = vec2u(pos_coord);  
-
-    let light_color = vec3f(1.0, 1.0, 0.5);
-
-    var near = ubuffer.near_far.x;
-    var far = ubuffer.near_far.y;
+    var pos_texel = vec2u(pos_coord);   
 
     var frag_pos = textureLoad(g_position_texture, pos_texel, 0).xyz;
     var frag_norm = textureLoad(g_normal_texture, pos_texel, 0).xyz;
     var frag_color = textureLoad(g_color_texture, pos_texel, 0).xyz; 
     var frag_occlusion = textureLoad(ssao_texture, pos_texel, 0).x; 
 
-    var lighting = frag_color * frag_occlusion * 0.6;
-    // var lighting = frag_color * 0.3;
-    var view_dir = normalize(ubuffer.view_pos - frag_pos); 
+    let color = frag_color;
+    let normal = normalize(frag_norm);
+    let light_color = vec3f(1.0, 1.0, 0.85);
+    let light_pos = ubuffer.light_pos; 
+    let view_pos = ubuffer.view_pos;
 
-    var light_dir = normalize(ubuffer.light_pos - frag_pos);
-    var diffuse = max(dot(frag_norm, light_dir), 0.0) * frag_color * light_color;
+    let ambient = 0.4 * light_color * frag_occlusion;
 
-    lighting = lighting + diffuse;
+    let light_dir = normalize(light_pos - frag_pos); 
+    let diff = max(dot(light_dir, normal), 0.0); 
+    let diffuse = diff * light_color;
+
+    let view_dir = normalize(view_pos - frag_pos);
+    let hafway_dir = normalize(light_dir + view_dir);
+    let spec = pow(max(dot(normal, hafway_dir), 0.0), 64.0);
+    let specular = spec * light_color; 
+
+    let lighting = (ambient + diffuse + specular) * color;  
 
     out.depth = textureLoad(g_normal_texture, pos_texel, 0).a; 
     out.color = vec4f(lighting, 1.0);
