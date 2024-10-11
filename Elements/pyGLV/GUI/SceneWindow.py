@@ -107,9 +107,16 @@ class SceneWindow:
                         self.show_selectable_entities(self.wrapee.scene.world.root);
                         imgui.end_menu();
                     imgui.end_menu()
-                if imgui.menu_item("Close", "Lal", False):
-                    pass
+                _, clicked = imgui.menu_item("Close", "Lal", False);
+                if clicked:
+                    exit(0)
                 imgui.end_menu() 
+            if imgui.begin_menu("Settings"):
+                if imgui.begin_menu("Entites"):
+                    _, self.gizmo._transformEnabled = imgui.checkbox("Enable Transformation Gizmos", self.gizmo._transformEnabled)
+                    _, self.gizmo._cameraEnabled= imgui.checkbox("Enable Camera Gizmo", self.gizmo._cameraEnabled)
+                    imgui.end_menu()
+                imgui.end_menu()
             imgui.end_main_menu_bar()
 
 

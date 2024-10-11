@@ -79,6 +79,8 @@ class Gizmos:
         self._gizmoView = self._view;
     
         self._cameraSystem = None;
+        self._transformEnabled = True;
+        self._cameraEnabled = True;
 
     def setView(self, _view):
         """
@@ -103,28 +105,30 @@ class Gizmos:
         :type comp: Component
         """
         global objectMatrix
+
         trs_changed = False;
 
-        if comp is not None and isinstance(comp, BasicTransform):
-            objectMatrix = [];
-            if self._cameraSystem is not None:
-                objectMatrix = np.array(glm.transpose(comp._l2cam), np.float32) @ idMatrix
-            else:
-                objectMatrix = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
-            makeMatrixCompatible()
+        if self._transformEnabled:
+            if comp is not None and isinstance(comp, BasicTransform):
+                objectMatrix = [];
+                if self._cameraSystem is not None:
+                    objectMatrix = np.array(glm.transpose(comp._l2cam), np.float32) @ idMatrix
+                else:
+                    objectMatrix = np.array(glm.transpose(comp.trs), np.float32) @ idMatrix
+                makeMatrixCompatible()
 
-            manip_result = self.gizmo.manipulate(
-                self._gizmoView,
-                self._projection,
-                self.currentGizmoOperation,
-                self.currentGizmoMode,
-                objectMatrix
-            )
+                manip_result = self.gizmo.manipulate(
+                    self._gizmoView,
+                    self._projection,
+                    self.currentGizmoOperation,
+                    self.currentGizmoMode,
+                    objectMatrix
+                )
 
-            if manip_result.edited:
-                objectMatrix = manip_result.value;
-                trs_changed = True
-            
+                if manip_result.edited:
+                    objectMatrix = manip_result.value;
+                    trs_changed = True
+
         return trs_changed, objectMatrix;
 
     def drawCameraGizmo(self):
@@ -151,20 +155,20 @@ class Gizmos:
         viewManipulateRight = imgui.get_window_pos().x + imgui.get_window_width();
         viewManipulateTop = imgui.get_window_pos().y
         
+        if self._cameraEnabled:
+            view_manip_result = self.gizmo.view_manipulate(
+                self._view,
+                10.0,
+                ImVec2(viewManipulateRight - 128, viewManipulateTop),
+                ImVec2(128, 128),
+                0x10101010
+            )
 
-        view_manip_result = self.gizmo.view_manipulate(
-            self._view,
-            10.0,
-            ImVec2(viewManipulateRight - 128, viewManipulateTop),
-            ImVec2(128, 128),
-            0x10101010
-        )
-
-        if view_manip_result.edited:
-            changed = True
-            cameraView = view_manip_result.value
-            self._gizmoView = cameraView;
-            self._view = np.array(cameraView, np.float32);
+            if view_manip_result.edited:
+                changed = True
+                cameraView = view_manip_result.value
+                self._gizmoView = cameraView;
+                self._view = np.array(cameraView, np.float32);
 
         return changed;
 
