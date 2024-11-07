@@ -20,6 +20,20 @@ from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.utils.Shortcuts import displayGUI_text
+
+def extract_eye_position(view_matrix):
+    # Extract the rotation part (the upper-left 3x3 matrix)
+    rotation_matrix = view_matrix[:3, :3]
+    
+    # Extract and negate the translation part (the last column of the view matrix)
+    translation = -view_matrix[:3, 3]
+    
+    # Compute the eye position by multiplying the transposed rotation matrix with the translation
+    eye_position = np.dot(rotation_matrix.T, translation)
+    
+    return eye_position
+
+
 example_description = \
 "This is a scene with a cube, a terrain and axes. The scene is being lit using \n\
 the Blinn-Phong algorithm. You may move the camera using the mouse or the GUI. \n\
@@ -232,17 +246,21 @@ while running:
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
+    scene.world.traverse_visit(transUpdate, scene.world.root)
+    
     view =  gWindow._myCamera # updates view via the imgui
+    LviewPos = extract_eye_position(view)
+
     # mvp_cube = projMat @ view @ model_cube
-    mvp_cube = projMat @ view @ trans4.trs
+    mvp_cube = projMat @ view @ trans4.l2world
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
     axes_shader.setUniformVariable(key='modelViewProj', value = mvp_axes, mat4=True)
-
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
-
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
+    #shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
+    shaderDec4.setUniformVariable(key='model',value=trans4.l2world,mat4=True)
+
     shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
     shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
     shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
