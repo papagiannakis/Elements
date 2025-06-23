@@ -139,7 +139,11 @@ class VertexArray(Component):
         self._arguments = (0, nb_primitives)
         if self._index is not None and len(self._index): #check if list is empty
             self._buffers += [gl.glGenBuffers(1)]
-            index_buffer = np.array(self._index, np.int32, copy=False)
+
+            # ISSUE 1
+
+            #index_buffer = np.array(self._index, np.int32, copy=False)
+            index_buffer = np.asarray(self._index, dtype=np.int32)
             gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self._buffers[-1])
             gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, index_buffer, self._usage)
             self._draw_command = gl.glDrawElements
