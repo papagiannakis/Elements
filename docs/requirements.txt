@@ -1,0 +1,8 @@
+sphinx-proof
+jupyter-book
+matplotlib
+graphviz
+seaborn
+sphinx
+numpy
+mlfz
