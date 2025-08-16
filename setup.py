@@ -32,14 +32,12 @@ setup(
         'wheel',
         'numpy',
         'scipy',
-        'imgui',
         'PyOpenGL',
         'pillow',
         'PyOpenGL_accelerate',
         'pysdl2',
         'pysdl2-dll',
         'ipykernel',
-        'usd-core',
         'jupyter',
         'scikit-spatial',
         'bezier',
@@ -49,6 +47,27 @@ setup(
         'open3d',
         'pyassimp==4.1.3'
     ],
+    # Optional features that often lack wheels on some platforms
+    # (e.g., macOS arm64)
+    extras_require={
+        # GUI/ImGui support
+        'gui': [
+            'imgui',
+            'pysdl2',
+            'pysdl2-dll',
+        ],
+        # Pixar USD support
+        'usd': [
+            'usd-core',
+        ],
+        # Install everything optional
+        'all': [
+            'imgui',
+            'pysdl2',
+            'pysdl2-dll',
+            'usd-core',
+        ]
+    },
     
 
     classifiers=[
@@ -63,11 +82,11 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     project_urls={
-        "Homepage" : "https://papagiannakis.github.io/Elements",
-        "Source" : "https://github.com/papagiannakis/Elements",
-        "Documentation" : "https://ElementsProject.readthedocs.io",
+        "Homepage": "https://papagiannakis.github.io/Elements",
+        "Source": "https://github.com/papagiannakis/Elements",
+        "Documentation": "https://ElementsProject.readthedocs.io",
     },
 
-    python_requires=">=3.8,<3.10",
+    python_requires=">=3.8,<3.11",
 
 )

@@ -126,22 +126,36 @@ class VertexArray(Component):
             if data is not None and len(data) : #check if it is empty
                 # bind a new VBO, upload it to GPU, declare size and type
                 self._buffers.append(gl.glGenBuffers(1))
-                data = np.array(data, np.float32, copy=False)
+                # NumPy 2.0: avoid copy=False errors; use float32 for GL
+                data = np.asarray(data, dtype=np.float32)
                 nb_primitives, size = data.shape
                 gl.glEnableVertexAttribArray(loc)
                 gl.glBindBuffer(gl.GL_ARRAY_BUFFER, self._buffers[-1])
                 gl.glBufferData(gl.GL_ARRAY_BUFFER, data, self._usage)
-                gl.glVertexAttribPointer(loc, size, gl.GL_FLOAT, False, 0, None)
+                gl.glVertexAttribPointer(
+                    loc,
+                    size,
+                    gl.GL_FLOAT,
+                    False,
+                    0,
+                    None,
+                )
            
         
-        #optionally create and upload an index buffer for this VBO         
+        # optionally create and upload an index buffer for this VBO
         self._draw_command = gl.glDrawArrays
         self._arguments = (0, nb_primitives)
-        if self._index is not None and len(self._index): #check if list is empty
+        # check if index list is empty
+        if self._index is not None and len(self._index):
             self._buffers += [gl.glGenBuffers(1)]
-            index_buffer = np.array(self._index, np.int32, copy=False)
+            # NumPy 2.0: asarray and uint32 to match GL_UNSIGNED_INT
+            index_buffer = np.asarray(self._index, dtype=np.uint32)
             gl.glBindBuffer(gl.GL_ELEMENT_ARRAY_BUFFER, self._buffers[-1])
-            gl.glBufferData(gl.GL_ELEMENT_ARRAY_BUFFER, index_buffer, self._usage)
+            gl.glBufferData(
+                gl.GL_ELEMENT_ARRAY_BUFFER,
+                index_buffer,
+                self._usage,
+            )
             self._draw_command = gl.glDrawElements
             self._arguments = (index_buffer.size, gl.GL_UNSIGNED_INT, None)
         
@@ -149,8 +163,8 @@ class VertexArray(Component):
         gl.glBindVertexArray(0)
         gl.glBindBuffer(gl.GL_ARRAY_BUFFER, 0)
     
-    def __iter__(self) ->CompNullIterator:
-        """ 
+    def __iter__(self) -> CompNullIterator:
+        """
         A component does not have children to iterate, thus a NULL iterator
         """
-        return CompNullIterator(self) 
+        return CompNullIterator(self)
