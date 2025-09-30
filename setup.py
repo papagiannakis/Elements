@@ -30,7 +30,7 @@ setup(
         'pip',
         'setuptools>=61',
         'wheel',
-        'numpy',
+        'numpy==1.26.4',
         'trimesh', 
         'scipy',
         'imgui',
