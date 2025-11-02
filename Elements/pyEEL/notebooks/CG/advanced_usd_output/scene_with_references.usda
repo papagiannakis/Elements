@@ -1,0 +1,43 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    upAxis = "Y"
+)
+
+def Xform "World"
+{
+    over "Chest_0"
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    over "Chest_1"
+    {
+        double3 xformOp:translate = (5, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    over "Chest_2"
+    {
+        double3 xformOp:translate = (10, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    over "MainRobot"
+    {
+        float xformOp:rotateY = 45
+        double3 xformOp:translate = (7, 0, -3)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+    }
+
+    def Cube "Ground"
+    {
+        color3f[] primvars:displayColor = [(0.3, 0.5, 0.3)]
+        float3 xformOp:scale = (20, 0.1, 10)
+        double3 xformOp:translate = (5, -1, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+

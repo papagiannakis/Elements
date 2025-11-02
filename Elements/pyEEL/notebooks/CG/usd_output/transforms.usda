@@ -1,0 +1,62 @@
+#usda 1.0
+(
+    upAxis = "Y"
+)
+
+def Xform "Transforms"
+{
+    def Cube "TranslatedCube"
+    {
+        color3f[] primvars:displayColor = [(1, 0, 0)]
+        double3 xformOp:translate = (3, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "RotatedCube"
+    {
+        color3f[] primvars:displayColor = [(0, 1, 0)]
+        float xformOp:rotateY = 45
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+    }
+
+    def Cube "ScaledCube"
+    {
+        color3f[] primvars:displayColor = [(0, 0, 1)]
+        float3 xformOp:scale = (0.5, 2, 0.5)
+        double3 xformOp:translate = (-3, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "CombinedCube"
+    {
+        color3f[] primvars:displayColor = [(1, 1, 0)]
+        float3 xformOp:rotateXYZ = (45, 45, 0)
+        float3 xformOp:scale = (0.5, 0.5, 0.5)
+        double3 xformOp:translate = (0, 3, 0)
+        uniform token[] xformOpOrder = ["xformOp:scale", "xformOp:rotateXYZ", "xformOp:translate"]
+    }
+
+    def Xform "ParentXform"
+    {
+        float xformOp:rotateY = 30
+        double3 xformOp:translate = (6, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+
+        def Cube "ChildCube"
+        {
+            color3f[] primvars:displayColor = [(1, 0, 1)]
+            float3 xformOp:scale = (0.5, 0.5, 0.5)
+            double3 xformOp:translate = (0, 2, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+    }
+
+    def Cube "MatrixCube"
+    {
+        color3f[] primvars:displayColor = [(0, 1, 1)]
+        matrix4d xformOp:transform = ( (0.8660254037844387, 0, 0.49999999999999994, 0), (0, 1, 0, 0), (-0.49999999999999994, 0, 0.8660254037844387, 0), (-6, 0, 0, 1) )
+        uniform token[] xformOpOrder = ["xformOp:transform"]
+    }
+}
+

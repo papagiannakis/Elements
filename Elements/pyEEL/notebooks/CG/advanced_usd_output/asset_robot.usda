@@ -1,0 +1,32 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    upAxis = "Y"
+)
+
+def Xform "Robot" (
+    assetInfo = {
+        string identifier = "Robot_v1"
+        string version = "1.0"
+    }
+    kind = "component"
+)
+{
+    def Cube "Body"
+    {
+        color3f[] primvars:displayColor = [(0.7, 0.7, 0.8)]
+        float3 xformOp:scale = (1, 1.5, 0.8)
+        double3 xformOp:translate = (0, 1.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Sphere "Head"
+    {
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.9)]
+        float3 xformOp:scale = (0.5, 0.5, 0.5)
+        double3 xformOp:translate = (0, 2.799999952316284, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+

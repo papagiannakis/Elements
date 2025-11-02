@@ -1,0 +1,13 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    subLayers = [
+        @composition_materials.usda@,
+        @composition_animation.usda@,
+        @composition_lighting.usda@,
+        @composition_base.usda@
+    ]
+    upAxis = "Y"
+)
+

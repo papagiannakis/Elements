@@ -1,0 +1,33 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    upAxis = "Y"
+)
+
+def "Materials"
+{
+    def Material "ComplexMaterial"
+    {
+        token outputs:surface.connect = </Materials/ComplexMaterial/SurfaceShader.outputs:surface>
+
+        def Shader "SurfaceShader"
+        {
+            uniform token info:id = "UsdPreviewSurface"
+            color3f inputs:diffuseColor = (0.8, 0.6, 0.4)
+            float inputs:displacement = 0.1
+            float inputs:metallic = 0
+            normal3f inputs:normal = (0, 1, 0)
+            float inputs:roughness = 0.6
+            token outputs:surface
+        }
+    }
+}
+
+def Sphere "TestSphere" (
+    apiSchemas = ["MaterialBindingAPI"]
+)
+{
+    rel material:binding = </Materials/ComplexMaterial>
+}
+

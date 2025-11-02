@@ -1,0 +1,42 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    timeCodesPerSecond = 24
+    upAxis = "Y"
+)
+
+def "World"
+{
+    def Xform "Cube"
+    {
+        float xformOp:rotateY.timeSamples = {
+            1: 15,
+            2: 30,
+            3: 45,
+            4: 60,
+            5: 75,
+            6: 90,
+            7: 105,
+            8: 120,
+            9: 135,
+            10: 150,
+            11: 165,
+            12: 180,
+            13: 195,
+            14: 210,
+            15: 225,
+            16: 240,
+            17: 255,
+            18: 270,
+            19: 285,
+            20: 300,
+            21: 315,
+            22: 330,
+            23: 345,
+            24: 360,
+        }
+        uniform token[] xformOpOrder = ["xformOp:rotateY"]
+    }
+}
+
