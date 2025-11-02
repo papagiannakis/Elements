@@ -7,29 +7,117 @@
 
 def Xform "World"
 {
-    over "Chest_0"
+    def Xform "Chest_0" (
+        assetInfo = {
+            string identifier = "TreasureChest_v1"
+            string version = "1.0"
+        }
+        kind = "component"
+    )
     {
         double3 xformOp:translate = (0, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.6, 0.4, 0.2)]
+            float3 xformOp:scale = (2, 1, 1)
+            double3 xformOp:translate = (0, 0.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Lid"
+        {
+            color3f[] primvars:displayColor = [(0.5, 0.3, 0.1)]
+            float3 xformOp:scale = (2.1, 0.2, 1.1)
+            double3 xformOp:translate = (0, 1.2000000476837158, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
     }
 
-    over "Chest_1"
+    def Xform "Chest_1" (
+        assetInfo = {
+            string identifier = "TreasureChest_v1"
+            string version = "1.0"
+        }
+        kind = "component"
+    )
     {
         double3 xformOp:translate = (5, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.6, 0.4, 0.2)]
+            float3 xformOp:scale = (2, 1, 1)
+            double3 xformOp:translate = (0, 0.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Lid"
+        {
+            color3f[] primvars:displayColor = [(0.5, 0.3, 0.1)]
+            float3 xformOp:scale = (2.1, 0.2, 1.1)
+            double3 xformOp:translate = (0, 1.2000000476837158, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
     }
 
-    over "Chest_2"
+    def Xform "Chest_2" (
+        assetInfo = {
+            string identifier = "TreasureChest_v1"
+            string version = "1.0"
+        }
+        kind = "component"
+    )
     {
         double3 xformOp:translate = (10, 0, 0)
         uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.6, 0.4, 0.2)]
+            float3 xformOp:scale = (2, 1, 1)
+            double3 xformOp:translate = (0, 0.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Lid"
+        {
+            color3f[] primvars:displayColor = [(0.5, 0.3, 0.1)]
+            float3 xformOp:scale = (2.1, 0.2, 1.1)
+            double3 xformOp:translate = (0, 1.2000000476837158, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
     }
 
-    over "MainRobot"
+    def Xform "MainRobot" (
+        assetInfo = {
+            string identifier = "Robot_v1"
+            string version = "1.0"
+        }
+        kind = "component"
+    )
     {
         float xformOp:rotateY = 45
         double3 xformOp:translate = (7, 0, -3)
         uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.7, 0.7, 0.8)]
+            float3 xformOp:scale = (1, 1.5, 0.8)
+            double3 xformOp:translate = (0, 1.5, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Sphere "Head"
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.8, 0.9)]
+            float3 xformOp:scale = (0.5, 0.5, 0.5)
+            double3 xformOp:translate = (0, 2.799999952316284, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
     }
 
     def Cube "Ground"
