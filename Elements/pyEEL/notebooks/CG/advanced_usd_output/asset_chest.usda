@@ -1,0 +1,32 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    upAxis = "Y"
+)
+
+def Xform "TreasureChest" (
+    assetInfo = {
+        string identifier = "TreasureChest_v1"
+        string version = "1.0"
+    }
+    kind = "component"
+)
+{
+    def Cube "Body"
+    {
+        color3f[] primvars:displayColor = [(0.6, 0.4, 0.2)]
+        float3 xformOp:scale = (2, 1, 1)
+        double3 xformOp:translate = (0, 0.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def Cube "Lid"
+    {
+        color3f[] primvars:displayColor = [(0.5, 0.3, 0.1)]
+        float3 xformOp:scale = (2.1, 0.2, 1.1)
+        double3 xformOp:translate = (0, 1.2000000476837158, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+}
+

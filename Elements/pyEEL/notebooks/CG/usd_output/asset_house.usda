@@ -1,0 +1,25 @@
+#usda 1.0
+(
+    upAxis = "Y"
+)
+
+def Xform "House"
+{
+    def Cube "Walls"
+    {
+        color3f[] primvars:displayColor = [(0.8, 0.8, 0.7)]
+        double size = 2
+        double3 xformOp:translate = (0, 1, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cone "Roof"
+    {
+        double height = 1.5
+        color3f[] primvars:displayColor = [(0.6, 0.2, 0.2)]
+        double radius = 1.5
+        double3 xformOp:translate = (0, 2.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
+

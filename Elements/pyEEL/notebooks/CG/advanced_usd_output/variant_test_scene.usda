@@ -1,0 +1,217 @@
+#usda 1.0
+(
+    doc = """Generated from Composed Stage of root layer 
+"""
+    upAxis = "Y"
+)
+
+over "Scene"
+{
+    def Xform "Car1" (
+        kind = "component"
+    )
+    {
+        double3 xformOp:translate = (-6, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "Spoiler"
+        {
+            color3f[] primvars:displayColor = [(0.1, 0.1, 0.1)]
+            float3 xformOp:scale = (1.8, 0.1, 0.5)
+            double3 xformOp:translate = (0, 1.5, -2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Hood"
+        {
+            float3 xformOp:scale = (1.8, 0.2, 1.5)
+            double3 xformOp:translate = (0, 0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Roof"
+        {
+            float3 xformOp:scale = (1.8, 0.8, 2)
+            double3 xformOp:translate = (0, 1.2000000476837158, -0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Wheel_0"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (-1, -0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_1"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (1, -0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_2"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (-1, -0.5, -1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_3"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (1, -0.5, -1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.1, 0.1)]
+            float3 xformOp:scale = (2, 1, 4)
+            uniform token[] xformOpOrder = ["xformOp:scale"]
+        }
+    }
+
+    def Xform "Car2" (
+        kind = "component"
+    )
+    {
+        double3 xformOp:translate = (0, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "Spoiler"
+        {
+            color3f[] primvars:displayColor = [(0.1, 0.1, 0.1)]
+            float3 xformOp:scale = (1.8, 0.1, 0.5)
+            double3 xformOp:translate = (0, 1.5, -2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Hood"
+        {
+            float3 xformOp:scale = (1.8, 0.2, 1.5)
+            double3 xformOp:translate = (0, 0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Roof"
+        {
+            float3 xformOp:scale = (1.8, 0.8, 2)
+            double3 xformOp:translate = (0, 1.2000000476837158, -0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Wheel_0"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (-1, -0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_1"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (1, -0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_2"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (-1, -0.5, -1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_3"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (1, -0.5, -1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.1, 0.1)]
+            float3 xformOp:scale = (2, 1, 4)
+            uniform token[] xformOpOrder = ["xformOp:scale"]
+        }
+    }
+
+    def Xform "Car3" (
+        kind = "component"
+    )
+    {
+        double3 xformOp:translate = (6, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+
+        def Cube "Spoiler"
+        {
+            color3f[] primvars:displayColor = [(0.1, 0.1, 0.1)]
+            float3 xformOp:scale = (1.8, 0.1, 0.5)
+            double3 xformOp:translate = (0, 1.5, -2)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Hood"
+        {
+            float3 xformOp:scale = (1.8, 0.2, 1.5)
+            double3 xformOp:translate = (0, 0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cube "Roof"
+        {
+            float3 xformOp:scale = (1.8, 0.8, 2)
+            double3 xformOp:translate = (0, 1.2000000476837158, -0.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+        }
+
+        def Cylinder "Wheel_0"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (-1, -0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_1"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (1, -0.5, 1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_2"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (-1, -0.5, -1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cylinder "Wheel_3"
+        {
+            float xformOp:rotateZ = 90
+            float3 xformOp:scale = (0.3, 0.5, 0.3)
+            double3 xformOp:translate = (1, -0.5, -1.5)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale", "xformOp:rotateZ"]
+        }
+
+        def Cube "Body"
+        {
+            color3f[] primvars:displayColor = [(0.8, 0.1, 0.1)]
+            float3 xformOp:scale = (2, 1, 4)
+            uniform token[] xformOpOrder = ["xformOp:scale"]
+        }
+    }
+}
+
