@@ -4,7 +4,7 @@ from os import path
 this_directory = path.abspath(path.dirname(__file__))
 
 # imports from __version__
-with open(path.join(this_directory, 'Elements', '_version.py'), encoding='utf-8') as f:
+with open(path.join(this_directory, 'src', 'Elements', '_version.py'), encoding='utf-8') as f:
     exec(f.read())
 
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
@@ -24,8 +24,8 @@ setup(
     maintainer_email='m.kamarianakis@gmail.com',
     url='https://github.com/papagiannakis/Elements',
     keywords = ['ECS','Scenegraph','Python design patterns','Computer Graphics'],
-    package_dir={'Elements':'Elements'},
-    packages=find_packages(exclude=["tests","tests.*", "tests/*", "pyEEL/*" ]),
+    package_dir={'': 'src'},
+    packages=find_packages(where='src'),
     install_requires=[
         'pip',
         'setuptools>=61',

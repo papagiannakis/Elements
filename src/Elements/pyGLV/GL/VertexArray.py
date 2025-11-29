@@ -88,8 +88,10 @@ class VertexArray(Component):
     def __del__(self):
         # using atexit to ensure correct destruction order and to avoid yielding errors and exceptions
         # see https://stackoverflow.com/questions/72238460/python-importerror-sys-meta-path-is-none-python-is-likely-shutting-down
-        gl.glDeleteVertexArrays(1, [self._glid])
-        gl.glDeleteBuffers(len(self._buffers), self._buffers)
+        if self._glid is not None:
+            gl.glDeleteVertexArrays(1, [self._glid])
+        if len(self._buffers) > 0:
+            gl.glDeleteBuffers(len(self._buffers), self._buffers)
     
     def draw(self):
         

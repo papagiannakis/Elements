@@ -56,41 +56,55 @@ The main steps summarize as follows:
 ## Folder Structure
 
 * [docs](./docs): Files used to generate the [documentation](https://elementsproject.readthedocs.io/en/latest/index.html)
-* [Elements](./Elements/): Contains all the source code of Elements
-  * [examples](./Elements/examples): Example files related to pyECSS
-  * [features](./Elements/features): Features extending basic functionality of Elements
-    * [BasicShapes](./Elements/features/BasicShapes): Quickly add basic shapes (cubes, spheres, cones) to the scene with helper functions
-    * [GA](./Elements/features/GA): Files related to Geometric Algebra(GA) and GA-based components-systems
-    * [Gizmos](./Elements/features/Gizmos): Introducing Unity-like Gizmos to the Elements, for object manipulation
-    * [SkinnedMesh](./Elements/features/SkinnedMesh): Visualize skinned meshes by applying the animation equation
-    * [Slicing](./Elements/features/Slicing): Visualize sliced version of a 3D object
-    * [Voronoi2D](./Elements/features/Voronoi2D): Visualize the Voronoi diagram of 2D points
-    * [bezier](./Elements/features/bezier): Visualize a 3D bezier curve
-    * [plane_fitting](./Elements/features/plane_fitting): Visualize the plane that best fits on a set of points
-    * [plotting](./Elements/features/plotting): Plot a 2D or 3D function
-    * [rigid_body_animation](./Elements/features/rigid_body_animation): Animate a skinned mesh (preliminary version)
-    * [usd](./Elements/features/usd): Enable loading/saving using Pixar's Universal Scene Descriptor (USD) format
-  * [files](./Elements/files): Static files required
-    * [atlas_files](./Elements/files/atlas_files): Required for the Classification and Generative AI examples/notebooks
-    * [models](./Elements/files/models): Various 3D models, static or rigged
-    * [scenes](./Elements/files/scenes): Scenes in USD format
-    * [scv](./Elements/files/scv): Various SCV files
-    * [shaders](./Elements/files/shaders): Various shader files
-    * [textures](./Elements/files/textures): Various texture files
-  * [pyECSS](./Elements/pyECSS): Contains all the source code for pyECSS - Entity, Component, System, Scenegraph functionality
-    * [tests](./Elements/pyECSS/tests): Test files for pyECSS
-  * [pyGLV](./Elements/pyGLV): Contains all the source code for pyGLV - graphics, shading, imgui functionality
-    * [tests](./Elements/pyGLV/tests): Test files for pyGLV
-    * [GL](./Elements/pyGLV/GL): The basic Graphics Library files (Scene, Shader, Texture, VertexArray)
-    * [GUI](./Elements/pyGLV/GUI): Files related to the window and GUI instantiation.
-  * [pyEEL](./Elements/pyEEL): The pyEEL learning hub
-    * [notebooks](./Elements/pyEEL/notebooks): Contains all the jupyter notebooks of pyEEL  
-      * [SciCom](./Elements/pyEEL/notebooks/SciCom): Scientific Computation related notebooks
-      * [neuralCG](./Elements/pyEEL/notebooks/neuralCG): Neural networks in CG related notebooks
-      * [DL](./Elements/pyEEL/notebooks/DL): Deep Learning related notebooks
-      * [CG](./Elements/pyEEL/notebooks/CG): Computer Graphics (CG) related notebooks
-      * [GATE](./Elements/pyEEL/notebooks/GATE): Geometric Algebra Transformation Engine related notebooks
-  * [utils](./Elements/utils): Utility files and functions for Elements
+The project follows a standard Python project layout with source code in `src/` and examples/tutorials at the top level.
+
+```text
+Elements/
+├── src/
+│   └── Elements/                  # Core package
+│       ├── extensions/            # Modules extending basic functionality
+│       │   ├── BasicShapes/       # Helper functions for basic 3D shapes
+│       │   ├── GA/                # Geometric Algebra implementation
+│       │   ├── Gizmos/            # Unity-like Gizmos for object manipulation
+│       │   ├── SkinnedMesh/       # Skinned mesh visualization systems
+│       │   ├── Slicing/           # Tools for slicing 3D objects
+│       │   ├── Voronoi2D/         # Voronoi diagram visualization
+│       │   ├── bezier/            # 3D Bezier curve visualization
+│       │   ├── plane_fitting/     # Plane fitting visualization
+│       │   ├── plotting/          # 2D/3D function plotting utilities
+│       │   ├── rigid_body_animation/ # Skinned mesh animation (preliminary)
+│       │   └── usd/               # USD format support (loading/saving)
+│       ├── files/                 # Static assets and resources
+│       │   ├── atlas_files/       # Resources for AI examples
+│       │   ├── models/            # 3D models (static and rigged)
+│       │   ├── scenes/            # Pre-built USD scenes
+│       │   ├── scv/               # Scientific Visualization data
+│       │   ├── shaders/           # GLSL shader programs
+│       │   └── textures/          # Image textures
+│       ├── pyECSS/                # Core Entity-Component-System-Scenegraph framework
+│       │   └── tests/             # Unit tests for pyECSS
+│       ├── pyGLV/                 # Graphics Library for Visualization (Rendering, GUI)
+│       │   ├── GL/                # Low-level OpenGL wrappers
+│       │   ├── GUI/               # Window management and GUI initialization
+│       │   └── tests/             # Unit tests for pyGLV
+│       └── utils/                 # General utility functions
+├── examples/                      # Standalone example scripts
+│   ├── 1.Introductory/            # Basic examples for beginners
+│   ├── 2.Intermediate/            # Intermediate concepts (textures, cameras)
+│   ├── 3.Advanced/                # Advanced topics (USD, complex scenes)
+│   └── 4.Experimental/            # Experimental features (AI, Generative)
+├── pyEEL/                         # Python Elements Educational Library (Learning Hub)
+│   └── notebooks/                 # Jupyter notebooks
+│       ├── CG/                    # Computer Graphics fundamentals
+│       ├── DL/                    # Deep Learning fundamentals
+│       ├── GATE/                  # Geometric Algebra Transformation Engine
+│       ├── SciCom/                # Scientific Computation
+│       └── neuralCG/              # Neural Networks in Computer Graphics
+├── docs/                          # Documentation source files
+├── tests/                         # (Optional) Top-level tests
+├── setup.py                       # Build and installation configuration
+└── README.md                      # Project overview and instructions
+```
   
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
