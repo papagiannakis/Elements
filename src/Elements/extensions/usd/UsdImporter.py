@@ -9,7 +9,7 @@ The USDImporter file, holds functionality for importing and exporting Elements s
 """
 import os
 
-from numpy.dual import norm
+import Elements.utils.normals as norm
 from pxr import Usd, Gf, Sdf
 import numpy as np
 
