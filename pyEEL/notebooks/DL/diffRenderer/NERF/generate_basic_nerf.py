@@ -12,11 +12,32 @@ This notebook implements a basic **Neural Radiance Field** (NeRF) from scratch u
 *   **Original Paper**: [Mildenhall et al. ECCV 2020](https://arxiv.org/abs/2003.08934)
 *   **Core Concept**: A scene is represented as a continuous 5D function $F(x, y, z, \theta, \phi) \to (r, g, b, \sigma)$, parameterized by a fully connected deep network (MLP).
 
-### Main Innovations
-1.  **Continuous Volumetric Representation**: Unlike meshes or voxel grids, NeRF represents geometry and appearance as a continuous field. This resolution-independent representation allows for high-quality close-ups.
-2.  **Positional Encoding**: Neural networks favor low-frequency functions (spectral bias). NeRF maps input coordinates to a higher-dimensional space using high-frequency sinusoids: $\gamma(p) = (\sin(2^0\pi p), \cos(2^0\pi p), \dots)$, enabling the MLP to capture fine details like texture and sharp edges.
-3.  **Differentiable Volumetric Rendering**: The rendering process is fully differentiable, allowing the 3D scene representation to be optimized directly from a set of 2D images using gradient descent.
-4.  **Hierarchical Volume Sampling**: To render efficiently, NeRF uses a "coarse" network to find relevant scene areas and a "fine" network to sample densely there.
+### 1. The 5D Coordinate Representation
+A NeRF takes a **continuous 5D coordinate** as input:
+*   **Spatial Location**: $\mathbf{x} = (x, y, z)$
+*   **Viewing Direction**: $\mathbf{d} = (\theta, \phi)$
+
+The output is:
+*   **Volume Density** $\sigma(\mathbf{x})$: Represents the probability of a ray terminating at location $\mathbf{x}$. Crucially, density is predicted **independent** of the viewing direction (geometry is the same regardless of where you look from).
+*   **Color** $\mathbf{c}(\mathbf{x}, \mathbf{d}) = (r, g, b)$: The emitted radiance. Color **depends** on the viewing direction, allowing the model to represent view-dependent effects like specular reflections.
+
+### 2. Network Architecture
+The MLP $F_\Theta$ is structured to enforce multiview consistency:
+1.  **Input**: 3D position $\mathbf{x}$ (with Positional Encoding).
+2.  **Density Network**: Passes through 8 fully-connected layers (ReLU activations, 256 channels). Outputs $\sigma$ and a feature vector.
+3.  **View Injection**: The feature vector is concatenated with the viewing direction $\mathbf{d}$ (Positional Encoded).
+4.  **Color Network**: Processes the concatenated vector to output RGB color.
+   
+This structure ensures that the geometry ($\sigma$) is consistent across all views, while color can vary effectively.
+
+### 3. Volume Rendering Equation
+To render a pixel, we shoot a ray $\mathbf{r}(t) = \mathbf{o} + t\mathbf{d}$ into the scene and integrate the color along it:
+$$ C(\mathbf{r}) = \int_{t_n}^{t_f} T(t) \sigma(\mathbf{r}(t)) \mathbf{c}(\mathbf{r}(t), \mathbf{d}) \, dt $$
+where $T(t) = \exp(-\int_{t_n}^t \sigma(\mathbf{r}(s)) ds)$ is the accumulated transmittance (probability that the ray travels from $t_n$ to $t$ without hitting anything).
+
+### 4. Positional Encoding
+Deep networks are biased towards learning low-frequency functions (Spectral Bias). To capture high-frequency details (sharp edges, textures), inputs $(x, y, z)$ are mapped to a higher dimensional space using sinusoidal functions:
+$$ \gamma(p) = (\sin(2^0\pi p), \cos(2^0\pi p), \dots, \sin(2^{L-1}\pi p), \cos(2^{L-1}\pi p)) $$
 
 ---
 
