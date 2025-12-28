@@ -1,17 +1,22 @@
-import numpy as np
 import imgui
 import time
+import numpy as np
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
+from Elements.pyGLV.GL.Textures import Texture
+from Elements.definitions import TEXTURE_DIR
 
 
 example_description = \
 "In this example, the camera moves smoothly along a predefined path,\
-such as a Bezier curve or a closed curve.\nWhile moving, the camera " \
+such as a Bezier curve or a closed curve (Orbit).\nWhile moving, the camera " \
 "continuously points toward a target. Use the interface to start, " \
 "reset, or choose any other option."
 
@@ -42,53 +47,60 @@ scene = Scene()
 # Scenegraph
 root = scene.world.createEntity(Entity(name="Root"))
 
-cube = scene.world.createEntity(Entity(name="Cube"))
-scene.world.addEntityChild(root, cube)
-cube_transform = scene.world.addComponent(
-    cube, BasicTransform(name="Cube_Transform", trs=util.translate(0, 0, 0))
+sphere = scene.world.createEntity(Entity(name="sphere"))
+scene.world.addEntityChild(root, sphere)
+sphere_transform = scene.world.addComponent(
+    sphere, BasicTransform(name="sphere_Transform", trs=util.translate(0, 0, 0))
 )
-cube_mesh = scene.world.addComponent(cube, RenderMesh(name="cube_mesh"))
+sphere_mesh = scene.world.addComponent(sphere, RenderMesh(name="sphere_mesh"))
 
-# Cube
-vertexCube = np.array([
-    [-1,-1,1,1],[1,-1,1,1],[1,1,1,1],[-1,1,1,1],
-    [-1,-1,-1,1],[-1,1,-1,1],[1,1,-1,1],[1,-1,-1,1],
-    [-1,-1,-1,1],[-1,-1,1,1],[-1,1,1,1],[-1,1,-1,1],
-    [1,-1,1,1],[1,-1,-1,1],[1,1,-1,1],[1,1,1,1],
-    [-1,1,1,1],[1,1,1,1],[1,1,-1,1],[-1,1,-1,1],
-    [-1,-1,-1,1],[1,-1,-1,1],[1,-1,1,1],[-1,-1,1,1]
-], dtype=np.float32)
+# Sphere
+segments = 64
+rings = 32
+radius = 1
 
-faceColors = [
-    [1.0, 0.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0]
-]
+vertices_sphere = []
+uvs_sphere = []
+colors_sphere = []
+indices_sphere = []
 
-colorCube = []
-for color in faceColors:
-    for _ in range(4):
-        colorCube.append(color)
+for i in range(rings + 1):
+    phi = np.pi * i / rings
+    v = 1 - i / rings
+    for j in range(segments + 1):
+        theta = 2 * np.pi * j / segments
+        u = j / segments
+        x = radius * np.sin(phi) * np.cos(theta)
+        y = radius * np.cos(phi)
+        z = radius * np.sin(phi) * np.sin(theta)
+        vertices_sphere.append([x, y, z, 1.0])
+        uvs_sphere.append([u, v])
+        colors_sphere.append([1.0, 1.0, 1.0, 1.0])
 
-indexCube = []
-for i in range(6):
-    offset = i * 4
-    indexCube.extend([0+offset,1+offset,2+offset, 0+offset,2+offset,3+offset])
+for i in range(rings):
+    for j in range(segments):
+        first = i * (segments + 1) + j
+        second = first + segments + 1
+        indices_sphere.extend([first, second, first + 1])
+        indices_sphere.extend([second, second + 1, first + 1])
 
-cube_mesh.vertex_attributes.append(vertexCube)
-cube_mesh.vertex_attributes.append(colorCube)
-cube_mesh.vertex_index.append(indexCube)
+vertices_sphere = np.array(vertices_sphere, dtype=np.float32)
+uvs_sphere = np.array(uvs_sphere, dtype=np.float32)
+colors_sphere = np.array(colors_sphere, dtype=np.float32)
+indices_sphere = np.array(indices_sphere, dtype=np.uint32)
 
-cube_vao = scene.world.addComponent(cube, VertexArray())
-cube_shader = scene.world.addComponent(
-    cube,
+sphere_mesh.vertex_attributes.append(vertices_sphere)
+sphere_mesh.vertex_attributes.append(uvs_sphere)
+sphere_mesh.vertex_attributes.append(colors_sphere)
+sphere_mesh.vertex_index.append(indices_sphere)
+
+sphere_vao = scene.world.addComponent(sphere, VertexArray())
+sphere_shader = scene.world.addComponent(
+    sphere,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.COLOR_VERT_MVP,
-            fragment_source=Shader.COLOR_FRAG
+            vertex_source=Shader.SIMPLE_TEXTURE_VERT,
+            fragment_source=Shader.SIMPLE_TEXTURE_FRAG
         )
     )
 )
@@ -111,6 +123,11 @@ scene.init(
     openGLversion=4
 )
 
+# Texture
+texturePath = TEXTURE_DIR / "earth.jpg"
+texture = Texture(texturePath)
+sphere_shader.setUniformVariable("ImageTexture", texture, texture=True)
+
 # GUIs
 def draw_start_gui():
     global show_start_gui
@@ -122,9 +139,8 @@ def draw_start_gui():
         show_start_gui = False
     imgui.end()
 
-
 def draw_gui():
-    global selected, start, cam_pos, control_points,moving,t,diameter,num_points
+    global selected, start, cam_pos, control_points,moving,t,diameter,num_points,speed
 
     imgui.begin("Options")
 
@@ -144,6 +160,7 @@ def draw_gui():
         control_points[:] = control_points[:2]
         diameter=5
         num_points=16
+        speed=0.1
 
     imgui.same_line()
 
@@ -165,18 +182,13 @@ def draw_gui():
 
     imgui.text(f"Selected: {selected}")
 
+    imgui.separator()
+    imgui.push_item_width(120)
+    _, speed = imgui.slider_float("Animation Speed", speed, 0.1, 2)
+    imgui.pop_item_width()
+
+
     imgui.end()
-
-
-def N_bezier(points, t):
-    pts = [p.copy() for p in points]
-    while len(pts) > 1:
-        pts = [
-            (1 - t) * pts[i] + t * pts[i + 1]
-            for i in range(len(pts) - 1)
-        ]
-    return pts[0]
-
 
 def bezier():
     global control_points
@@ -198,6 +210,31 @@ def bezier():
 
     imgui.end()
 
+def orbit():
+    global diameter, num_points
+
+    imgui.begin("Orbit")
+
+    imgui.text("Number of points:")
+    changed, num_points = imgui.slider_int("##num_points", num_points, 3, 256)
+
+    imgui.separator()
+
+    imgui.text("Diameter:")
+    _, diameter = imgui.input_float("##diameter", diameter)
+    if diameter<3:
+        diameter=3
+
+    imgui.end()
+
+def N_bezier(points, t):
+    pts = [p.copy() for p in points]
+    while len(pts) > 1:
+        pts = [
+            (1 - t) * pts[i] + t * pts[i + 1]
+            for i in range(len(pts) - 1)
+        ]
+    return pts[0]
 
 def start_motion():
     global t, moving, cam_pos
@@ -230,10 +267,14 @@ def update_camera():
         if t >= 1.0:
             t = 0.0
 
+    model = sphere_transform.l2world
     view = util.lookat(np.array(cam_pos), target, up)
-    projMat = util.perspective(60.0, 1000/800, 0.1, 100.0)
-    mvpMat = projMat @ view @ cube_transform.trs
-    cube_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+    proj = util.perspective(60.0, 1000/800, 0.1, 100.0)
+
+    sphere_shader.setUniformVariable("model", model, mat4=True)
+    sphere_shader.setUniformVariable("View", view, mat4=True)
+    sphere_shader.setUniformVariable("Proj", proj, mat4=True)
+
 
 def orbit_points(diameter,num_points):
     radius=diameter/2
@@ -246,28 +287,7 @@ def orbit_points(diameter,num_points):
         points.append(np.array([x,y,z]))
     return points
 
-def orbit():
-    global diameter, num_points
-
-    imgui.begin("Orbit")
-
-    # Slider for number of points
-    imgui.text("Number of points:")
-    changed, num_points = imgui.slider_int("##num_points", num_points, 3, 256)
-
-    imgui.separator()
-
-    # Slider for diameter
-    imgui.text("Diameter:")
-    _, diameter = imgui.input_float("##diameter", diameter)
-    if diameter<1:
-        diameter=1
-
-    imgui.end()
-    
-
-
-# MAIN LOOP
+# Main loop
 scene.world.traverse_visit(initUpdate, scene.world.root)
 running = True
 
@@ -287,8 +307,6 @@ while running:
         elif selected =="Orbit":
             orbit()
         update_camera()
-        
-    
 
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
