@@ -15,78 +15,94 @@ such as a Bezier curve or a closed curve.\nWhile moving, the camera " \
 "continuously points toward a target. Use the interface to start, " \
 "reset, or choose any other option."
 
-show_start_gui = True # flag for start GUI
-selected = None # selected path type
+show_start_gui = True
+selected = None
 
-last_time = time.time() # Initialize last_time for delta time calculation
+last_time = time.time()
 
-#Bezier curve control points
-start_point = np.array([5,3,5])    
-end_point = np.array([0, 0, 0])
-control_point= np.array([0.0, 0, 0.0])
+# Bezier curve control points
+control_points = [
+    np.array([0.0, 0.0, 0.0]),
+    np.array([1.0, 1.0, 0.0]),
+]
 
-#Animation variables
-t=0.0
-speed=0.1
-moving=False
+# Orbit settings
+diameter=5
+num_points=16
+
+start = False
+
+# Animation variables
+t = 0.0
+speed = 0.1
+moving = False
 
 scene = Scene()
 
-#Scenegraph
-root=scene.world.createEntity(Entity(name="Root"))
+# Scenegraph
+root = scene.world.createEntity(Entity(name="Root"))
 
-cube=scene.world.createEntity(Entity(name="Cube"))
+cube = scene.world.createEntity(Entity(name="Cube"))
 scene.world.addEntityChild(root, cube)
-cube_transform=scene.world.addComponent(cube, BasicTransform(name="Cube_Transform", trs=util.translate(0,0,0)))
-cube_mesh=scene.world.addComponent(cube, RenderMesh(name="cube_mesh"))
+cube_transform = scene.world.addComponent(
+    cube, BasicTransform(name="Cube_Transform", trs=util.translate(0, 0, 0))
+)
+cube_mesh = scene.world.addComponent(cube, RenderMesh(name="cube_mesh"))
 
-#Cube
+# Cube
 vertexCube = np.array([
-    [-1,-1,1,1],[1,-1,1,1],[1,1,1,1],[-1,1,1,1],#front
-    [-1,-1,-1,1],[-1,1,-1,1],[1,1,-1,1],[1,-1,-1,1],#back
-    [-1,-1,-1,1],[-1,-1,1,1],[-1,1,1,1],[-1,1,-1,1],#left
-    [1,-1,1,1],[1,-1,-1,1],[1,1,-1,1],[1,1,1,1],#right
-    [-1,1,1,1],[1,1,1,1],[1,1,-1,1],[-1,1,-1,1],#top
-    [-1,-1,-1,1],[1,-1,-1,1],[1,-1,1,1],[-1,-1,1,1]#bottom
+    [-1,-1,1,1],[1,-1,1,1],[1,1,1,1],[-1,1,1,1],
+    [-1,-1,-1,1],[-1,1,-1,1],[1,1,-1,1],[1,-1,-1,1],
+    [-1,-1,-1,1],[-1,-1,1,1],[-1,1,1,1],[-1,1,-1,1],
+    [1,-1,1,1],[1,-1,-1,1],[1,1,-1,1],[1,1,1,1],
+    [-1,1,1,1],[1,1,1,1],[1,1,-1,1],[-1,1,-1,1],
+    [-1,-1,-1,1],[1,-1,-1,1],[1,-1,1,1],[-1,-1,1,1]
 ], dtype=np.float32)
 
 faceColors = [
-    [1.0, 0.0, 0.0, 1.0],#front-red
-    [0.0, 1.0, 0.0, 1.0],#back-green
-    [0.0, 0.0, 1.0, 1.0],#left-blue
-    [1.0, 1.0, 0.0, 1.0],#right-yellow
-    [1.0, 0.0, 1.0, 1.0],#top-magenta
-    [0.0, 1.0, 1.0, 1.0] #bottom-cyan
+    [1.0, 0.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [1.0, 1.0, 0.0, 1.0],
+    [1.0, 0.0, 1.0, 1.0],
+    [0.0, 1.0, 1.0, 1.0]
 ]
 
-colorCube=[]
-
+colorCube = []
 for color in faceColors:
     for _ in range(4):
         colorCube.append(color)
 
-indexCube=[]
+indexCube = []
 for i in range(6):
-    offset=i*4
+    offset = i * 4
     indexCube.extend([0+offset,1+offset,2+offset, 0+offset,2+offset,3+offset])
 
 cube_mesh.vertex_attributes.append(vertexCube)
 cube_mesh.vertex_attributes.append(colorCube)
 cube_mesh.vertex_index.append(indexCube)
 
-cube_vao=scene.world.addComponent(cube,VertexArray())
-cube_shader=scene.world.addComponent(cube,ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+cube_vao = scene.world.addComponent(cube, VertexArray())
+cube_shader = scene.world.addComponent(
+    cube,
+    ShaderGLDecorator(
+        Shader(
+            vertex_source=Shader.COLOR_VERT_MVP,
+            fragment_source=Shader.COLOR_FRAG
+        )
+    )
+)
 
-#Camera setup
+# Camera setup
 cam_pos = [5.0, 3.0, 5.0]
 target = np.array([0.0, 0.0, 0.0])
 up = np.array([0.0, 1.0, 0.0])
 
-#System
+# Systems
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
-#Initialize
+# Initialize
 scene.init(
     imgui=True,
     windowWidth=1000,
@@ -95,21 +111,20 @@ scene.init(
     openGLversion=4
 )
 
-#GUIS
+# GUIs
 def draw_start_gui():
     global show_start_gui
-
     imgui.begin("Welcome")
     imgui.text_wrapped("Camera-Man Project")
     imgui.separator()
     imgui.text(example_description)
-
     if imgui.button("Start"):
         show_start_gui = False
     imgui.end()
 
+
 def draw_gui():
-    global selected,start, cam_pos
+    global selected, start, cam_pos, control_points,moving,t,diameter,num_points
 
     imgui.begin("Options")
 
@@ -123,12 +138,18 @@ def draw_gui():
     if imgui.button("Reset"):
         selected = None
         start = False
-        cam_pos = [5.0, 3.0, 5.0]
+        moving = False
+        t = 0.0
+        cam_pos[:] = [5.0, 3.0, 5.0]
+        control_points[:] = control_points[:2]
+        diameter=5
+        num_points=16
 
     imgui.same_line()
 
     if imgui.button("Start"):
-        start_motion()
+        if selected is not None:
+            start = True
 
     imgui.same_line()
 
@@ -137,8 +158,8 @@ def draw_gui():
 
     imgui.same_line()
 
-    if imgui.button("Curve"):
-        selected = "Curve"
+    if imgui.button("Orbit"):
+        selected = "Orbit"
 
     imgui.same_line()
 
@@ -146,86 +167,130 @@ def draw_gui():
 
     imgui.end()
 
-def update_camera():
-    global cam_pos, t, moving,last_time
 
-    #calculate delta time
+def N_bezier(points, t):
+    pts = [p.copy() for p in points]
+    while len(pts) > 1:
+        pts = [
+            (1 - t) * pts[i] + t * pts[i + 1]
+            for i in range(len(pts) - 1)
+        ]
+    return pts[0]
+
+
+def bezier():
+    global control_points
+
+    imgui.begin("Bezier Path")
+
+    if imgui.button("Add Point"):
+        control_points.append(control_points[-1].copy())
+
+    imgui.same_line()
+
+    if imgui.button("Remove Point") and len(control_points) > 2:
+        control_points.pop()
+
+    imgui.separator()
+
+    for i, p in enumerate(control_points):
+        _, p[:] = imgui.drag_float3(f"Point {i}", *p, 0.01)
+
+    imgui.end()
+
+
+def start_motion():
+    global t, moving, cam_pos
+
+    if len(control_points) < 2:
+        return
+
+    t = 0.0
+    moving = True
+    cam_pos[:] = control_points[0]
+
+
+def update_camera():
+    global cam_pos, t, moving, last_time
+
     current_time = time.time()
     delta_time = current_time - last_time
     last_time = current_time
 
-    if moving:
-        if selected == "Bezier":
-
-            cam_pos[:] = quadratic_bezier(start_point, control_point, end_point, t)
-            t += speed *delta_time
-
-            if t >= 1.0:#animation ends
-
-                t = 1.0
-                moving = False
-
-        elif selected == "Curve":#under construction
-            pass
+    if moving and selected == "Bezier":
+        cam_pos[:] = N_bezier(control_points, t)
+        t += speed * delta_time
+        if t >= 1.0:
+            t = 1.0
+            moving = False
+    elif moving and selected =="Orbit":
+        closed_points = orbit_points(diameter,num_points)
+        cam_pos[:] = N_bezier(closed_points, t)
+        t += speed * delta_time
+        if t >= 1.0:
+            t = 0.0
 
     view = util.lookat(np.array(cam_pos), target, up)
     projMat = util.perspective(60.0, 1000/800, 0.1, 100.0)
     mvpMat = projMat @ view @ cube_transform.trs
     cube_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
-def quadratic_bezier(p0, p1, p2, t):
-    return (1-t)**2 * p0 + 2*(1-t)*t * p1 + t**2 * p2   
+def orbit_points(diameter,num_points):
+    radius=diameter/2
+    points=[]
+    for i in range(num_points):
+        angle=2*np.pi*i/num_points
+        x=radius*np.cos(angle)
+        z=radius*np.sin(angle)
+        y=0.5
+        points.append(np.array([x,y,z]))
+    return points
 
-def bezier():
-    global cam_pos,start_point,end_point,control_point
+def orbit():
+    global diameter, num_points
 
-    imgui.begin("Bezier Path")
+    imgui.begin("Orbit")
 
-    imgui.text("Choose 2 points to define the path:")
-    imgui.text("Start Point:")
-    _, start_point[0] = imgui.input_float("start_x", start_point[0])
-    _, start_point[1] = imgui.input_float("start_y", start_point[1])
-    _, start_point[2] = imgui.input_float("start_z", start_point[2])
-    imgui.text("Control Point:")
-    _, control_point[0] = imgui.input_float("ctrl_x", control_point[0])
-    _, control_point[1] = imgui.input_float("ctrl_y", control_point[1])
-    _, control_point[2] = imgui.input_float("ctrl_z", control_point[2])
-    imgui.text("End Point:")
-    _, end_point[0] = imgui.input_float("end_x", end_point[0])
-    _, end_point[1] = imgui.input_float("end_y", end_point[1])
-    _, end_point[2] = imgui.input_float("end_z", end_point[2])
+    # Slider for number of points
+    imgui.text("Number of points:")
+    changed, num_points = imgui.slider_int("##num_points", num_points, 3, 256)
+
     imgui.separator()
 
+    # Slider for diameter
+    imgui.text("Diameter:")
+    _, diameter = imgui.input_float("##diameter", diameter)
+    if diameter<1:
+        diameter=1
+
     imgui.end()
-   
-
-def start_motion():
-    global t, moving, cam_pos
-
-    t = 0.0
-    moving = True
-    cam_pos[:] = start_point
+    
 
 
-def closed_curve():#under construction
-    return
-
-running = True
+# MAIN LOOP
 scene.world.traverse_visit(initUpdate, scene.world.root)
-while running:
+running = True
 
+while running:
     running = scene.render()
+
+    if start and selected is not None: 
+        start = False
+        start_motion()
 
     if show_start_gui:
         draw_start_gui()
     else:
         draw_gui()
-        if selected is not None:
-            if selected == "Bezier":
-                bezier()
-            elif selected == "Curve":
-                closed_curve()
+        if selected == "Bezier":
+            bezier()
+        elif selected =="Orbit":
+            orbit()
         update_camera()
+        
+    
+
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
+
 scene.shutdown()
