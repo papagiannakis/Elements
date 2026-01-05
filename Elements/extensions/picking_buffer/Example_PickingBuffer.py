@@ -14,7 +14,8 @@ from Elements.utils.Shortcuts import displayGUI_text
 from Elements.extensions.picking_buffer import PickingBuffer as pb
 
 assignment_goals = \
-"Simple scene containing cube and terrain to test "
+"Simple scene containing cube and terrain to test PickingSystem \n" \
+"Clicked entity information is printed in console \n" \
 
 # Initializing scene
 scene = Scene()
