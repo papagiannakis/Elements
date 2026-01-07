@@ -53,9 +53,9 @@ The examples include a real-time ImGUI control panel that allows for interactive
 - **Soft Shadows (PCF):** Enable Percentage-Closer Filtering to soften the edges of shadows. The softness can be adjusted.
 - **Shadow Bias:** Adjust the shadow bias to mitigate "shadow acne" artifacts.
 - **Light Control:** Animate the light source or move it manually using sliders.
-- **Debug Visualizations:**
+- **Visualizations:**
     - **Normal Render:** Standard scene view with shadows.
-    - **Light Depth:** View the raw depth map generated in the first pass. This is an essential tool for debugging.
+    - **Light Depth:** View the raw depth map generated in the first pass.
     - **Shadow Check:** A visualization mode that colors fragments green if they are lit and red if they are in shadow.
     - **Unfolded Map:** For point lights, this shows a 2D "cross" layout of the 6 faces of the shadow cubemap.
 
