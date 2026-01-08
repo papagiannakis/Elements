@@ -69,7 +69,7 @@ for i in range(rings + 1):
     v = 1 - i / rings
     for j in range(segments + 1):
         theta = 2 * np.pi * j / segments
-        u = j / segments
+        u =1 - (j / segments)
         x = radius * np.sin(phi) * np.cos(theta)
         y = radius * np.cos(phi)
         z = radius * np.sin(phi) * np.sin(theta)
