@@ -22,7 +22,7 @@ import time
 
 
 
-from Elements.pyGLV.GL.ShadowShader import ShadowShader, ShadowMappingSystem
+from Elements.extensions.Shadows.ShadowShader import ShadowShader, ShadowMappingSystem
 
 LIGHT_TYPE = "directional"  # "point" or "directional"
 

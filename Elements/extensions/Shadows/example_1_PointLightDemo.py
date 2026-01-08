@@ -16,7 +16,7 @@ from Elements.utils.Shortcuts import displayGUI_text
 import imgui
 import time
 
-from Elements.pyGLV.GL.ShadowShader import ShadowShader, ShadowMappingSystem
+from Elements.extensions.Shadows.ShadowShader import ShadowShader, ShadowMappingSystem
 
 
 example_description = f"SHADOW MAPPING DEMO 2 (POINT LIGHTS)\n\n" + \
