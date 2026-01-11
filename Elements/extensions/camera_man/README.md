@@ -1,6 +1,6 @@
 # Camera-Man Project
 
-**Author:** Giorgos Vitsos (csd5369)
+**Author:** Giorgos Vitsos (csd5369)  
 **Email:** csd5369@csd.uoc.gr
 
 This project implements a dynamic camera system within a 3D environment using the Elements **pyECSS** and **pyGLV** framework. It allows users to define camera paths via Bezier curves or circular orbits to visualize a textured 3D sphere (Earth).
