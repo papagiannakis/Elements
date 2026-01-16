@@ -29,11 +29,11 @@ The class `MarchingCubes` is a wrapper around the `VertexArray` component. It ho
 - use_taichi: *bool, optional*
 	If true, uses the taichi JIT (increases performance substantially)
 
-*__Note:__ The marching cubes algorithm, especially a relatively simple implementation like this one, works best with ![C1](https://latex.codecogs.com/svg.image?C^1&space;) differentiable functions. Though unlikely, other  functions might cause artifacts or even cause the algorithm to outright fail*
+*__Note:__ The marching cubes algorithm, especially a relatively simple implementation like this one, works best with ![C1](https://latex.codecogs.com/svg.image?\color{White}C^1&space;) differentiable functions. Though unlikely, other  functions might cause artifacts or even cause the algorithm to outright fail*
 
 ## 2D Function Plotting
 
-The class `RealFunction2D` is a wrapper around the `VertexArray` component. It generates a plot of a 2d function ![R^2->R](https://latex.codecogs.com/svg.image?R^2\rightarrow&space;R).
+The class `RealFunction2D` is a wrapper around the `VertexArray` component. It generates a plot of a 2d function ![R^2->R](https://latex.codecogs.com/svg.image?\color{White}R^2\rightarrow&space;R).
 
 **Usage:**
 - Create a `RealFunction2D` instance on a existing `VertexArray` component
