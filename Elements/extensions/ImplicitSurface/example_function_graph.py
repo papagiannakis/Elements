@@ -34,12 +34,12 @@ from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, Re
 
 import time
 
-expression = "x**2 + y**2"
+expression = "sin(x + cos(y * 3) * 0.2) + sqrt(y**2 + 1) - 1"
 changed = False
 minv = np.array([-5, -5, -5])
 maxv = np.array([5, 5, 5])
 res = [100, 100, 100]
-scale = 1
+scale = .7
 last_must_save = False
 
 inside_color = np.array([1, 0.67, 0.63])
@@ -159,6 +159,7 @@ def main(imguiFlag = False):
     #-----------------------------------------
     # Spawn Two Homes on top of each other
     surf = scene.world.createEntity(GameObjectEntity("Surface"))
+    surf.trans.trs = util.scale(scale, scale, scale)
     scene.world.addEntityChild(rootEntity, surf)
     
     # MAIN RENDERING LOOP
@@ -227,13 +228,6 @@ def main(imguiFlag = False):
     eManager._publishers[updateBackground.name] = gGUI
     
     while running:
-
-
-        if time.time() - start > 1 / 60:
-            t = time.time()
-            surf.surface.update_surface(f"0.5 * sin(cos(x) + {t}) - 0.5 * cos(sin(y) - {t})", [-5, -5, -5], [5, 5, 5], [70, 70, 70])
-            # surf.surface.update_surface(f"x**2 + 2 * y**2 + 1.3 * z**2 - {(sin(t) + 1.1) * 2}", [-5, -5, -5], [5, 5, 5], [100, 100, 100], normals=True)
-            start = time.time()
 
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)

@@ -31,15 +31,14 @@ from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction2D, Surface3D_VERT, Surface3D_FRAG
 
+
 import time
 
-expression = "x**2 + y**2 + x*y*z - 1"
+expression = "x**2 + y**2"
 changed = False
-
 minv = np.array([-5, -5, -5])
-maxv = -minv
+maxv = np.array([5, 5, 5])
 res = [100, 100, 100]
-
 scale = 1
 last_must_save = False
 
@@ -59,8 +58,8 @@ class GameObjectEntity(Entity):
         # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Surface3D_VERT, fragment_source=Surface3D_FRAG));
         self.vArray         = VertexArray();
-        self.surface        = MarchingCubes(self.vArray);
-        # self.surface        = RealFunction2D(self.vArray);
+        # self.surface        = MarchingCubes(self.vArray);
+        self.surface        = RealFunction2D(self.vArray);
         # Add components to entity
         scene = Scene();
         scene.world.createEntity(self);
@@ -86,44 +85,6 @@ class GameObjectEntity(Entity):
         if normals is not None:
             self.mesh.vertex_attributes.append(normals);
         self.mesh.vertex_index.append(index);
-
-def displayGUI(obj, m: MarchingCubes):
-    global expression
-    global n
-    global changed
-    global maxv
-    global minv
-    global res
-    global scale
-    global outside_color
-    global inside_color
-    global last_must_save
-
-    imgui.begin("Input")
-    m_changed, expression = imgui.input_text(label="input expression", value=expression, buffer_length=400,
-                                                   flags=imgui.INPUT_TEXT_ENTER_RETURNS_TRUE)
-
-    min_changed, minv = imgui.drag_float3("Min", minv[0], minv[1], minv[2], 0.01, -10, 10, "%0.01f")
-    max_changed, maxv = imgui.drag_float3("Max", maxv[0], maxv[1], maxv[2], 0.01, -10, 10, "%0.01f")
-    res_changed, res = imgui.drag_int3("Res", res[0], res[1], res[2], 1, 10, 200, "%d", 1)
-    scale_chaned, scale = imgui.drag_float("Scale", scale, change_speed=0.01, min_value=0, max_value=5, format="%0.001f")
-    _, outside_color = imgui.color_edit3("Outside color", outside_color[0], outside_color[1], outside_color[2])
-    _, inside_color = imgui.color_edit3("Inside color", inside_color[0], inside_color[1], inside_color[2])
-    must_save = imgui.button("Save .obj")
-
-
-    imgui.set_item_default_focus()
-    # imgui.text("How many commands have you typed: " + str(n))
-    if m_changed or min_changed or max_changed or res_changed:
-        m.update_surface(expression, minv, maxv, res)
-    if scale_chaned:
-        obj.trans.trs = util.scale(scale, scale, scale)
-
-    if must_save and not last_must_save:
-        m.save_to_obj("output.obj")
-    last_must_save = must_save
-    # imgui.text("This is what you last typed: " + str(latest.upper()))
-    imgui.end()
 
 
 def main(imguiFlag = False):
@@ -160,7 +121,6 @@ def main(imguiFlag = False):
     #-----------------------------------------
     # Spawn Two Homes on top of each other
     surf = scene.world.createEntity(GameObjectEntity("Surface"))
-    surf.trans.trs = util.scale(scale, scale, scale)
     scene.world.addEntityChild(rootEntity, surf)
     
     # MAIN RENDERING LOOP
@@ -187,13 +147,13 @@ def main(imguiFlag = False):
     # wineglass
     # surf.surface.save_to_obj("output_obj.obj")
     surf.surface.update_surface(expression, minv, maxv, res)
-    # surf.surface.update_surface("x**2 + y**2 + x*y*z - 1", [-3.1, -3.1, -3.1], [3.1, 3.1, 3.1], [200, 200, 200]) ###
-    # surf.surface.update_surface("x**2 + y**2 - z**2 * (1 - z)", [-2, -2, -2], [2, 2, 2], [100, 100, 100]) ###
+    # surf.surface.update_surface("x**2 + y**2 + x*y*z - 1", [-3.1, -3.1, -3.1], [3.1, 3.1, 3.1], [200, 200, 200])
+    # surf.surface.update_surface("x**2 + y**2 - z**2 * (1 - z)", [-2, -2, -2], [2, 2, 2], [100, 100, 100])
     # surf.surface.update_surface("x**2 + y**2 + z**2 + (x**2 + y**2) * (x**2 + z**2) * (y**2 + z**2) - 30", [-5, -5, -5], [5, 5, 5], [100, 100, 100])
     # surf.surface.update_surface("x**2 / 4 + y**2 / 4 - 0.025 - (x**2 + y**2 + z**2)**2 / 16", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
     # surf.surface.update_surface("x**2 * z**2 + z**4 - y**2 - z**3", [-3, -3, -3], [3, 3, 3], [100, 100, 100])
     # surf.surface.update_surface("x**2 + y**2 + y**4 + z**3 - x**3 - z**4", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02", [-3, -3, -3], [3, 3, 3], [50, 50, 50]) ###
+    # surf.surface.update_surface("x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
 
 
     ############################################
@@ -231,9 +191,11 @@ def main(imguiFlag = False):
     while running:
 
 
-        # if time.time() - start > 1 / 60:
-        #     surf.surface.update_surface(f"0.5 * sin(cos(x) + {t}) - 0.5 * cos(sin(y) - {t})", [-5, -5, -5], [5, 5, 5], [70, 70, 70])
+        if time.time() - start > 1 / 60:
+            t = time.time()
+            surf.surface.update_surface(f"0.5 * sin(cos(x) + {t}) - 0.5 * cos(sin(y) - {t})", [-5, -5, -5], [5, 5, 5], [70, 70, 70])
             # surf.surface.update_surface(f"x**2 + 2 * y**2 + 1.3 * z**2 - {(sin(t) + 1.1) * 2}", [-5, -5, -5], [5, 5, 5], [100, 100, 100], normals=True)
+            start = time.time()
 
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
@@ -251,7 +213,6 @@ def main(imguiFlag = False):
 
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
-        displayGUI(surf, surf.surface)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         # ImGUI post-display calls and SDLWindow swap 
