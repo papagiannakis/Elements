@@ -11,10 +11,10 @@ Contributor :
 
 Usage instructions : 
 1) Ensure you have the Pillow library installed
-    pip install Pillow
+    **pip install Pillow**
 
 2) Navigation 
-    cd Elements/extensions/Project
+   **cd Elements/extensions/Project**
 
 3) run the examples
 
@@ -22,9 +22,9 @@ Usage instructions :
 
 Assumptions & Constraints : 
 1) Framework 
-    Built and tested specifically for the Elements ECSS library
+   -> Built and tested specifically for the Elements ECSS library
 2) Graphics 
-    Requires an OpenGL 4.1+ compatible enviroment
+   -> Requires an OpenGL 4.1+ compatible enviroment
 
 ***IMPORTANT***
-In the first place we had been created a private repository and we had all the files there. So , now in this repository all of them looks like perfect without changes.
+-> In the first place we had been created a private repository and we had all the files there. So , now in this repository all of them looks like perfect without changes.
