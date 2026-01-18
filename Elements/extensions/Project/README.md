@@ -6,8 +6,8 @@ The features in this project is :
 4) Screenshot functionality
 
 Contributor :
-    Elisavet Kourkounaki - csd5116@csd.uoc.gr
-    Anna Kladou - csd4576@csd.uoc.gr
+   Elisavet Kourkounaki - csd5116@csd.uoc.gr
+   Anna Kladou - csd4576@csd.uoc.gr
 
 Usage instructions : 
 1) Ensure you have the Pillow library installed
@@ -26,5 +26,16 @@ Assumptions & Constraints :
 2) Graphics 
    -> Requires an OpenGL 4.1+ compatible enviroment
 
+Files included: 
+1) beautification.py 
+2) screenshot.py
+3) billboard_label_component.py 
+4) subtitle_system.py 
+5) beautification+Screenshot.py example
+6) examples for subtitles and labels
+7) tests 
+8) README FILE
+
 ***IMPORTANT***
--> In the first place we had been created a private repository and we had all the files there. So , now in this repository all of them looks like perfect without changes.
+-> In the first place we had created a private repository and had all the files.
+ So , now we made a new branch and added the files in theis final version.
