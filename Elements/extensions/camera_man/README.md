@@ -68,6 +68,7 @@ Include the logic file at the top of your script:
 
 ```python
 import cameraman_logic as cam
+```
 
 ### 2. Configure the Camera (Optional)
 
