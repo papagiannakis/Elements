@@ -671,3 +671,8 @@ class RealFunction2D:
 		self.vArray.attributes = [verts, norms]
 
 		self.__update_vArray()
+
+
+	def save_to_obj(self, filename):
+		if self.vArray.attributes:
+			save_obj(filename, self.vArray.attributes[0], self.vArray.attributes[1], self.vArray.index[0])
