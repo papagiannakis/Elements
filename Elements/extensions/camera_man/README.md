@@ -74,11 +74,12 @@ import cameraman_logic as cam
 
 Before entering your main loop, you can use the provided setter functions to customize the camera's behavior for your specific scene.
 
-| Function                         | Description                                                        | Example 
-| `cam.set_target([x, y, z])`      | Sets the point the camera will look at (the center of the screen). | `cam.set_target([0, 5, 0])` 
-| `cam.set_cam_pos([x, y, z])`     | Sets the initial position of the camera before animation starts.   | `cam.set_cam_pos([10, 10, 10])` 
-| `cam.set_up([x, y, z])`          | Defines the "Up" vector for the camera (usually Y-up).             | `cam.set_up([0, 1, 0])` 
-| `cam.set_control_points([List])` | Defines the initial list of points for the Bezier curve.           | `cam.set_control_points([[0,0,0], [5,5,5]])` 
+| Function | Description | Example |
+| :--- | :--- | :--- |
+| `cam.set_target([x, y, z])` | Sets the point the camera will look at (the center of the screen). | `cam.set_target([0, 5, 0])` |
+| `cam.set_cam_pos([x, y, z])` | Sets the initial position of the camera before animation starts. | `cam.set_cam_pos([10, 10, 10])` |
+| `cam.set_up([x, y, z])` | Defines the "Up" vector for the camera (usually Y-up). | `cam.set_up([0, 1, 0])` |
+| `cam.set_control_points([List])` | Defines the initial list of points for the Bezier curve. | `cam.set_control_points([[0,0,0], [5,5,5]])` |
 
 ### 3. Implement in Render Loop
 
