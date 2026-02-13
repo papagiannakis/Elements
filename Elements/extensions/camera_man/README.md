@@ -3,15 +3,13 @@
 **Author:** Giorgos Vitsos (csd5369)  
 **Email:** csd5369@csd.uoc.gr
 
-This project implements a dynamic, interactive camera system within a 3D environment using the **pyECSS** (Entity-Component-System) and **pyGLV** (OpenGL Wrapper) frameworks. It features a textured 3D Earth model and allows users to switch between smooth **Bezier curve** paths and circular **Orbit** paths while maintaining focus on a specific target.
+This project implements a dynamic, interactive camera system within a 3D environment using the **pyECSS** and **pyGLV** frameworks. It features a textured 3D Earth model and allows users to switch between smooth **Bezier curve** paths and circular **Orbit** paths while maintaining focus on a specific target.
 
 ---
 
 ## Project Structure
 
-The project is divided into two main Python files, separating the **Scene Graph construction** from the **Camera Control logic**.
-
-### 1. `cameraman_example.py` (The Scene Builder)
+### 1. `cameraman_example.py` 
 This is the main entry point of the application. It is responsible for setting up the 3D world and the rendering pipeline.
 
 * **Scene Graph Initialization:** Sets up the `pyECSS` Scene and creates the entity hierarchy (`Root` -> `Sphere`).
@@ -19,10 +17,10 @@ This is the main entry point of the application. It is responsible for setting u
 * **Texture Management:** Loads the `earth.jpg` texture and binds it to the sphere's shader.
 * **Render Loop:** Manages the main application loop. Crucially, it delegates camera control to the logic module by calling `cam.run_camera()` every frame, passing the sphere's Transform and Shader components for updates.
 
-### 2. `cameraman_logic.py` (The Camera Controller)
+### 2. `cameraman_logic.py` 
 This file acts as the "brain" of the camera. It handles user input, graphical user interface (GUI) rendering, and the mathematical calculations for camera movement.
 
-* **GUI System (`imgui`):** Renders the interactive control panels:
+* **GUI System:** Renders the interactive control panels:
     * **Welcome Screen:** Initial start overlay.
     * **Main Options:** Select modes (Bezier vs. Orbit), reset positions, and adjust global animation speed.
     * **Path Editors:** Specialized windows to add/remove Bezier control points or adjust Orbit diameter/point count.
@@ -86,14 +84,12 @@ Before entering your main loop, you can use the provided setter functions to cus
 Inside your main `while running:` loop, call `run_camera`. You must pass the **Transform component** of the object you are viewing (used for the Model matrix) and the **Shader** (used to update View/Projection matrices).
 
 ```python
-# Setup before loop
-cam.set_target([0.0, 0.0, 0.0])   # Look at origin
-cam.set_cam_pos([0.0, 0.0, 10.0]) # Start 10 units back
+cam.set_target([0.0, 0.0, 0.0])  
+cam.set_cam_pos([0.0, 0.0, 10.0]) 
 
 while running:
     running = scene.render()
     
-    # Run logic and update shader uniforms
     cam.run_camera(my_object_transform, my_shader)
     
     scene.world.traverse_visit(renderUpdate, scene.world.root)
