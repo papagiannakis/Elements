@@ -7,7 +7,6 @@ Elements.pyECSS (Entity Component Systems in a Scenegraph) package
 The USDImporter file, holds functionality for importing and exporting Elements scenes as .usd files
 
 """
-from pxr import Usd, UsdGeom
 
 from pxr import Usd, UsdGeom, UsdShade
 import numpy as np

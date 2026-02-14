@@ -1,4 +1,5 @@
 import numpy as np
+import imgui
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
@@ -20,14 +21,14 @@ from Elements.extensions.Normals_USDimporter_BSP.BSPTree import BSPTree
 
 
 example_description = \
-"This is a scene with triangles (instead of cubes), a terrain and axes. \n\
-The triangles and axes are rendered with a simple shader. \n\
-that allow camera movement too, via the Elements GUI. \n\n\
-An ECSS Graph shows the Entities and Components of the \n\
-scene, in read only way, i.e., you cannot manipulate  \n\
-any information via the ECSS Graph GUI. \n\n\
-You can move the camera through the Elements GUI \n\
-or the mouse. Hit ESC OR Close the window to quit."
+"This example demonstrates building and querying a BSP tree over a small set of triangles.\n\
+Five triangles are placed in the scene along with a terrain grid and world axes.\n\
+\n\
+Use the 'BSP Controls' window to select a Triangle id and press 'Search' to print the\n\
+BSP traversal path to the terminal. Press 'Print tree' to print the BSP structure by depth.\n\
+\n\
+You can move the camera via the Elements GUI or the mouse. Hit ESC or close the window to quit."
+
 
 winWidth = 1024
 winHeight = 768
@@ -271,23 +272,42 @@ BSP = BSPTree(vertices, indexes)
 BSP.build()
 
 print()
-print("---- BSP Tree ----")
-BSP.print_by_depth()
+# print("---- BSP Tree ----")
+# BSP.print_by_depth()
 
-print()
-print("---- Search path traversal (for a non-intersected triangle) ----")
-BSP.search(1)
+# print()
+# print("---- Search path traversal (for a non-intersected triangle) ----")
+# BSP.search(1)
 
-print()
-print("---- Search path traversal (for a intersected triangle) ----")
+# print()
+# print("---- Search path traversal (for a intersected triangle) ----")
 
-BSP.search(0)
+# BSP.search(0)
 
 model_terrain = terrain.getChild(0).trs
 model_axes = axes_trans.trs
 
+search_id = 0
+print_tree = False
+
 while running:
     running = scene.render()
+    imgui.begin("BSP Controls")
+
+    changed, search_id = imgui.input_int("Triangle id", search_id)
+
+    if imgui.button("Search"):
+        print("\n---- Search path traversal ----")
+        BSP.search(int(search_id))
+
+    imgui.same_line()
+
+    if imgui.button("Print tree"):
+        print("\n---- BSP Tree ----")
+        BSP.print_by_depth()
+
+    imgui.end()
+
     displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
