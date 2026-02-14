@@ -39,9 +39,99 @@ class UVGui:
         self.show_sphere_gizmo = False
         self.sphere_gizmo = None
         self.original_normals = None
+       
+        self.objects = {}
+        self.current_object_name = None
  
     def draw(self, imgui, obj_trans, vertices, mesh, varray=None):
         imgui.begin("UV Projection Inspector")
+
+        # --- Object picker ---
+        if self.objects:
+            names = list(self.objects.keys())
+            if self.current_object_name not in names:
+                self.current_object_name = names[0]
+
+            try:
+                current_idx = names.index(self.current_object_name)
+            except ValueError:
+                current_idx = 0
+
+        
+            combo_a, combo_b = imgui.combo("Object", current_idx, names)
+            
+            if isinstance(combo_a, bool) and isinstance(combo_b, int):
+                changed_idx, new_idx = combo_a, combo_b
+            elif isinstance(combo_a, int) and isinstance(combo_b, bool):
+                changed_idx, new_idx = combo_b, combo_a
+            else:
+                changed_idx, new_idx = combo_a, combo_b
+
+            if changed_idx:
+
+                if 0 <= new_idx < len(names):
+                    self.current_object_name = names[new_idx]
+                else:
+                    self.current_object_name = names[0]
+                sel = self.objects[self.current_object_name]
+                
+                
+                if 'trans' in sel and sel['trans'] is not None:
+                    try:
+                        obj_trans.trs = sel['trans'].trs if hasattr(sel['trans'], 'trs') else sel['trans']
+                    except Exception:
+                        obj_trans.trs = sel['trans']
+
+                if 'vertices' in sel and sel['vertices'] is not None:
+                    if len(mesh.vertex_attributes) > 0:
+                        mesh.vertex_attributes[0] = sel['vertices']
+                    else:
+                        mesh.vertex_attributes.append(sel['vertices'])
+
+                if 'normals' in sel and sel['normals'] is not None:
+                    if len(mesh.vertex_attributes) > 1:
+                        mesh.vertex_attributes[1] = sel['normals']
+                    else:
+                        
+                        while len(mesh.vertex_attributes) < 1:
+                            mesh.vertex_attributes.append([])
+                        mesh.vertex_attributes.append(sel['normals'])
+
+                if 'uvs' in sel and sel['uvs'] is not None:
+                    if len(mesh.vertex_attributes) > 2:
+                        mesh.vertex_attributes[2] = sel['uvs']
+                    else:
+                        while len(mesh.vertex_attributes) < 2:
+                            mesh.vertex_attributes.append([])
+                        mesh.vertex_attributes.append(sel['uvs'])
+
+                if 'indices' in sel and sel['indices'] is not None:
+                    
+                    if hasattr(mesh, 'vertex_index') and len(mesh.vertex_index) > 0:
+                        mesh.vertex_index[0] = sel['indices']
+                    else:
+                        mesh.vertex_index.append(sel['indices'])
+
+            
+                target_varray = varray if varray is not None else sel.get('varray', None)
+                if target_varray is not None:
+                    if getattr(target_varray, 'glid', None) is not None:
+                        try:
+                            gl.glDeleteVertexArrays(1, [target_varray.glid])
+                        except Exception:
+                            pass
+                        try:
+                            gl.glDeleteBuffers(len(target_varray._buffers), target_varray._buffers)
+                        except Exception:
+                            pass
+                        target_varray._glid = None
+                        target_varray._buffers = []
+                    try:
+                        target_varray.init()
+                    except Exception:
+                        pass
+
+            imgui.separator()
 
         # THIS PART THE TRANSFORM
         imgui.text("Object Transform")

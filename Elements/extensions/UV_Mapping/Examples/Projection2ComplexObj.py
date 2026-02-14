@@ -27,6 +27,12 @@ from Elements.extensions.UV_Mapping.ObjectGenerator import UVObjectGenerator
 from Elements.extensions.UV_Mapping.Gui import UVGui
 from Elements.extensions.UV_Mapping import ObjectGenerator
 from build.lib.Elements.pyGLV.GL.Textures import Texture, get_texture_faces
+from pathlib import Path
+import Elements.extensions.UV_Mapping as UV
+CURRENT_DIR = Path(__file__).resolve()
+UV_MAPPING_DIR = CURRENT_DIR.parent.parent  
+ASSETS_DIR = UV_MAPPING_DIR / "Assets"
+
 
 
 #from Elements.extensions.UV_Mapping.TextureMapping import TextureGUI
@@ -108,7 +114,6 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
 
 ## object load 
 # NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-# obj_to_import = MODEL_DIR / "teapot.obj"
 #obj_to_import = MODEL_DIR / "obj.obj"
 obj_to_import = MODEL_DIR / "teddy.obj"
 
@@ -130,7 +135,51 @@ vArray4 = scene.world.addComponent(obj, VertexArray())
 shaderDec4 = scene.world.addComponent(obj, ShaderGLDecorator(Shader(vertex_source = ObjectGenerator.TEXTURE_VERT, fragment_source=ObjectGenerator.TEXTURE_FRAG)))
 
 
+teapot = scene.world.createEntity(Entity(name="Teapot"))
+scene.world.addEntityChild(rootEntity, teapot)
+teapot_trans = scene.world.addComponent(teapot, BasicTransform(name="Teapot_TRS", trs=util.scale(0.1, 0.1, 0.1) ))
+teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="Teapot_mesh"))
+
+obj_to_import_teapot = MODEL_DIR / "teapot.obj"
+teapot_color = [200/255, 160/255, 120/255, 1.0]
+vert_t, ind_t, col_t = obj_to_mesh(obj_to_import_teapot, color=teapot_color)
+vertices_t, indices_t, colors_t, normals_t = norm.generateSmoothNormalsMesh(vert_t , ind_t, col_t)
+
+uvs_t, proj_type_t = UVObjectGenerator.AutoProjectUV(vertices_t, return_type=True)
+
+teapot_mesh.vertex_attributes.append(vertices_t)
+teapot_mesh.vertex_attributes.append(normals_t)
+teapot_mesh.vertex_attributes.append(uvs_t)
+
+teapot_mesh.vertex_index.append(indices_t)
+vArray_teapot = scene.world.addComponent(teapot, VertexArray())
+shaderDec_teapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = ObjectGenerator.TEXTURE_VERT, fragment_source=ObjectGenerator.TEXTURE_FRAG)))
+
+# In order for the gui object picker to work we need to pass objects with their data to the Gui class. 
+# THis allows us to pick any object we want through the gui without hardcoding it again and againn.
+# THe only downside is that we need to add the verticies normals transform and uvs to the GUi class by hand excesive but for the sake 
+# of the example it is fair i think. 
 uv_gui = UVGui()
+
+uv_gui.objects = {
+    "Teddy": {
+        "trans": obj_trans,
+        "vertices": vertices,
+        "normals": normals,
+        "uvs": uvs,
+        "indices": indices,
+        "varray": vArray4
+    },
+    "Teapot": {
+        "trans": teapot_trans,
+        "vertices": vertices_t,
+        "normals": normals_t,
+        "uvs": uvs_t,
+        "indices": indices_t,
+        "varray": vArray_teapot
+    }
+}
+uv_gui.current_object_name = "Teddy"
 
 # MAIN RENDERING LOOP
 
@@ -170,8 +219,13 @@ model_terrain_axes = util.translate(0.0,-1.8,0.0)
 terrain_trans.trs = model_terrain_axes
 
 
-texture = Texture(TEXTURE_DIR / "fur.jpg")
+texture = Texture(str(ASSETS_DIR / "fur.jpg"))
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
+try:
+    shaderDec_teapot.setUniformVariable(key='ImageTexture', value=texture, texture=True)
+except NameError:
+    # If teapot shader isn't present for some runs, ignore
+    pass
 
 model_cube = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
 
@@ -206,6 +260,20 @@ while running:
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
     shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+
+
+    shaderDec_teapot.setUniformVariable(key='model', value=teapot_trans.trs, mat4=True)
+    shaderDec_teapot.setUniformVariable(key='View', value=view, mat4=True)
+    shaderDec_teapot.setUniformVariable(key='Proj', value=projMat, mat4=True)
+    shaderDec_teapot.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+    shaderDec_teapot.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+    shaderDec_teapot.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+    shaderDec_teapot.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+    shaderDec_teapot.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+    shaderDec_teapot.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+    shaderDec_teapot.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+    shaderDec_teapot.setUniformVariable(key='matColor',value=Mcolor,float3=True)
+
 
 
     scene.world.traverse_visit(renderUpdate, scene.world.root) 
