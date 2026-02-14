@@ -65,17 +65,27 @@ This extension includes a  unit test to ensure the core shader component functio
 
 ### Running the Tests
 
-To run the tests, execute the test file using Python's `unittest` module from the project root directory:
+To run the tests, execute `pytest` from the project root directory. Using `python -m` ensures that your project's import paths resolve correctly:
 
 ```bash
-python -m unittest Elements/extensions/Shadows/tests/test_shader_component.py
+python -m pytest Elements/extensions/Shadows/tests/test_shader_component.py
 ```
+
+For more detailed output, you can add the `-v` flag:
+
+```bash
+python -m pytest -v Elements/extensions/Shadows/tests/test_shader_component.py
+```
+
+---
 
 ### Test Coverage
 
 The `test_shader_component.py` file includes the following checks:
-- **Constructor Test:** Verifies that the `ShadowShader` component is initialized correctly with the provided shader source strings.
-- **OpenGL Initialization:** Mocks the PyOpenGL (`gl`) module to confirm that the `init()` method correctly calls the underlying OpenGL functions for shader compilation, attachment, and linking.
-- **Default Shader Loading:** Ensures that if no custom shader code is provided, the component correctly falls back to its default Phong lighting shaders upon initialization.
 
-These tests are designed to run without a live OpenGL context, allowing for automated validation in different environments.
+- **Constructor Test:** Verifies that the `ShadowShader` component is initialized correctly with the provided shader source strings.  
+- **OpenGL Initialization:** Mocks the PyOpenGL (`gl`) module using `pytest-mock` to confirm that the `init()` method correctly calls the underlying OpenGL functions for shader compilation, attachment, and linking.  
+- **Default Shader Loading:** Ensures that if no custom shader code is provided, the component correctly falls back to its default Phong lighting shaders upon initialization.  
+
+These tests utilize mocking to run without a live OpenGL context or heavy 3D engine initialization, allowing for fast, automated validation in different environments.
+
