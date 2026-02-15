@@ -28,7 +28,7 @@ Assumptions & Constraints :
 
 Files included: 
 1) beautification.py 
-2) screenshot.py
+2) screenshot.py , !!! You cannot screenshot in all examples !!!
 3) billboard_label_component.py 
 4) subtitle_system.py 
 5) beautification+Screenshot.py example
