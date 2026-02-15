@@ -13,17 +13,24 @@ from Elements.extensions.ImplicitSurface.triangulation_table import Ttable, Ttab
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.utils.normals import generateNormals
 
-import taichi as ti
-
-# CPU seems to runs. The delay with datatrasfer is not worth the small performance gain
-ti.init(arch=ti.cpu)
+try:
+	import taichi as ti
+	# CPU seems to runs. The delay with datatrasfer is not worth the small performance gain
+	ti.init(arch=ti.cpu)
+	use_taichi = True
+except:
+	print("\n[Marhcing Cubes]")
+	print("WARNING: Module taichi not installed. Install taichi with 'pip install taichi' to gain significant perfomance enhancements")
+	print()
+	use_taichi = False
 
 try:
 	from numexpr import evaluate
 except:
 	evaluate = eval
-	print('Module numexpr not found, using native evaluation!')
+	print("WARNING: Module numexpr not installed. Install numexpr with 'pip install numexpr' for better performance")
 
+## Build in functions
 
 from numpy import sin, cos, tan, arcsin, arccos, arctan
 from numpy import sinh, cosh, tanh, arcsinh, arccosh, arctanh
@@ -47,18 +54,10 @@ def save_obj(filename, verts, norms, tris):
 		file.write('\n\nf ' + '\nf '.join(f"{t[0] + 1} {t[1] + 1} {t[2] + 1}" for t in [tris[n:n+3] for n in range(0, len(tris), 3)]))
 
 
-## TAICHI Precomputed stuff
-__ti_neighbour_coords = ti.Vector.field(n=3, dtype=int, shape=3)
-__ti_neighbour_coords[0] = [1, 0, 0]
-__ti_neighbour_coords[1] = [0, 1, 0]
-__ti_neighbour_coords[2] = [0, 0, 1]
 
 neighbour_coords = np.array([
 	[1, 0, 0], [0, 1, 0], [0, 0, 1]
 ])
-
-ti_Ttable = ti.field(int, shape=Ttable2.shape)
-ti_Ttable.from_numpy(Ttable2)
 
 # map (reduced hindex, edge index) -> vertex index offest
 rh_ei2vo = np.array([
@@ -80,13 +79,38 @@ rh_ei2vo = np.array([
 	[0, 0, 0]
 ])
 
-# converting to taichi data structures
-ti_rh_ei2vo = ti.field(ti.int32, shape=(16, 3))
-ti_rh_ei2vo.from_numpy(rh_ei2vo)
 
-hi2tc = np.array([0, 3, 3, 6, 3, 6, 6, 9, 3, 6, 6, 9, 6, 9, 9, 6, 3, 6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12, 9, 12, 12, 9, 3, 6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12, 9, 12, 12, 9, 6, 9, 9, 6, 9, 12, 12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 3, 6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12, 9, 12, 12, 9, 6, 9, 9, 12, 9, 6, 12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 6, 9, 9, 12, 9, 12, 12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9, 6, 9, 6, 6, 3, 3, 6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12, 9, 12, 12, 9, 6, 9, 9, 12, 9, 12, 12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 6, 9, 9, 12, 9, 12, 12, 9, 9, 12, 6, 9, 12, 9, 9, 6, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9, 6, 9, 6, 6, 3, 6, 9, 9, 12, 9, 12, 12, 9, 9, 12, 12, 9, 6, 9, 9, 6, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9, 6, 9, 6, 6, 3, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9, 6, 9, 6, 6, 3, 6, 9, 9, 6, 9, 6, 6, 3, 9, 6, 6, 3, 6, 3, 3, 0])
-ti_hi2tc = ti.field(ti.int8, shape=hi2tc.shape)
-ti_hi2tc.from_numpy(hi2tc)
+## TAICHI Precomputed stuff
+if use_taichi:
+	__ti_neighbour_coords = ti.Vector.field(n=3, dtype=int, shape=3)
+	__ti_neighbour_coords[0] = [1, 0, 0]
+	__ti_neighbour_coords[1] = [0, 1, 0]
+	__ti_neighbour_coords[2] = [0, 0, 1]
+
+
+	ti_Ttable = ti.field(int, shape=Ttable2.shape)
+	ti_Ttable.from_numpy(Ttable2)
+
+	# converting to taichi data structures
+	ti_rh_ei2vo = ti.field(ti.int32, shape=(16, 3))
+	ti_rh_ei2vo.from_numpy(rh_ei2vo)
+
+	hi2tc = np.array([
+		0, 3, 3, 6, 3, 6, 6, 9, 3, 6, 6, 9, 6, 9, 9, 6, 3, 6, 6, 9, 6, 9, 9,
+		12, 6, 9, 9, 12, 9, 12, 12, 9, 3, 6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12,
+		9, 12, 12, 9, 6, 9, 9, 6, 9, 12, 12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 3,
+		6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12, 9, 12, 12, 9, 6, 9, 9, 12, 9, 6,
+		12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 6, 9, 9, 12, 9, 12, 12, 9, 9, 12,
+		12, 9, 12, 9, 9, 6, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9, 6, 9, 6, 6,
+		3, 3, 6, 6, 9, 6, 9, 9, 12, 6, 9, 9, 12, 9, 12, 12, 9, 6, 9, 9, 12, 9,
+		12, 12, 9, 9, 12, 12, 9, 12, 9, 9, 6, 6, 9, 9, 12, 9, 12, 12, 9, 9, 12,
+		6, 9, 12, 9, 9, 6, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9, 6, 9, 6, 6, 3,
+		6, 9, 9, 12, 9, 12, 12, 9, 9, 12, 12, 9, 6, 9, 9, 6, 9, 12, 12, 9, 12,
+		9, 9, 6, 12, 9, 9, 6, 9, 6, 6, 3, 9, 12, 12, 9, 12, 9, 9, 6, 12, 9, 9,
+		6, 9, 6, 6, 3, 6, 9, 9, 6, 9, 6, 6, 3, 9, 6, 6, 3, 6, 3, 3, 0
+	])
+	ti_hi2tc = ti.field(ti.int8, shape=hi2tc.shape)
+	ti_hi2tc.from_numpy(hi2tc)
 
 '''double-face vertex shader'''
 Surface3D_VERT = """
@@ -153,145 +177,146 @@ void main()
 """
 
 
+if use_taichi:
 
-@ti.func
-def hindex2redh(x):
-	return ((x >> 1) & 0b1000) | (x & 0b0111)
+	@ti.func
+	def hindex2redh(x):
+		return ((x >> 1) & 0b1000) | (x & 0b0111)
 
-@ti.kernel
-def get_verts_taichi(
-		ti_values: ti.types.ndarray(), coords: ti.types.ndarray(), verts: ti.types.ndarray(), ti_sign: ti.types.ndarray(),
-		ti_vertex_indices_start: ti.types.ndarray(), maxv: ti.types.vector(3, float), minv: ti.types.vector(3, float),
-		res: ti.types.vector(3, int)
-	):
-	'''generate verticies for the taichi implementation'''
-	
-	ti_transf = (maxv - minv) / res
+	@ti.kernel
+	def get_verts_taichi(
+			ti_values: ti.types.ndarray(), coords: ti.types.ndarray(), verts: ti.types.ndarray(), ti_sign: ti.types.ndarray(),
+			ti_vertex_indices_start: ti.types.ndarray(), maxv: ti.types.vector(3, float), minv: ti.types.vector(3, float),
+			res: ti.types.vector(3, int)
+		):
+		'''generate verticies for the taichi implementation'''
+		
+		ti_transf = (maxv - minv) / res
 
-	for i in range(coords.shape[0]):
-		x = coords[i, 0]
-		y = coords[i, 1]
-		z = coords[i, 2]
+		for i in range(coords.shape[0]):
+			x = coords[i, 0]
+			y = coords[i, 1]
+			z = coords[i, 2]
 
-		# value at current point
-		v1 = ti_values[x, y, z]
-		s = ti_sign[x, y, z]
+			# value at current point
+			v1 = ti_values[x, y, z]
+			s = ti_sign[x, y, z]
 
-		nv = ti_vertex_indices_start[x, y, z]
-		c = ti.Vector([x, y, z])
-		for L in ti.static(range(3)):
-			u = __ti_neighbour_coords[L]
-			if ti_sign[x + u.x, y + u.y, z + u.z] != s: # there should be a vertex between (x, y, z) and (x, y, z) + u
-				v2 = ti_values[x + u.x, y + u.y, z + u.z]
-				t = 0.5
-				if v2 != v1 and not ti.math.isinf(v1) and not ti.math.isinf(v2):
-					t = v1 / (v1 - v2)
+			nv = ti_vertex_indices_start[x, y, z]
+			c = ti.Vector([x, y, z])
+			for L in ti.static(range(3)):
+				u = __ti_neighbour_coords[L]
+				if ti_sign[x + u.x, y + u.y, z + u.z] != s: # there should be a vertex between (x, y, z) and (x, y, z) + u
+					v2 = ti_values[x + u.x, y + u.y, z + u.z]
+					t = 0.5
+					if v2 != v1 and not ti.math.isinf(v1) and not ti.math.isinf(v2):
+						t = v1 / (v1 - v2)
 
-				# interpolate between the two vertecies according the there values -> approximate the root
-				v = (c + u * t) * ti_transf + minv
-				verts[nv, 0] = v.x
-				verts[nv, 1] = v.y
-				verts[nv, 2] = v.z
-				nv += 1
+					# interpolate between the two vertecies according the there values -> approximate the root
+					v = (c + u * t) * ti_transf + minv
+					verts[nv, 0] = v.x
+					verts[nv, 1] = v.y
+					verts[nv, 2] = v.z
+					nv += 1
 
-@ti.kernel
-def get_verts_norms_taichi(
-		ti_values: ti.types.ndarray(), coords: ti.types.ndarray(), values: ti.types.ndarray(), verts: ti.types.ndarray(), norms: ti.types.ndarray(),
-		ti_sign: ti.types.ndarray(), ti_vertex_indices_start: ti.types.ndarray(), maxv: ti.types.vector(3, float), minv: ti.types.vector(3, float),
-		res: ti.types.vector(3, int)
-	):
-	'''generates verticies and normals for the taichi implementation'''
-	
-	ti_transf = (maxv - minv) / res
-	ti_transf = ti_transf
+	@ti.kernel
+	def get_verts_norms_taichi(
+			ti_values: ti.types.ndarray(), coords: ti.types.ndarray(), values: ti.types.ndarray(), verts: ti.types.ndarray(), norms: ti.types.ndarray(),
+			ti_sign: ti.types.ndarray(), ti_vertex_indices_start: ti.types.ndarray(), maxv: ti.types.vector(3, float), minv: ti.types.vector(3, float),
+			res: ti.types.vector(3, int)
+		):
+		'''generates verticies and normals for the taichi implementation'''
+		
+		ti_transf = (maxv - minv) / res
+		ti_transf = ti_transf
 
-	zero = -res * minv / (maxv - minv)
+		zero = -res * minv / (maxv - minv)
 
-	for i in range(coords.shape[0]):
-		x = coords[i, 0]
-		y = coords[i, 1]
-		z = coords[i, 2]
+		for i in range(coords.shape[0]):
+			x = coords[i, 0]
+			y = coords[i, 1]
+			z = coords[i, 2]
 
-		v1 = ti_values[x, y, z]
-		s = ti_sign[x, y, z]
-		nv = ti_vertex_indices_start[x, y, z]
-		c = ti.Vector([x, y, z])
-		for L in ti.static(range(3)):
-			u = __ti_neighbour_coords[L]
-			x2 = x + u.x
-			y2 = y + u.y
-			z2 = z + u.z
-			if ti_sign[x2, y2, z2] != s: # there should be a vertex between (x, y, z) and (x, y, z) + u
-				v2 = ti_values[x2, y2, z2]
-				t = 0.5
-				if v2 != v1 and not ti.math.isinf(v1) and not ti.math.isinf(v2):
-					t = v1 / (v1 - v2)
+			v1 = ti_values[x, y, z]
+			s = ti_sign[x, y, z]
+			nv = ti_vertex_indices_start[x, y, z]
+			c = ti.Vector([x, y, z])
+			for L in ti.static(range(3)):
+				u = __ti_neighbour_coords[L]
+				x2 = x + u.x
+				y2 = y + u.y
+				z2 = z + u.z
+				if ti_sign[x2, y2, z2] != s: # there should be a vertex between (x, y, z) and (x, y, z) + u
+					v2 = ti_values[x2, y2, z2]
+					t = 0.5
+					if v2 != v1 and not ti.math.isinf(v1) and not ti.math.isinf(v2):
+						t = v1 / (v1 - v2)
 
-				# interpolate between the two vertecies according the there values -> approximate the root
-				v = (c + u * t) * ti_transf + minv
-				verts[nv, 0] = v.x
-				verts[nv, 1] = v.y
-				verts[nv, 2] = v.z
+					# interpolate between the two vertecies according the there values -> approximate the root
+					v = (c + u * t) * ti_transf + minv
+					verts[nv, 0] = v.x
+					verts[nv, 1] = v.y
+					verts[nv, 2] = v.z
 
-				# approximation of the gradient at (x, y, z)
-				g0 = ti.Vector([
-					values[x + 1, y, z] - v1,
-					values[x, y + 1, z] - v1,
-					values[x, y, z + 1] - v1,
-				])
-
-				# apploximation of the gradient at (x2, y2, z2)
-				g1 = g0
-				if x2 != res[0] and y2 != res[1] and z2 != res[2]:
-					g1 = ti.Vector([
-						values[x2 + 1, y2, z2] - v2,
-						values[x2, y2 + 1, z2] - v2,
-						values[x2, y2, z2 + 1] - v2,
+					# approximation of the gradient at (x, y, z)
+					g0 = ti.Vector([
+						values[x + 1, y, z] - v1,
+						values[x, y + 1, z] - v1,
+						values[x, y, z + 1] - v1,
 					])
 
-				# interpolate gradient and normalize
-				n = g0 * (1 - t) + g1 * t
-				n = n / ti.math.length(n)
-				norms[nv, 0] = n.x
-				norms[nv, 1] = n.y
-				norms[nv, 2] = n.z
+					# apploximation of the gradient at (x2, y2, z2)
+					g1 = g0
+					if x2 != res[0] and y2 != res[1] and z2 != res[2]:
+						g1 = ti.Vector([
+							values[x2 + 1, y2, z2] - v2,
+							values[x2, y2 + 1, z2] - v2,
+							values[x2, y2, z2 + 1] - v2,
+						])
 
-				nv += 1
+					# interpolate gradient and normalize
+					n = g0 * (1 - t) + g1 * t
+					n = n / ti.math.length(n)
+					norms[nv, 0] = n.x
+					norms[nv, 1] = n.y
+					norms[nv, 2] = n.z
 
-@ti.kernel
-def get_tris_taichi(
-		coords: ti.types.ndarray(), ti_tris: ti.types.ndarray(), ti_hindex: ti.types.ndarray(),
-		ti_triangle_index_start: ti.types.ndarray(), ti_vertex_indices_start: ti.types.ndarray(), res: ti.types.vector(3, int)
-	):
-	'''generates triangles for the taichi implementation'''
-	for i in range(coords.shape[0]):
-		x = coords[i, 0]
-		y = coords[i, 1]
-		z = coords[i, 2]
-		if x < res[0] - 1 and y < res[1] - 1 and z < res[2] - 1:
-			h = int(ti_hindex[x, y, z])
-			if h < 0:
-				h = h + 256
+					nv += 1
 
-			tind = ti_triangle_index_start[x, y, z]
+	@ti.kernel
+	def get_tris_taichi(
+			coords: ti.types.ndarray(), ti_tris: ti.types.ndarray(), ti_hindex: ti.types.ndarray(),
+			ti_triangle_index_start: ti.types.ndarray(), ti_vertex_indices_start: ti.types.ndarray(), res: ti.types.vector(3, int)
+		):
+		'''generates triangles for the taichi implementation'''
+		for i in range(coords.shape[0]):
+			x = coords[i, 0]
+			y = coords[i, 1]
+			z = coords[i, 2]
+			if x < res[0] - 1 and y < res[1] - 1 and z < res[2] - 1:
+				h = int(ti_hindex[x, y, z])
+				if h < 0:
+					h = h + 256
 
-			for t in range(ti_hi2tc[h]):
-				cx = x + ti_Ttable[h, 4 * t + 0]
-				cy = y + ti_Ttable[h, 4 * t + 1]
-				cz = z + ti_Ttable[h, 4 * t + 2]
-				credh = hindex2redh(ti_hindex[cx, cy, cz])
-				ti_tris[tind] = ti_vertex_indices_start[cx, cy, cz] + ti_rh_ei2vo[credh, ti_Ttable[h, 4 * t + 3]]
-				tind += 1
+				tind = ti_triangle_index_start[x, y, z]
+
+				for t in range(ti_hi2tc[h]):
+					cx = x + ti_Ttable[h, 4 * t + 0]
+					cy = y + ti_Ttable[h, 4 * t + 1]
+					cz = z + ti_Ttable[h, 4 * t + 2]
+					credh = hindex2redh(ti_hindex[cx, cy, cz])
+					ti_tris[tind] = ti_vertex_indices_start[cx, cy, cz] + ti_rh_ei2vo[credh, ti_Ttable[h, 4 * t + 3]]
+					tind += 1
 
 
-@ti.kernel
-def get_hindex(hindex: ti.types.ndarray(), coords_hindex: ti.types.ndarray(), sign: ti.types.ndarray()):
-	''' auxilary kernel for the taichi implementation'''
-	for i, j, k in ti.ndrange(*hindex.shape):
-		h = (sign[i, j, k]     << 0) | (sign[i, j + 1, k]     << 2) | (sign[i, j, k + 1]     << 4) | (sign[i, j + 1, k + 1]     << 6) | \
-			(sign[i + 1, j, k] << 1) | (sign[i + 1, j + 1, k] << 3) | (sign[i + 1, j, k + 1] << 5) | (sign[i + 1, j + 1, k + 1] << 7)
-		hindex[i, j, k] = h
-		coords_hindex[i, j, k] = ((h >> 1) & 0b1000) | (h & 0b0111)
+	@ti.kernel
+	def get_hindex(hindex: ti.types.ndarray(), coords_hindex: ti.types.ndarray(), sign: ti.types.ndarray()):
+		''' auxilary kernel for the taichi implementation'''
+		for i, j, k in ti.ndrange(*hindex.shape):
+			h = (sign[i, j, k]     << 0) | (sign[i, j + 1, k]     << 2) | (sign[i, j, k + 1]     << 4) | (sign[i, j + 1, k + 1]     << 6) | \
+				(sign[i + 1, j, k] << 1) | (sign[i + 1, j + 1, k] << 3) | (sign[i + 1, j, k + 1] << 5) | (sign[i + 1, j + 1, k + 1] << 7)
+			hindex[i, j, k] = h
+			coords_hindex[i, j, k] = ((h >> 1) & 0b1000) | (h & 0b0111)
 
 
 
@@ -476,8 +501,7 @@ class MarchingCubes:
 			np.linspace(minv[0], maxv[0], res[0] + 1),
 			np.linspace(minv[1], maxv[1], res[1] + 1),
 			np.linspace(minv[2], maxv[2], res[2] + 1),
-			copy=False, # faster with it
-			dtype=np.float32
+			copy=False # faster with it
 		)
 
 		try:
@@ -526,7 +550,7 @@ class MarchingCubes:
 
 		self.__update_vArray()
 	
-	def update_surface(self, expression, minv, maxv, res, normals=True, use_taichi=True):
+	def update_surface(self, expression, minv, maxv, res, normals=True):
 		'''
 		Updates the surface according to the expression.
 		Parameters:
@@ -564,7 +588,7 @@ class MarchingCubes:
 
 
 
-class RealFunction2D:
+class RealFunction3D:
 	'''
 	Wrapper for the Vertex Array class
 	RealFunction2D.update_surface generates a 2D surface according by displacing a grid of points

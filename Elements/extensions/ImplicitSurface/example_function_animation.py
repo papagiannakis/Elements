@@ -1,4 +1,15 @@
 
+'''
+author: Kostis Lymperakis (kostis1101.github.io)
+
+This example showcases the RealFunction3D class for real time
+function animations. Every ~16 ms the function expression is
+updated with a time parameter and the function surface will be updated
+in real time. This shows a way to use parameters to control functions by
+passing the values of the parameters in the string of the expression.
+'''
+
+
 from __future__         import annotations
 from asyncore import dispatcher
 from math import sin, cos, radians
@@ -29,7 +40,7 @@ from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
 
-from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction2D, Surface3D_VERT, Surface3D_FRAG
+from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction3D, Surface3D_VERT, Surface3D_FRAG
 
 
 import time
@@ -59,7 +70,7 @@ class GameObjectEntity(Entity):
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Surface3D_VERT, fragment_source=Surface3D_FRAG));
         self.vArray         = VertexArray();
         # self.surface        = MarchingCubes(self.vArray);
-        self.surface        = RealFunction2D(self.vArray);
+        self.surface        = RealFunction3D(self.vArray);
         # Add components to entity
         scene = Scene();
         scene.world.createEntity(self);
@@ -144,16 +155,8 @@ def main(imguiFlag = False):
     gl.glDepthFunc(gl.GL_LESS);
     scene.world.traverse_visit(initUpdate, rootEntity)
 
-    # wineglass
-    # surf.surface.save_to_obj("output_obj.obj")
+    # create surface (implicitly invokes JIT)
     surf.surface.update_surface(expression, minv, maxv, res)
-    # surf.surface.update_surface("x**2 + y**2 + x*y*z - 1", [-3.1, -3.1, -3.1], [3.1, 3.1, 3.1], [200, 200, 200])
-    # surf.surface.update_surface("x**2 + y**2 - z**2 * (1 - z)", [-2, -2, -2], [2, 2, 2], [100, 100, 100])
-    # surf.surface.update_surface("x**2 + y**2 + z**2 + (x**2 + y**2) * (x**2 + z**2) * (y**2 + z**2) - 30", [-5, -5, -5], [5, 5, 5], [100, 100, 100])
-    # surf.surface.update_surface("x**2 / 4 + y**2 / 4 - 0.025 - (x**2 + y**2 + z**2)**2 / 16", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 * z**2 + z**4 - y**2 - z**3", [-3, -3, -3], [3, 3, 3], [100, 100, 100])
-    # surf.surface.update_surface("x**2 + y**2 + y**4 + z**3 - x**3 - z**4", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
 
 
     ############################################
@@ -194,14 +197,12 @@ def main(imguiFlag = False):
         if time.time() - start > 1 / 60:
             t = time.time()
             surf.surface.update_surface(f"0.5 * sin(cos(x) + {t}) - 0.5 * cos(sin(y) - {t})", [-5, -5, -5], [5, 5, 5], [70, 70, 70])
-            # surf.surface.update_surface(f"x**2 + 2 * y**2 + 1.3 * z**2 - {(sin(t) + 1.1) * 2}", [-5, -5, -5], [5, 5, 5], [100, 100, 100], normals=True)
             start = time.time()
 
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
 
-        # print(mainCamera.trans2.trs)
         view_dir = mainCamera.trans1.trs @ mainCamera.trans2.trs @ np.array([0, 0, 0, 1])
 
         surf.shaderDec.setUniformVariable(key='modelViewProj', value=surf.trans.l2cam, mat4=True);

@@ -1,4 +1,16 @@
 
+'''
+author: Kostis Lymperakis (kostis1101.github.io)
+
+This example showcases the RealFunction3D class.
+One can dynamically change the function by inputing an expression
+in terms of x and y in the corrisponding GUI input field.
+Once changed, the `update_surface` method with be called and the
+surface will be updated according to the new function.
+'''
+
+
+
 from __future__         import annotations
 from asyncore import dispatcher
 from math import sin, cos, radians
@@ -29,7 +41,7 @@ from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
 
-from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction2D, Surface3D_VERT, Surface3D_FRAG
+from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction3D, Surface3D_VERT, Surface3D_FRAG
 
 
 import time
@@ -59,7 +71,7 @@ class GameObjectEntity(Entity):
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Surface3D_VERT, fragment_source=Surface3D_FRAG));
         self.vArray         = VertexArray();
         # self.surface        = MarchingCubes(self.vArray);
-        self.surface        = RealFunction2D(self.vArray);
+        self.surface        = RealFunction3D(self.vArray);
         # Add components to entity
         scene = Scene();
         scene.world.createEntity(self);
@@ -113,7 +125,7 @@ def displayGUI(obj, m: MarchingCubes):
 
     imgui.set_item_default_focus()
     # imgui.text("How many commands have you typed: " + str(n))
-    if m_changed or min_changed or max_changed or res_changed:
+    if m_changed or min_changed or max_changed or res_changed: # update surface
         m.update_surface(expression, minv, maxv, res)
     if scale_chaned:
         obj.trans.trs = util.scale(scale, scale, scale)
@@ -183,17 +195,8 @@ def main(imguiFlag = False):
     gl.glDepthFunc(gl.GL_LESS);
     scene.world.traverse_visit(initUpdate, rootEntity)
 
-    # wineglass
-    # surf.surface.save_to_obj("output_obj.obj")
+    # generate funtion surface
     surf.surface.update_surface(expression, minv, maxv, res)
-    # surf.surface.update_surface("x**2 + y**2 + x*y*z - 1", [-3.1, -3.1, -3.1], [3.1, 3.1, 3.1], [200, 200, 200])
-    # surf.surface.update_surface("x**2 + y**2 - z**2 * (1 - z)", [-2, -2, -2], [2, 2, 2], [100, 100, 100])
-    # surf.surface.update_surface("x**2 + y**2 + z**2 + (x**2 + y**2) * (x**2 + z**2) * (y**2 + z**2) - 30", [-5, -5, -5], [5, 5, 5], [100, 100, 100])
-    # surf.surface.update_surface("x**2 / 4 + y**2 / 4 - 0.025 - (x**2 + y**2 + z**2)**2 / 16", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 * z**2 + z**4 - y**2 - z**3", [-3, -3, -3], [3, 3, 3], [100, 100, 100])
-    # surf.surface.update_surface("x**2 + y**2 + y**4 + z**3 - x**3 - z**4", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-
 
     ############################################
     # Instantiate all Event-related key objects

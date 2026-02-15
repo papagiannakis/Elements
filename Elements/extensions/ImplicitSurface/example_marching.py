@@ -1,4 +1,17 @@
 
+
+'''
+author : Kostis Lympakis (kostis1101.github.io)
+
+This example showcases the MarchingCubes class.
+This class generated implicit surfaces from a mathematical
+expression. The expression is given in terms of x y z in
+form of a string (all variables must be lowercase). There
+are a number of build in functions one can use in the expression
+(see README for more information).
+'''
+
+
 from __future__         import annotations
 from asyncore import dispatcher
 from math import sin, cos, radians
@@ -29,11 +42,20 @@ from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
 
-from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction2D, Surface3D_VERT, Surface3D_FRAG
+from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction3D, Surface3D_VERT, Surface3D_FRAG
 
 import time
 
 expression = "x**2 + y**2 + x*y*z - 1"
+''' Other interesting expressions:
+x**2 + y**2 - z**2 * (1 - z)
+x**2 + y**2 + z**2 + (x**2 + y**2) * (x**2 + z**2) * (y**2 + z**2) - 30
+x**2 / 4 + y**2 / 4 - 0.025 - (x**2 + y**2 + z**2)**2 / 16
+x**2 * z**2 + z**4 - y**2 - z**3
+x**2 + y**2 + y**4 + z**3 - x**3 - z**4
+x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02
+'''
+
 changed = False
 
 minv = np.array([-5, -5, -5])
@@ -60,7 +82,7 @@ class GameObjectEntity(Entity):
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Surface3D_VERT, fragment_source=Surface3D_FRAG));
         self.vArray         = VertexArray();
         self.surface        = MarchingCubes(self.vArray);
-        # self.surface        = RealFunction2D(self.vArray);
+        # self.surface        = RealFunction3D(self.vArray);
         # Add components to entity
         scene = Scene();
         scene.world.createEntity(self);
@@ -185,15 +207,7 @@ def main(imguiFlag = False):
     scene.world.traverse_visit(initUpdate, rootEntity)
 
     # wineglass
-    # surf.surface.save_to_obj("output_obj.obj")
     surf.surface.update_surface(expression, minv, maxv, res)
-    # surf.surface.update_surface("x**2 + y**2 + x*y*z - 1", [-3.1, -3.1, -3.1], [3.1, 3.1, 3.1], [200, 200, 200]) ###
-    # surf.surface.update_surface("x**2 + y**2 - z**2 * (1 - z)", [-2, -2, -2], [2, 2, 2], [100, 100, 100]) ###
-    # surf.surface.update_surface("x**2 + y**2 + z**2 + (x**2 + y**2) * (x**2 + z**2) * (y**2 + z**2) - 30", [-5, -5, -5], [5, 5, 5], [100, 100, 100])
-    # surf.surface.update_surface("x**2 / 4 + y**2 / 4 - 0.025 - (x**2 + y**2 + z**2)**2 / 16", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 * z**2 + z**4 - y**2 - z**3", [-3, -3, -3], [3, 3, 3], [100, 100, 100])
-    # surf.surface.update_surface("x**2 + y**2 + y**4 + z**3 - x**3 - z**4", [-3, -3, -3], [3, 3, 3], [50, 50, 50])
-    # surf.surface.update_surface("x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02", [-3, -3, -3], [3, 3, 3], [50, 50, 50]) ###
 
 
     ############################################
