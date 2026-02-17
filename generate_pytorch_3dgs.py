@@ -136,7 +136,7 @@ rasterizer_code = """def differentiable_rasterizer(world_pos, colors, opacities,
     tan_fovy = math.tan(math.radians(fov_y) * 0.5)
     tan_fovx = tan_fovy * (width / height)
     view_mat = torch.eye(4, device=device)
-    view_mat[2, 3] = 5.0 
+    view_mat[2, 3] = -5.0 
     view_mat = torch.inverse(view_mat)
     
     cov3d = compute_covariance_3d(scales, rots)
@@ -201,27 +201,32 @@ demo_code = """def optimization_demo():
     target_canvas[mask] = torch.tensor([0.0, 1.0, 0.0]) # Green Circle Target
     
     # Init 1 Gaussian
-    xyz = nn.Parameter(torch.tensor([[2.0, 2.0, 0.0]], device=device))
-    color = nn.Parameter(torch.tensor([[1.0, 0.0, 0.0]], device=device))
-    scale = nn.Parameter(torch.tensor([[0.5, 0.5, 0.5]], device=device))
-    rot = nn.Parameter(torch.tensor([[1.0, 0.0, 0.0, 0.0]], device=device)) 
-    opacity = nn.Parameter(torch.tensor([0.8], device=device))
+    # Init 3 Gaussians to better approximate the circle
+    # We initialize them randomly around the center to show "learning"
+    num_gaussians = 3
+    xyz = nn.Parameter(torch.rand(num_gaussians, 3, device=device) * 2.0 - 1.0) # Range [-1, 1]
+    color = nn.Parameter(torch.rand(num_gaussians, 3, device=device))
+    # Init scale smallish
+    scale = nn.Parameter(torch.tensor([[-2.0, -2.0, -2.0]] * num_gaussians, device=device)) # log-space
+    rot = nn.Parameter(torch.rand(num_gaussians, 4, device=device)) 
+    opacity = nn.Parameter(torch.tensor([0.5] * num_gaussians, device=device))
     
-    optimizer = torch.optim.Adam([xyz, color, scale, opacity], lr=0.1)
+    optimizer = torch.optim.Adam([xyz, color, scale, opacity], lr=0.01)
     losses = []
     
-    for i in range(101):
+    for i in range(1001):
         optimizer.zero_grad()
-        render = differentiable_rasterizer(xyz, color, opacity, scale, rot, W, H)
+        # Use torch.exp(scale) to prevent scale collapse, and sigmoid for color/opacity
+        render = differentiable_rasterizer(xyz, torch.sigmoid(color), torch.sigmoid(opacity), torch.exp(scale), rot, W, H)
         loss = torch.mean(torch.abs(render - target_canvas))
         loss.backward()
         optimizer.step()
         losses.append(loss.item())
-        if i % 20 == 0: print(f"Iter {i}: Loss {loss.item():.4f}")
+        if i % 100 == 0: print(f"Iter {i}: Loss {loss.item():.4f}")
             
     plt.figure(figsize=(10,3))
     plt.subplot(1,3,1); plt.imshow(target_canvas.detach().cpu()); plt.title("Target")
-    plt.subplot(1,3,2); plt.imshow(render.detach().cpu()); plt.title("Learned Gaussian")
+    plt.subplot(1,3,2); plt.imshow(render.detach().cpu()); plt.title(f"Learned (Max: {render.max().item():.2f}, Iters: 1000)")
     plt.subplot(1,3,3); plt.plot(losses); plt.title("Loss")
     plt.show()
 
