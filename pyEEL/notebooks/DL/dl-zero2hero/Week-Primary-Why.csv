@@ -1,0 +1,7 @@
+"Week","Primary","Why"
+"1","Karpathy — Zero to Hero, Lecture 1","Builds autograd from scratch in 2 hours — nothing else makes backprop this tangible"
+"1","3Blue1Brown — Neural Networks","Geometric intuition visualizations, 40 min"
+"2","PyTorch Tutorials","Canonical, short, no fluff"
+"2","Dive into Deep Learning, Ch. 7","Runnable code + geometric CNN explanations"
+"3","HuggingFace NLP Course","Fastest path to using pretrained transformers"
+"3","fast.ai Lesson 9","Diffusion models without drowning in math"
