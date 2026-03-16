@@ -51,10 +51,10 @@ def generate_scene(ir: dict) -> str:
 
 
 #function for vec3
-def vec3_to_util_vec3 (vec):
+def vec3_to_util_vec (vec):
     if len(vec) != 3:
         raise ValueError("Vector must have 3 components")
-    return f"util.vec3({vec[0]}, {vec[1]}, {vec[2]})"
+    return f"util.vec({vec[0]}, {vec[1]}, {vec[2]})"
 
 #function for translation
 def make_translate(position):
@@ -68,7 +68,7 @@ def make_scale(scale):
     sx,sy,sz = scale # for uniform scale all numbers must be equal
     if sx==sy==sz:
         return f"util.scale({float(sx)})"
-    return "util.scale(1.0)"
+    return "util.scale(1.0)" # default to no scale if non-uniform scaling
 
 def emit_cube_geometry(var_suffix: str) -> str:
     return f"""
@@ -122,7 +122,7 @@ def emit_cube_object(obj: dict, idx: int) ->tuple[str, str]:
     shader_var = f"shader_{suffix}"
 
     trs_expr = f"{make_scale(scale)} @ {make_translate(position)}"
-    mat_color_expr = vec3_to_util_vec3(color)
+    mat_color_expr = vec3_to_util_vec(color)
 
     object_code = f"""
 # ===== Cube: {name} =====
