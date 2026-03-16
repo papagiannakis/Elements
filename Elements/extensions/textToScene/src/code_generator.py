@@ -1,39 +1,54 @@
-def generate_scene(ir):
+import os
+from pathlib import Path
+from typing import Optional
+import builtins
+print("IS BUILTIN OPEN:", builtins.open is open)
+print("OPEN OBJECT:", open)
+
+def generate_scene(ir: dict) -> str:
+    if not isinstance(ir, dict):
+        raise TypeError("IR must be a dictionary")
+    # 1. Validate IR
     if "window" not in ir:
-        raise ValueError("IR must contain a 'window' key")  
+        raise ValueError("IR must contain a 'window' key")
     if "objects" not in ir:
         raise ValueError("IR must contain an 'objects' key")
+
     window = ir["window"]
     objects = ir["objects"]
-    if "width" not in window or "height" not in window:
-        raise ValueError("Window must contain 'width' and 'height' keys")
-    code = f"create_window({window['width']}, {window['height']})\n"
-    for obj in objects:
-        if "type" not in obj or "name" not in obj:
-            raise ValueError("Each object must contain 'type' and 'name' keys")
-        obj_type = obj["type"]
-        name = obj["name"]
-        position = obj.get("position", [0, 0, 0])
-        scale = obj.get("scale", [1, 1, 1])
-        color = obj.get("color", [1, 1, 1])
-        if obj["type"] == "cube":
-            code += f"""
-        node = scene.world.createEntity(Entity(name="{obj['name']}"))
-            scene.world.addEntityChild(rootEntity, node)
-            trans = scene.world.addComponent(
-                node,
-                BasicTransform(name="TRS", trs=util.translate{tuple(obj["position"])})
-            )
-            scene.world.addComponent(
-                node,
-                BoxCollider(name="BoxCollider", halfExtents=util.vec3({tuple(obj["scale"])}))
-            )
-            scene.world.addComponent(
-                node,
-                MeshRenderer(name="MeshRenderer", mesh=util.mesh("cube"), material=util.material(color={tuple(obj["color"])}))
-            )
+    title = window.get("title", "generated scene")
 
-            """
+    # 2. Start with header
+    script_parts: list[str] = []
+    script_parts.append(built_header(window))
+
+    # 3. Emit objects + collect uniform code
+    uniform_blocks: list[str] = []
+
+    for idx, obj in enumerate(objects):
+        if "type" not in obj:
+            raise ValueError("Each object must contain a 'type' key")
+
+        obj_type = obj["type"]
+
+        if obj_type == "cube":
+            object_code, uniform_code = emit_cube_object(obj, idx)
+            script_parts.append(object_code)
+            uniform_blocks.append(uniform_code)
+        else:
+            # For now, ignore or raise for unsupported types
+            raise ValueError(f"Unsupported object type: {obj_type}")
+
+    # 4. Combine uniform blocks into one block
+    uniform_block_str = "\n".join(uniform_blocks)
+
+    # 5. Add ending (render loop)
+    script_parts.append(build_ending(title, uniform_block_str))
+
+    # 6. Join everything into a single script string
+    full_script = "\n".join(script_parts)
+    return full_script
+
 
 #function for vec3
 def vec3_to_util_vec3 (vec):
@@ -43,7 +58,8 @@ def vec3_to_util_vec3 (vec):
 
 #function for translation
 def make_translate(position):
-    return f"util.translate({vec3_to_util_vec3(position)})" 
+    x, y, z = position
+    return f"util.translate({float(x)}, {float(y)}, {float(z)})" 
 
 #function for scaling
 def make_scale(scale):
@@ -52,7 +68,7 @@ def make_scale(scale):
     sx,sy,sz = scale # for uniform scale all numbers must be equal
     if sx==sy==sz:
         return f"util.scale({float(sx)})"
-    return "util.identity()"
+    return "util.scale(1.0)"
 
 def emit_cube_geometry(var_suffix: str) -> str:
     return f"""
@@ -67,7 +83,7 @@ vertexCube_{var_suffix} = np.array([
     [0.5, -0.5, -0.5, 1.0]
 ], dtype=np.float32)
 
-colorCube_{var_suffix} = nm.array([colorCube_{var_suffix} = np.array([
+colorCube_{var_suffix} = np.array([
     [0.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
     [1.0, 1.0, 0.0, 1.0],
@@ -93,7 +109,7 @@ vertices_{var_suffix}, indices_{var_suffix}, colors_{var_suffix}, normals_{var_s
     colorCube_{var_suffix}
 )
 """
-def emit_cube_object(obj: dict, idx: int) -> tuple[str, str]:
+def emit_cube_object(obj: dict, idx: int) ->tuple[str, str]:
     name = obj.get("name", f"cube{idx}")
     position = obj.get("position", [0.0, 0.5, 0.0])
     scale = obj.get("scale", [1.0, 1.0, 1.0])
@@ -106,7 +122,7 @@ def emit_cube_object(obj: dict, idx: int) -> tuple[str, str]:
     shader_var = f"shader_{suffix}"
 
     trs_expr = f"{make_scale(scale)} @ {make_translate(position)}"
-    mat_color_expr = vec3_to_util_vec(color)
+    mat_color_expr = vec3_to_util_vec3(color)
 
     object_code = f"""
 # ===== Cube: {name} =====
@@ -152,7 +168,7 @@ scene.world.addComponent({entity_var}, VertexArray())
     {shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
     {shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
 """
-
+    
     return object_code, uniform_code
 
 #function to create the header and the imports
@@ -261,3 +277,18 @@ while running:
 
 scene.shutdown()
 '''
+
+def save_script(script: str, output_path: str = None):
+    if output_path is None:
+        # Save to Desktop ALWAYS works
+        desktop = Path.home() / "Desktop" / "scene_out.py"
+        output_file = desktop
+    else:
+        output_file = Path(output_path)
+
+    output_file.parent.mkdir(parents=True, exist_ok=True)
+
+    with open(output_file, "w", encoding="utf-8") as f:
+        f.write(script)
+
+    print("Saved script to:", output_file)

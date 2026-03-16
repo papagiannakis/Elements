@@ -1,4 +1,5 @@
-from code_generator import generate_scene_script, save_script
+# src/test_codegen.py
+from code_generator import generate_scene, save_script
 
 ir = {
     "window": {
@@ -17,9 +18,6 @@ ir = {
     ]
 }
 
-script = generate_scene_script(ir)
-
-print(type(script))
-print(script[:1000])
-
+script = generate_scene(ir)
 save_script(script)
+print("Scene script generated at generated/scene_out.py")
