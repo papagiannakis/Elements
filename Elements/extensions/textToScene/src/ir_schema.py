@@ -1,7 +1,8 @@
 scene = {
     "window": {
         "width": 1200,
-        "height": 800
+        "height": 800, 
+        "title": "My 1rst Scene"
     },
     "objects": [
         {

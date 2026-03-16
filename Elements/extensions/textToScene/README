@@ -1,0 +1,20 @@
+********************
+csd5116
+elisavet Kourkounaki 
+********************
+
+text to scene: Code generator using intermidiate representation IR 
+
+files: 
+textToScene/src/
+    code_generation.py Includes the main code for creating
+    a executable scpript in python.
+    ir_schema.py contains the ir in json format which is used is
+    as input to code_generation.
+    main.py a file that indicates the pipeline for the text to code \
+    generation
+    text_parser.py
+    
+textTOScene/data 
+
+textToScene/tests
