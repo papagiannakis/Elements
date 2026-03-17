@@ -5,6 +5,10 @@ elisavet Kourkounaki
 
 text to scene: Code generator using intermidiate representation IR 
 
+obj -> create_geometry() -> vertices/indices/colors
+    -> generateSmoothNormalsMesh(...)
+    -> RenderMesh / VertexArray / Shader
+
 files: 
 textToScene/src/
     code_generation.py Includes the main code for creating

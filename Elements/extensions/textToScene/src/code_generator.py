@@ -1,6 +1,7 @@
 import os
 from pathlib import Path
 from typing import Optional
+from geometry_factory import create_geometry
 import builtins
 print("IS BUILTIN OPEN:", builtins.open is open)
 print("OPEN OBJECT:", open)
