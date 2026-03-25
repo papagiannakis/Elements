@@ -1,23 +1,31 @@
-# src/test_codegen.py
-from code_generator import generate_scene, save_script
+from code_generator import generate_scene_script, save_script
 
-ir = {
+scene_ir = {
+    "node_type": "scene",
+    "name": "root",
     "window": {
         "width": 1200,
         "height": 800,
-        "title": "Cube Test"
+        "title": "Hierarchical Cube Scene"
     },
-    "objects": [
+    "children": [
         {
-            "type": "cube",
+            "node_type": "mesh_object",
             "name": "cube1",
-            "position": [0.0, 0.5, 0.0],
-            "scale": [1.0, 1.0, 1.0],
-            "color": [0.8, 0.0, 0.8]
+            "shape": "cube",
+            "transform": {
+                "position": [0.0, 0.5, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "material": {
+                "color": [0.8, 0.0, 0.8]
+            }
         }
     ]
 }
 
-script = generate_scene(ir)
+script = generate_scene_script(scene_ir)
+compile(script, "scene_out.py", "exec")
+print("Syntax OK")
 save_script(script)
-print("Scene script generated at generated/scene_out.py")
+print("Saved successfully")

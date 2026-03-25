@@ -22,3 +22,17 @@ textToScene/src/
 textTOScene/data 
 
 textToScene/tests
+
+
+
+Addjust to a better solution 
+The idea:
+scene is not just a list of objects but a tree with nodes.
+The initial nodes are:
+    - scene
+    - group
+    - mesh_object
+    - camera
+    - light
+
+    

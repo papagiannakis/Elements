@@ -1,185 +1,222 @@
-import os
+# code_generator.py
+from copy import deepcopy
 from pathlib import Path
 from typing import Optional
+
+import numpy as np
+
 from geometry_factory import create_geometry
-import builtins
-print("IS BUILTIN OPEN:", builtins.open is open)
-print("OPEN OBJECT:", open)
-
-def generate_scene(ir: dict) -> str:
-    if not isinstance(ir, dict):
-        raise TypeError("IR must be a dictionary")
-    # 1. Validate IR
-    if "window" not in ir:
-        raise ValueError("IR must contain a 'window' key")
-    if "objects" not in ir:
-        raise ValueError("IR must contain an 'objects' key")
-
-    window = ir["window"]
-    objects = ir["objects"]
-    title = window.get("title", "generated scene")
-
-    # 2. Start with header
-    script_parts: list[str] = []
-    script_parts.append(built_header(window))
-
-    # 3. Emit objects + collect uniform code
-    uniform_blocks: list[str] = []
-
-    for idx, obj in enumerate(objects):
-        if "type" not in obj:
-            raise ValueError("Each object must contain a 'type' key")
-
-        obj_type = obj["type"]
-
-        if obj_type == "cube":
-            object_code, uniform_code = emit_cube_object(obj, idx)
-            script_parts.append(object_code)
-            uniform_blocks.append(uniform_code)
-        else:
-            # For now, ignore or raise for unsupported types
-            raise ValueError(f"Unsupported object type: {obj_type}")
-
-    # 4. Combine uniform blocks into one block
-    uniform_block_str = "\n".join(uniform_blocks)
-
-    # 5. Add ending (render loop)
-    script_parts.append(build_ending(title, uniform_block_str))
-
-    # 6. Join everything into a single script string
-    full_script = "\n".join(script_parts)
-    return full_script
 
 
-#function for vec3
-def vec3_to_util_vec (vec):
-    if len(vec) != 3:
-        raise ValueError("Vector must have 3 components")
-    return f"util.vec({vec[0]}, {vec[1]}, {vec[2]})"
+DEFAULT_WINDOW = {
+    "width": 1200,
+    "height": 800,
+    "title": "Generated Scene"
+}
 
-#function for translation
+DEFAULT_TRANSFORM = {
+    "position": [0.0, 0.5, 0.0],
+    "scale": [1.0, 1.0, 1.0]
+}
+
+DEFAULT_MATERIAL = {
+    "color": [0.8, 0.0, 0.8]
+}
+
+
+# -----------------------------
+# Validation / normalization
+# -----------------------------
+def ensure_vec3(value, field_name):
+    if value is None:
+        raise ValueError("Field '{}' cannot be None".format(field_name))
+
+    if not isinstance(value, (list, tuple)):
+        raise TypeError("Field '{}' must be a list/tuple of length 3".format(field_name))
+
+    if len(value) != 3:
+        raise ValueError("Field '{}' must have exactly 3 values".format(field_name))
+
+    try:
+        return [float(value[0]), float(value[1]), float(value[2])]
+    except Exception:
+        raise TypeError("Field '{}' must contain numeric values".format(field_name))
+
+
+def clamp_color(color):
+    return [max(0.0, min(1.0, float(c))) for c in color]
+
+
+def normalize_window(window):
+    if window is None:
+        window = {}
+
+    if not isinstance(window, dict):
+        raise TypeError("'window' must be a dictionary")
+
+    normalized = deepcopy(DEFAULT_WINDOW)
+
+    if "width" in window:
+        normalized["width"] = int(window["width"])
+    if "height" in window:
+        normalized["height"] = int(window["height"])
+    if "title" in window:
+        normalized["title"] = str(window["title"])
+
+    if normalized["width"] <= 0 or normalized["height"] <= 0:
+        raise ValueError("Window width and height must be positive")
+
+    return normalized
+
+
+def normalize_transform(transform):
+    if transform is None:
+        transform = {}
+
+    if not isinstance(transform, dict):
+        raise TypeError("'transform' must be a dictionary")
+
+    normalized = deepcopy(DEFAULT_TRANSFORM)
+
+    if "position" in transform:
+        normalized["position"] = ensure_vec3(transform["position"], "position")
+    if "scale" in transform:
+        normalized["scale"] = ensure_vec3(transform["scale"], "scale")
+
+    return normalized
+
+
+def normalize_material(material):
+    if material is None:
+        material = {}
+
+    if not isinstance(material, dict):
+        raise TypeError("'material' must be a dictionary")
+
+    normalized = deepcopy(DEFAULT_MATERIAL)
+
+    if "color" in material:
+        normalized["color"] = clamp_color(ensure_vec3(material["color"], "color"))
+
+    return normalized
+
+
+def normalize_node(node, idx=1):
+    if not isinstance(node, dict):
+        raise TypeError("Each node must be a dictionary")
+
+    node_type = node.get("node_type")
+    if node_type is None:
+        raise ValueError("Node is missing 'node_type'")
+
+    if node_type == "scene":
+        children = node.get("children", [])
+        if not isinstance(children, list):
+            raise TypeError("'children' of scene must be a list")
+
+        return {
+            "node_type": "scene",
+            "name": str(node.get("name", "root")),
+            "children": [normalize_node(child, i + 1) for i, child in enumerate(children)]
+        }
+
+    elif node_type == "mesh_object":
+        shape = node.get("shape")
+        if shape is None:
+            raise ValueError("mesh_object node is missing 'shape'")
+
+        if shape != "cube":
+            raise ValueError("Unsupported shape for now: {}".format(shape))
+
+        return {
+            "node_type": "mesh_object",
+            "name": str(node.get("name", "mesh_object_{}".format(idx))),
+            "shape": shape,
+            "transform": normalize_transform(node.get("transform", {})),
+            "material": normalize_material(node.get("material", {}))
+        }
+
+    else:
+        raise ValueError("Unsupported node_type: {}".format(node_type))
+
+
+def validate_and_normalize_scene_ir(scene_ir):
+    if not isinstance(scene_ir, dict):
+        raise TypeError("Scene IR must be a dictionary")
+
+    if scene_ir.get("node_type") != "scene":
+        raise ValueError("Top-level IR must have node_type='scene'")
+
+    normalized_scene = normalize_node(scene_ir)
+    normalized_window = normalize_window(scene_ir.get("window", {}))
+    normalized_scene["window"] = normalized_window
+
+    return normalized_scene
+
+
+# -----------------------------
+# Code generation helpers
+# -----------------------------
 def make_translate(position):
     x, y, z = position
-    return f"util.translate({float(x)}, {float(y)}, {float(z)})" 
+    return "util.translate({}, {}, {})".format(float(x), float(y), float(z))
 
-#function for scaling
+
 def make_scale(scale):
-    if isinstance(scale, (int, float)):
-        return f"util.scale({float(scale)})"
-    sx,sy,sz = scale # for uniform scale all numbers must be equal
-    if sx==sy==sz:
-        return f"util.scale({float(sx)})"
-    return "util.scale(1.0)" # default to no scale if non-uniform scaling
+    sx, sy, sz = scale
 
-def emit_cube_geometry(var_suffix: str) -> str:
-    return f"""
-vertexCube_{var_suffix} = np.array([
-    [-0.5, -0.5, 0.5, 1.0],
-    [-0.5, 0.5, 0.5, 1.0],
-    [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0],
-    [-0.5, -0.5, -0.5, 1.0],
-    [-0.5, 0.5, -0.5, 1.0],
-    [0.5, 0.5, -0.5, 1.0],
-    [0.5, -0.5, -0.5, 1.0]
-], dtype=np.float32)
+    # Elements snippet σου χρησιμοποιεί util.scale(s)
+    # κρατάμε uniform scale αν είναι ίδια.
+    if sx == sy == sz:
+        return "util.scale({})".format(float(sx))
 
-colorCube_{var_suffix} = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0]
-], dtype=np.float32)
+    # προσωρινό fallback για non-uniform scale
+    return "util.scale(1.0)"
 
-indexCube_{var_suffix} = np.array((
-    1,0,3, 1,3,2,
-    2,3,7, 2,7,6,
-    3,0,4, 3,4,7,
-    6,5,1, 6,1,2,
-    4,5,6, 4,6,7,
-    5,4,0, 5,0,1
-), np.uint32)
 
-vertices_{var_suffix}, indices_{var_suffix}, colors_{var_suffix}, normals_{var_suffix} = norm.generateSmoothNormalsMesh(
-    vertexCube_{var_suffix},
-    indexCube_{var_suffix},
-    colorCube_{var_suffix}
+def vec3_to_util_vec(v):
+    return "util.vec({}, {}, {})".format(float(v[0]), float(v[1]), float(v[2]))
+
+
+def ndarray_to_python(np_array, dtype_name):
+    return "np.array({}, dtype=np.{})".format(np_array.tolist(), dtype_name)
+
+
+def emit_geometry_data(shape, material, suffix):
+    params = {
+        "color": material["color"]
+    }
+
+    raw_vertices, raw_indices, raw_colors = create_geometry(shape, params)
+
+    vertices_code = ndarray_to_python(raw_vertices, "float32")
+    indices_code = ndarray_to_python(raw_indices, "uint32")
+    colors_code = ndarray_to_python(raw_colors, "float32")
+
+    return """
+raw_vertices_{suffix} = {vertices_code}
+raw_indices_{suffix} = {indices_code}
+raw_colors_{suffix} = {colors_code}
+
+vertices_{suffix}, indices_{suffix}, colors_{suffix}, normals_{suffix} = norm.generateSmoothNormalsMesh(
+    raw_vertices_{suffix},
+    raw_indices_{suffix},
+    raw_colors_{suffix}
 )
-"""
-def emit_cube_object(obj: dict, idx: int) ->tuple[str, str]:
-    name = obj.get("name", f"cube{idx}")
-    position = obj.get("position", [0.0, 0.5, 0.0])
-    scale = obj.get("scale", [1.0, 1.0, 1.0])
-    color = obj.get("color", [0.8, 0.0, 0.8])
-
-    suffix = f"{idx}"
-    entity_var = f"node_{suffix}"
-    trans_var = f"trans_{suffix}"
-    mesh_var = f"mesh_{suffix}"
-    shader_var = f"shader_{suffix}"
-
-    trs_expr = f"{make_scale(scale)} @ {make_translate(position)}"
-    mat_color_expr = vec3_to_util_vec(color)
-
-    object_code = f"""
-# ===== Cube: {name} =====
-{emit_cube_geometry(suffix)}
-
-{entity_var} = scene.world.createEntity(Entity(name="{name}"))
-scene.world.addEntityChild(rootEntity, {entity_var})
-
-{trans_var} = scene.world.addComponent(
-    {entity_var},
-    BasicTransform(name="{name}_TRS", trs={trs_expr})
-)
-
-{mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
-{mesh_var}.vertex_attributes.append(vertices_{suffix})
-{mesh_var}.vertex_attributes.append(colors_{suffix})
-{mesh_var}.vertex_attributes.append(normals_{suffix})
-{mesh_var}.vertex_index.append(indices_{suffix})
-
-scene.world.addComponent({entity_var}, VertexArray())
-
-{shader_var} = scene.world.addComponent(
-    {entity_var},
-    ShaderGLDecorator(
-        Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
-        )
+""".format(
+        suffix=suffix,
+        vertices_code=vertices_code,
+        indices_code=indices_code,
+        colors_code=colors_code
     )
-)
-"""
 
-    uniform_code = f"""
-    mvp_{suffix} = projMat @ view @ {trans_var}.trs
-    {shader_var}.setUniformVariable(key='modelViewProj', value=mvp_{suffix}, mat4=True)
-    {shader_var}.setUniformVariable(key='model', value={trans_var}.trs, mat4=True)
-    {shader_var}.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
-    {shader_var}.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
-    {shader_var}.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
-    {shader_var}.setUniformVariable(key='lightPos', value=Lposition, float3=True)
-    {shader_var}.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
-    {shader_var}.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
-    {shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    {shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
-"""
-    
-    return object_code, uniform_code
 
-#function to create the header and the imports
+def build_header(window):
+    width = window["width"]
+    height = window["height"]
 
-def built_header(window: dict)->str:
-    width = window.get("width", 1200)
-    height =window.get("height", 800)
-    title = window.get("title", "generated scene")
+    return '''import numpy as np
 
-    return f'''import numpy as np
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
@@ -193,7 +230,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import OpenGL.GL as gl
 import Elements.utils.normals as norm
 
-example_description = "Generated scene from natural language"
+example_description = "Generated scene from hierarchical IR"
 
 # Light
 Lposition = util.vec(2.0, 5.5, 2.0)
@@ -237,10 +274,16 @@ transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "Transform
 camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
-'''
+'''.format(width=width, height=height)
 
-def build_ending(title: str, uniform_block: str)->str:
-    return f'''
+
+def build_footer(title, uniform_block):
+    indented_uniforms = "\n".join(
+        ("    " + line) if line.strip() else line
+        for line in uniform_block.splitlines()
+    )
+
+    return '''
 running = True
 scene.init(
     imgui=True,
@@ -273,23 +316,167 @@ while running:
     scene.world.traverse_visit(camUpdate, scene.world.root)
 
     view = gWindow._myCamera
-{uniform_block}
+{uniforms}
     scene.render_post()
 
 scene.shutdown()
-'''
+'''.format(title=title, uniforms=indented_uniforms)
 
-def save_script(script: str, output_path: str = None):
-    if output_path is None:
-        # Save to Desktop ALWAYS works
-        desktop = Path.home() / "Desktop" / "scene_out.py"
-        output_file = desktop
+
+# -----------------------------
+# Recursive node emission
+# -----------------------------
+def emit_mesh_object_node(node, idx, parent_entity_var):
+    name = node["name"]
+    shape = node["shape"]
+    transform = node["transform"]
+    material = node["material"]
+
+    position = transform["position"]
+    scale = transform["scale"]
+    color = material["color"]
+
+    suffix = str(idx)
+
+    entity_var = "node_{}".format(suffix)
+    trans_var = "trans_{}".format(suffix)
+    mesh_var = "mesh_{}".format(suffix)
+    shader_var = "shader_{}".format(suffix)
+
+    trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
+    mat_color_expr = vec3_to_util_vec(color)
+
+    geometry_code = emit_geometry_data(shape, material, suffix)
+
+    object_code = """
+# ===== mesh_object: {name} =====
+{geometry_code}
+
+{entity_var} = scene.world.createEntity(Entity(name="{name}"))
+scene.world.addEntityChild({parent_entity_var}, {entity_var})
+
+{trans_var} = scene.world.addComponent(
+    {entity_var},
+    BasicTransform(name="{name}_TRS", trs={trs_expr})
+)
+
+{mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
+{mesh_var}.vertex_attributes.append(vertices_{suffix})
+{mesh_var}.vertex_attributes.append(colors_{suffix})
+{mesh_var}.vertex_attributes.append(normals_{suffix})
+{mesh_var}.vertex_index.append(indices_{suffix})
+
+scene.world.addComponent({entity_var}, VertexArray())
+
+{shader_var} = scene.world.addComponent(
+    {entity_var},
+    ShaderGLDecorator(
+        Shader(
+            vertex_source=Shader.VERT_PHONG_MVP,
+            fragment_source=Shader.FRAG_PHONG
+        )
+    )
+)
+""".format(
+        name=name,
+        geometry_code=geometry_code,
+        entity_var=entity_var,
+        parent_entity_var=parent_entity_var,
+        trans_var=trans_var,
+        trs_expr=trs_expr,
+        mesh_var=mesh_var,
+        suffix=suffix,
+        shader_var=shader_var
+    )
+
+    uniform_code = """
+mvp_{suffix} = projMat @ view @ {trans_var}.trs
+{shader_var}.setUniformVariable(key='modelViewProj', value=mvp_{suffix}, mat4=True)
+{shader_var}.setUniformVariable(key='model', value={trans_var}.trs, mat4=True)
+{shader_var}.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
+{shader_var}.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
+{shader_var}.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
+{shader_var}.setUniformVariable(key='lightPos', value=Lposition, float3=True)
+{shader_var}.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
+{shader_var}.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
+{shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
+{shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
+""".format(
+        suffix=suffix,
+        trans_var=trans_var,
+        shader_var=shader_var,
+        mat_color_expr=mat_color_expr
+    )
+
+    return object_code, uniform_code
+
+
+def emit_node(node, parent_entity_var, state):
+    node_type = node["node_type"]
+
+    if node_type == "scene":
+        object_blocks = []
+        uniform_blocks = []
+
+        children = node.get("children", [])
+        for child in children:
+            child_obj_code, child_uniform_code = emit_node(child, "rootEntity", state)
+            object_blocks.append(child_obj_code)
+            uniform_blocks.append(child_uniform_code)
+
+        return "\n".join(object_blocks), "\n".join(uniform_blocks)
+
+    elif node_type == "mesh_object":
+        state["counter"] += 1
+        return emit_mesh_object_node(node, state["counter"], parent_entity_var)
+
     else:
-        output_file = Path(output_path)
+        raise ValueError("Unsupported node_type: {}".format(node_type))
 
-    output_file.parent.mkdir(parents=True, exist_ok=True)
 
-    with open(output_file, "w", encoding="utf-8") as f:
+# -----------------------------
+# Main public API
+# -----------------------------
+def generate_scene_script(scene_ir):
+    scene_ir = validate_and_normalize_scene_ir(scene_ir)
+
+    window = scene_ir["window"]
+    title = window["title"]
+
+    header = build_header(window)
+
+    state = {"counter": 0}
+    object_code, uniform_code = emit_node(scene_ir, "rootEntity", state)
+
+    footer = build_footer(title, uniform_code)
+
+    final_script = header + "\n" + object_code + "\n" + footer
+    return final_script
+
+'''
+def save_script(script, output_path: Optional[str] = None):
+    base_dir = Path(__file__).resolve().parent
+
+    if output_path is None:
+        output_file = base_dir / "scene_out.py"
+    else:
+        output_file = Path(output_path).resolve()
+
+    with open(str(output_file), "w", encoding="utf-8") as f:
         f.write(script)
 
     print("Saved script to:", output_file)
+    ''' #ISSUE WITH PATHS RESTRICTIONS AND SAVING 
+def save_script(script, output_path: Optional[str] = None):
+    if output_path is None:
+        output_file = Path.home() / "Desktop" / "scene_out.py"
+    else:
+        output_file = Path(output_path).resolve()
+
+    with open(str(output_file), "w", encoding="utf-8") as f:
+        f.write(script)
+
+    print("Saved script to:", output_file)
+
+    #keep the old saving method as a fallback in case of issues with desktop path
+    # base_dir = Path(__file__).resolve().parent 
