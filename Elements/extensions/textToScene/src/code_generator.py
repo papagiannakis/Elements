@@ -340,7 +340,7 @@ scene.shutdown()
 # -----------------------------
 # Recursive node emission
 # -----------------------------
-def emit_mesh_object_node(node, idx, parent_entity_var):
+def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     name = node["name"]
     shape = node["shape"]
     transform = node["transform"]
@@ -357,9 +357,10 @@ def emit_mesh_object_node(node, idx, parent_entity_var):
     mesh_var = "mesh_{}".format(suffix)
     shader_var = "shader_{}".format(suffix)
 
-    trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
-    mat_color_expr = vec3_to_util_vec(color)
+    local_trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
+    world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
 
+    mat_color_expr = vec3_to_util_vec(color)
     geometry_code = emit_geometry_data(shape, material, suffix)
 
     object_code = """
@@ -371,7 +372,7 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 
 {trans_var} = scene.world.addComponent(
     {entity_var},
-    BasicTransform(name="{name}_TRS", trs={trs_expr})
+    BasicTransform(name="{name}_TRS", trs={local_trs_expr})
 )
 
 {mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
@@ -397,16 +398,17 @@ scene.world.addComponent({entity_var}, VertexArray())
         entity_var=entity_var,
         parent_entity_var=parent_entity_var,
         trans_var=trans_var,
-        trs_expr=trs_expr,
+        local_trs_expr=local_trs_expr,
         mesh_var=mesh_var,
         suffix=suffix,
         shader_var=shader_var
     )
 
     uniform_code = """
-mvp_{suffix} = projMat @ view @ {trans_var}.trs
+model_{suffix} = {world_trs_expr}
+mvp_{suffix} = projMat @ view @ model_{suffix}
 {shader_var}.setUniformVariable(key='modelViewProj', value=mvp_{suffix}, mat4=True)
-{shader_var}.setUniformVariable(key='model', value={trans_var}.trs, mat4=True)
+{shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
 {shader_var}.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
 {shader_var}.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
 {shader_var}.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
@@ -417,8 +419,8 @@ mvp_{suffix} = projMat @ view @ {trans_var}.trs
 {shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
 """.format(
         suffix=suffix,
-        trans_var=trans_var,
         shader_var=shader_var,
+        world_trs_expr=world_trs_expr,
         mat_color_expr=mat_color_expr
     )
 
@@ -428,7 +430,7 @@ mvp_{suffix} = projMat @ view @ {trans_var}.trs
 # - a new entity 
 # - BasicTransform component
 # - and then emit its children with that entity as the parent_entity_var
-def emit_group_node(node, idx, parent_entity_var, state):
+def emit_group_node(node, idx, parent_entity_var, parent_trs_expr, state):
     name = node["name"]
     transform = node["transform"]
 
@@ -440,7 +442,8 @@ def emit_group_node(node, idx, parent_entity_var, state):
     trans_var = "group_trans_{}".format(suffix)
 
     trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
-
+    local_trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
+    world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
     object_code = """
 # ===== group: {name} =====
 {entity_var} = scene.world.createEntity(Entity(name="{name}"))
@@ -462,7 +465,7 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
     child_uniform_blocks = []
 
     for child in node.get("children", []):
-        child_obj_code, child_uniform_code = emit_node(child, entity_var, state)
+        child_obj_code, child_uniform_code = emit_node(child, entity_var, world_trs_expr, state)
         child_object_blocks.append(child_obj_code)
         child_uniform_blocks.append(child_uniform_code)
 
@@ -472,32 +475,34 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
     return full_object_code, full_uniform_code
 
 
-def emit_node(node, parent_entity_var, state):
+def emit_node(node, parent_entity_var, parent_trs_expr, state):
     node_type = node["node_type"]
 
     if node_type == "scene":
         object_blocks = []
         uniform_blocks = []
 
-        children = node.get("children", [])
-        for child in children:
-            child_obj_code, child_uniform_code = emit_node(child, "rootEntity", state)
+        for child in node.get("children", []):
+            child_obj_code, child_uniform_code = emit_node(
+                child,
+                "rootEntity",
+                "util.identity()",
+                state
+            )
             object_blocks.append(child_obj_code)
             uniform_blocks.append(child_uniform_code)
 
         return "\n".join(object_blocks), "\n".join(uniform_blocks)
     elif node_type == "group":
         state["counter"] += 1
-        return emit_group_node(node, state["counter"], parent_entity_var, state)
+        return emit_group_node(node, state["counter"], parent_entity_var, parent_trs_expr, state)
 
     elif node_type == "mesh_object":
         state["counter"] += 1
-        return emit_mesh_object_node(node, state["counter"], parent_entity_var)
+        return emit_mesh_object_node(node, state["counter"], parent_entity_var, parent_trs_expr)
 
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
-
-
 
 # -----------------------------
 # Main public API
@@ -511,7 +516,7 @@ def generate_scene_script(scene_ir):
     header = build_header(window)
 
     state = {"counter": 0}
-    object_code, uniform_code = emit_node(scene_ir, "rootEntity", state)
+    object_code, uniform_code = emit_node(scene_ir, "rootEntity", "util.identity()", state)
 
     footer = build_footer(title, uniform_code)
 
