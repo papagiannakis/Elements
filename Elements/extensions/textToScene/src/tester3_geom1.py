@@ -20,10 +20,14 @@ scene_ir = {
                  "transform": {"position": [-1.5,0.5,0]}, "material": {"color":[0,1,0]}},
 
                 {"node_type": "mesh_object", "name": "pyramid", "shape": "pyramid",
-                 "transform": {"position": [-2,0.5,2]}, "material": {"color":[0,1,1]}},
+                 "transform": {"position": [0,-1,2]}, "material": {"color":[0,1,1]}},
 
                 {"node_type": "mesh_object", "name": "plane", "shape": "plane",
-                 "transform": {"position": [0,0,0]}, "material": {"color":[0.5,0.5,0.5]}}
+                 "transform": {"position": [0,0,0]}, "material": {"color":[0.5,0.5,0.5]}},
+
+                {"node_type": "mesh_object", "name": "triangular_pyramid", "shape": "triangular_pyramid",
+                 "transform": {"position": [2,0.5,0]}, "material": {"color":[1,0,1]}}
+
             ]
         }
     ]

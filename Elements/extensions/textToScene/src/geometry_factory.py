@@ -83,7 +83,24 @@ def create_pyramid(params):
     colors = make_color_array(params.get("color"), 5)
     return vertices, indices, colors
 
-
+#-------------------------
+# Triangular Pyramid (tetrahedron)
+#-------------------------
+def create_triangular_pyramid(params):
+    vertices = np.array([
+        [0,1,0,1],
+        [-1,0,-1,1],
+        [1,0,-1,1],
+        [0,0,1,1]
+        ], dtype=np.float32)
+    indices = np.array((
+        0,1,2,
+        0,2,3,
+        0,3,1,
+        1,3,2
+    ), dtype=np.uint32)
+    colors = make_color_array(params.get("color"), 4)
+    return vertices, indices, colors
 
 
 def create_geometry(shape_type, params):
@@ -95,11 +112,11 @@ def create_geometry(shape_type, params):
         return create_plane(params)
     elif shape_type == "pyramid":
         return create_pyramid(params)
-    
+    elif shape_type == "triangular_pyramid":
+        return create_triangular_pyramid(params)
     else:
         raise ValueError("Unsupported shape type: {}".format(shape_type))
-'''elif shape_type == "triangular_pyramid":
-        return create_triangular_pyramid(params)
+'''
     elif shape_type == "cylinder":
         return create_cylinder(params)
     elif shape_type == "cone":
