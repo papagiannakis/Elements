@@ -3,28 +3,108 @@ csd5116
 elisavet Kourkounaki 
 ********************
 
-text to scene: Code generator using intermidiate representation IR 
+# Text to scene: Code generator using intermidiate representation IR 
+- This project is my undergraduate theses and aims to generate executable Python code for the Elements graphics framework 
+from structured scene representations.
+- The current system uses hierarchical Intermediate Representation (IR) and a code generator to produce runnable 3D scenes
 
-obj -> create_geometry() -> vertices/indices/colors
-    -> generateSmoothNormalsMesh(...)
-    -> RenderMesh / VertexArray / Shader
+ ## Current Features
 
-files: 
-textToScene/src/
-    code_generation.py Includes the main code for creating
-    a executable scpript in python.
-    ir_schema.py contains the ir in json format which is used is
-    as input to code_generation.
-    main.py a file that indicates the pipeline for the text to code \
-    generation
-    text_parser.py
-    
-textTOScene/data 
+ - Hierarchical scene representation (scene tree)
+ - Deterministic code generator for the Elements framework
+ - Support for:
+    - scene nodes 
+    - group nodes
+    - mesh_objects nodes
+- Geometry factory support for: 
+    - cube 
+    - rechtagnular prism 
+    - plane
+    - sphere
+    - cylinder
+    - cone
+    - pyramid
+    - triangular_pyramid
+- Composite site sctructures using groups
+- Prefab scene composition 
 
-textToScene/tests
+## Project Structure 
+
+textToScene/
+├── src/
+|   ├── code_generator.py
+|   ├── geometry_factory.py
+|   ├── prefabs.py
+|   ├── tester_1.py
+|   ├── tester2_group.py
+|   ├── tester3_geom1.py
+|   ├── tester1_allShapes.py
+|   └── tester_house.py
+|   ├── prefabs/
+|              |__ prefabs.py
+
+## Example Hierarchical IR 
+
+```python
+scene_ir = {
+    "node_type": "scene",
+    "name": "root",
+    "window": {
+        "width": 1200,
+        "height": 800,
+        "title": "Example Scene"
+    },
+    "children": [
+        {
+            "node_type": "mesh_object",
+            "name": "cube1",
+            "shape": "cube",
+            "transform": {
+                "position": [0.0, 0.5, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "material": {
+                "color": [0.8, 0.0, 0.8]
+            }
+        }
+    ]
+}
+
+```
+### 6. How to run 
+``` md 
+1. activate the Python elements environment
+2. Run a tester file, for example: 
+```bash
+python tester_house.py
+``` 
+3. This generates a Python scene script scene_out.py 
+4. Execute the file with 
+``` bash 
+python C:\Users\yanni\Desktop\scene_out.py
+
+```
+## Current limitations
+
+LOCATION of saving the generated file
+MUST CHANGEEEEEEEEEE!!!!!SOSOSOSOSOSOSOSOS
+ISSUE !!!!! BIG ISSUE !!!!!
+
+-No natural language parsing yet
+- No LLM intergation yet 
+- No texture pipeline yet 
+- No online texture retrieval yet 
+- Lighting support is basic and global
+
+## Planned Next Steps
+- Add prefab support for house tree and gift box 
+- Add light nodes (point , directional, spot)
+- Add tecture support 
+- Add text-to-hierarchical-IR parsing 
+- ML/LLM stractured scene generation 
 
 
-
+notes 
 Addjust to a better solution 
 The idea:
 scene is not just a list of objects but a tree with nodes.
