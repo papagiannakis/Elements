@@ -30,19 +30,28 @@ from structured scene representations.
 
 ## Project Structure 
 
-textToScene/
-├── src/
-|   ├── code_generator.py
-|   ├── geometry_factory.py
-|   ├── prefabs.py
-|   ├── tester_1.py
-|   ├── tester2_group.py
-|   ├── tester3_geom1.py
-|   ├── tester1_allShapes.py
-|   └── tester_house.py
-|   ├── prefabs/
-|              |__ prefabs.py
-
+Folder PATH listing for volume Windows
+Volume serial number is AAE3-8BD3
+```text 
+Elements\extentions\textToScene
+│   README
+│
+├───src
+│   │   code_generator.py
+│   │   geometry_factory.py
+│   │   ir_schema.py
+│   │   main.py
+│   │   tester2_group.py
+│   │   tester3_geom1.py
+│   │   tester4_allShapes.py
+│   │   tester_1.py
+│   │   text_parser.py
+│   │
+│   └───prefarbs
+│           prefarbs.py
+│
+└───tests
+```
 ## Example Hierarchical IR 
 
 ```python
@@ -76,9 +85,11 @@ scene_ir = {
 1. activate the Python elements environment
 2. Run a tester file, for example: 
 ```bash
-python tester_house.py
-``` 
+python tester_house.py 
+```
+``` md 
 3. This generates a Python scene script scene_out.py 
+ 
 4. Execute the file with 
 ``` bash 
 python C:\Users\yanni\Desktop\scene_out.py
@@ -86,11 +97,11 @@ python C:\Users\yanni\Desktop\scene_out.py
 ```
 ## Current limitations
 
-LOCATION of saving the generated file
+LOCATION of the generated file is wrong RESTRICTIONS !!!!
 MUST CHANGEEEEEEEEEE!!!!!SOSOSOSOSOSOSOSOS
 ISSUE !!!!! BIG ISSUE !!!!!
 
--No natural language parsing yet
+- No natural language parsing yet
 - No LLM intergation yet 
 - No texture pipeline yet 
 - No online texture retrieval yet 
@@ -104,7 +115,7 @@ ISSUE !!!!! BIG ISSUE !!!!!
 - ML/LLM stractured scene generation 
 
 
-notes 
+### notes for me 
 Addjust to a better solution 
 The idea:
 scene is not just a list of objects but a tree with nodes.
