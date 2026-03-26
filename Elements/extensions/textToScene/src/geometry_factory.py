@@ -1,56 +1,35 @@
-import numpy as np 
-
-DEFAULT_COLOR = (0.8, 0.8, 0.8) # default color for objects
-
-#helper functions for geometry creation
-def check_prosimo(value, name:str)-> float:
-    # Check if the value is a positive number (prosimo)
-    if value is None:
-        raise ValueError(f"{name} is required and cannot be None.")
-    value = float(value)
-    if value <= 0.0: 
-        raise ValueError(f"{name} must be a positive number. Got {value}.")
-    return value
-
-def get_color(params: dict)-> np.ndarray:
-    
-    color = params.get("color", DEFAULT_COLOR)
-
-    if len(color) == 3:
-        color = (*color, 1.0)
-    elif len(color) != 4:
-        raise ValueError("Color must have 3 or 4 components: [r,g,b] or [r,g,b,a]")
-
-    return np.array(color, dtype=np.float32)
-
-def make_color(vertex_count: int , color: np.ndarray) -> np.ndarray:
-    # Create a vertex color array with the same color for all vertices
-    return np.tile(color, (vertex_count, 1))
-
-def convert_to_vec3(vec):
-    vertices = np.array(vertices, dtype=np.float32)
-    indices = np.array(indices, dtype=np.uint32)
-    colors = np.array(colors, dtype=np.float32)
-    return vertices, indices, colors
-
 # Geometry factory functions for different shapes
 import numpy as np
 
+def make_color_array(color, count):
+    r, g, b = color
+    return np.array([[r, g, b, 1.0]] * count, dtype=np.float32)
 
+#-------------------------
+# Cube + Rectangular Prism
+#-------------------------  
 def create_cube(params):
-    color = params.get("color", [0.8, 0.0, 0.8])
+    return create_rectangular_prism({
+        "size": [1.0, 1.0, 1.0],
+        "color": params.get("color", [0.8, 0.0, 0.8])
+    })
 
+def create_rectangular_prism(params):
+    sx, sy, sz = params.get("size", [1.0, 1.0, 1.0])
+    sx/= 2.0
+    sy/= 2.0
+    sz/= 2.0
     vertices = np.array([
-        [-0.5, -0.5,  0.5, 1.0],
-        [-0.5,  0.5,  0.5, 1.0],
-        [ 0.5,  0.5,  0.5, 1.0],
-        [ 0.5, -0.5,  0.5, 1.0],
-        [-0.5, -0.5, -0.5, 1.0],
-        [-0.5,  0.5, -0.5, 1.0],
-        [ 0.5,  0.5, -0.5, 1.0],
-        [ 0.5, -0.5, -0.5, 1.0]
+        [-sx, -sy, -sz, 1],  # 0
+        [ sx, -sy, -sz, 1],  # 1
+        [ sx,  sy, -sz, 1],  # 2
+        [-sx,  sy, -sz, 1],  # 3
+        [-sx, -sy,  sz, 1],  # 4
+        [ sx, -sy,  sz, 1],  # 5
+        [ sx,  sy,  sz, 1],  # 6
+        [-sx,  sy,  sz, 1]   # 7
     ], dtype=np.float32)
-
+    
     indices = np.array((
         1,0,3, 1,3,2,
         2,3,7, 2,7,6,
@@ -59,27 +38,74 @@ def create_cube(params):
         4,5,6, 4,6,7,
         5,4,0, 5,0,1
     ), dtype=np.uint32)
+    colors = make_color_array(params.get("color"), 8)
+    return vertices, indices, colors
 
-    r, g, b = float(color[0]), float(color[1]), float(color[2])
-    colors = np.array([
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0],
-        [r, g, b, 1.0]
+# ------------------------
+# Plane 
+# ------------------------
+
+def create_plane(params):
+    size = params.get("size", 2.0)
+    s = size / 2.0
+    vertices = np.array([
+        [-s, 0, -s, 1],  # 0
+        [ s, 0, -s, 1],  # 1
+        [ s, 0,  s, 1],  # 2
+        [-s, 0,  s, 1]   # 3
+    ], dtype=np.float32)
+    indices = np.array((0, 1, 2, 0, 2, 3), dtype=np.uint32)
+    colors = make_color_array(params.get("color"), 4)
+    return vertices, indices, colors
+
+#-------------------------
+# Pyramid (square base)
+#-------------------------
+def create_pyramid(params):
+    h = params.get("height", 1.0)
+    s = 0.5
+
+    vertices = np.array([
+        [-s, 0, -s, 1],
+        [ s, 0, -s, 1],
+        [ s, 0,  s, 1],
+        [-s, 0,  s, 1],
+        [0, h, 0, 1]
     ], dtype=np.float32)
 
+    indices = np.array((
+        0,1,2, 0,2,3,
+        0,1,4,
+        1,2,4,
+        2,3,4,
+        3,0,4
+    ), dtype=np.uint32)
+    colors = make_color_array(params.get("color"), 5)
     return vertices, indices, colors
+
+
+
 
 def create_geometry(shape_type, params):
     if shape_type == "cube":
         return create_cube(params)
+    elif shape_type == "rectangular_prism":
+        return create_rectangular_prism(params)
+    elif shape_type == "plane":
+        return create_plane(params)
+    elif shape_type == "pyramid":
+        return create_pyramid(params)
+    
     else:
         raise ValueError("Unsupported shape type: {}".format(shape_type))
-
+'''elif shape_type == "triangular_pyramid":
+        return create_triangular_pyramid(params)
+    elif shape_type == "cylinder":
+        return create_cylinder(params)
+    elif shape_type == "cone":
+        return create_cone(params)
+    elif shape_type == "sphere":
+        return create_sphere(params)'''
 #  Main idea: code_generator.py asks for geometry code 
 #  for a given shape type and parameters,
 #  and it uses the appropriate function to generate

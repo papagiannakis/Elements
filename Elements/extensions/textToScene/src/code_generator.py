@@ -125,15 +125,29 @@ def normalize_node(node, idx=1):
         if shape is None:
             raise ValueError("mesh_object node is missing 'shape'")
 
-        if shape != "cube":
-            raise ValueError("Unsupported shape for now: {}".format(shape))
-
+        shape = node.get("shape")
+        if shape is None:
+            raise ValueError("mesh_object node is missing 'shape'")
+        
         return {
             "node_type": "mesh_object",
             "name": str(node.get("name", "mesh_object_{}".format(idx))),
             "shape": shape,
             "transform": normalize_transform(node.get("transform", {})),
             "material": normalize_material(node.get("material", {}))
+        }
+    
+    #add support for group nodes 
+    elif node_type == "group":
+        children = node.get("children", [])
+        if not isinstance(children, list):
+            raise TypeError("'children' of group must be a list")
+
+        return {
+            "node_type": "group",
+            "name": str(node.get("name", "group_{}".format(idx))),
+            "transform": normalize_transform(node.get("transform", {})),
+            "children": [normalize_node(child, i + 1) for i, child in enumerate(children)]
         }
 
     else:
@@ -410,6 +424,53 @@ mvp_{suffix} = projMat @ view @ {trans_var}.trs
 
     return object_code, uniform_code
 
+#group node emmission. The group must create: 
+# - a new entity 
+# - BasicTransform component
+# - and then emit its children with that entity as the parent_entity_var
+def emit_group_node(node, idx, parent_entity_var, state):
+    name = node["name"]
+    transform = node["transform"]
+
+    position = transform["position"]
+    scale = transform["scale"]
+
+    suffix = str(idx)
+    entity_var = "group_node_{}".format(suffix)
+    trans_var = "group_trans_{}".format(suffix)
+
+    trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
+
+    object_code = """
+# ===== group: {name} =====
+{entity_var} = scene.world.createEntity(Entity(name="{name}"))
+scene.world.addEntityChild({parent_entity_var}, {entity_var})
+
+{trans_var} = scene.world.addComponent(
+    {entity_var},
+    BasicTransform(name="{name}_TRS", trs={trs_expr})
+)
+""".format(
+        name=name,
+        entity_var=entity_var,
+        parent_entity_var=parent_entity_var,
+        trans_var=trans_var,
+        trs_expr=trs_expr
+    )
+
+    child_object_blocks = []
+    child_uniform_blocks = []
+
+    for child in node.get("children", []):
+        child_obj_code, child_uniform_code = emit_node(child, entity_var, state)
+        child_object_blocks.append(child_obj_code)
+        child_uniform_blocks.append(child_uniform_code)
+
+    full_object_code = object_code + "\n" + "\n".join(child_object_blocks)
+    full_uniform_code = "\n".join(child_uniform_blocks)
+
+    return full_object_code, full_uniform_code
+
 
 def emit_node(node, parent_entity_var, state):
     node_type = node["node_type"]
@@ -425,6 +486,9 @@ def emit_node(node, parent_entity_var, state):
             uniform_blocks.append(child_uniform_code)
 
         return "\n".join(object_blocks), "\n".join(uniform_blocks)
+    elif node_type == "group":
+        state["counter"] += 1
+        return emit_group_node(node, state["counter"], parent_entity_var, state)
 
     elif node_type == "mesh_object":
         state["counter"] += 1
@@ -432,6 +496,7 @@ def emit_node(node, parent_entity_var, state):
 
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
+
 
 
 # -----------------------------
