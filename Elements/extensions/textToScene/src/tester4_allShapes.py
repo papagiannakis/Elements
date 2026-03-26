@@ -1,31 +1,42 @@
 from code_generator import generate_scene_script, save_script
-# This is a test script to generate a scene with all the supported shapes,
-# and save the generated code to a file. You can run this to verify that
-# the geometry generation and code generation are working correctly.
+
 scene_ir = {
     "node_type": "scene",
     "name": "root",
     "window": {
         "width": 1200,
         "height": 800,
-        "title": "All Shapes Test"
+        "title": "Shapes on Plane"
     },
     "children": [
         {
             "node_type": "group",
-            "name": "shapes",
+            "name": "scene_group",
             "transform": {
                 "position": [0.0, 0.0, 0.0],
-                "scale": [0.5, 0.5, 0.5]
+                "scale": [1.0, 1.0, 1.0]
             },
             "children": [
+                {
+                    "node_type": "mesh_object",
+                    "name": "ground",
+                    "shape": "plane",
+                    "transform": {
+                        "position": [0.0, 0.0, 0.0],
+                        "scale": [12.0, 12.0, 12.0]
+                    },
+                    "material": {
+                        "color": [0.6, 0.6, 0.6]
+                    }
+                },
+
                 {
                     "node_type": "mesh_object",
                     "name": "cube",
                     "shape": "cube",
                     "transform": {
-                        "position": [-6.0, 0.5, 0.0],
-                        "scale": [0.6, 0.6, 0.6]
+                        "position": [-4.5, 0.35, 0.0],
+                        "scale": [0.35, 0.35, 0.35]
                     },
                     "material": {
                         "color": [1.0, 0.0, 0.0]
@@ -34,11 +45,11 @@ scene_ir = {
 
                 {
                     "node_type": "mesh_object",
-                    "name": "rect",
+                    "name": "rectangular_prism",
                     "shape": "rectangular_prism",
                     "transform": {
-                        "position": [-3.5, 0.5, 0.0],
-                        "scale": [0.8, 0.5, 0.5]
+                        "position": [-3.0, 0.35, 0.0],
+                        "scale": [0.45, 0.30, 0.30]
                     },
                     "material": {
                         "color": [0.0, 1.0, 0.0]
@@ -50,8 +61,8 @@ scene_ir = {
                     "name": "sphere",
                     "shape": "sphere",
                     "transform": {
-                        "position": [-1.0, 0.5, 0.0],
-                        "scale": [0.6, 0.6, 0.6]
+                        "position": [-1.5, 0.35, 0.0],
+                        "scale": [0.35, 0.35, 0.35]
                     },
                     "material": {
                         "color": [0.0, 0.0, 1.0]
@@ -63,8 +74,8 @@ scene_ir = {
                     "name": "cylinder",
                     "shape": "cylinder",
                     "transform": {
-                        "position": [1.5, 0.5, 0.0],
-                        "scale": [0.6, 0.8, 0.6]
+                        "position": [0.0, 0.4, 0.0],
+                        "scale": [0.30, 0.50, 0.30]
                     },
                     "material": {
                         "color": [1.0, 1.0, 0.0]
@@ -76,8 +87,8 @@ scene_ir = {
                     "name": "cone",
                     "shape": "cone",
                     "transform": {
-                        "position": [4.0, 0.5, 0.0],
-                        "scale": [0.6, 0.8, 0.6]
+                        "position": [1.5, 0.4, 0.0],
+                        "scale": [0.30, 0.50, 0.30]
                     },
                     "material": {
                         "color": [1.0, 0.0, 1.0]
@@ -89,8 +100,8 @@ scene_ir = {
                     "name": "pyramid",
                     "shape": "pyramid",
                     "transform": {
-                        "position": [-2.5, 0.5, 3.5],
-                        "scale": [0.7, 0.7, 0.7]
+                        "position": [3.0, 0.4, 0.0],
+                        "scale": [0.35, 0.45, 0.35]
                     },
                     "material": {
                         "color": [0.0, 1.0, 1.0]
@@ -99,27 +110,14 @@ scene_ir = {
 
                 {
                     "node_type": "mesh_object",
-                    "name": "tri_pyramid",
+                    "name": "triangular_pyramid",
                     "shape": "triangular_pyramid",
                     "transform": {
-                        "position": [2.5, 0.5, 3.5],
-                        "scale": [0.7, 0.7, 0.7]
+                        "position": [4.5, 0.4, 0.0],
+                        "scale": [0.35, 0.45, 0.35]
                     },
                     "material": {
                         "color": [1.0, 0.5, 0.0]
-                    }
-                },
-
-                {
-                    "node_type": "mesh_object",
-                    "name": "plane",
-                    "shape": "plane",
-                    "transform": {
-                        "position": [0.0, 0.0, 1.5],
-                        "scale": [8.0, 1.0, 8.0]
-                    },
-                    "material": {
-                        "color": [0.5, 0.5, 0.5]
                     }
                 }
             ]

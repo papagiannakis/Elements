@@ -102,6 +102,103 @@ def create_triangular_pyramid(params):
     colors = make_color_array(params.get("color"), 4)
     return vertices, indices, colors
 
+#----------------------
+# cylinder
+#----------------------
+
+def create_cylinder(params):
+    segments = 20
+    radius = 0.5
+    height = 1.0
+
+    vertices = []
+    indices = []
+
+    for i in range(segments):
+        angle = 2 * np.pi * i / segments
+        x = radius * np.cos(angle)
+        z = radius * np.sin(angle)
+
+        vertices.append([x, -height/2, z, 1])
+        vertices.append([x, height/2, z, 1])
+
+    for i in range(segments):
+        i1 = i * 2
+        i2 = (i * 2 + 2) % (segments * 2)
+
+        indices += [i1, i1+1, i2+1]
+        indices += [i1, i2+1, i2]
+
+    vertices = np.array(vertices, dtype=np.float32)
+    indices = np.array(indices, dtype=np.uint32)
+    colors = make_color_array(params.get("color"), len(vertices))
+
+    return vertices, indices, colors
+
+
+# --------------------
+# Cone
+# --------------------
+def create_cone(params):
+    segments = 20
+    radius = 0.5
+    height = 1.0
+
+    vertices = [[0, height/2, 0, 1]]
+    indices = []
+
+    for i in range(segments):
+        angle = 2*np.pi*i/segments
+        x = radius*np.cos(angle)
+        z = radius*np.sin(angle)
+        vertices.append([x, -height/2, z, 1])
+
+    for i in range(1, segments):
+        indices += [0, i, i+1]
+    indices += [0, segments, 1]
+
+    vertices = np.array(vertices, dtype=np.float32)
+    indices = np.array(indices, dtype=np.uint32)
+    colors = make_color_array(params.get("color"), len(vertices))
+
+    return vertices, indices, colors
+
+
+# ---------------------
+# Sphere 
+# ---------------------
+def create_sphere(params):
+    lat = 10
+    lon = 10
+    r = 0.5
+
+    vertices = []
+    indices = []
+
+    for i in range(lat+1):
+        theta = np.pi * i / lat
+        for j in range(lon+1):
+            phi = 2*np.pi*j/lon
+
+            x = r*np.sin(theta)*np.cos(phi)
+            y = r*np.cos(theta)
+            z = r*np.sin(theta)*np.sin(phi)
+
+            vertices.append([x,y,z,1])
+
+    for i in range(lat):
+        for j in range(lon):
+            a = i*(lon+1)+j
+            b = a+lon+1
+
+            indices += [a,b,a+1]
+            indices += [b,b+1,a+1]
+
+    vertices = np.array(vertices, dtype=np.float32)
+    indices = np.array(indices, dtype=np.uint32)
+    colors = make_color_array(params.get("color"), len(vertices))
+
+    return vertices, indices, colors
 
 def create_geometry(shape_type, params):
     if shape_type == "cube":
@@ -114,15 +211,15 @@ def create_geometry(shape_type, params):
         return create_pyramid(params)
     elif shape_type == "triangular_pyramid":
         return create_triangular_pyramid(params)
-    else:
-        raise ValueError("Unsupported shape type: {}".format(shape_type))
-'''
     elif shape_type == "cylinder":
         return create_cylinder(params)
     elif shape_type == "cone":
         return create_cone(params)
     elif shape_type == "sphere":
-        return create_sphere(params)'''
+        return create_sphere(params)
+    else:
+        raise ValueError("Unsupported shape type: {}".format(shape_type))
+
 #  Main idea: code_generator.py asks for geometry code 
 #  for a given shape type and parameters,
 #  and it uses the appropriate function to generate
