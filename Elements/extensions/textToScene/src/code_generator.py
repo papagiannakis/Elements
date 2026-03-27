@@ -196,9 +196,10 @@ def ndarray_to_python(np_array, dtype_name):
     return "np.array({}, dtype=np.{})".format(np_array.tolist(), dtype_name)
 
 
-def emit_geometry_data(shape, material, suffix):
+def emit_geometry_data(shape, material, transform, suffix):
     params = {
-        "color": material["color"]
+        "color": material["color"],
+        "scale": transform.get("scale", [1.0, 1.0, 1.0])
     }
 
     raw_vertices, raw_indices, raw_colors = create_geometry(shape, params)
@@ -357,11 +358,11 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     mesh_var = "mesh_{}".format(suffix)
     shader_var = "shader_{}".format(suffix)
 
-    local_trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
+    local_trs_expr = "util.identity() @ {}".format(make_translate(position))
     world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
 
     mat_color_expr = vec3_to_util_vec(color)
-    geometry_code = emit_geometry_data(shape, material, suffix)
+    geometry_code = emit_geometry_data(shape, material, transform, suffix)
 
     object_code = """
 # ===== mesh_object: {name} =====

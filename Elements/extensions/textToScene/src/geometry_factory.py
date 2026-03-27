@@ -15,10 +15,12 @@ def create_cube(params):
     })
 
 def create_rectangular_prism(params):
-    sx, sy, sz = params.get("size", [1.0, 1.0, 1.0])
-    sx/= 2.0
-    sy/= 2.0
-    sz/= 2.0
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+
+    sx = 0.5 * scale[0]
+    sy = 0.5 * scale[1]
+    sz = 0.5 * scale[2]
     vertices = np.array([
         [-sx, -sy, -sz, 1],  # 0
         [ sx, -sy, -sz, 1],  # 1
@@ -38,7 +40,7 @@ def create_rectangular_prism(params):
         4,5,6, 4,6,7,
         5,4,0, 5,0,1
     ), dtype=np.uint32)
-    colors = make_color_array(params.get("color"), 8)
+    colors = make_color_array(color, len(vertices))
     return vertices, indices, colors
 
 # ------------------------
@@ -107,31 +109,60 @@ def create_triangular_pyramid(params):
 #----------------------
 
 def create_cylinder(params):
-    segments = 20
-    radius = 0.5
-    height = 1.0
+    segments = params.get("segments", 20)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    
+    radius_x = params.get("radius", 0.5) * scale[0]
+    radius_z = params.get("radius", 0.5) * scale[2]
+    height = params.get("height", 1.0) * scale[1]
+    color = params.get("color", [0.8, 0.0, 0.8])
 
     vertices = []
     indices = []
 
+    # ring vertices
     for i in range(segments):
         angle = 2 * np.pi * i / segments
-        x = radius * np.cos(angle)
-        z = radius * np.sin(angle)
+        x = radius_x * np.cos(angle)
+        z = radius_z * np.sin(angle)
 
-        vertices.append([x, -height/2, z, 1])
-        vertices.append([x, height/2, z, 1])
+        # bottom
+        vertices.append([x, -height / 2, z, 1.0])
+        # top
+        vertices.append([x, height / 2, z, 1.0])
 
+    # side faces
     for i in range(segments):
-        i1 = i * 2
-        i2 = (i * 2 + 2) % (segments * 2)
+        i_bottom_1 = i * 2
+        i_top_1 = i * 2 + 1
+        i_bottom_2 = (i * 2 + 2) % (segments * 2)
+        i_top_2 = (i * 2 + 3) % (segments * 2)
 
-        indices += [i1, i1+1, i2+1]
-        indices += [i1, i2+1, i2]
+        indices += [i_bottom_1, i_top_1, i_top_2]
+        indices += [i_bottom_1, i_top_2, i_bottom_2]
+
+    # center vertices for caps
+    top_center_index = len(vertices)
+    vertices.append([0.0, height / 2, 0.0, 1.0])
+
+    bottom_center_index = len(vertices)
+    vertices.append([0.0, -height / 2, 0.0, 1.0])
+
+    # top cap
+    for i in range(segments):
+        top_1 = i * 2 + 1
+        top_2 = (i * 2 + 3) % (segments * 2)
+        indices += [top_center_index, top_1, top_2]
+
+    # bottom cap
+    for i in range(segments):
+        bottom_1 = i * 2
+        bottom_2 = (i * 2 + 2) % (segments * 2)
+        indices += [bottom_center_index, bottom_2, bottom_1]
 
     vertices = np.array(vertices, dtype=np.float32)
     indices = np.array(indices, dtype=np.uint32)
-    colors = make_color_array(params.get("color"), len(vertices))
+    colors = make_color_array(color, len(vertices))
 
     return vertices, indices, colors
 
@@ -140,11 +171,14 @@ def create_cylinder(params):
 # Cone
 # --------------------
 def create_cone(params):
-    segments = 20
-    radius = 0.5
-    height = 1.0
+    segments = params.get("segments", 20)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
 
-    vertices = [[0, height/2, 0, 1]]
+    radius = params.get("radius", 0.5) * scale[0]
+    height = params.get("height", 1.0) * scale[1]
+    color = params.get("color", [0.8, 0.0, 0.8])
+
+    vertices = [[0.0, height / 2, 0.0, 1.0]]
     indices = []
 
     for i in range(segments):
@@ -168,9 +202,14 @@ def create_cone(params):
 # Sphere 
 # ---------------------
 def create_sphere(params):
-    lat = 10
-    lon = 10
-    r = 0.5
+    lat = params.get("lat", 10)
+    lon = params.get("lon", 10)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+
+    rx = 0.5 * scale[0]
+    ry = 0.5 * scale[1]
+    rz = 0.5 * scale[2]
 
     vertices = []
     indices = []
@@ -180,9 +219,9 @@ def create_sphere(params):
         for j in range(lon+1):
             phi = 2*np.pi*j/lon
 
-            x = r*np.sin(theta)*np.cos(phi)
-            y = r*np.cos(theta)
-            z = r*np.sin(theta)*np.sin(phi)
+            x = rx*np.sin(theta)*np.cos(phi)
+            y = ry*np.cos(theta)
+            z = rz*np.sin(theta)*np.sin(phi)
 
             vertices.append([x,y,z,1])
 
