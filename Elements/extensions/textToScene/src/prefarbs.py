@@ -23,7 +23,7 @@ def build_house(name, position):
                 "shape": "rectangular_prism",
                 "transform": {
                     "position": [0.0, 0.5, 0.0],
-                    "scale": [1.5, 1.0, 1.5]
+                    "scale": [1.2, 1.0, 1.2]
                 },
                 "material": {
                     "color": [0.8, 0.7, 0.5]
@@ -123,6 +123,57 @@ def build_gift_box(name, position):
                 },
                 "material": {
                     "color": [1.0, 0.85, 0.1]
+                }
+            }
+        ]
+    }
+
+def build_street_light(name, position):
+    return {
+        "node_type": "group",
+        "name": name,
+        "transform": {
+            "position": position,
+            "scale": [1.0, 1.0, 1.0]
+        },
+        "children": [
+            # 1. Ο Στύλος (Pole)
+            {
+                "node_type": "mesh_object",
+                "name": f"{name}_pole",
+                "shape": "cylinder",
+                "transform": {
+                    "position": [0.0, 1.25, 0.0],
+                    "scale": [0.1, 2.5, 0.1]
+                },
+                "material": {
+                    "color": [0.3, 0.3, 0.3]
+                }
+            },
+            
+            {
+                "node_type": "mesh_object",
+                "name": f"{name}_arm",
+                "shape": "rectangular_prism",
+                "transform": {
+                    "position": [0.3, 2.4, 0.0],  
+                    "scale": [0.6, 0.1, 0.1]      
+                },
+                "material": {
+                    "color": [0.3, 0.3, 0.3]
+                }
+            },
+            
+            {
+                "node_type": "mesh_object",
+                "name": f"{name}_lamp",
+                "shape": "cube",
+                "transform": {
+                    "position": [0.6, 2.3, 0.0], 
+                    "scale": [0.2, 0.15, 0.2]
+                },
+                "material": {
+                    "color": [1.0, 0.9, 0.0]
                 }
             }
         ]

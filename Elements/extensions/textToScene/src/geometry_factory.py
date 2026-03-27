@@ -9,9 +9,12 @@ def make_color_array(color, count):
 # Cube + Rectangular Prism
 #-------------------------  
 def create_cube(params):
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+
     return create_rectangular_prism({
-        "size": [1.0, 1.0, 1.0],
-        "color": params.get("color", [0.8, 0.0, 0.8])
+        "scale": scale,
+        "color": color
     })
 
 def create_rectangular_prism(params):
@@ -48,31 +51,38 @@ def create_rectangular_prism(params):
 # ------------------------
 
 def create_plane(params):
-    size = params.get("size", 2.0)
-    s = size / 2.0
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+
+    sx = 0.5 * scale[0]
+    sz = 0.5 * scale[2]
+
     vertices = np.array([
-        [-s, 0, -s, 1],  # 0
-        [ s, 0, -s, 1],  # 1
-        [ s, 0,  s, 1],  # 2
-        [-s, 0,  s, 1]   # 3
+        [-sx, 0, -sz, 1],  # 0
+        [ sx, 0, -sz, 1],  # 1
+        [ sx, 0,  sz, 1],  # 2
+        [-sx, 0,  sz, 1]   # 3
     ], dtype=np.float32)
     indices = np.array((0, 1, 2, 0, 2, 3), dtype=np.uint32)
-    colors = make_color_array(params.get("color"), 4)
+    colors = make_color_array(color, len(vertices))
     return vertices, indices, colors
 
 #-------------------------
 # Pyramid (square base)
 #-------------------------
 def create_pyramid(params):
-    h = params.get("height", 1.0)
-    s = 0.5
-
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+    sx = 0.5 * scale[0]
+    sy = scale[1]
+    sz = 0.5 * scale[2]
+    
     vertices = np.array([
-        [-s, 0, -s, 1],
-        [ s, 0, -s, 1],
-        [ s, 0,  s, 1],
-        [-s, 0,  s, 1],
-        [0, h, 0, 1]
+        [-sx, 0, -sz, 1],
+        [ sx, 0, -sz, 1],
+        [ sx, 0,  sz, 1],
+        [-sx, 0,  sz, 1],
+        [0, sy, 0, 1]
     ], dtype=np.float32)
 
     indices = np.array((
@@ -82,26 +92,33 @@ def create_pyramid(params):
         2,3,4,
         3,0,4
     ), dtype=np.uint32)
-    colors = make_color_array(params.get("color"), 5)
+    colors = make_color_array(color, len(vertices))
     return vertices, indices, colors
 
 #-------------------------
 # Triangular Pyramid (tetrahedron)
 #-------------------------
 def create_triangular_pyramid(params):
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+    sx = 0.5 * scale[0]
+    sy = scale[1]
+    sz = 0.5 * scale[2]
+
     vertices = np.array([
-        [0,1,0,1],
-        [-1,0,-1,1],
-        [1,0,-1,1],
-        [0,0,1,1]
-        ], dtype=np.float32)
+        [ 0.0, sy,  0.0, 1.0],   # top
+        [-sx, 0.0,  sz, 1.0],
+        [ sx, 0.0,  sz, 1.0],
+        [ 0.0, 0.0, -sz, 1.0]
+    ], dtype=np.float32)
+
     indices = np.array((
         0,1,2,
         0,2,3,
         0,3,1,
         1,3,2
     ), dtype=np.uint32)
-    colors = make_color_array(params.get("color"), 4)
+    colors = make_color_array(color, len(vertices))
     return vertices, indices, colors
 
 #----------------------
