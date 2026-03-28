@@ -26,12 +26,10 @@ from structured scene representations.
     - pyramid
     - triangular_pyramid
 - Composite site sctructures using groups
-- Prefab scene composition 
+- Prefab scene composition (house, tree, box, street light)
 
 ## Project Structure 
 
-Folder PATH listing for volume Windows
-Volume serial number is AAE3-8BD3
 ```text 
 Elements\extentions\textToScene
 │   README

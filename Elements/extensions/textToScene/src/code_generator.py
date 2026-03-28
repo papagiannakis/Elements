@@ -1,6 +1,7 @@
 # code_generator.py
 from copy import deepcopy
 from pathlib import Path
+from turtle import position
 from typing import Optional
 
 import numpy as np
@@ -149,7 +150,21 @@ def normalize_node(node, idx=1):
             "transform": normalize_transform(node.get("transform", {})),
             "children": [normalize_node(child, i + 1) for i, child in enumerate(children)]
         }
-
+    elif node_type == "light":
+        light_type = node.get("light_type")
+        if light_type != "point":
+            raise ValueError("Unsupported light_type: {}".format(light_type))
+        properties = {
+            "position" : node["properties"].get("position", [2.0, 2.5, 2.0]),
+            "color" : node["properties"].get("color", [1.0, 1.0, 1.0]),
+            "intensity" : float(node["properties"].get("intensity", 0.8))
+        }
+        return {
+            "node_type": "light",
+            "name": str(node.get("name", "light_{}".format(idx))),
+            "light_type": "point",
+            "properties": properties
+        }
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
 
@@ -167,7 +182,40 @@ def validate_and_normalize_scene_ir(scene_ir):
 
     return normalized_scene
 
+#----------------------------
+# LIGHTS 
+# ---------------------------
 
+def collect_lights(node, lights):
+    if node.get("node_type") == "light":
+        lights.append(node)
+
+    for child in node.get("children", []):
+        collect_lights(child, lights)
+
+def build_light_setup_code(active_light):
+    if active_light is None:
+        return """
+activeLightPos = util.vec(2.0, 5.5, 2.0)
+activeLightColor = util.vec(1.0, 1.0, 1.0)
+activeLightIntensity = 0.8
+"""
+
+    p = active_light["properties"]
+
+    return """
+activeLightPos = util.vec({px}, {py}, {pz})
+activeLightColor = util.vec({cr}, {cg}, {cb})
+activeLightIntensity = {intensity}
+""".format(
+        px=p["position"][0],
+        py=p["position"][1],
+        pz=p["position"][2],
+        cr=p["color"][0],
+        cg=p["color"][1],
+        cb=p["color"][2],
+        intensity=p["intensity"]
+    )
 # -----------------------------
 # Code generation helpers
 # -----------------------------
@@ -226,7 +274,7 @@ vertices_{suffix}, indices_{suffix}, colors_{suffix}, normals_{suffix} = norm.ge
     )
 
 
-def build_header(window):
+def build_header(window, light_setup_code):
     width = window["width"]
     height = window["height"]
 
@@ -247,16 +295,16 @@ import Elements.utils.normals as norm
 
 example_description = "Generated scene from hierarchical IR"
 
-# Light
-Lposition = util.vec(2.0, 5.5, 2.0)
+# Ambient / view defaults
 Lambientcolor = util.vec(1.0, 1.0, 1.0)
 Lambientstr = 0.3
 LviewPos = util.vec(2.5, 2.8, 5.0)
-Lcolor = util.vec(1.0, 1.0, 1.0)
-Lintensity = 0.8
 
 # Material
 Mshininess = 0.4
+
+# Active light
+{light_setup_code}
 
 winWidth = {width}
 winHeight = {height}
@@ -289,8 +337,11 @@ transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "Transform
 camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
-'''.format(width=width, height=height)
-
+'''.format(
+        width=width,
+        height=height,
+        light_setup_code=light_setup_code
+    )
 
 def build_footer(title, uniform_block):
     indented_uniforms = "\n".join(
@@ -413,9 +464,9 @@ mvp_{suffix} = projMat @ view @ model_{suffix}
 {shader_var}.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
 {shader_var}.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
 {shader_var}.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
-{shader_var}.setUniformVariable(key='lightPos', value=Lposition, float3=True)
-{shader_var}.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
-{shader_var}.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
+{shader_var}.setUniformVariable(key='lightPos', value=activeLightPos, float3=True)
+{shader_var}.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
+{shader_var}.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
 {shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
 {shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
 """.format(
@@ -501,7 +552,9 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
     elif node_type == "mesh_object":
         state["counter"] += 1
         return emit_mesh_object_node(node, state["counter"], parent_entity_var, parent_trs_expr)
-
+    elif node_type == "light":
+        #lights don't emit any code for now, but we could extend this in the future to support light entities/components in the scene
+        return "", ""
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
 
@@ -514,7 +567,16 @@ def generate_scene_script(scene_ir):
     window = scene_ir["window"]
     title = window["title"]
 
-    header = build_header(window)
+
+    ## LIGHTS 
+    lights = []
+    collect_lights(scene_ir, lights)
+
+    active_light = lights[0] if len(lights) > 0 else None
+
+    light_setup_code = build_light_setup_code(active_light)
+    #end lights
+    header = build_header(window, light_setup_code)
 
     state = {"counter": 0}
     object_code, uniform_code = emit_node(scene_ir, "rootEntity", "util.identity()", state)
@@ -551,3 +613,4 @@ def save_script(script, output_path: Optional[str] = None):
 
     #keep the old saving method as a fallback in case of issues with desktop path
     # base_dir = Path(__file__).resolve().parent 
+
