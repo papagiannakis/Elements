@@ -188,11 +188,19 @@ def validate_and_normalize_scene_ir(scene_ir):
 # ---------------------------
 
 def collect_lights(node, lights):
+    if node is None: return 
+    if not isinstance(node, dict): return
+
     if node.get("node_type") == "light":
         lights.append(node)
 
-    for child in node.get("children", []):
-        collect_lights(child, lights)
+    children = node.get("children", [])
+    if children is None:
+        children = []
+
+    for child in children:
+        if child is not None:
+            collect_lights(child, lights)
 
 def build_light_setup_code(active_light):
     if active_light is None:
@@ -201,6 +209,7 @@ activeLightPos = util.vec(2.0, 5.5, 2.0)
 activeLightColor = util.vec(1.0, 1.0, 1.0)
 activeLightIntensity = 0.8
 """
+
 
     props = active_light["properties"]
     color = props["color"]
@@ -567,7 +576,10 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 
 
 def emit_node(node, parent_entity_var, parent_trs_expr, state):
-    node_type = node["node_type"]
+    if node is None:
+        # Decide if you want to return empty strings or raise a clearer error
+        return "", ""
+    node_type = node.get("node_type")
 
     if node_type == "scene":
         object_blocks = []
