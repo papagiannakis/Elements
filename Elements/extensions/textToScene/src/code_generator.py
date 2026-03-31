@@ -152,19 +152,20 @@ def normalize_node(node, idx=1):
         }
     elif node_type == "light":
         light_type = node.get("light_type")
-        if light_type != "point":
+        if light_type is None:
+            raise ValueError("light node is missing 'light_type'")
+        if light_type not in ["point", "directional"]:
             raise ValueError("Unsupported light_type: {}".format(light_type))
-        properties = {
-            "position" : node["properties"].get("position", [2.0, 2.5, 2.0]),
-            "color" : node["properties"].get("color", [1.0, 1.0, 1.0]),
-            "intensity" : float(node["properties"].get("intensity", 0.8))
+        input_props = node.get("properties", {})
+        if not isinstance(input_props, dict):
+            raise TypeError("'properties' of light must be a dictionary")
+        props={
+            "position": [2.0, 5.5, 2.0],
+            "direction": [1.0, -1.0, -1.0],
+            "color": [1.0, 1.0, 1.0],
+            "intensity": 0.8
         }
-        return {
-            "node_type": "light",
-            "name": str(node.get("name", "light_{}".format(idx))),
-            "light_type": "point",
-            "properties": properties
-        }
+    
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
 
@@ -201,21 +202,59 @@ activeLightColor = util.vec(1.0, 1.0, 1.0)
 activeLightIntensity = 0.8
 """
 
-    p = active_light["properties"]
+    props = active_light["properties"]
+    color = props["color"]
+    intensity = props["intensity"]
 
-    return """
-activeLightPos = util.vec({px}, {py}, {pz})
-activeLightColor = util.vec({cr}, {cg}, {cb})
+    color_expr = "util.vec({}, {}, {})".format(
+        float(color[0]), float(color[1]), float(color[2])
+    )
+
+    if active_light["light_type"] == "point":
+        pos = props["position"]
+        pos_expr = "util.vec({}, {}, {})".format(
+            float(pos[0]), float(pos[1]), float(pos[2])
+        )
+
+        return """
+activeLightPos = {pos_expr}
+activeLightColor = {color_expr}
 activeLightIntensity = {intensity}
 """.format(
-        px=p["position"][0],
-        py=p["position"][1],
-        pz=p["position"][2],
-        cr=p["color"][0],
-        cg=p["color"][1],
-        cb=p["color"][2],
-        intensity=p["intensity"]
-    )
+            pos_expr=pos_expr,
+            color_expr=color_expr,
+            intensity=float(intensity)
+        )
+
+    elif active_light["light_type"] == "directional":
+        direction = props["direction"]
+
+        # Μετατρέπουμε direction -> pseudo-position μακριά από τη σκηνή
+        pseudo_pos = [
+            -10.0 * float(direction[0]),
+            -10.0 * float(direction[1]),
+            -10.0 * float(direction[2])
+        ]
+
+        pseudo_pos_expr = "util.vec({}, {}, {})".format(
+            pseudo_pos[0], pseudo_pos[1], pseudo_pos[2]
+        )
+
+        return """
+activeLightPos = {pseudo_pos_expr}
+activeLightColor = {color_expr}
+activeLightIntensity = {intensity}
+""".format(
+            pseudo_pos_expr=pseudo_pos_expr,
+            color_expr=color_expr,
+            intensity=float(intensity)
+        )
+
+    return """
+activeLightPos = util.vec(2.0, 5.5, 2.0)
+activeLightColor = util.vec(1.0, 1.0, 1.0)
+activeLightIntensity = 0.8
+"""
 # -----------------------------
 # Code generation helpers
 # -----------------------------
@@ -553,8 +592,9 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
         state["counter"] += 1
         return emit_mesh_object_node(node, state["counter"], parent_entity_var, parent_trs_expr)
     elif node_type == "light":
-        #lights don't emit any code for now, but we could extend this in the future to support light entities/components in the scene
+        
         return "", ""
+        
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
 
