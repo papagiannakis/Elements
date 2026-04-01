@@ -20,10 +20,15 @@ DEFAULT_TRANSFORM = {
     "scale": [1.0, 1.0, 1.0]
 }
 
-DEFAULT_MATERIAL = {
-    "color": [0.8, 0.0, 0.8]
-}
+#Add support for texture in material normalization
 
+DEFAULT_MATERIAL = {
+    "color": [0.8, 0.0, 0.8],
+    "texture":{
+        "enabled": False,
+        "path": None
+    }
+}
 
 # -----------------------------
 # Validation / normalization
@@ -87,6 +92,7 @@ def normalize_transform(transform):
     return normalized
 
 
+
 def normalize_material(material):
     if material is None:
         material = {}
@@ -99,7 +105,20 @@ def normalize_material(material):
     if "color" in material:
         normalized["color"] = clamp_color(ensure_vec3(material["color"], "color"))
 
+    if "texture" in material:
+        texture = material["texture"]
+        if not isinstance(texture, dict):
+            raise TypeError("'texture' must be a dictionary")
+        normalized["texture"]["enabled"] = bool(texture.get("enabled", False))  
+        normalized["texture"]["path"]=texture.get("path", None)
     return normalized
+
+def is_textured_material(material):
+    tex= material.get("texture", {})
+    return bool(tex.get("enabled")) and  tex.get("path")
+
+#-----------------------------
+#texture loading and emitting code generation for textured materials
 
 
 def normalize_node(node, idx=1):
@@ -337,10 +356,28 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
+from Elements.pyGLV.GL.Textures import Texture 
 
 import OpenGL.GL as gl
 import Elements.utils.normals as norm
 
+TEXTURE_VERTEX_SHADER = """
+#version 410
+layout (location=0) in vec4 vPos;
+layout (location=1) in vec2 vTexCoord;
+
+out vec2 fragmentTexCoord;
+
+uniform mat4 model;
+uniform mat4 View;
+uniform mat4 Proj;
+
+void main()
+{{
+    gl_Position = Proj * View * model * vPos;
+    fragmentTexCoord = vTexCoord;
+}}
+"""
 example_description = "Generated scene from hierarchical IR"
 
 # Ambient / view defaults
@@ -445,6 +482,9 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     shape = node["shape"]
     transform = node["transform"]
     material = node["material"]
+
+    if is_textured_material(material):
+        return emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr)    
 
     position = transform["position"]
     scale = transform["scale"]
@@ -609,6 +649,61 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
         
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
+
+def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
+    name = node["name"]
+    shape = node["shape"]
+    transform = node["transform"]
+    material = node["material"]
+    position = transform["position"]
+    scale = transform["scale"]
+    texture_path = material["texture"]["path"]
+    suffix = str(idx)
+    entity_var = "node_{}".format(suffix)
+    trans_var = "trans_{}".format(suffix)
+    mesh_var = "mesh_{}".format(suffix)
+    shader_var = "shader_{}".format(suffix)
+    texture_var = "texture_{}".format(suffix)
+    trs_expr = "{} @ ({})".format(make_scale(scale), make_translate(position))
+    world_trs_expr = "{} @ ({})".format(parent_trs_expr, trs_expr)
+    object_code = f"""
+# ===== textured mesh_object: {name} =====
+vertices_{suffix}, indices_{suffix}, colors_{suffix} =create_textured_cube()
+{entity_var} = scene.world.createEntity(Entity(name="{name}"))
+scene.world.addEntityChild({parent_entity_var}, {entity_var})
+
+{trans_var} = scene.world.addComponent(
+    {entity_var},
+    BasicTransform(name="{name}_TRS", trs={world_trs_expr})
+)
+{mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
+{mesh_var}.vertex_attributes.append(vertices_{suffix})
+{mesh_var}.vertex_attributes.append(uv_{suffix})
+{mesh_var}.vertex_index.append(indices_{suffix})
+
+scene.world.addComponent({entity_var}, VertexArray())
+{shader_var} = scene.world.addComponent(
+    {entity_var},
+    ShaderGLDecorator(
+        Shader(
+            vertex_source=Shader.VERT_TEXTURED,
+            fragment_source=Shader.FRAG_TEXTURED
+        )
+    )
+)
+
+{texture_var} = load_texture(r"{texture_path}")
+{shader_var}.setUniformVariable(key='texSampler', value={texture_var}, texture=True)
+""" 
+    
+    uniform_code = f"""
+model_{suffix} = {world_trs_expr}
+{shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
+{shader_var}.setUniformVariable(key='view', value=view, mat4=True)
+{shader_var}.setUniformVariable(key='proj', value=projMat, mat4=True)
+"""
+    return object_code, uniform_code
+
 
 # -----------------------------
 # Main public API
