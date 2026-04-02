@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from geometry_factory import create_geometry
+from geometry_factory import create_geometry, create_textured_cube
 
 
 DEFAULT_WINDOW = {
@@ -357,6 +357,12 @@ from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture 
+import Elements.utils.normals as norm
+
+from Elements.utils.terrain import generateTerrain
+from Elements.definitions import TEXTURE_DIR
+
+from Elements.utils.Shortcuts import displayGUI_text
 
 import OpenGL.GL as gl
 import Elements.utils.normals as norm
@@ -369,13 +375,24 @@ layout (location=1) in vec2 vTexCoord;
 out vec2 fragmentTexCoord;
 
 uniform mat4 model;
-uniform mat4 View;
-uniform mat4 Proj;
+uniform mat4 view;
+uniform mat4 proj;
 
 void main()
 {{
-    gl_Position = Proj * View * model * vPos;
+    gl_Position = proj * view * model * vPos;
     fragmentTexCoord = vTexCoord;
+}}
+"""
+TEXTURE_FRAGMENT_SHADER = """
+#version 410
+out vec4 outputColor;
+in vec2 fragmentTexCoord;
+uniform sampler2D texSampler;
+
+void main()
+{{
+    outputColor = texture(texSampler, fragmentTexCoord);
 }}
 """
 example_description = "Generated scene from hierarchical IR"
@@ -428,7 +445,7 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
         light_setup_code=light_setup_code
     )
 
-def build_footer(title, uniform_block):
+def build_footer(title, uniform_block, texture_set_up_block):
     indented_uniforms = "\n".join(
         ("    " + line) if line.strip() else line
         for line in uniform_block.splitlines()
@@ -446,6 +463,7 @@ scene.init(
 )
 
 scene.world.traverse_visit(initUpdate, scene.world.root)
+{post_init_block}
 
 eManager = scene.world.eventManager
 gWindow = scene.renderWindow
@@ -471,7 +489,7 @@ while running:
     scene.render_post()
 
 scene.shutdown()
-'''.format(title=title, uniforms=indented_uniforms)
+'''.format(title=title, uniforms=indented_uniforms, post_init_block=texture_set_up_block)
 
 
 # -----------------------------
@@ -564,7 +582,7 @@ mvp_{suffix} = projMat @ view @ model_{suffix}
         mat_color_expr=mat_color_expr
     )
 
-    return object_code, uniform_code
+    return object_code, uniform_code, ""
 
 #group node emmission. The group must create: 
 # - a new entity 
@@ -603,16 +621,20 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 
     child_object_blocks = []
     child_uniform_blocks = []
+    child_post_init_blocks = []
 
     for child in node.get("children", []):
-        child_obj_code, child_uniform_code = emit_node(child, entity_var, world_trs_expr, state)
+        child_obj_code, child_uniform_code, child_post_init_code = emit_node(child, entity_var, world_trs_expr, state)
         child_object_blocks.append(child_obj_code)
         child_uniform_blocks.append(child_uniform_code)
+        child_post_init_blocks.append(child_post_init_code)
+
 
     full_object_code = object_code + "\n" + "\n".join(child_object_blocks)
     full_uniform_code = "\n".join(child_uniform_blocks)
+    full_post_init_code = "\n".join(child_post_init_blocks)
 
-    return full_object_code, full_uniform_code
+    return full_object_code, full_uniform_code, full_post_init_code
 
 
 def emit_node(node, parent_entity_var, parent_trs_expr, state):
@@ -624,9 +646,10 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
     if node_type == "scene":
         object_blocks = []
         uniform_blocks = []
+        post_init_blocks = []
 
         for child in node.get("children", []):
-            child_obj_code, child_uniform_code = emit_node(
+            child_obj_code, child_uniform_code, child_post_init_code = emit_node(
                 child,
                 "rootEntity",
                 "util.identity()",
@@ -634,8 +657,9 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
             )
             object_blocks.append(child_obj_code)
             uniform_blocks.append(child_uniform_code)
+            post_init_blocks.append(child_post_init_code)
 
-        return "\n".join(object_blocks), "\n".join(uniform_blocks)
+        return "\n".join(object_blocks), "\n".join(uniform_blocks), "\n".join(post_init_blocks)
     elif node_type == "group":
         state["counter"] += 1
         return emit_group_node(node, state["counter"], parent_entity_var, parent_trs_expr, state)
@@ -645,30 +669,47 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
         return emit_mesh_object_node(node, state["counter"], parent_entity_var, parent_trs_expr)
     elif node_type == "light":
         
-        return "", ""
+        return "", "", ""
         
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
+
+
+def ndarray_to_python(np_array, dtype_name):
+    return "np.array({}, dtype=np.{})".format(np_array.tolist(), dtype_name)
 
 def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     name = node["name"]
     shape = node["shape"]
     transform = node["transform"]
     material = node["material"]
+
     position = transform["position"]
-    scale = transform["scale"]
     texture_path = material["texture"]["path"]
     suffix = str(idx)
+
     entity_var = "node_{}".format(suffix)
     trans_var = "trans_{}".format(suffix)
     mesh_var = "mesh_{}".format(suffix)
     shader_var = "shader_{}".format(suffix)
     texture_var = "texture_{}".format(suffix)
-    trs_expr = "{} @ ({})".format(make_scale(scale), make_translate(position))
-    world_trs_expr = "{} @ ({})".format(parent_trs_expr, trs_expr)
+
+    local_trs_expr = "{} ".format( make_translate(position))
+    world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
+    if shape != "cube":
+        raise ValueError("Currently only 'cube' shape is supported for textured mesh_object nodes")
+    
+    raw_vertices, raw_indices, raw_uvs = create_textured_cube()
+    vertices_code = ndarray_to_python(raw_vertices, "float32")
+    indices_code = ndarray_to_python(raw_indices, "uint32")
+    uv_code = ndarray_to_python(raw_uvs, "float32")
+
     object_code = f"""
 # ===== textured mesh_object: {name} =====
-vertices_{suffix}, indices_{suffix}, colors_{suffix} =create_textured_cube()
+vertices_{suffix} = {vertices_code}
+indices_{suffix} = {indices_code}
+uv_{suffix} = {uv_code}
+
 {entity_var} = scene.world.createEntity(Entity(name="{name}"))
 scene.world.addEntityChild({parent_entity_var}, {entity_var})
 
@@ -686,23 +727,25 @@ scene.world.addComponent({entity_var}, VertexArray())
     {entity_var},
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_TEXTURED,
-            fragment_source=Shader.FRAG_TEXTURED
+            vertex_source=TEXTURE_VERTEX_SHADER,
+            fragment_source=TEXTURE_FRAGMENT_SHADER
         )
     )
 )
-
-{texture_var} = load_texture(r"{texture_path}")
-{shader_var}.setUniformVariable(key='texSampler', value={texture_var}, texture=True)
 """ 
-    
+
     uniform_code = f"""
 model_{suffix} = {world_trs_expr}
 {shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
 {shader_var}.setUniformVariable(key='view', value=view, mat4=True)
 {shader_var}.setUniformVariable(key='proj', value=projMat, mat4=True)
 """
-    return object_code, uniform_code
+    texture_set_up_code = f"""
+{texture_var} = Texture(r"{texture_path}")
+{shader_var}.setUniformVariable(key='texSampler', value={texture_var}, texture=True)
+"""
+    
+    return object_code, uniform_code, texture_set_up_code
 
 
 # -----------------------------
@@ -726,9 +769,9 @@ def generate_scene_script(scene_ir):
     header = build_header(window, light_setup_code)
 
     state = {"counter": 0}
-    object_code, uniform_code = emit_node(scene_ir, "rootEntity", "util.identity()", state)
+    object_code, uniform_code, post_init_code = emit_node(scene_ir, "rootEntity", "util.identity()", state)
 
-    footer = build_footer(title, uniform_code)
+    footer = build_footer(title, uniform_code, post_init_code)
 
     final_script = header + "\n" + object_code + "\n" + footer
     return final_script

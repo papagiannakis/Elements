@@ -1,10 +1,46 @@
 # Geometry factory functions for different shapes
 import numpy as np
-
+import Elements.utils.normals as norm
 def make_color_array(color, count):
     r, g, b = color
     return np.array([[r, g, b, 1.0]] * count, dtype=np.float32)
 
+
+# TEXTURED CUBE  wwith uv map for each fase
+
+def create_textured_cube():
+    vertexCube = np.array([
+        [-1, -1,  1, 1.0],
+        [-1,  1,  1, 1.0],
+        [ 1,  1,  1, 1.0],
+        [ 1, -1,  1, 1.0], 
+        [-1, -1, -1, 1.0], 
+        [-1,  1, -1, 1.0], 
+        [ 1,  1, -1, 1.0], 
+        [ 1, -1, -1, 1.0]
+    ], dtype=np.float32)
+
+    indexCube = np.array((
+        1,0,3, 1,3,2, 
+        2,3,7, 2,7,6,
+        3,0,4, 3,4,7,
+        6,5,1, 6,1,2,
+        4,5,6, 4,6,7,
+        5,4,0, 5,0,1
+    ), dtype=np.uint32)
+
+    vertices, indices, _ = norm.generateUniqueVertices(vertexCube, indexCube)
+
+    UV_MAP = np.array([
+        [0,1],[0,0],[1,0],[0,1],[1,0],[1,1],
+        [0,2],[0,0],[2,0],[0,2],[2,0],[2,2],
+        [0,2/3],[0,1/3],[1/3,1/3],[0,2/3],[1/3,1/3],[1/3,2/3],
+        [1/3,1],[1/3,2/3],[2/3,2/3],[1/3,1],[2/3,2/3],[2/3,1],
+        [2/3,1/3],[2/3,0],[1,0],[2/3,1/3],[1,0],[1,1/3],
+        [0,1],[0,2/3],[1/3,2/3],[0,1],[1/3,2/3],[1/3,1]
+    ], dtype=np.float32)
+
+    return vertices, indices, UV_MAP
 #-------------------------
 # Cube + Rectangular Prism
 #-------------------------  
@@ -273,6 +309,8 @@ def create_geometry(shape_type, params):
         return create_cone(params)
     elif shape_type == "sphere":
         return create_sphere(params)
+    elif shape_type == "textured_cube":
+        return create_textured_cube(params)
     else:
         raise ValueError("Unsupported shape type: {}".format(shape_type))
 
