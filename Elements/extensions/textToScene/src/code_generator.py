@@ -445,6 +445,8 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
         light_setup_code=light_setup_code
     )
 
+
+
 def build_footer(title, uniform_block, texture_set_up_block):
     indented_uniforms = "\n".join(
         ("    " + line) if line.strip() else line
@@ -452,6 +454,53 @@ def build_footer(title, uniform_block, texture_set_up_block):
     )
 
     return '''
+import imgui
+
+class CustomImGUI(ImGUIecssDecorator2):
+    def __init__(self, imguiContext):
+        # Στην έκδοση που χρησιμοποιείς, ο decorator αρχικοποιείται 
+        # απευθείας από το scene.init περνώντας το context/window
+        self.user_input = ""
+        self.ai_response_ready = False
+        self.status_msg = "Ready"
+
+    def drawImgui(self):
+        super().drawImgui()
+        imgui.begin("AI Scene Assistant")
+        imgui.set_window_size(300,200) 
+        imgui.text(f"Status: {{self.status_msg}}")
+        
+        # Text Input for instruction
+        changed, self.user_input = imgui.input_text(
+            'Command', 
+            self.user_input, 
+            256
+        )
+        
+        if imgui.button("Send to AI"):
+            self.status_msg = "Processing..."
+            # Here would go the API call later
+            print(f"Sending to LLM: {{self.user_input}}")
+            self.ai_response_ready = True # Temporary for testing
+            
+        imgui.separator()
+        
+        # Display Accept/Reject only if the AI has responded
+        if self.ai_response_ready:
+            imgui.text("AI proposed a change. Accept?")
+            if imgui.button(" Accept (✓) "):
+                self.status_msg = "Applied!"
+                self.ai_response_ready = False
+                # Here would go the call to the Injector
+            
+            imgui.same_line()
+            
+            if imgui.button(" Reject (X) "):
+                self.status_msg = "Rejected"
+                self.ai_response_ready = False
+                # Here would go the call to delete the preview entity
+
+        imgui.end()
 running = True
 scene.init(
     imgui=True,
@@ -459,7 +508,7 @@ scene.init(
     windowHeight=winHeight,
     windowTitle="{title}",
     openGLversion=4,
-    customImGUIdecorator=ImGUIecssDecorator2
+    customImGUIdecorator=CustomImGUI
 )
 
 scene.world.traverse_visit(initUpdate, scene.world.root)
@@ -640,7 +689,7 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 def emit_node(node, parent_entity_var, parent_trs_expr, state):
     if node is None:
         # Decide if you want to return empty strings or raise a clearer error
-        return "", ""
+        return "", "", ""
     node_type = node.get("node_type")
 
     if node_type == "scene":
@@ -715,7 +764,7 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 
 {trans_var} = scene.world.addComponent(
     {entity_var},
-    BasicTransform(name="{name}_TRS", trs={world_trs_expr})
+    BasicTransform(name="{name}_TRS", trs={local_trs_expr})
 )
 {mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
 {mesh_var}.vertex_attributes.append(vertices_{suffix})

@@ -142,6 +142,7 @@ The initial nodes are:
 ## corrunt errors 
 1) generated file is saved in desktop
 2) directional light DOESNT EVEN RUNNNNN - only compile ! DONE 
-3) add gui box in scene to add nodes 
+3) add gui box in scene to add nodes '
+4) CustomImGUI and ImGUIecssDecorator2 incompatible cannot synchronize with elements ![alt text](image.png)
 
     
