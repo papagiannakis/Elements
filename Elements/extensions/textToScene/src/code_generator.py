@@ -453,6 +453,7 @@ def build_footer(title, uniform_block, texture_set_up_block):
 
     return '''    
 import imgui
+ 
 
 command_text = ""
 status_message = "Ready for input."
@@ -481,9 +482,19 @@ def draw_editor_panel():
 
     if imgui.button("Send to AI", width=120):
         if command_text.strip():
-            pending_ai_request = True
-            preview_ready = False
-            status_message = "Sent to AI:" + command_text
+            # pending_ai_request = True
+            # preview_ready = False
+            # status_message = "Sent to AI:" + command_text
+            ######
+            try: 
+                import json
+                with open("ai_task.json", "w", encoding="utf-8") as f:
+                    json.dump({{"command": command_text, "status": "pending"}}, f)
+                pending_ai_request = True
+                preview_ready = False
+                status_message = "Sent to AI: " + command_text
+            except Exception as e:
+                status_message = "Failed to send to AI: " + str(e)
         else:
             status_message = "Please type a command first."
 
