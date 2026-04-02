@@ -455,14 +455,18 @@ def build_footer(title, uniform_block, texture_set_up_block):
 import imgui
 
 command_text = ""
+status_message = "Ready for input."
+preview_ready = False
 show_editor_panel = True
+pending_ai_request = False
 
 def draw_editor_panel():
-    global command_text, show_editor_panel
+    global command_text,status_message
+    global pending_ai_request, preview_ready, show_editor_panel
 
     if not show_editor_panel:
-        return
-
+        return 
+        
     imgui.begin("Scene Editor", True)
 
     imgui.text("Write a command for the scene:")
@@ -471,15 +475,56 @@ def draw_editor_panel():
         command_text,
         1024,
         width=420,
-        height=120
+        height=100
     )
+    imgui.spacing()
+
+    if imgui.button("Send to AI", width=120):
+        if command_text.strip():
+            pending_ai_request = True
+            preview_ready = False
+            status_message = "Sent to AI:" + command_text
+        else:
+            status_message = "Please type a command first."
+
+    imgui.same_line()
+
+    if imgui.button("Apply", width=100):
+        if preview_ready:
+            status_message = "Preview accepted and saved."
+            preview_ready = False
+            pending_ai_request = False
+        else:
+            status_message = "No preview available to apply."
+
+    imgui.same_line()
+
+    if imgui.button("Reject", width=100):
+        if preview_ready or pending_ai_request:
+            status_message = "Preview rejected."
+            preview_ready = False
+            pending_ai_request = False
+        else:
+            status_message = "Nothing to reject."
+
+    # προσωρινή προσομοίωση AI απάντησης
+    if pending_ai_request:
+        imgui.spacing()
+        imgui.text("AI preview pending...")
+        preview_ready = True
+        pending_ai_request = False
+        status_message = "AI preview ready. Press Apply or Reject."
+
+    imgui.spacing()
+    imgui.separator()
+    imgui.text("Status:")
+    imgui.text_wrapped(status_message)
 
     imgui.spacing()
     imgui.text("Current text:")
     imgui.text_wrapped(command_text if command_text.strip() else "(empty)")
 
     imgui.end()
-
 
     ######
 running = True
