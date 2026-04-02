@@ -96,19 +96,18 @@ python C:\Users\yanni\Desktop\scene_out.py
 ## Current limitations
 
 LOCATION of the generated file is wrong RESTRICTIONS !!!!
-MUST CHANGEEEEEEEEEE!!!!!SOSOSOSOSOSOSOSOS
-ISSUE !!!!! BIG ISSUE !!!!!
+MUST CHANGEEEEEEEEEE!!!!!
 
 - No natural language parsing yet
 - No LLM intergation yet 
 - No texture pipeline yet 
 - No online texture retrieval yet 
 - Lighting support is basic and global
-
-## Planned Next Steps
 - Add prefab support for house tree and gift box 
 - Add light nodes (point , directional, spot)
 - Add tecture support 
+
+## Planned Next Steps
 - Add text-to-hierarchical-IR parsing 
 - ML/LLM stractured scene generation 
 
@@ -123,5 +122,26 @@ The initial nodes are:
     - mesh_object
     - camera
     - light
+
+
+## PHASE 2 
+ΒΑΣΙΚΗ ΙΔΕΑ 
+Ωσ τώρα έχω το code generation που παράγει ένα αρχείο και ο χρήστης πρέπει να το τρέξει. θέλω να μπορεί ενώ τρέχει η σκηνή να μπορεί να γράφει σε ένα τετραγωνάκι μέσα στη σκηνή πχ βάλε έναν ακόμη κύβο πανω στον κύβο (που υπάρχει ήδη). το πρόγραμμα να προσθέτει τον κύβο και αν είναι όπως το θέλει ο χρήστης να πατάει τικ και να αποθηκέυεται το αρχείο μαζί με την προσθήκη. αλλιώς αν πατήσει χ να μην αποθηκευεται κάτι παραπάνω.
+
+Τι φτιάχνω 
+1) μεταβλητή για το κειμενο που θα γράφει ο χρήστης 
+2) κουμπι send που θα καλεί το LLM 
+3) δυο κουμπιά Accept and reject που θα εμφανίζεται όταν έχει προσθεθεί κάτι στην σκηνή (επιπρόσθετο) 
+ΑΡΑ 
+1) αλλάζω header gia decorator imgui 
+2) πεδίο που για γράφει ο χρήστης --> imgui.imput_text
+3) ai_responce_ready flag όταν το API θα στείλει το JSON -->true + show_buttons
+4) imgui bottons for accept/reject
+
+
+## corrunt errors 
+1) generated file is saved in desktop
+2) directional light DOESNT EVEN RUNNNNN - only compile ! DONE 
+3) add gui box in scene to add nodes 
 
     
