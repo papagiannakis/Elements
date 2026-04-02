@@ -445,62 +445,43 @@ initUpdate = scene.world.createSystem(InitGLShaderSystem())
         light_setup_code=light_setup_code
     )
 
-
-
 def build_footer(title, uniform_block, texture_set_up_block):
     indented_uniforms = "\n".join(
         ("    " + line) if line.strip() else line
         for line in uniform_block.splitlines()
     )
 
-    return '''
+    return '''    
 import imgui
 
-class CustomImGUI(ImGUIecssDecorator2):
-    def __init__(self, imguiContext):
-        # Στην έκδοση που χρησιμοποιείς, ο decorator αρχικοποιείται 
-        # απευθείας από το scene.init περνώντας το context/window
-        self.user_input = ""
-        self.ai_response_ready = False
-        self.status_msg = "Ready"
+command_text = ""
+show_editor_panel = True
 
-    def drawImgui(self):
-        super().drawImgui()
-        imgui.begin("AI Scene Assistant")
-        imgui.set_window_size(300,200) 
-        imgui.text(f"Status: {{self.status_msg}}")
-        
-        # Text Input for instruction
-        changed, self.user_input = imgui.input_text(
-            'Command', 
-            self.user_input, 
-            256
-        )
-        
-        if imgui.button("Send to AI"):
-            self.status_msg = "Processing..."
-            # Here would go the API call later
-            print(f"Sending to LLM: {{self.user_input}}")
-            self.ai_response_ready = True # Temporary for testing
-            
-        imgui.separator()
-        
-        # Display Accept/Reject only if the AI has responded
-        if self.ai_response_ready:
-            imgui.text("AI proposed a change. Accept?")
-            if imgui.button(" Accept (✓) "):
-                self.status_msg = "Applied!"
-                self.ai_response_ready = False
-                # Here would go the call to the Injector
-            
-            imgui.same_line()
-            
-            if imgui.button(" Reject (X) "):
-                self.status_msg = "Rejected"
-                self.ai_response_ready = False
-                # Here would go the call to delete the preview entity
+def draw_editor_panel():
+    global command_text, show_editor_panel
 
-        imgui.end()
+    if not show_editor_panel:
+        return
+
+    imgui.begin("Scene Editor", True)
+
+    imgui.text("Write a command for the scene:")
+    changed, command_text = imgui.input_text_multiline(
+        "##scene_command",
+        command_text,
+        1024,
+        width=420,
+        height=120
+    )
+
+    imgui.spacing()
+    imgui.text("Current text:")
+    imgui.text_wrapped(command_text if command_text.strip() else "(empty)")
+
+    imgui.end()
+
+
+    ######
 running = True
 scene.init(
     imgui=True,
@@ -508,7 +489,7 @@ scene.init(
     windowHeight=winHeight,
     windowTitle="{title}",
     openGLversion=4,
-    customImGUIdecorator=CustomImGUI
+    customImGUIdecorator=ImGUIecssDecorator2 
 )
 
 scene.world.traverse_visit(initUpdate, scene.world.root)
@@ -535,12 +516,11 @@ while running:
 
     view = gWindow._myCamera
 {uniforms}
+    draw_editor_panel()
     scene.render_post()
 
 scene.shutdown()
 '''.format(title=title, uniforms=indented_uniforms, post_init_block=texture_set_up_block)
-
-
 # -----------------------------
 # Recursive node emission
 # -----------------------------
@@ -722,10 +702,6 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
         
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
-
-
-def ndarray_to_python(np_array, dtype_name):
-    return "np.array({}, dtype=np.{})".format(np_array.tolist(), dtype_name)
 
 def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     name = node["name"]
