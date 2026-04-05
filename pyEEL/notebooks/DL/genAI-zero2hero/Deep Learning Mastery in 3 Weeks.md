@@ -1,4 +1,4 @@
-# Deep Learning Mastery in 3 Weeks
+# Generative AI / Deep Learning Mastery in 3 Weeks
 
 ## A Coach-Style Learning Plan for Builders
 
