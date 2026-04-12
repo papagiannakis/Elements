@@ -1,0 +1,20 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -l \"kingdon\\\\|Kingdon\" /Users/papagian/GPcode/Elements/pyEEL/notebooks/DL/diffRenderer/GA/*.ipynb)",
+      "Bash(python3 -c \"import json; nb = json.load\\(open\\('/Users/papagian/GPcode/Elements/pyEEL/notebooks/DL/diffRenderer/GA/EGA-PGA-CGA-Kingdon.ipynb'\\)\\); [print\\(cell['source']\\) for cell in nb['cells'][:15]]\")",
+      "Bash(python3 -c ':*)",
+      "Bash(python3)",
+      "Bash(python3 -c \"import kingdon; print\\(kingdon.__version__\\)\")",
+      "Bash(python3 -c \"from kingdon import Algebra; alg = Algebra\\(4,1\\); print\\('CGA OK, blades:', list\\(alg.blades.keys\\(\\)\\)[:10]\\)\")",
+      "Read(//tmp/**)",
+      "Read(//private/tmp/**)",
+      "Bash(grep -E \"\\\\.\\(py|glsl|frag|vert\\)$\")",
+      "Bash(grep -v \"^$\")",
+      "Bash(python3 -c \"import torch; print\\('PyTorch', torch.__version__\\); print\\('CUDA:', torch.cuda.is_available\\(\\)\\)\")",
+      "Bash(curl -s \"https://arxiv.org/abs/2408.02275\")",
+      "WebFetch(domain:arxiv.org)",
+      "Bash(pip install:*)"
+    ]
+  }
+}
