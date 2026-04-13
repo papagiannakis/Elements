@@ -14,7 +14,21 @@
       "Bash(python3 -c \"import torch; print\\('PyTorch', torch.__version__\\); print\\('CUDA:', torch.cuda.is_available\\(\\)\\)\")",
       "Bash(curl -s \"https://arxiv.org/abs/2408.02275\")",
       "WebFetch(domain:arxiv.org)",
-      "Bash(pip install:*)"
+      "Bash(pip install:*)",
+      "Bash(pip list:*)",
+      "Bash(python3 /tmp/gen_neurosymbolic_nb.py)",
+      "Bash(python3 /tmp/add_final_experiments.py)",
+      "Bash(python3 -c \"compile\\(open\\('/tmp/add_final_experiments.py'\\).read\\(\\), '/tmp/add_final_experiments.py', 'exec'\\)\")",
+      "Bash(python3 /tmp/nb_test.py)",
+      "Bash(echo \"EXIT: $?\")",
+      "Bash(python3 -c \"compile\\(open\\('/tmp/rewrite_experiments.py'\\).read\\(\\), 'rewrite', 'exec'\\)\")",
+      "Bash(python3 /tmp/rewrite_experiments.py)",
+      "Bash(timeout 180 python3 /tmp/nb_validate.py)",
+      "Bash(timeout 300 python3 /tmp/nb_real.py)"
+    ],
+    "additionalDirectories": [
+      "/tmp",
+      "/private/tmp"
     ]
   }
 }
