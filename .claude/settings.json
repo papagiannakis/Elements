@@ -24,7 +24,11 @@
       "Bash(python3 -c \"compile\\(open\\('/tmp/rewrite_experiments.py'\\).read\\(\\), 'rewrite', 'exec'\\)\")",
       "Bash(python3 /tmp/rewrite_experiments.py)",
       "Bash(timeout 180 python3 /tmp/nb_validate.py)",
-      "Bash(timeout 300 python3 /tmp/nb_real.py)"
+      "Bash(timeout 300 python3 /tmp/nb_real.py)",
+      "Bash(jupyter nbextension:*)",
+      "Bash(timeout 300 python3 /tmp/nb_real2.py)",
+      "Bash(timeout 300 python3 /tmp/nb_real3.py)",
+      "Bash(python3 -m jupyter nbconvert --to notebook --execute --ExecutePreprocessor.timeout=300 --ExecutePreprocessor.kernel_name=python3 pyEEL/notebooks/neuralCG/GAmeetsLLM.ipynb --output GAmeetsLLM_validated.ipynb)"
     ],
     "additionalDirectories": [
       "/tmp",
