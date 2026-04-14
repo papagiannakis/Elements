@@ -487,8 +487,11 @@ def draw_editor_panel():
             # status_message = "Sent to AI:" + command_text
             ######
             try: 
-                import json
-                with open("ai_task.json", "w", encoding="utf-8") as f:
+                import json, os 
+                desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
+                task_path = os.path.join(desktop_path, "ai_task.json")
+                
+                with open(task_path, "w", encoding="utf-8") as f:
                     json.dump({{"command": command_text, "status": "pending"}}, f)
                 pending_ai_request = True
                 preview_ready = False
