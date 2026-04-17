@@ -453,17 +453,59 @@ def build_footer(title, uniform_block, texture_set_up_block):
 
     return '''    
 import imgui
+import json 
+from pathlib import Path 
  
+SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
+SHARED_DIR.mkdir(parents=True, exist_ok=True)
+
+AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
+UI_STATE_FILE = SHARED_DIR / "ui_state.json"
+#first try ###############
 
 command_text = ""
 status_message = "Ready for input."
-preview_ready = False
 show_editor_panel = True
-pending_ai_request = False
+request_counter = 0
+
+## helper function to write request to file 
+def write_json_file(path, data):
+    print("WRITING JSON TO:", path)
+    print("DATA:", data)
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+
+
+def write_ai_request(prompt_text):
+    global request_counter
+
+    request_counter += 1
+
+    data = {{
+        "request_id": request_counter,
+        "status": "pending",
+        "prompt": prompt_text
+    }}
+
+    write_json_file(AI_REQUEST_FILE, data)
+    return request_counter
+
+
+def write_ui_action(action_name, request_id=None):
+    data = {{
+        "action": action_name
+    }}
+
+    if request_id is not None:
+        data["request_id"] = request_id
+
+    write_json_file(UI_STATE_FILE, data)
 
 def draw_editor_panel():
     global command_text,status_message
-    global pending_ai_request, preview_ready, show_editor_panel
+    global show_editor_panel
+    ## add 
+    global request_counter 
 
     if not show_editor_panel:
         return 
@@ -482,52 +524,32 @@ def draw_editor_panel():
 
     if imgui.button("Send to AI", width=120):
         if command_text.strip():
-            # pending_ai_request = True
-            # preview_ready = False
-            # status_message = "Sent to AI:" + command_text
-            ######
-            try: 
-                import json, os 
-                desktop_path = os.path.join(os.path.join(os.environ['USERPROFILE']), 'Desktop')
-                task_path = os.path.join(desktop_path, "ai_task.json")
-                
-                with open(task_path, "w", encoding="utf-8") as f:
-                    json.dump({{"command": command_text, "status": "pending"}}, f)
-                pending_ai_request = True
-                preview_ready = False
-                status_message = "Sent to AI: " + command_text
+            try:
+                req_id = write_ai_request(command_text)
+                status_message = "Request sent. request_id = " + str(req_id)
             except Exception as e:
-                status_message = "Failed to send to AI: " + str(e)
+                status_message = "Failed to send request: " + str(e)
         else:
             status_message = "Please type a command first."
 
     imgui.same_line()
 
+
     if imgui.button("Apply", width=100):
-        if preview_ready:
-            status_message = "Preview accepted and saved."
-            preview_ready = False
-            pending_ai_request = False
-        else:
-            status_message = "No preview available to apply."
+        try:
+            write_ui_action("apply", request_id=request_counter)
+            status_message = "Apply sent to controller."
+        except Exception as e:
+            status_message = "Apply failed: " + str(e)
 
     imgui.same_line()
 
-    if imgui.button("Reject", width=100):
-        if preview_ready or pending_ai_request:
-            status_message = "Preview rejected."
-            preview_ready = False
-            pending_ai_request = False
-        else:
-            status_message = "Nothing to reject."
-
-    # προσωρινή προσομοίωση AI απάντησης
-    if pending_ai_request:
-        imgui.spacing()
-        imgui.text("AI preview pending...")
-        preview_ready = True
-        pending_ai_request = False
-        status_message = "AI preview ready. Press Apply or Reject."
+    if imgui.button("Reject"):
+        try: 
+            write_ui_action("reject")
+            status_message = "Reject request sent to controller."
+        except Exception as e:
+            status_message = "Reject failed: " + str(e)
 
     imgui.spacing()
     imgui.separator()
@@ -540,7 +562,6 @@ def draw_editor_panel():
 
     imgui.end()
 
-    ######
 running = True
 scene.init(
     imgui=True,
