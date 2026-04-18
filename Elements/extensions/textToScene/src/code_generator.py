@@ -453,24 +453,22 @@ def build_footer(title, uniform_block, texture_set_up_block):
 
     return '''    
 import imgui
-import json 
-from pathlib import Path 
- 
+import json
+from pathlib import Path
+
 SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
 SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
 UI_STATE_FILE = SHARED_DIR / "ui_state.json"
-#first try ###############
 
 command_text = ""
 status_message = "Ready for input."
 show_editor_panel = True
 request_counter = 0
 
-## helper function to write request to file 
 def read_json_file(path):
-    try: 
+    try:
         if not path.exists():
             return None
         with open(path, "r", encoding="utf-8") as f:
@@ -481,31 +479,33 @@ def read_json_file(path):
 
 def poll_backend_state():
     global status_message
+
     req = read_json_file(AI_REQUEST_FILE)
     ui = read_json_file(UI_STATE_FILE)
 
-    if req: 
+    if req:
         req_status = req.get("status")
+
         if req_status == "preview_ready":
-            status_message = "Preview ready."
+            status_message = "Preview ready. The window will refresh automatically."
+        elif req_status == "applied":
+            status_message = "Scene applied successfully."
+        elif req_status == "rejected":
+            status_message = "Preview rejected."
         elif req_status == "error":
             status_message = "AI error: " + str(req.get("error", "unknown error"))
 
     if ui:
         action = ui.get("action")
-        if action == "applied":
-            status_message = "Preview applied."
-        elif action == "rejected":
-            status_message = "Preview rejected."
-        elif action == "error":
-            status_message = "Controller error: " + str(ui.get("message", "unknown")) 
+
+        if action == "error":
+            status_message = "Controller error: " + str(ui.get("message", "unknown"))
 
 def write_json_file(path, data):
     print("WRITING JSON TO:", path)
     print("DATA:", data)
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-
 
 def write_ai_request(prompt_text):
     global request_counter
@@ -521,7 +521,6 @@ def write_ai_request(prompt_text):
     write_json_file(AI_REQUEST_FILE, data)
     return request_counter
 
-
 def write_ui_action(action_name, request_id=None):
     data = {{
         "action": action_name
@@ -533,14 +532,13 @@ def write_ui_action(action_name, request_id=None):
     write_json_file(UI_STATE_FILE, data)
 
 def draw_editor_panel():
-    global command_text,status_message
+    global command_text, status_message
     global show_editor_panel
-    ## add 
-    global request_counter 
+    global request_counter
 
     if not show_editor_panel:
-        return 
-        
+        return
+
     imgui.begin("Scene Editor", True)
 
     imgui.text("Write a command for the scene:")
@@ -551,6 +549,7 @@ def draw_editor_panel():
         width=420,
         height=100
     )
+
     imgui.spacing()
 
     if imgui.button("Send to AI", width=120):
@@ -565,7 +564,6 @@ def draw_editor_panel():
 
     imgui.same_line()
 
-
     if imgui.button("Apply", width=100):
         try:
             write_ui_action("apply", request_id=request_counter)
@@ -575,10 +573,10 @@ def draw_editor_panel():
 
     imgui.same_line()
 
-    if imgui.button("Reject"):
-        try: 
-            write_ui_action("reject")
-            status_message = "Reject request sent to controller."
+    if imgui.button("Reject", width=100):
+        try:
+            write_ui_action("reject", request_id=request_counter)
+            status_message = "Reject sent to controller."
         except Exception as e:
             status_message = "Reject failed: " + str(e)
 
@@ -600,7 +598,7 @@ scene.init(
     windowHeight=winHeight,
     windowTitle="{title}",
     openGLversion=4,
-    customImGUIdecorator=ImGUIecssDecorator2 
+    customImGUIdecorator=ImGUIecssDecorator2
 )
 
 scene.world.traverse_visit(initUpdate, scene.world.root)
@@ -632,7 +630,11 @@ while running:
     scene.render_post()
 
 scene.shutdown()
-'''.format(title=title, uniforms=indented_uniforms, post_init_block=texture_set_up_block)
+'''.format(
+        title=title,
+        uniforms=indented_uniforms,
+        post_init_block=texture_set_up_block
+    )
 # -----------------------------
 # Recursive node emission
 # -----------------------------

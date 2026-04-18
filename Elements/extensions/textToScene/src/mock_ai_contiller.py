@@ -9,13 +9,14 @@ PROJECT_DIR = Path(__file__).resolve().parent
 SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
 SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
-SCENE_IR_FILE = SHARED_DIR/ "scene_ir.json"
-#SCENE_IR_FILE = PROJECT_DIR / "scene_ir.json"
+SCENE_IR_FILE = SHARED_DIR / "scene_ir.json"
 PREVIEW_IR_FILE = SHARED_DIR / "preview_scene_ir.json"
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
 UI_STATE_FILE = SHARED_DIR / "ui_state.json"
+SCENE_STATE_FILE = SHARED_DIR / "scene_state.json"
 SCENE_OUT_FILE = Path.home() / "Desktop" / "scene_out.py"
 PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
+
 def read_json(path: Path, default=None):
     path = Path(path)
     if not path.exists():
@@ -33,28 +34,28 @@ def write_json(path: Path, data):
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
 
-def save_text(path: Path, text: str):
-    with open(path, "w", encoding="utf-8") as f:
-        f.write(text)
-
 
 def load_scene_ir():
     data = read_json(SCENE_IR_FILE, default=None)
-    if data is None:
-        raise FileNotFoundError(f"Δεν βρέθηκε το {SCENE_IR_FILE.name}")
-    return data
+    if data is not None:
+        return data
 
+    data = read_json(PROJECT_SCENE_IR_FILE, default=None)
+    if data is not None:
+        print("[controller] Using fallback project scene_ir.json")
+        return data
+
+    raise FileNotFoundError("Δεν βρέθηκε scene_ir.json ούτε στο shared folder ούτε στο project folder")
 
 def save_preview_ir(scene_ir):
     write_json(PREVIEW_IR_FILE, scene_ir)
     print("[controller] Saved preview IR to:", PREVIEW_IR_FILE)
 
-
 def save_preview_script(scene_ir):
     script = generate_scene_script(scene_ir)
     PREVIEW_SCENE_FILE.write_text(script, encoding="utf-8")
     print("[controller] Saved preview script to:", PREVIEW_SCENE_FILE)
-
+    
 def promote_preview():
     if not PREVIEW_IR_FILE.exists():
         raise FileNotFoundError("Δεν υπάρχει preview_scene_ir.json")
@@ -233,6 +234,13 @@ def handle_pending_ai_request():
         req["preview_ir_file"] = PREVIEW_IR_FILE.name
         write_json(AI_REQUEST_FILE, req)
 
+        # ΕΔΩ μπαίνει το scene_state update για preview mode
+        write_json(SCENE_STATE_FILE, {
+            "mode": "preview",
+            "active_script": str(PREVIEW_SCENE_FILE),
+            "request_id": request_id
+        })
+
         print(f"[controller] Preview ready for request {request_id}")
 
     except Exception as e:
@@ -246,11 +254,12 @@ def handle_ui_actions():
     ui = read_json(UI_STATE_FILE, default=None)
     if not ui:
         return
-    
+
     action = ui.get("action")
 
-    if action in (None, "idle"):
+    if action in (None, "idle", "error"):
         return
+
     print("[controller] UI action found:", ui)
 
     if action == "apply":
@@ -266,6 +275,13 @@ def handle_ui_actions():
             if req:
                 req["status"] = "applied"
                 write_json(AI_REQUEST_FILE, req)
+
+            # ΕΔΩ μπαίνει το scene_state update για official mode
+            write_json(SCENE_STATE_FILE, {
+                "mode": "official",
+                "active_script": str(SCENE_OUT_FILE),
+                "request_id": ui.get("request_id")
+            })
 
             print("[controller] Preview applied")
 
@@ -289,8 +305,14 @@ def handle_ui_actions():
             req["status"] = "rejected"
             write_json(AI_REQUEST_FILE, req)
 
-        print("[controller] Preview rejected")
+        # ΕΔΩ μπαίνει το scene_state update για επιστροφή στο official
+        write_json(SCENE_STATE_FILE, {
+            "mode": "official",
+            "active_script": str(SCENE_OUT_FILE),
+            "request_id": ui.get("request_id")
+        })
 
+        print("[controller] Preview rejected")
 
 def main():
     print("[controller] Mock AI controller started.")
@@ -300,11 +322,18 @@ def main():
     print("[controller] UI_STATE_FILE   =", UI_STATE_FILE)
     print("[controller] SCENE_IR_FILE   =", SCENE_IR_FILE)
     print("[controller] SCENE_OUT_FILE  =", SCENE_OUT_FILE)
+    print("[controller] SCENE_STATE_FILE =", SCENE_STATE_FILE)
+
+    if not SCENE_STATE_FILE.exists():
+        write_json(SCENE_STATE_FILE, {
+            "mode": "official",
+            "active_script": str(SCENE_OUT_FILE)
+        })
+
     while True:
         handle_pending_ai_request()
         handle_ui_actions()
         time.sleep(0.5)
-
 
 if __name__ == "__main__":
     main()
