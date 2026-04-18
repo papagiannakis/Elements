@@ -1,34 +1,37 @@
 import json
 import time
-import shutil
 from copy import deepcopy
 from pathlib import Path
+import traceback 
 
 from code_generator import generate_scene_script
 PROJECT_DIR = Path(__file__).resolve().parent
 SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
 SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
-SCENE_IR_FILE = PROJECT_DIR / "scene_ir.json"
+SCENE_IR_FILE = SHARED_DIR/ "scene_ir.json"
+#SCENE_IR_FILE = PROJECT_DIR / "scene_ir.json"
 PREVIEW_IR_FILE = SHARED_DIR / "preview_scene_ir.json"
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
 UI_STATE_FILE = SHARED_DIR / "ui_state.json"
 SCENE_OUT_FILE = Path.home() / "Desktop" / "scene_out.py"
 PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
 def read_json(path: Path, default=None):
+    path = Path(path)
     if not path.exists():
         return default
-    try:
-        with open(path, "r", encoding="utf-8") as f:
-            return json.load(f)
-    except Exception:
-        return default
+
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def write_json(path: Path, data):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    print("[write_json] writing to", path)
+
     with open(path, "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
-
 
 def save_text(path: Path, text: str):
     with open(path, "w", encoding="utf-8") as f:
@@ -44,12 +47,13 @@ def load_scene_ir():
 
 def save_preview_ir(scene_ir):
     write_json(PREVIEW_IR_FILE, scene_ir)
+    print("[controller] Saved preview IR to:", PREVIEW_IR_FILE)
 
 
 def save_preview_script(scene_ir):
     script = generate_scene_script(scene_ir)
-    save_text(PREVIEW_SCENE_FILE, script)
-
+    PREVIEW_SCENE_FILE.write_text(script, encoding="utf-8")
+    print("[controller] Saved preview script to:", PREVIEW_SCENE_FILE)
 
 def promote_preview():
     if not PREVIEW_IR_FILE.exists():
@@ -57,10 +61,23 @@ def promote_preview():
     if not PREVIEW_SCENE_FILE.exists():
         raise FileNotFoundError("Δεν υπάρχει preview_scene.py")
 
-    shutil.copy2(PREVIEW_IR_FILE, SCENE_IR_FILE)
-    shutil.copy2(PREVIEW_SCENE_FILE, SCENE_OUT_FILE)
+    print("[controller] READING PREVIEW IR FROM", PREVIEW_IR_FILE)
+    preview_ir = read_json(PREVIEW_IR_FILE, default=None)
+    if preview_ir is None:
+        raise ValueError("Δεν μπόρεσα να διαβάσω το preview_scene_ir.json")
 
+    print("[controller] Writing official scene IR to:", SCENE_IR_FILE)
+    SCENE_IR_FILE.write_text(
+        json.dumps(preview_ir, indent=2, ensure_ascii=False),
+        encoding="utf-8"
+    )
 
+    preview_script = PREVIEW_SCENE_FILE.read_text(encoding="utf-8")
+    print("[controller] Writing official scene script to:", SCENE_OUT_FILE)
+    SCENE_OUT_FILE.write_text(preview_script, encoding="utf-8")
+
+    print("[controller] Promoted preview successfully")
+    
 def clear_preview():
     if PREVIEW_IR_FILE.exists():
         PREVIEW_IR_FILE.unlink()
@@ -119,11 +136,11 @@ def ensure_scene_children(scene_ir):
 
 
 def detect_color_from_text(text):
-    if "κόκκινο" in text or "red" in text:
+    if  "red" in text:
         return [1.0, 0.0, 0.0]
-    if "μπλε" in text or "blue" in text:
+    if  "blue" in text:
         return [0.0, 0.0, 1.0]
-    if "πράσινο" in text or "green" in text:
+    if "green" in text:
         return [0.0, 1.0, 0.0]
 
     return [0.8, 0.0, 0.8]
@@ -176,7 +193,7 @@ def apply_mock_ai_prompt(scene_ir, prompt: str):
         return new_ir
 
     # περίπτωση: "βάλε έναν ... κύβο"
-    if "κύβο" in text or "cube" in text:
+    if "cube" in text:
         new_cube = make_cube_node(new_ir, [0.0, 1.5, 0.0], color)
         ensure_scene_children(new_ir).append(new_cube)
         return new_ir
@@ -188,10 +205,11 @@ def handle_pending_ai_request():
     req = read_json(AI_REQUEST_FILE, default=None)
     if not req:
         return
-    print("[controller] AI request found:", req)
 
     if req.get("status") != "pending":
         return
+
+    print("[controller] AI request found:", req)
 
     request_id = req.get("request_id")
     prompt = req.get("prompt", "").strip()
@@ -215,12 +233,6 @@ def handle_pending_ai_request():
         req["preview_ir_file"] = PREVIEW_IR_FILE.name
         write_json(AI_REQUEST_FILE, req)
 
-        write_json(UI_STATE_FILE, {
-            "action": "preview_ready",
-            "request_id": request_id,
-            "message": "Preview is ready"
-        })
-
         print(f"[controller] Preview ready for request {request_id}")
 
     except Exception as e:
@@ -228,41 +240,59 @@ def handle_pending_ai_request():
         req["error"] = str(e)
         write_json(AI_REQUEST_FILE, req)
         print(f"[controller] Error: {e}")
-
+        traceback.print_exc()
 
 def handle_ui_actions():
     ui = read_json(UI_STATE_FILE, default=None)
     if not ui:
         return
-    print("[controller] UI action found:", ui)
+    
     action = ui.get("action")
+
+    if action in (None, "idle"):
+        return
+    print("[controller] UI action found:", ui)
 
     if action == "apply":
         try:
             promote_preview()
+            clear_preview()
+
             write_json(UI_STATE_FILE, {
-                "action": "applied",
-                "message": "Το preview έγινε επίσημη σκηνή."
+                "action": "idle"
             })
+
+            req = read_json(AI_REQUEST_FILE, default={}) or {}
+            if req:
+                req["status"] = "applied"
+                write_json(AI_REQUEST_FILE, req)
+
             print("[controller] Preview applied")
+
         except Exception as e:
             write_json(UI_STATE_FILE, {
                 "action": "error",
                 "message": str(e)
             })
-            print(f"[controller] Apply error: {e}")
+            print("[controller] Apply error:")
+            traceback.print_exc()
 
     elif action == "reject":
         clear_preview()
+
         write_json(UI_STATE_FILE, {
-            "action": "rejected",
-            "message": "Το preview απορρίφθηκε."
+            "action": "idle"
         })
+
+        req = read_json(AI_REQUEST_FILE, default={}) or {}
+        if req:
+            req["status"] = "rejected"
+            write_json(AI_REQUEST_FILE, req)
+
         print("[controller] Preview rejected")
 
 
 def main():
-    print("[controller] Mock AI controller started.")
     print("[controller] Mock AI controller started.")
     print("[controller] PROJECT_DIR =", PROJECT_DIR)
     print("[controller] SHARED_DIR  =", SHARED_DIR)
