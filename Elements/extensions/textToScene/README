@@ -139,10 +139,19 @@ The initial nodes are:
 4) imgui bottons for accept/reject
 
 
-## corrunt errors 
+Send to AI → γράφει ai_request.json
+Apply → γράφει ui_state.json με action apply
+Reject → γράφει ui_state.json με action reject
+
+
+## current errors 
 1) generated file is saved in desktop
-2) directional light DOESNT EVEN RUNNNNN - only compile ! DONE 
-3) add gui box in scene to add nodes '
-4) CustomImGUI and ImGUIecssDecorator2 incompatible cannot synchronize with elements ![alt text](image.png)
+2) directional light DOESNT work - only compile ! DONE 
+3) add gui box in scene to add nodes ' DONE
+4) CustomImGUI and ImGUIecssDecorator2 incompatible cannot synchronize with elements ! [alt text](image.png) DONE
+5) [controller] AI request found: {'request_id': 1, 'status': 'error', 'prompt': 'cube', 'error': "'path'"}
+[controller] UI action found: {'action': 'error', 'message': '[Errno 9] Bad file descriptor'}
+[controller] AI request found: {'request_id': 1, 'status': 'error', 'prompt': 'cube', 'error': "'path'"}
+
 
     

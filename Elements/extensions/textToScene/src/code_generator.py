@@ -114,8 +114,8 @@ def normalize_material(material):
     return normalized
 
 def is_textured_material(material):
-    tex= material.get("texture", {})
-    return bool(tex.get("enabled")) and  tex.get("path")
+    tex = material.get("texture") or {}
+    return bool(tex.get("enabled", False)) and bool(tex.get("path"))
 
 #-----------------------------
 #texture loading and emitting code generation for textured materials
@@ -469,6 +469,37 @@ show_editor_panel = True
 request_counter = 0
 
 ## helper function to write request to file 
+def read_json_file(path):
+    try: 
+        if not path.exists():
+            return None
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception as e:
+        print("Error reading JSON file " + str(path) + ": " + str(e))
+        return None
+
+def poll_backend_state():
+    global status_message
+    req = read_json_file(AI_REQUEST_FILE)
+    ui = read_json_file(UI_STATE_FILE)
+
+    if req: 
+        req_status = req.get("status")
+        if req_status == "preview_ready":
+            status_message = "Preview ready."
+        elif req_status == "error":
+            status_message = "AI error: " + str(req.get("error", "unknown error"))
+
+    if ui:
+        action = ui.get("action")
+        if action == "applied":
+            status_message = "Preview applied."
+        elif action == "rejected":
+            status_message = "Preview rejected."
+        elif action == "error":
+            status_message = "Controller error: " + str(ui.get("message", "unknown")) 
+
 def write_json_file(path, data):
     print("WRITING JSON TO:", path)
     print("DATA:", data)
@@ -596,6 +627,7 @@ while running:
 
     view = gWindow._myCamera
 {uniforms}
+    poll_backend_state()
     draw_editor_panel()
     scene.render_post()
 
@@ -790,7 +822,9 @@ def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr
     material = node["material"]
 
     position = transform["position"]
-    texture_path = material["texture"]["path"]
+    texture_path = (material.get("texture") or {}).get("path")
+    if not texture_path:
+        raise ValueError("Textured material is missing texture.path")
     suffix = str(idx)
 
     entity_var = "node_{}".format(suffix)
@@ -852,11 +886,24 @@ model_{suffix} = {world_trs_expr}
     
     return object_code, uniform_code, texture_set_up_code
 
+def check_ir_textures(node):
+    if not isinstance(node, dict):
+        return
 
+    if node.get("node_type") == "mesh_object":
+        material = node.setdefault("material", {})
+        texture = material.setdefault("texture", {})
+        texture.setdefault("enabled", False)
+        texture.setdefault("path", None)
+
+    for child in node.get("children", []):
+        check_ir_textures(child)
 # -----------------------------
 # Main public API
 # -----------------------------
 def generate_scene_script(scene_ir):
+    scene_ir = deepcopy(scene_ir)
+    check_ir_textures(scene_ir)
     scene_ir = validate_and_normalize_scene_ir(scene_ir)
 
     window = scene_ir["window"]
