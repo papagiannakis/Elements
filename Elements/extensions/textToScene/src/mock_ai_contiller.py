@@ -44,6 +44,16 @@ COLOR_TABLE = {
     "purple": [0.8, 0.0, 0.8],
 }
 
+SHAPE_WORDS = [
+    "cube",
+    "sphere",
+    "cylinder",
+    "cone",
+    "pyramid",
+    "plane",
+]
+
+
 DEFAULT_SCENE_IR = {
     "node_type": "scene",
     "name": "root",
@@ -138,28 +148,43 @@ def make_unique_name(scene_ir, prefix):
 
 
 def ensure_stable_object_ids(scene_ir):
-    used = set()
+    used_ids = set()
+    used_names = set()
+    next_order = 1
 
     for node in collect_mesh_objects(scene_ir):
-        name = node.get("name")
-        obj_id = node.get("id")
+        shape = str(node.get("shape", "object"))
 
+        name = node.get("name")
         if not name:
-            name = make_unique_name(scene_ir, node.get("shape", "object"))
+            name = make_unique_name(scene_ir, shape)
             node["name"] = name
 
-        if not obj_id:
-            obj_id = str(name)
+        name = str(name)
+        if name in used_names:
+            node["name"] = make_unique_name(scene_ir, shape)
+            name = node["name"]
+        used_names.add(name)
 
+        obj_id = node.get("id") or name
         base_id = str(obj_id)
         candidate = base_id
-        index = 2
-        while candidate in used:
-            candidate = base_id + "_" + str(index)
-            index += 1
+        suffix = 2
+
+        while candidate in used_ids:
+            candidate = base_id + "_" + str(suffix)
+            suffix += 1
 
         node["id"] = candidate
-        used.add(candidate)
+        used_ids.add(candidate)
+
+        try:
+            order = int(node.get("created_order"))
+        except Exception:
+            order = next_order
+
+        node["created_order"] = order
+        next_order = max(next_order, order + 1)
 
     return scene_ir
 
@@ -355,14 +380,26 @@ def resolve_target(scene_ir, prompt, prefer_color=None):
 
 def make_cube_node(scene_ir, position, color):
     name = make_unique_name(scene_ir, "cube")
+
     return {
         "node_type": "mesh_object",
         "name": name,
         "id": name,
+        "created_order": next_object_order(scene_ir),
         "shape": "cube",
-        "transform": {"position": position, "scale": [1.0, 1.0, 1.0]},
-        "material": {"color": color, "texture": {"enabled": False, "path": None}},
+        "transform": {
+            "position": position,
+            "scale": [1.0, 1.0, 1.0]
+        },
+        "material": {
+            "color": color,
+            "texture": {
+                "enabled": False,
+                "path": None
+            }
+        }
     }
+
 
 
 def remove_node_by_id(node, target_id):
