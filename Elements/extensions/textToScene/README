@@ -9,8 +9,6 @@ The system is based on a hierarchical **Intermediate Representation (scene IR)**
 
 The current version also includes an experimental **text-to-scene editing loop**. A generated scene contains a small ImGui editor panel where the user can type simple commands, preview the result, apply it, reject it, or undo the last applied change.
 
----
-
 ## Overview
 
 The project combines:
@@ -25,22 +23,23 @@ The project combines:
 - rule-based command parsing for simple editing commands
 - stable object names/IDs for deterministic targeting
 
----
-
 ## Current Features
 
 ### Scene Representation
+
 - Hierarchical scene representation using scene IR
 - Tree-based scene structure rather than a flat list of objects
 - Support for composite structures using groups
 - Prefab scene composition
 
 ### Code Generation
+
 - Deterministic Python code generation for Elements
 - Generated runnable Elements/OpenGL scene scripts
 - Shared support for preview and official scene generation
 
 ### Editing Workflow
+
 - In-scene ImGui editor panel
 - `Send to AI`, `Apply`, `Reject`, and `Undo` workflow
 - Preview scene generation before commit
@@ -49,11 +48,10 @@ The project combines:
 - Undo support through scene IR history
 
 ### Materials and Rendering
+
 - Basic material color support
 - Basic global lighting support
 - Textured cube support
-
----
 
 ## Supported IR Node Types
 
@@ -64,9 +62,7 @@ The current IR supports the following node types:
 - `mesh_object`
 - `light`
 
-> Note: the design also considers `camera` as part of the scene structure, but the currently supported IR node set in the editing pipeline is centered around the four node types above.
-
----
+The design also considers `camera` as part of the scene structure, but the current editing pipeline is centered around the four node types above.
 
 ## Supported Geometry Types
 
@@ -81,44 +77,232 @@ The geometry factory currently supports:
 - `pyramid`
 - `triangular_pyramid`
 
----
-
 ## Project Structure
 
 ```text
 extensions/textToScene
-├── README
-├── src
-│   ├── code_generator.py
-│   ├── geometry_factory.py
-│   ├── ir_schema.py
-│   ├── tester_1.py
-│   ├── mock_ai_contiller.py
-│   ├── supervisor.py
-│   ├── scene_ir.json
-│   ├── text_parser.py
-│   └── prefarbs
-│       └── prefarbs.py
-└── tests
+|-- README
+|-- src
+|   |-- code_generator.py
+|   |-- geometry_factory.py
+|   |-- ir_schema.py
+|   |-- tester_1.py
+|   |-- mock_ai_contiller.py
+|   |-- supervisor.py
+|   |-- scene_ir.json
+|   |-- text_parser.py
+|   |-- prefarbs
+|       |-- prefarbs.py
+|-- tests
+```
+
+## Main Architecture
+
+The editing loop is split into three parts.
+
+### Generated Scene
+
+`tester_1.py` generates the official scene script:
+
+```text
+Desktop/scene_out.py
+```
+
+The generated scene handles only:
+
+- rendering the scene
+- showing the ImGui editor panel
+- writing `ai_request.json`
+- writing `ui_state.json`
+- reading status from bridge files
+
+It does not inject OpenGL entities into the running process.
+
+### Controller
+
+`mock_ai_contiller.py` is the rule-based controller. It handles:
+
+- reading user commands from `ai_request.json`
+- parsing simple editing commands
+- updating scene IR
+- generating `preview_scene_ir.json`
+- generating `preview_scene.py`
+- applying or rejecting previews
+- saving and restoring undo history
+
+### Supervisor
+
+`supervisor.py` watches `scene_state.json` and switches processes:
+
+- official mode runs `Desktop/scene_out.py`
+- preview mode runs `Desktop/scene_bridge/preview_scene.py`
+
+This keeps preview stable by restarting the scene process instead of modifying OpenGL objects live.
+
+## Bridge Files
+
+The shared bridge folder is:
+
+```text
+Desktop/scene_bridge
+```
+
+Important files:
+
+```text
+scene_ir.json
+preview_scene_ir.json
+preview_scene.py
+ai_request.json
+ui_state.json
+scene_state.json
+history/undo_stack.json
+```
+
+## How to Run
+
+From:
+
+```text
+extensions/textToScene/src
+```
+
+Run these in separate terminals:
+
+```bash
+python tester_1.py
+```
+
+```bash
+python mock_ai_contiller.py
+```
+
+```bash
+python supervisor.py
+```
+
+Workflow:
+
+1. `tester_1.py` generates the official scene.
+2. `mock_ai_contiller.py` starts the controller.
+3. `supervisor.py` opens the official scene.
+4. Type a command in the scene UI.
+5. Click `Send to AI`.
+6. The controller generates a preview scene.
+7. The supervisor switches to the preview.
+8. Click `Apply`, `Reject`, or `Undo`.
+
+## Supported Commands
+
+The current parser is rule-based. Supported examples:
+
+```text
+add a red cube
+add a green cube to the right of the cube
+add a blue cube on top of the cube
+move the red cube to the right
+change the cube color to green
+delete the red cube
+```
+
+Supported object references:
+
+```text
+the cube
+the red cube
+the green sphere
+the first cube
+the last cube
+the most recently added object
+```
+
+If more than one object matches a reference, the controller chooses a predictable target and prints the selected object in the logs.
+
+## Preview, Apply, Reject, and Undo
+
+Preview writes:
+
+```text
+preview_scene_ir.json
+preview_scene.py
+```
+
+Apply promotes those exact preview files to the official files:
+
+```text
+preview_scene_ir.json -> scene_ir.json
+preview_scene.py -> Desktop/scene_out.py
+```
+
+Reject clears the preview files and returns to the official scene.
+
+Undo restores the previous official scene IR from:
+
+```text
+Desktop/scene_bridge/history
+```
+
+Then it regenerates `scene_out.py` and switches back to official mode.
+
+## Errors and Fixes
+
+Important problems fixed during development:
+
+- The generated footer used `.format()` on a large Python string and broke when literal braces appeared.
+- Live OpenGL/entity injection during preview caused instability and was removed.
+- Preview and Apply could diverge when placement was recomputed.
+- New cubes could overlap existing cubes, making them appear missing.
+- Stale bridge files could keep old pending or preview states.
+- The generated scene process lost the current `request_id` after supervisor restarts.
+- Apply and Reject needed to be synchronized through the controller.
+
+Current solution:
+
+- no live OpenGL injection
+- preview uses generated files and process restart
+- Apply promotes the exact preview files
+- new objects use deterministic non-overlapping placement
+- the UI reads current state from bridge files
+- the controller owns all scene IR changes
+- the supervisor only switches processes
+
+## Current Limitations
+
+- Rule-based command parsing only
+- No external LLM/API integration yet
+- Limited object types in text commands
+- Texture support is still basic
+- Lighting support is basic
+- More robust natural language parsing is planned
+- More prefab editing commands are planned
+
+## Planned Next Steps
+
+- Expand text-to-IR parsing
+- Add more object types to command parsing
+- Add prefab commands
+- Add better target selection
+- Add richer material and texture commands
+- Later, connect an LLM for structured scene generation
 
 ## PHASE 2 
-ΒΑΣΙΚΗ ΙΔΕΑ 
-Ωσ τώρα έχω το code generation που παράγει ένα αρχείο και ο χρήστης πρέπει να το τρέξει. θέλω να μπορεί ενώ τρέχει η σκηνή να μπορεί να γράφει σε ένα τετραγωνάκι μέσα στη σκηνή πχ βάλε έναν ακόμη κύβο πανω στον κύβο (που υπάρχει ήδη). το πρόγραμμα να προσθέτει τον κύβο και αν είναι όπως το θέλει ο χρήστης να πατάει τικ και να αποθηκέυεται το αρχείο μαζί με την προσθήκη. αλλιώς αν πατήσει χ να μην αποθηκευεται κάτι παραπάνω.
+Ξ’Ξ‘Ξ£Ξ™ΞΞ— Ξ™Ξ”Ξ•Ξ‘ 
+Ξ©Οƒ Ο„ΟΟΞ± Ξ­Ο‡Ο‰ Ο„ΞΏ code generation Ο€ΞΏΟ… Ο€Ξ±ΟΞ¬Ξ³ΞµΞΉ Ξ­Ξ½Ξ± Ξ±ΟΟ‡ΞµΞ―ΞΏ ΞΊΞ±ΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ Ο€ΟΞ­Ο€ΞµΞΉ Ξ½Ξ± Ο„ΞΏ Ο„ΟΞ­ΞΎΞµΞΉ. ΞΈΞ­Ξ»Ο‰ Ξ½Ξ± ΞΌΟ€ΞΏΟΞµΞ― ΞµΞ½Ο Ο„ΟΞ­Ο‡ΞµΞΉ Ξ· ΟƒΞΊΞ·Ξ½Ξ® Ξ½Ξ± ΞΌΟ€ΞΏΟΞµΞ― Ξ½Ξ± Ξ³ΟΞ¬Ο†ΞµΞΉ ΟƒΞµ Ξ­Ξ½Ξ± Ο„ΞµΟ„ΟΞ±Ξ³Ο‰Ξ½Ξ¬ΞΊΞΉ ΞΌΞ­ΟƒΞ± ΟƒΟ„Ξ· ΟƒΞΊΞ·Ξ½Ξ® Ο€Ο‡ Ξ²Ξ¬Ξ»Ξµ Ξ­Ξ½Ξ±Ξ½ Ξ±ΞΊΟΞΌΞ· ΞΊΟΞ²ΞΏ Ο€Ξ±Ξ½Ο‰ ΟƒΟ„ΞΏΞ½ ΞΊΟΞ²ΞΏ (Ο€ΞΏΟ… Ο…Ο€Ξ¬ΟΟ‡ΞµΞΉ Ξ®Ξ΄Ξ·). Ο„ΞΏ Ο€ΟΟΞ³ΟΞ±ΞΌΞΌΞ± Ξ½Ξ± Ο€ΟΞΏΟƒΞΈΞ­Ο„ΞµΞΉ Ο„ΞΏΞ½ ΞΊΟΞ²ΞΏ ΞΊΞ±ΞΉ Ξ±Ξ½ ΞµΞ―Ξ½Ξ±ΞΉ ΟΟ€Ο‰Ο‚ Ο„ΞΏ ΞΈΞ­Ξ»ΞµΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ Ξ½Ξ± Ο€Ξ±Ο„Ξ¬ΞµΞΉ Ο„ΞΉΞΊ ΞΊΞ±ΞΉ Ξ½Ξ± Ξ±Ο€ΞΏΞΈΞ·ΞΊΞ­Ο…ΞµΟ„Ξ±ΞΉ Ο„ΞΏ Ξ±ΟΟ‡ΞµΞ―ΞΏ ΞΌΞ±Ξ¶Ξ― ΞΌΞµ Ο„Ξ·Ξ½ Ο€ΟΞΏΟƒΞΈΞ®ΞΊΞ·. Ξ±Ξ»Ξ»ΞΉΟΟ‚ Ξ±Ξ½ Ο€Ξ±Ο„Ξ®ΟƒΞµΞΉ Ο‡ Ξ½Ξ± ΞΌΞ·Ξ½ Ξ±Ο€ΞΏΞΈΞ·ΞΊΞµΟ…ΞµΟ„Ξ±ΞΉ ΞΊΞ¬Ο„ΞΉ Ο€ΟΞ±Ο€Ξ¬Ξ½Ο‰.
 
-Τι φτιάχνω 
-1) μεταβλητή για το κειμενο που θα γράφει ο χρήστης 
-2) κουμπι send που θα καλεί το LLM 
-3) δυο κουμπιά Accept and reject που θα εμφανίζεται όταν έχει προσθεθεί κάτι στην σκηνή (επιπρόσθετο) 
-ΑΡΑ 
-1) αλλάζω header gia decorator imgui 
-2) πεδίο που για γράφει ο χρήστης --> imgui.imput_text
-3) ai_responce_ready flag όταν το API θα στείλει το JSON -->true + show_buttons
+Ξ¤ΞΉ Ο†Ο„ΞΉΞ¬Ο‡Ξ½Ο‰ 
+1) ΞΌΞµΟ„Ξ±Ξ²Ξ»Ξ·Ο„Ξ® Ξ³ΞΉΞ± Ο„ΞΏ ΞΊΞµΞΉΞΌΞµΞ½ΞΏ Ο€ΞΏΟ… ΞΈΞ± Ξ³ΟΞ¬Ο†ΞµΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ 
+2) ΞΊΞΏΟ…ΞΌΟ€ΞΉ send Ο€ΞΏΟ… ΞΈΞ± ΞΊΞ±Ξ»ΞµΞ― Ο„ΞΏ LLM 
+3) Ξ΄Ο…ΞΏ ΞΊΞΏΟ…ΞΌΟ€ΞΉΞ¬ Accept and reject Ο€ΞΏΟ… ΞΈΞ± ΞµΞΌΟ†Ξ±Ξ½Ξ―Ξ¶ΞµΟ„Ξ±ΞΉ ΟΟ„Ξ±Ξ½ Ξ­Ο‡ΞµΞΉ Ο€ΟΞΏΟƒΞΈΞµΞΈΞµΞ― ΞΊΞ¬Ο„ΞΉ ΟƒΟ„Ξ·Ξ½ ΟƒΞΊΞ·Ξ½Ξ® (ΞµΟ€ΞΉΟ€ΟΟΟƒΞΈΞµΟ„ΞΏ) 
+Ξ‘Ξ΅Ξ‘ 
+1) Ξ±Ξ»Ξ»Ξ¬Ξ¶Ο‰ header gia decorator imgui 
+2) Ο€ΞµΞ΄Ξ―ΞΏ Ο€ΞΏΟ… Ξ³ΞΉΞ± Ξ³ΟΞ¬Ο†ΞµΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ --> imgui.imput_text
+3) ai_responce_ready flag ΟΟ„Ξ±Ξ½ Ο„ΞΏ API ΞΈΞ± ΟƒΟ„ΞµΞ―Ξ»ΞµΞΉ Ο„ΞΏ JSON -->true + show_buttons
 4) imgui bottons for accept/reject
 
 
-Send to AI → γράφει ai_request.json
-Apply → γράφει ui_state.json με action apply
-Reject → γράφει ui_state.json με action reject
+Send to AI β†’ Ξ³ΟΞ¬Ο†ΞµΞΉ ai_request.json
+Apply β†’ Ξ³ΟΞ¬Ο†ΞµΞΉ ui_state.json ΞΌΞµ action apply
+Reject β†’ Ξ³ΟΞ¬Ο†ΞµΞΉ ui_state.json ΞΌΞµ action reject
 
 
 ## current errors 
@@ -145,4 +329,15 @@ Requirements:
      - preview_scene.py -> Desktop scene_out.py
    - Only after both files are updated should scene_state.json switch back to official mode.
  DONE 
-    
+
+
+
+
+
+
+
+
+
+
+ 
+ readme preview ctrl + shift + v
