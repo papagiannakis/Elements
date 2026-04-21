@@ -452,8 +452,6 @@ def build_footer(title, uniform_block, texture_set_up_block):
         for line in uniform_block.splitlines()
     )
 
-    # Deliberately avoid str.format() here.
-    # The generated scene contains many literal braces, so sentinel replacement is safer.
     footer_template = r'''
 import imgui
 import json
@@ -465,12 +463,15 @@ SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
 UI_STATE_FILE = SHARED_DIR / "ui_state.json"
+SCENE_STATE_FILE = SHARED_DIR / "scene_state.json"
 
 command_text = ""
 status_message = "Ready for input."
 show_editor_panel = True
 request_counter = 0
 current_request_id = None
+current_mode = "official"
+current_active_script = ""
 
 
 def read_json_file(path):
@@ -494,28 +495,39 @@ def write_json_file(path, data):
 def load_bridge_state():
     global request_counter
     global current_request_id
+    global current_mode
+    global current_active_script
 
     req = read_json_file(AI_REQUEST_FILE)
-    if not isinstance(req, dict):
-        return
+    if isinstance(req, dict):
+        try:
+            req_id = int(req.get("request_id", 0))
+            if req_id > 0:
+                request_counter = max(request_counter, req_id)
+                current_request_id = req_id
+        except Exception:
+            pass
 
-    try:
-        req_id = int(req.get("request_id", 0))
-    except Exception:
-        return
-
-    if req_id > 0:
-        request_counter = max(request_counter, req_id)
-        current_request_id = req_id
+    scene_state = read_json_file(SCENE_STATE_FILE)
+    if isinstance(scene_state, dict):
+        current_mode = str(scene_state.get("mode", "official"))
+        current_active_script = str(scene_state.get("active_script", ""))
 
 
 def poll_backend_state():
     global status_message
     global request_counter
     global current_request_id
+    global current_mode
+    global current_active_script
 
     req = read_json_file(AI_REQUEST_FILE)
     ui = read_json_file(UI_STATE_FILE)
+    scene_state = read_json_file(SCENE_STATE_FILE)
+
+    if isinstance(scene_state, dict):
+        current_mode = str(scene_state.get("mode", "official"))
+        current_active_script = str(scene_state.get("active_script", ""))
 
     if isinstance(req, dict):
         try:
@@ -577,6 +589,16 @@ def write_ui_action(action_name):
     write_json_file(UI_STATE_FILE, data)
 
 
+def display_active_script():
+    if not current_active_script:
+        return "(unknown)"
+
+    try:
+        return Path(current_active_script).name
+    except Exception:
+        return current_active_script
+
+
 def draw_editor_panel():
     global command_text
     global status_message
@@ -586,6 +608,14 @@ def draw_editor_panel():
         return
 
     imgui.begin("Scene Editor", True)
+
+    imgui.text("Mode: " + str(current_mode))
+    imgui.text("Request ID: " + (str(current_request_id) if current_request_id is not None else "(none)"))
+    imgui.text_wrapped("Active script: " + display_active_script())
+
+    imgui.spacing()
+    imgui.separator()
+    imgui.spacing()
 
     imgui.text("Write a command for the scene:")
     changed, command_text = imgui.input_text_multiline(
@@ -687,6 +717,7 @@ scene.shutdown()
         .replace("__POST_INIT_BLOCK__", texture_set_up_block)
         .replace("__UNIFORMS__", indented_uniforms)
     )
+
 # -----------------------------
 # Recursive node emission
 # -----------------------------

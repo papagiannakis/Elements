@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import time
 import traceback
 from copy import deepcopy
@@ -24,6 +25,9 @@ SCENE_OUT_FILE = Path.home() / "Desktop" / "scene_out.py"
 PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
 
 POLL_INTERVAL = 0.5
+GRID_SPACING = 1.5
+CUBE_Y = 0.5
+CUBE_Z = 0.0
 
 DEFAULT_SCENE_IR = {
     "node_type": "scene",
@@ -88,6 +92,19 @@ def write_text_atomic(path, text):
     os.replace(str(tmp_path), str(path))
 
 
+def copy_file_atomic(source_path, target_path):
+    source_path = Path(source_path)
+    target_path = Path(target_path)
+    target_path.parent.mkdir(parents=True, exist_ok=True)
+
+    if not source_path.exists():
+        raise FileNotFoundError("Missing source file: " + str(source_path))
+
+    tmp_path = target_path.with_suffix(target_path.suffix + ".tmp")
+    shutil.copyfile(str(source_path), str(tmp_path))
+    os.replace(str(tmp_path), str(target_path))
+
+
 def clear_preview_files():
     for path in (PREVIEW_IR_FILE, PREVIEW_SCENE_FILE):
         try:
@@ -114,6 +131,7 @@ def ensure_shared_scene_ir():
     baseline = load_project_baseline_ir()
     write_json(SCENE_IR_FILE, baseline)
     print("[controller] Initialized shared scene_ir.json from project baseline.")
+    print("[controller] official scene_ir path used:", SCENE_IR_FILE)
     return baseline
 
 
@@ -124,7 +142,7 @@ def ensure_official_scene_script():
 
     script = generate_scene_script(scene_ir)
     write_text_atomic(SCENE_OUT_FILE, script)
-    print("[controller] Created missing official scene_out.py.")
+    print("[controller] Created missing official scene_out.py:", SCENE_OUT_FILE)
 
 
 def normalize_startup_bridge_state():
@@ -138,28 +156,23 @@ def normalize_startup_bridge_state():
     })
 
     req = read_json(AI_REQUEST_FILE, default=None)
-    if isinstance(req, dict):
-        status = req.get("status")
-        if status in ("pending", "preview_ready"):
-            req["status"] = "stale"
-            req["message"] = "Cleared by controller startup."
-            req["updated_at"] = time.time()
-            write_json(AI_REQUEST_FILE, req)
+    if isinstance(req, dict) and req.get("status") in ("pending", "preview_ready"):
+        req["status"] = "stale"
+        req["message"] = "Cleared by controller startup."
+        req["updated_at"] = time.time()
+        write_json(AI_REQUEST_FILE, req)
 
-    write_json(SCENE_STATE_FILE, {
-        "mode": "official",
-        "active_script": str(SCENE_OUT_FILE),
-        "updated_at": time.time()
-    })
+    write_scene_state("official", SCENE_OUT_FILE)
 
 
 def load_scene_ir():
+    print("[controller] official scene_ir path used:", SCENE_IR_FILE)
     return ensure_shared_scene_ir()
 
 
 def save_preview_ir(scene_ir):
     write_json(PREVIEW_IR_FILE, scene_ir)
-    print("[controller] Saved preview IR to:", PREVIEW_IR_FILE)
+    print("[controller] preview scene_ir path used:", PREVIEW_IR_FILE)
 
 
 def save_preview_script(scene_ir):
@@ -168,7 +181,7 @@ def save_preview_script(scene_ir):
     print("[controller] Saved preview script to:", PREVIEW_SCENE_FILE)
 
 
-def promote_preview():
+def promote_preview_files_exactly():
     if not PREVIEW_IR_FILE.exists():
         raise FileNotFoundError("Missing preview_scene_ir.json")
     if not PREVIEW_SCENE_FILE.exists():
@@ -178,12 +191,14 @@ def promote_preview():
     if not isinstance(preview_ir, dict):
         raise ValueError("Could not read preview_scene_ir.json")
 
-    preview_script = PREVIEW_SCENE_FILE.read_text(encoding="utf-8")
+    print("[controller] Applying exact preview IR:", PREVIEW_IR_FILE)
+    print("[controller] Applying exact preview script:", PREVIEW_SCENE_FILE)
 
-    write_json(SCENE_IR_FILE, preview_ir)
-    write_text_atomic(SCENE_OUT_FILE, preview_script)
+    copy_file_atomic(PREVIEW_IR_FILE, SCENE_IR_FILE)
+    copy_file_atomic(PREVIEW_SCENE_FILE, SCENE_OUT_FILE)
 
-    print("[controller] Promoted preview successfully.")
+    print("[controller] Promoted preview IR to:", SCENE_IR_FILE)
+    print("[controller] Promoted preview script to:", SCENE_OUT_FILE)
 
 
 def collect_mesh_objects(node, out_list):
@@ -195,6 +210,56 @@ def collect_mesh_objects(node, out_list):
 
     for child in node.get("children", []):
         collect_mesh_objects(child, out_list)
+
+
+def collect_cube_positions(scene_ir):
+    meshes = []
+    positions = []
+    collect_mesh_objects(scene_ir, meshes)
+
+    for node in meshes:
+        if node.get("shape") != "cube":
+            continue
+
+        transform = node.get("transform", {})
+        position = transform.get("position")
+        if not isinstance(position, list) or len(position) != 3:
+            continue
+
+        try:
+            positions.append([
+                float(position[0]),
+                float(position[1]),
+                float(position[2])
+            ])
+        except Exception:
+            pass
+
+    return positions
+
+
+def find_next_free_cube_position(scene_ir):
+    used_slots = set()
+
+    for position in collect_cube_positions(scene_ir):
+        x = position[0]
+        y = position[1]
+        z = position[2]
+
+        if abs(y - CUBE_Y) > 0.01:
+            continue
+        if abs(z - CUBE_Z) > 0.01:
+            continue
+
+        slot = int(round(x / GRID_SPACING))
+        if abs(x - (slot * GRID_SPACING)) < 0.01 and slot >= 0:
+            used_slots.add(slot)
+
+    slot = 0
+    while slot in used_slots:
+        slot += 1
+
+    return [slot * GRID_SPACING, CUBE_Y, CUBE_Z]
 
 
 def find_first_cube(scene_ir):
@@ -282,8 +347,8 @@ def apply_mock_ai_prompt(scene_ir, prompt):
     new_ir = deepcopy(scene_ir)
     color = detect_color_from_text(text)
 
-    mentions_cube = "cube" in text or "κύβ" in text
-    mentions_on_top = "on top" in text or "πάνω" in text
+    mentions_cube = "cube" in text or "κύβ" in text or "κυβ" in text
+    mentions_on_top = "on top" in text or "πάνω" in text or "πανω" in text
 
     if mentions_cube and mentions_on_top:
         target_cube = find_first_cube(new_ir)
@@ -294,20 +359,23 @@ def apply_mock_ai_prompt(scene_ir, prompt):
         target_pos = target_transform.get("position", [0.0, 0.5, 0.0])
         target_scale = target_transform.get("scale", [1.0, 1.0, 1.0])
 
-        new_pos = [
+        position = [
             float(target_pos[0]),
             float(target_pos[1]) + float(target_scale[1]),
             float(target_pos[2])
         ]
+    elif mentions_cube:
+        position = find_next_free_cube_position(new_ir)
+    else:
+        raise ValueError("This mock controller currently supports cube commands only.")
 
-        ensure_scene_children(new_ir).append(make_cube_node(new_ir, new_pos, color))
-        return new_ir
+    cube = make_cube_node(new_ir, position, color)
+    ensure_scene_children(new_ir).append(cube)
 
-    if mentions_cube:
-        ensure_scene_children(new_ir).append(make_cube_node(new_ir, [0.0, 1.5, 0.0], color))
-        return new_ir
+    print("[controller] Added cube:", cube["name"])
+    print("[controller] Added cube position:", position)
 
-    raise ValueError("This mock controller currently supports cube commands only.")
+    return new_ir
 
 
 def write_scene_state(mode, active_script, request_id=None):
@@ -359,11 +427,7 @@ def handle_pending_ai_request():
         save_preview_ir(preview_ir)
         save_preview_script(preview_ir)
 
-        mark_request_status(
-            req,
-            "preview_ready",
-            message="Preview generated."
-        )
+        mark_request_status(req, "preview_ready", message="Preview generated.")
 
         write_scene_state("preview", PREVIEW_SCENE_FILE, request_id=request_id)
         print("[controller] Preview ready for request", request_id)
@@ -377,8 +441,7 @@ def handle_pending_ai_request():
 def handle_apply(ui):
     request_id = ui.get("request_id")
 
-    promote_preview()
-    clear_preview_files()
+    promote_preview_files_exactly()
 
     write_json(UI_STATE_FILE, {
         "action": "idle",
@@ -391,6 +454,8 @@ def handle_apply(ui):
         mark_request_status(req, "applied", message="Preview applied.")
 
     write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
+
+    clear_preview_files()
     print("[controller] Preview applied.")
 
 
@@ -454,7 +519,8 @@ def main():
     print("[controller] PROJECT_DIR =", PROJECT_DIR)
     print("[controller] PROJECT_SCENE_IR_FILE =", PROJECT_SCENE_IR_FILE)
     print("[controller] SHARED_DIR =", SHARED_DIR)
-    print("[controller] SCENE_IR_FILE =", SCENE_IR_FILE)
+    print("[controller] official scene_ir path used:", SCENE_IR_FILE)
+    print("[controller] preview scene_ir path used:", PREVIEW_IR_FILE)
     print("[controller] SCENE_OUT_FILE =", SCENE_OUT_FILE)
     print("[controller] PREVIEW_SCENE_FILE =", PREVIEW_SCENE_FILE)
     print("[controller] SCENE_STATE_FILE =", SCENE_STATE_FILE)
