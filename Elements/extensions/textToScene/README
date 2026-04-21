@@ -153,5 +153,19 @@ Reject → γράφει ui_state.json με action reject
 [controller] UI action found: {'action': 'error', 'message': '[Errno 9] Bad file descriptor'}
 [controller] AI request found: {'request_id': 1, 'status': 'error', 'prompt': 'cube', 'error': "'path'"}
 
+Observed problems:
+1. I type e.g. "red cube", the preview opens and shows the red cube in one position.
+2. Then I click Apply, it switches back to the official scene, but the cube appears in a different position than in the preview.
+3. Then if I type e.g. "green cube", I can see a new node in the hierarchy, but the cube is not visibly rendered.
+
+Requirements:
+1. Preview and Apply must be visually identical.
+   - Apply must NOT recompute placement.
+   - Apply must NOT regenerate from a different baseline.
+   - The preview_scene_ir.json and preview_scene.py must be treated as the exact source of truth for Apply.
+   - On Apply, atomically promote:
+     - preview_scene_ir.json -> official shared scene_ir.json
+     - preview_scene.py -> Desktop scene_out.py
+   - Only after both files are updated should scene_state.json switch back to official mode.
 
     
