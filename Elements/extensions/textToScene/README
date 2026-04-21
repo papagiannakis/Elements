@@ -1,128 +1,105 @@
-********************
-csd5116
-elisavet Kourkounaki 
-********************
+# Text to Scene: Code Generator Using an Intermediate Representation (IR)
 
-# Text to scene: Code generator using intermidiate representation IR 
-- This project is my undergraduate theses and aims to generate executable Python code for the Elements graphics framework 
-from structured scene representations.
-- The current system uses hierarchical Intermediate Representation (IR) and a code generator to produce runnable 3D scenes
+**csd5116**  
+**Elisavet Kourkounaki**
 
- ## Current Features
+This project is my undergraduate thesis. It generates executable Python scene files for the **Elements** graphics framework from structured scene representations.
 
- - Hierarchical scene representation (scene tree)
- - Deterministic code generator for the Elements framework
- - Support for:
-    - scene nodes 
-    - group nodes
-    - mesh_objects nodes
-- Geometry factory support for: 
-    - cube 
-    - rechtagnular prism 
-    - plane
-    - sphere
-    - cylinder
-    - cone
-    - pyramid
-    - triangular_pyramid
-- Composite site sctructures using groups
-- Prefab scene composition (house, tree, box, street light)
+The system is based on a hierarchical **Intermediate Representation (scene IR)**. The IR describes the scene as a tree of nodes, and `code_generator.py` converts that tree into a runnable Elements/OpenGL Python script.
 
-## Project Structure 
+The current version also includes an experimental **text-to-scene editing loop**. A generated scene contains a small ImGui editor panel where the user can type simple commands, preview the result, apply it, reject it, or undo the last applied change.
 
-```text 
-Elements\extentions\textToScene
-│   README
-│
-├───src
-│   │   code_generator.py
-│   │   geometry_factory.py
-│   │   ir_schema.py
-│   │   main.py
-│   │   tester2_group.py
-│   │   tester3_geom1.py
-│   │   tester4_allShapes.py
-│   │   tester_1.py
-│   │   text_parser.py
-│   │
-│   └───prefarbs
-│           prefarbs.py
-│
-└───tests
-```
-## Example Hierarchical IR 
+---
 
-```python
-scene_ir = {
-    "node_type": "scene",
-    "name": "root",
-    "window": {
-        "width": 1200,
-        "height": 800,
-        "title": "Example Scene"
-    },
-    "children": [
-        {
-            "node_type": "mesh_object",
-            "name": "cube1",
-            "shape": "cube",
-            "transform": {
-                "position": [0.0, 0.5, 0.0],
-                "scale": [1.0, 1.0, 1.0]
-            },
-            "material": {
-                "color": [0.8, 0.0, 0.8]
-            }
-        }
-    ]
-}
+## Overview
 
-```
-### 6. How to run 
-``` md 
-1. activate the Python elements environment
-2. Run a tester file, for example: 
-```bash
-python tester_house.py 
-```
-``` md 
-3. This generates a Python scene script scene_out.py 
- 
-4. Execute the file with 
-``` bash 
-python C:\Users\yanni\Desktop\scene_out.py
+The project combines:
 
-```
-## Current limitations
+- hierarchical scene representation through scene IR
+- deterministic Python code generation for Elements
+- generated Elements/OpenGL scene scripts
+- an in-scene ImGui editor panel
+- a file-based bridge between the scene UI, the controller, and the supervisor
+- preview/apply/reject workflow using process restart
+- undo support using saved scene IR history
+- rule-based command parsing for simple editing commands
+- stable object names/IDs for deterministic targeting
 
-LOCATION of the generated file is wrong RESTRICTIONS !!!!
-MUST CHANGEEEEEEEEEE!!!!!
+---
 
-- No natural language parsing yet
-- No LLM intergation yet 
-- No texture pipeline yet 
-- No online texture retrieval yet 
-- Lighting support is basic and global
-- Add prefab support for house tree and gift box 
-- Add light nodes (point , directional, spot)
-- Add tecture support 
+## Current Features
 
-## Planned Next Steps
-- Add text-to-hierarchical-IR parsing 
-- ML/LLM stractured scene generation 
+### Scene Representation
+- Hierarchical scene representation using scene IR
+- Tree-based scene structure rather than a flat list of objects
+- Support for composite structures using groups
+- Prefab scene composition
 
+### Code Generation
+- Deterministic Python code generation for Elements
+- Generated runnable Elements/OpenGL scene scripts
+- Shared support for preview and official scene generation
 
-### notes for me 
-Addjust to a better solution 
-The idea:
-scene is not just a list of objects but a tree with nodes.
-The initial nodes are:
-    - scene
-    - group
-    - mesh_object
-    - camera
-    - light
+### Editing Workflow
+- In-scene ImGui editor panel
+- `Send to AI`, `Apply`, `Reject`, and `Undo` workflow
+- Preview scene generation before commit
+- File-based communication between the UI and backend processes
+- Supervisor-based scene switching through process restart
+- Undo support through scene IR history
 
+### Materials and Rendering
+- Basic material color support
+- Basic global lighting support
+- Textured cube support
+
+---
+
+## Supported IR Node Types
+
+The current IR supports the following node types:
+
+- `scene`
+- `group`
+- `mesh_object`
+- `light`
+
+> Note: the design also considers `camera` as part of the scene structure, but the currently supported IR node set in the editing pipeline is centered around the four node types above.
+
+---
+
+## Supported Geometry Types
+
+The geometry factory currently supports:
+
+- `cube`
+- `rectangular prism`
+- `plane`
+- `sphere`
+- `cylinder`
+- `cone`
+- `pyramid`
+- `triangular_pyramid`
+
+---
+
+## Project Structure
+
+```text
+extensions/textToScene
+├── README
+├── src
+│   ├── code_generator.py
+│   ├── geometry_factory.py
+│   ├── ir_schema.py
+│   ├── tester_1.py
+│   ├── mock_ai_contiller.py
+│   ├── supervisor.py
+│   ├── scene_ir.json
+│   ├── text_parser.py
+│   └── prefarbs
+│       └── prefarbs.py
+└── tests
 
 ## PHASE 2 
 ΒΑΣΙΚΗ ΙΔΕΑ 
