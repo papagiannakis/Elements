@@ -1,4 +1,5 @@
 # code_generator.py
+import json
 from copy import deepcopy
 from pathlib import Path
 from turtle import position
@@ -451,9 +452,12 @@ def build_footer(title, uniform_block, texture_set_up_block):
         for line in uniform_block.splitlines()
     )
 
-    return '''    
+    # Deliberately avoid str.format() here.
+    # The generated scene contains many literal braces, so sentinel replacement is safer.
+    footer_template = r'''
 import imgui
 import json
+import time
 from pathlib import Path
 
 SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
@@ -466,27 +470,67 @@ command_text = ""
 status_message = "Ready for input."
 show_editor_panel = True
 request_counter = 0
+current_request_id = None
+
 
 def read_json_file(path):
     try:
         if not path.exists():
             return None
-        with open(path, "r", encoding="utf-8") as f:
+        with open(str(path), "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception as e:
         print("Error reading JSON file " + str(path) + ": " + str(e))
         return None
 
+
+def write_json_file(path, data):
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(str(tmp_path), "w", encoding="utf-8") as f:
+        json.dump(data, f, indent=2, ensure_ascii=False)
+    tmp_path.replace(path)
+
+
+def load_bridge_state():
+    global request_counter
+    global current_request_id
+
+    req = read_json_file(AI_REQUEST_FILE)
+    if not isinstance(req, dict):
+        return
+
+    try:
+        req_id = int(req.get("request_id", 0))
+    except Exception:
+        return
+
+    if req_id > 0:
+        request_counter = max(request_counter, req_id)
+        current_request_id = req_id
+
+
 def poll_backend_state():
     global status_message
+    global request_counter
+    global current_request_id
 
     req = read_json_file(AI_REQUEST_FILE)
     ui = read_json_file(UI_STATE_FILE)
 
-    if req:
+    if isinstance(req, dict):
+        try:
+            req_id = int(req.get("request_id", 0))
+            if req_id > 0:
+                request_counter = max(request_counter, req_id)
+                current_request_id = req_id
+        except Exception:
+            pass
+
         req_status = req.get("status")
 
-        if req_status == "preview_ready":
+        if req_status == "pending":
+            status_message = "Request sent. Waiting for preview."
+        elif req_status == "preview_ready":
             status_message = "Preview ready. The window will refresh automatically."
         elif req_status == "applied":
             status_message = "Scene applied successfully."
@@ -495,46 +539,48 @@ def poll_backend_state():
         elif req_status == "error":
             status_message = "AI error: " + str(req.get("error", "unknown error"))
 
-    if ui:
-        action = ui.get("action")
+    if isinstance(ui, dict) and ui.get("action") == "error":
+        status_message = "Controller error: " + str(ui.get("message", "unknown"))
 
-        if action == "error":
-            status_message = "Controller error: " + str(ui.get("message", "unknown"))
-
-def write_json_file(path, data):
-    print("WRITING JSON TO:", path)
-    print("DATA:", data)
-    with open(path, "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
 
 def write_ai_request(prompt_text):
     global request_counter
+    global current_request_id
+
+    load_bridge_state()
 
     request_counter += 1
+    current_request_id = request_counter
 
-    data = {{
+    data = {
         "request_id": request_counter,
         "status": "pending",
-        "prompt": prompt_text
-    }}
+        "prompt": prompt_text,
+        "created_at": time.time()
+    }
 
     write_json_file(AI_REQUEST_FILE, data)
     return request_counter
 
-def write_ui_action(action_name, request_id=None):
-    data = {{
-        "action": action_name
-    }}
+
+def write_ui_action(action_name):
+    request_id = current_request_id
+
+    data = {
+        "action": action_name,
+        "created_at": time.time()
+    }
 
     if request_id is not None:
         data["request_id"] = request_id
 
     write_json_file(UI_STATE_FILE, data)
 
+
 def draw_editor_panel():
-    global command_text, status_message
+    global command_text
+    global status_message
     global show_editor_panel
-    global request_counter
 
     if not show_editor_panel:
         return
@@ -566,7 +612,7 @@ def draw_editor_panel():
 
     if imgui.button("Apply", width=100):
         try:
-            write_ui_action("apply", request_id=request_counter)
+            write_ui_action("apply")
             status_message = "Apply sent to controller."
         except Exception as e:
             status_message = "Apply failed: " + str(e)
@@ -575,7 +621,7 @@ def draw_editor_panel():
 
     if imgui.button("Reject", width=100):
         try:
-            write_ui_action("reject", request_id=request_counter)
+            write_ui_action("reject")
             status_message = "Reject sent to controller."
         except Exception as e:
             status_message = "Reject failed: " + str(e)
@@ -591,18 +637,21 @@ def draw_editor_panel():
 
     imgui.end()
 
+
 running = True
+load_bridge_state()
+
 scene.init(
     imgui=True,
     windowWidth=winWidth,
     windowHeight=winHeight,
-    windowTitle="{title}",
+    windowTitle=__WINDOW_TITLE_LITERAL__,
     openGLversion=4,
     customImGUIdecorator=ImGUIecssDecorator2
 )
 
 scene.world.traverse_visit(initUpdate, scene.world.root)
-{post_init_block}
+__POST_INIT_BLOCK__
 
 eManager = scene.world.eventManager
 gWindow = scene.renderWindow
@@ -624,16 +673,19 @@ while running:
     scene.world.traverse_visit(camUpdate, scene.world.root)
 
     view = gWindow._myCamera
-{uniforms}
+__UNIFORMS__
     poll_backend_state()
     draw_editor_panel()
     scene.render_post()
 
 scene.shutdown()
-'''.format(
-        title=title,
-        uniforms=indented_uniforms,
-        post_init_block=texture_set_up_block
+'''
+
+    return (
+        footer_template
+        .replace("__WINDOW_TITLE_LITERAL__", json.dumps(title))
+        .replace("__POST_INIT_BLOCK__", texture_set_up_block)
+        .replace("__UNIFORMS__", indented_uniforms)
     )
 # -----------------------------
 # Recursive node emission

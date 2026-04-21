@@ -1,11 +1,16 @@
 import json
+import os
 import time
+import traceback
 from copy import deepcopy
 from pathlib import Path
-import traceback 
 
 from code_generator import generate_scene_script
+
+
 PROJECT_DIR = Path(__file__).resolve().parent
+PROJECT_SCENE_IR_FILE = PROJECT_DIR / "scene_ir.json"
+
 SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
 SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -14,76 +19,171 @@ PREVIEW_IR_FILE = SHARED_DIR / "preview_scene_ir.json"
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
 UI_STATE_FILE = SHARED_DIR / "ui_state.json"
 SCENE_STATE_FILE = SHARED_DIR / "scene_state.json"
+
 SCENE_OUT_FILE = Path.home() / "Desktop" / "scene_out.py"
 PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
 
-def read_json(path: Path, default=None):
+POLL_INTERVAL = 0.5
+
+DEFAULT_SCENE_IR = {
+    "node_type": "scene",
+    "name": "root",
+    "window": {
+        "width": 1200,
+        "height": 800,
+        "title": "Hierarchical Cube Scene"
+    },
+    "children": [
+        {
+            "node_type": "mesh_object",
+            "name": "cube1",
+            "shape": "cube",
+            "transform": {
+                "position": [0.0, 0.5, 0.0],
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "material": {
+                "color": [0.8, 0.0, 0.8],
+                "texture": {
+                    "enabled": False,
+                    "path": None
+                }
+            }
+        }
+    ]
+}
+
+
+def read_json(path, default=None):
     path = Path(path)
     if not path.exists():
         return default
 
-    with open(path, "r", encoding="utf-8") as f:
-        return json.load(f)
+    try:
+        with open(str(path), "r", encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return default
 
 
-def write_json(path: Path, data):
+def write_json(path, data):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    print("[write_json] writing to", path)
 
-    with open(path, "w", encoding="utf-8") as f:
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(str(tmp_path), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+    os.replace(str(tmp_path), str(path))
+
+
+def write_text_atomic(path, text):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(str(tmp_path), "w", encoding="utf-8") as f:
+        f.write(text)
+
+    os.replace(str(tmp_path), str(path))
+
+
+def clear_preview_files():
+    for path in (PREVIEW_IR_FILE, PREVIEW_SCENE_FILE):
+        try:
+            if path.exists():
+                path.unlink()
+        except Exception:
+            pass
+
+
+def load_project_baseline_ir():
+    data = read_json(PROJECT_SCENE_IR_FILE, default=None)
+    if isinstance(data, dict):
+        return data
+
+    print("[controller] Project baseline scene_ir.json missing or invalid; using built-in fallback.")
+    return deepcopy(DEFAULT_SCENE_IR)
+
+
+def ensure_shared_scene_ir():
+    data = read_json(SCENE_IR_FILE, default=None)
+    if isinstance(data, dict):
+        return data
+
+    baseline = load_project_baseline_ir()
+    write_json(SCENE_IR_FILE, baseline)
+    print("[controller] Initialized shared scene_ir.json from project baseline.")
+    return baseline
+
+
+def ensure_official_scene_script():
+    scene_ir = ensure_shared_scene_ir()
+    if SCENE_OUT_FILE.exists():
+        return
+
+    script = generate_scene_script(scene_ir)
+    write_text_atomic(SCENE_OUT_FILE, script)
+    print("[controller] Created missing official scene_out.py.")
+
+
+def normalize_startup_bridge_state():
+    ensure_shared_scene_ir()
+    ensure_official_scene_script()
+    clear_preview_files()
+
+    write_json(UI_STATE_FILE, {
+        "action": "idle",
+        "created_at": time.time()
+    })
+
+    req = read_json(AI_REQUEST_FILE, default=None)
+    if isinstance(req, dict):
+        status = req.get("status")
+        if status in ("pending", "preview_ready"):
+            req["status"] = "stale"
+            req["message"] = "Cleared by controller startup."
+            req["updated_at"] = time.time()
+            write_json(AI_REQUEST_FILE, req)
+
+    write_json(SCENE_STATE_FILE, {
+        "mode": "official",
+        "active_script": str(SCENE_OUT_FILE),
+        "updated_at": time.time()
+    })
 
 
 def load_scene_ir():
-    data = read_json(SCENE_IR_FILE, default=None)
-    if data is not None:
-        return data
+    return ensure_shared_scene_ir()
 
-    data = read_json(PROJECT_SCENE_IR_FILE, default=None)
-    if data is not None:
-        print("[controller] Using fallback project scene_ir.json")
-        return data
-
-    raise FileNotFoundError("Δεν βρέθηκε scene_ir.json ούτε στο shared folder ούτε στο project folder")
 
 def save_preview_ir(scene_ir):
     write_json(PREVIEW_IR_FILE, scene_ir)
     print("[controller] Saved preview IR to:", PREVIEW_IR_FILE)
 
+
 def save_preview_script(scene_ir):
     script = generate_scene_script(scene_ir)
-    PREVIEW_SCENE_FILE.write_text(script, encoding="utf-8")
+    write_text_atomic(PREVIEW_SCENE_FILE, script)
     print("[controller] Saved preview script to:", PREVIEW_SCENE_FILE)
-    
+
+
 def promote_preview():
     if not PREVIEW_IR_FILE.exists():
-        raise FileNotFoundError("Δεν υπάρχει preview_scene_ir.json")
+        raise FileNotFoundError("Missing preview_scene_ir.json")
     if not PREVIEW_SCENE_FILE.exists():
-        raise FileNotFoundError("Δεν υπάρχει preview_scene.py")
+        raise FileNotFoundError("Missing preview_scene.py")
 
-    print("[controller] READING PREVIEW IR FROM", PREVIEW_IR_FILE)
     preview_ir = read_json(PREVIEW_IR_FILE, default=None)
-    if preview_ir is None:
-        raise ValueError("Δεν μπόρεσα να διαβάσω το preview_scene_ir.json")
-
-    print("[controller] Writing official scene IR to:", SCENE_IR_FILE)
-    SCENE_IR_FILE.write_text(
-        json.dumps(preview_ir, indent=2, ensure_ascii=False),
-        encoding="utf-8"
-    )
+    if not isinstance(preview_ir, dict):
+        raise ValueError("Could not read preview_scene_ir.json")
 
     preview_script = PREVIEW_SCENE_FILE.read_text(encoding="utf-8")
-    print("[controller] Writing official scene script to:", SCENE_OUT_FILE)
-    SCENE_OUT_FILE.write_text(preview_script, encoding="utf-8")
 
-    print("[controller] Promoted preview successfully")
-    
-def clear_preview():
-    if PREVIEW_IR_FILE.exists():
-        PREVIEW_IR_FILE.unlink()
-    if PREVIEW_SCENE_FILE.exists():
-        PREVIEW_SCENE_FILE.unlink()
+    write_json(SCENE_IR_FILE, preview_ir)
+    write_text_atomic(SCENE_OUT_FILE, preview_script)
+
+    print("[controller] Promoted preview successfully.")
 
 
 def collect_mesh_objects(node, out_list):
@@ -108,7 +208,7 @@ def find_first_cube(scene_ir):
     return None
 
 
-def make_unique_name(scene_ir, prefix="cube"):
+def make_unique_name(scene_ir, prefix):
     existing = set()
 
     def walk(node):
@@ -124,25 +224,36 @@ def make_unique_name(scene_ir, prefix="cube"):
 
     walk(scene_ir)
 
-    i = 1
-    while f"{prefix}_{i}" in existing:
-        i += 1
-    return f"{prefix}_{i}"
+    index = 1
+    while prefix + "_" + str(index) in existing:
+        index += 1
+
+    return prefix + "_" + str(index)
 
 
 def ensure_scene_children(scene_ir):
-    if "children" not in scene_ir or not isinstance(scene_ir["children"], list):
-        scene_ir["children"] = []
-    return scene_ir["children"]
+    children = scene_ir.get("children")
+    if not isinstance(children, list):
+        children = []
+        scene_ir["children"] = children
+    return children
 
 
 def detect_color_from_text(text):
-    if  "red" in text:
+    text = text.lower()
+
+    if "red" in text:
         return [1.0, 0.0, 0.0]
-    if  "blue" in text:
+    if "blue" in text:
         return [0.0, 0.0, 1.0]
     if "green" in text:
         return [0.0, 1.0, 0.0]
+    if "yellow" in text:
+        return [1.0, 1.0, 0.0]
+    if "white" in text:
+        return [1.0, 1.0, 1.0]
+    if "black" in text:
+        return [0.02, 0.02, 0.02]
 
     return [0.8, 0.0, 0.8]
 
@@ -166,22 +277,22 @@ def make_cube_node(scene_ir, position, color):
     }
 
 
-def apply_mock_ai_prompt(scene_ir, prompt: str):
-    """
-    Rule-based 'fake AI' για δοκιμές χωρίς API key.
-    """
+def apply_mock_ai_prompt(scene_ir, prompt):
     text = prompt.lower().strip()
     new_ir = deepcopy(scene_ir)
     color = detect_color_from_text(text)
 
-    # περίπτωση: "βάλε έναν ... κύβο πάνω στον κύβο"
-    if ("κύβο" in text or "cube" in text) and ("πάνω" in text or "on top" in text):
+    mentions_cube = "cube" in text or "κύβ" in text
+    mentions_on_top = "on top" in text or "πάνω" in text
+
+    if mentions_cube and mentions_on_top:
         target_cube = find_first_cube(new_ir)
         if target_cube is None:
-            raise ValueError("Δεν βρήκα υπάρχοντα κύβο για να βάλω άλλον πάνω του.")
+            raise ValueError("No existing cube found to place another cube on top of.")
 
-        target_pos = target_cube.get("transform", {}).get("position", [0.0, 0.5, 0.0])
-        target_scale = target_cube.get("transform", {}).get("scale", [1.0, 1.0, 1.0])
+        target_transform = target_cube.get("transform", {})
+        target_pos = target_transform.get("position", [0.0, 0.5, 0.0])
+        target_scale = target_transform.get("scale", [1.0, 1.0, 1.0])
 
         new_pos = [
             float(target_pos[0]),
@@ -189,36 +300,56 @@ def apply_mock_ai_prompt(scene_ir, prompt: str):
             float(target_pos[2])
         ]
 
-        new_cube = make_cube_node(new_ir, new_pos, color)
-        ensure_scene_children(new_ir).append(new_cube)
+        ensure_scene_children(new_ir).append(make_cube_node(new_ir, new_pos, color))
         return new_ir
 
-    # περίπτωση: "βάλε έναν ... κύβο"
-    if "cube" in text:
-        new_cube = make_cube_node(new_ir, [0.0, 1.5, 0.0], color)
-        ensure_scene_children(new_ir).append(new_cube)
+    if mentions_cube:
+        ensure_scene_children(new_ir).append(make_cube_node(new_ir, [0.0, 1.5, 0.0], color))
         return new_ir
 
-    raise ValueError("Δεν υποστηρίζεται ακόμα αυτή η εντολή.")
+    raise ValueError("This mock controller currently supports cube commands only.")
+
+
+def write_scene_state(mode, active_script, request_id=None):
+    data = {
+        "mode": mode,
+        "active_script": str(active_script),
+        "updated_at": time.time()
+    }
+
+    if request_id is not None:
+        data["request_id"] = request_id
+
+    write_json(SCENE_STATE_FILE, data)
+
+
+def mark_request_status(req, status, message=None, error=None):
+    req["status"] = status
+    req["updated_at"] = time.time()
+
+    if message is not None:
+        req["message"] = message
+    if error is not None:
+        req["error"] = error
+
+    write_json(AI_REQUEST_FILE, req)
 
 
 def handle_pending_ai_request():
     req = read_json(AI_REQUEST_FILE, default=None)
-    if not req:
+    if not isinstance(req, dict):
         return
 
     if req.get("status") != "pending":
         return
 
+    request_id = req.get("request_id")
+    prompt = str(req.get("prompt", "")).strip()
+
     print("[controller] AI request found:", req)
 
-    request_id = req.get("request_id")
-    prompt = req.get("prompt", "").strip()
-
     if not prompt:
-        req["status"] = "error"
-        req["error"] = "Empty prompt"
-        write_json(AI_REQUEST_FILE, req)
+        mark_request_status(req, "error", error="Empty prompt")
         return
 
     try:
@@ -228,112 +359,113 @@ def handle_pending_ai_request():
         save_preview_ir(preview_ir)
         save_preview_script(preview_ir)
 
-        req["status"] = "preview_ready"
-        req["message"] = "Το preview δημιουργήθηκε."
-        req["preview_file"] = PREVIEW_SCENE_FILE.name
-        req["preview_ir_file"] = PREVIEW_IR_FILE.name
-        write_json(AI_REQUEST_FILE, req)
+        mark_request_status(
+            req,
+            "preview_ready",
+            message="Preview generated."
+        )
 
-        # ΕΔΩ μπαίνει το scene_state update για preview mode
-        write_json(SCENE_STATE_FILE, {
-            "mode": "preview",
-            "active_script": str(PREVIEW_SCENE_FILE),
-            "request_id": request_id
-        })
-
-        print(f"[controller] Preview ready for request {request_id}")
+        write_scene_state("preview", PREVIEW_SCENE_FILE, request_id=request_id)
+        print("[controller] Preview ready for request", request_id)
 
     except Exception as e:
-        req["status"] = "error"
-        req["error"] = str(e)
-        write_json(AI_REQUEST_FILE, req)
-        print(f"[controller] Error: {e}")
+        mark_request_status(req, "error", error=str(e))
+        print("[controller] Error while generating preview:", e)
         traceback.print_exc()
+
+
+def handle_apply(ui):
+    request_id = ui.get("request_id")
+
+    promote_preview()
+    clear_preview_files()
+
+    write_json(UI_STATE_FILE, {
+        "action": "idle",
+        "request_id": request_id,
+        "updated_at": time.time()
+    })
+
+    req = read_json(AI_REQUEST_FILE, default=None)
+    if isinstance(req, dict):
+        mark_request_status(req, "applied", message="Preview applied.")
+
+    write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
+    print("[controller] Preview applied.")
+
+
+def handle_reject(ui):
+    request_id = ui.get("request_id")
+
+    clear_preview_files()
+
+    write_json(UI_STATE_FILE, {
+        "action": "idle",
+        "request_id": request_id,
+        "updated_at": time.time()
+    })
+
+    req = read_json(AI_REQUEST_FILE, default=None)
+    if isinstance(req, dict):
+        mark_request_status(req, "rejected", message="Preview rejected.")
+
+    write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
+    print("[controller] Preview rejected.")
+
 
 def handle_ui_actions():
     ui = read_json(UI_STATE_FILE, default=None)
-    if not ui:
+    if not isinstance(ui, dict):
         return
 
     action = ui.get("action")
-
     if action in (None, "idle", "error"):
         return
 
     print("[controller] UI action found:", ui)
 
-    if action == "apply":
-        try:
-            promote_preview()
-            clear_preview()
-
-            write_json(UI_STATE_FILE, {
-                "action": "idle"
-            })
-
-            req = read_json(AI_REQUEST_FILE, default={}) or {}
-            if req:
-                req["status"] = "applied"
-                write_json(AI_REQUEST_FILE, req)
-
-            # ΕΔΩ μπαίνει το scene_state update για official mode
-            write_json(SCENE_STATE_FILE, {
-                "mode": "official",
-                "active_script": str(SCENE_OUT_FILE),
-                "request_id": ui.get("request_id")
-            })
-
-            print("[controller] Preview applied")
-
-        except Exception as e:
+    try:
+        if action == "apply":
+            handle_apply(ui)
+        elif action == "reject":
+            handle_reject(ui)
+        else:
             write_json(UI_STATE_FILE, {
                 "action": "error",
-                "message": str(e)
+                "message": "Unknown action: " + str(action),
+                "updated_at": time.time()
             })
-            print("[controller] Apply error:")
-            traceback.print_exc()
 
-    elif action == "reject":
-        clear_preview()
-
+    except Exception as e:
         write_json(UI_STATE_FILE, {
-            "action": "idle"
+            "action": "error",
+            "message": str(e),
+            "updated_at": time.time()
         })
 
-        req = read_json(AI_REQUEST_FILE, default={}) or {}
-        if req:
-            req["status"] = "rejected"
-            write_json(AI_REQUEST_FILE, req)
+        write_scene_state("official", SCENE_OUT_FILE, request_id=ui.get("request_id"))
 
-        # ΕΔΩ μπαίνει το scene_state update για επιστροφή στο official
-        write_json(SCENE_STATE_FILE, {
-            "mode": "official",
-            "active_script": str(SCENE_OUT_FILE),
-            "request_id": ui.get("request_id")
-        })
+        print("[controller] UI action error:", e)
+        traceback.print_exc()
 
-        print("[controller] Preview rejected")
 
 def main():
     print("[controller] Mock AI controller started.")
     print("[controller] PROJECT_DIR =", PROJECT_DIR)
-    print("[controller] SHARED_DIR  =", SHARED_DIR)
-    print("[controller] AI_REQUEST_FILE =", AI_REQUEST_FILE)
-    print("[controller] UI_STATE_FILE   =", UI_STATE_FILE)
-    print("[controller] SCENE_IR_FILE   =", SCENE_IR_FILE)
-    print("[controller] SCENE_OUT_FILE  =", SCENE_OUT_FILE)
+    print("[controller] PROJECT_SCENE_IR_FILE =", PROJECT_SCENE_IR_FILE)
+    print("[controller] SHARED_DIR =", SHARED_DIR)
+    print("[controller] SCENE_IR_FILE =", SCENE_IR_FILE)
+    print("[controller] SCENE_OUT_FILE =", SCENE_OUT_FILE)
+    print("[controller] PREVIEW_SCENE_FILE =", PREVIEW_SCENE_FILE)
     print("[controller] SCENE_STATE_FILE =", SCENE_STATE_FILE)
 
-    if not SCENE_STATE_FILE.exists():
-        write_json(SCENE_STATE_FILE, {
-            "mode": "official",
-            "active_script": str(SCENE_OUT_FILE)
-        })
+    normalize_startup_bridge_state()
 
     while True:
         handle_pending_ai_request()
         handle_ui_actions()
-        time.sleep(0.5)
+        time.sleep(POLL_INTERVAL)
+
 
 if __name__ == "__main__":
     main()

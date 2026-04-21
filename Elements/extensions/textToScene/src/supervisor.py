@@ -1,5 +1,6 @@
 import json
 import subprocess
+import sys
 import time
 from pathlib import Path
 
@@ -14,53 +15,73 @@ PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
 POLL_INTERVAL = 0.5
 
 
-def read_json(path: Path, default=None):
+def read_json(path, default=None):
+    path = Path(path)
+
     if not path.exists():
         return default
+
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(str(path), "r", encoding="utf-8") as f:
             return json.load(f)
     except Exception:
         return default
 
 
-def write_json(path: Path, data):
+def write_json(path, data):
+    path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    with open(path, "w", encoding="utf-8") as f:
+
+    tmp_path = path.with_suffix(path.suffix + ".tmp")
+    with open(str(tmp_path), "w", encoding="utf-8") as f:
         json.dump(data, f, indent=2, ensure_ascii=False)
+
+    tmp_path.replace(path)
 
 
 def ensure_initial_state():
     if not SCENE_STATE_FILE.exists():
         write_json(SCENE_STATE_FILE, {
             "mode": "official",
-            "active_script": str(OFFICIAL_SCENE_FILE)
+            "active_script": str(OFFICIAL_SCENE_FILE),
+            "updated_at": time.time()
         })
 
 
-def normalize_script_path(scene_state: dict) -> Path:
+def normalize_script_path(scene_state):
+    if not isinstance(scene_state, dict):
+        return OFFICIAL_SCENE_FILE
+
     mode = scene_state.get("mode", "official")
     active_script = scene_state.get("active_script")
 
     if active_script:
-        p = Path(active_script)
-        if not p.is_absolute():
-            p = SHARED_DIR / p
-        return p
+        path = Path(active_script)
+        if not path.is_absolute():
+            path = SHARED_DIR / path
 
-    if mode == "preview":
+        if mode == "preview" and path.exists():
+            return path
+
+        if mode == "official":
+            return path
+
+    if mode == "preview" and PREVIEW_SCENE_FILE.exists():
         return PREVIEW_SCENE_FILE
 
     return OFFICIAL_SCENE_FILE
 
 
-def launch_scene(script_path: Path):
-    if not script_path.exists():
-        raise FileNotFoundError(f"Scene script not found: {script_path}")
+def launch_scene(script_path):
+    script_path = Path(script_path)
 
-    print(f"[supervisor] Launching: {script_path}")
+    if not script_path.exists():
+        raise FileNotFoundError("Scene script not found: " + str(script_path))
+
+    print("[supervisor] Launching:", script_path)
+
     return subprocess.Popen(
-        ["python", str(script_path)],
+        [sys.executable, str(script_path)],
         cwd=str(script_path.parent)
     )
 
@@ -84,7 +105,7 @@ def stop_scene(proc):
 
 
 def main():
-    print("[supervisor] Starting...")
+    print("[supervisor] Starting.")
     print("[supervisor] SHARED_DIR =", SHARED_DIR)
     print("[supervisor] SCENE_STATE_FILE =", SCENE_STATE_FILE)
     print("[supervisor] OFFICIAL_SCENE_FILE =", OFFICIAL_SCENE_FILE)
@@ -100,13 +121,11 @@ def main():
             scene_state = read_json(SCENE_STATE_FILE, default={}) or {}
             desired_script = normalize_script_path(scene_state)
 
-            # Αν το process έκλεισε μόνο του, ξέχνα το handle
             if current_proc is not None and current_proc.poll() is not None:
                 print("[supervisor] Scene process exited.")
                 current_proc = None
                 current_script = None
 
-            # Αν θέλουμε άλλο script ή δεν υπάρχει process, κάνε launch/relaunch
             if current_proc is None or current_script != desired_script:
                 stop_scene(current_proc)
                 current_proc = launch_scene(desired_script)
@@ -115,7 +134,8 @@ def main():
             time.sleep(POLL_INTERVAL)
 
     except KeyboardInterrupt:
-        print("\n[supervisor] Stopping...")
+        print("")
+        print("[supervisor] Stopping.")
         stop_scene(current_proc)
 
 
