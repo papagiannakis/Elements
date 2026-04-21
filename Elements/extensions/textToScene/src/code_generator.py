@@ -480,8 +480,7 @@ def read_json_file(path):
             return None
         with open(str(path), "r", encoding="utf-8") as f:
             return json.load(f)
-    except Exception as e:
-        print("Error reading JSON file " + str(path) + ": " + str(e))
+    except Exception:
         return None
 
 
@@ -539,17 +538,18 @@ def poll_backend_state():
             pass
 
         req_status = req.get("status")
-
         if req_status == "pending":
             status_message = "Request sent. Waiting for preview."
         elif req_status == "preview_ready":
-            status_message = "Preview ready. The window will refresh automatically."
+            status_message = "Preview ready."
         elif req_status == "applied":
-            status_message = "Scene applied successfully."
+            status_message = "Applied."
         elif req_status == "rejected":
-            status_message = "Preview rejected."
+            status_message = "Rejected."
+        elif req_status == "undone":
+            status_message = "Undo restored previous scene."
         elif req_status == "error":
-            status_message = "AI error: " + str(req.get("error", "unknown error"))
+            status_message = "Error: " + str(req.get("error", "unknown error"))
 
     if isinstance(ui, dict) and ui.get("action") == "error":
         status_message = "Controller error: " + str(ui.get("message", "unknown"))
@@ -560,7 +560,6 @@ def write_ai_request(prompt_text):
     global current_request_id
 
     load_bridge_state()
-
     request_counter += 1
     current_request_id = request_counter
 
@@ -576,15 +575,13 @@ def write_ai_request(prompt_text):
 
 
 def write_ui_action(action_name):
-    request_id = current_request_id
-
     data = {
         "action": action_name,
         "created_at": time.time()
     }
 
-    if request_id is not None:
-        data["request_id"] = request_id
+    if current_request_id is not None:
+        data["request_id"] = current_request_id
 
     write_json_file(UI_STATE_FILE, data)
 
@@ -592,7 +589,6 @@ def write_ui_action(action_name):
 def display_active_script():
     if not current_active_script:
         return "(unknown)"
-
     try:
         return Path(current_active_script).name
     except Exception:
@@ -617,7 +613,7 @@ def draw_editor_panel():
     imgui.separator()
     imgui.spacing()
 
-    imgui.text("Write a command for the scene:")
+    imgui.text("Command:")
     changed, command_text = imgui.input_text_multiline(
         "##scene_command",
         command_text,
@@ -640,30 +636,35 @@ def draw_editor_panel():
 
     imgui.same_line()
 
-    if imgui.button("Apply", width=100):
+    if imgui.button("Apply", width=90):
         try:
             write_ui_action("apply")
-            status_message = "Apply sent to controller."
+            status_message = "Apply sent."
         except Exception as e:
             status_message = "Apply failed: " + str(e)
 
     imgui.same_line()
 
-    if imgui.button("Reject", width=100):
+    if imgui.button("Reject", width=90):
         try:
             write_ui_action("reject")
-            status_message = "Reject sent to controller."
+            status_message = "Reject sent."
         except Exception as e:
             status_message = "Reject failed: " + str(e)
+
+    imgui.same_line()
+
+    if imgui.button("Undo", width=90):
+        try:
+            write_ui_action("undo")
+            status_message = "Undo sent."
+        except Exception as e:
+            status_message = "Undo failed: " + str(e)
 
     imgui.spacing()
     imgui.separator()
     imgui.text("Status:")
     imgui.text_wrapped(status_message)
-
-    imgui.spacing()
-    imgui.text("Current text:")
-    imgui.text_wrapped(command_text if command_text.strip() else "(empty)")
 
     imgui.end()
 
