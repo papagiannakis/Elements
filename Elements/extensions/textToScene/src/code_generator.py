@@ -174,18 +174,37 @@ def normalize_node(node, idx=1):
         light_type = node.get("light_type")
         if light_type is None:
             raise ValueError("light node is missing 'light_type'")
+
         if light_type not in ["point", "directional"]:
             raise ValueError("Unsupported light_type: {}".format(light_type))
+
         input_props = node.get("properties", {})
         if not isinstance(input_props, dict):
             raise TypeError("'properties' of light must be a dictionary")
-        props={
+
+        props = {
             "position": [2.0, 5.5, 2.0],
             "direction": [1.0, -1.0, -1.0],
             "color": [1.0, 1.0, 1.0],
-            "intensity": 0.8
+            "intensity": 1.2
         }
-    
+
+        if "position" in input_props:
+            props["position"] = ensure_vec3(input_props["position"], "light.position")
+        if "direction" in input_props:
+            props["direction"] = ensure_vec3(input_props["direction"], "light.direction")
+        if "color" in input_props:
+            props["color"] = clamp_color(ensure_vec3(input_props["color"], "light.color"))
+        if "intensity" in input_props:
+            props["intensity"] = float(input_props["intensity"])
+
+        return {
+            "node_type": "light",
+            "name": str(node.get("name", "light_{}".format(idx))),
+            "light_type": light_type,
+            "properties": props
+        }
+
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
 
@@ -538,6 +557,7 @@ def poll_backend_state():
             pass
 
         req_status = req.get("status")
+
         if req_status == "pending":
             status_message = "Request sent. Waiting for preview."
         elif req_status == "preview_ready":
@@ -548,6 +568,14 @@ def poll_backend_state():
             status_message = "Rejected."
         elif req_status == "undone":
             status_message = "Undo restored previous scene."
+        elif req_status == "new_scene_created":
+            status_message = "New scene created."
+        elif req_status == "scene_saved":
+            status_message = str(req.get("message", "Scene saved."))
+        elif req_status == "save_blocked_preview":
+            status_message = "Save blocked. Apply or Reject preview first."
+        elif req_status == "stale":
+            status_message = "Previous stale request was cleared."
         elif req_status == "error":
             status_message = "Error: " + str(req.get("error", "unknown error"))
 
@@ -589,6 +617,7 @@ def write_ui_action(action_name):
 def display_active_script():
     if not current_active_script:
         return "(unknown)"
+
     try:
         return Path(current_active_script).name
     except Exception:
@@ -636,7 +665,7 @@ def draw_editor_panel():
 
     imgui.same_line()
 
-    if imgui.button("Apply", width=90):
+    if imgui.button("Apply", width=80):
         try:
             write_ui_action("apply")
             status_message = "Apply sent."
@@ -645,7 +674,7 @@ def draw_editor_panel():
 
     imgui.same_line()
 
-    if imgui.button("Reject", width=90):
+    if imgui.button("Reject", width=80):
         try:
             write_ui_action("reject")
             status_message = "Reject sent."
@@ -654,12 +683,30 @@ def draw_editor_panel():
 
     imgui.same_line()
 
-    if imgui.button("Undo", width=90):
+    if imgui.button("Undo", width=80):
         try:
             write_ui_action("undo")
             status_message = "Undo sent."
         except Exception as e:
             status_message = "Undo failed: " + str(e)
+
+    imgui.spacing()
+
+    if imgui.button("New Scene", width=120):
+        try:
+            write_ui_action("new_scene")
+            status_message = "New scene requested."
+        except Exception as e:
+            status_message = "New scene failed: " + str(e)
+
+    imgui.same_line()
+
+    if imgui.button("Save", width=80):
+        try:
+            write_ui_action("save_scene")
+            status_message = "Save requested."
+        except Exception as e:
+            status_message = "Save failed: " + str(e)
 
     imgui.spacing()
     imgui.separator()

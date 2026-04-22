@@ -72,6 +72,18 @@ def normalize_script_path(scene_state):
     return OFFICIAL_SCENE_FILE
 
 
+def scene_state_key(scene_state, script_path):
+    if not isinstance(scene_state, dict):
+        return (str(script_path), None)
+
+    return (
+        str(script_path),
+        scene_state.get("mode"),
+        scene_state.get("request_id"),
+        scene_state.get("updated_at")
+    )
+
+
 def launch_scene(script_path):
     script_path = Path(script_path)
 
@@ -114,22 +126,23 @@ def main():
     ensure_initial_state()
 
     current_proc = None
-    current_script = None
+    current_key = None
 
     try:
         while True:
             scene_state = read_json(SCENE_STATE_FILE, default={}) or {}
             desired_script = normalize_script_path(scene_state)
+            desired_key = scene_state_key(scene_state, desired_script)
 
             if current_proc is not None and current_proc.poll() is not None:
                 print("[supervisor] Scene process exited.")
                 current_proc = None
-                current_script = None
+                current_key = None
 
-            if current_proc is None or current_script != desired_script:
+            if current_proc is None or current_key != desired_key:
                 stop_scene(current_proc)
                 current_proc = launch_scene(desired_script)
-                current_script = desired_script
+                current_key = desired_key
 
             time.sleep(POLL_INTERVAL)
 
