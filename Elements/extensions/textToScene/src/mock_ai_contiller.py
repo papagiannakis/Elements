@@ -133,6 +133,27 @@ def collect_mesh_objects(scene_ir):
         if isinstance(node, dict) and node.get("node_type") == "mesh_object"
     ]
 
+def make_cube_node(scene_ir, position, color):
+    name = make_unique_name(scene_ir, "cube")
+
+    return {
+        "node_type": "mesh_object",
+        "name": name,
+        "id": name,
+        "created_order": next_object_order(scene_ir),
+        "shape": "cube",
+        "transform": {
+            "position": position,
+            "scale": [1.0, 1.0, 1.0]
+        },
+        "material": {
+            "color": color,
+            "texture": {
+                "enabled": False,
+                "path": None
+            }
+        }
+    }
 
 def make_unique_name(scene_ir, prefix):
     existing = set()
@@ -343,42 +364,171 @@ def ensure_scene_children(scene_ir):
 def sorted_candidates(nodes):
     return sorted(nodes, key=lambda node: str(node.get("name", node.get("id", ""))))
 
+def shape_from_text(text):
+    text = text.lower()
 
-def resolve_target(scene_ir, prompt, prefer_color=None):
+    for shape in SHAPE_WORDS:
+        if re.search(r"\b" + re.escape(shape) + r"\b", text):
+            return shape
+
+    if "κύβ" in text or "κυβ" in text or "ΞΊΟΞ²" in text:
+        return "cube"
+
+    return None
+
+
+def reference_mode_from_text(text):
+    text = text.lower()
+
+    if "most recently added object" in text:
+        return "most_recent"
+    if "most recent object" in text:
+        return "most_recent"
+    if "latest object" in text:
+        return "most_recent"
+    if "last " in text:
+        return "last"
+    if "first " in text:
+        return "first"
+
+    return "default"
+
+
+def sort_targets_for_reference(nodes, mode):
+    def sort_key(node):
+        try:
+            created_order = int(node.get("created_order", 0))
+        except Exception:
+            created_order = 0
+
+        return (
+            created_order,
+            str(node.get("name", "")),
+            str(node.get("id", ""))
+        )
+
+    ordered = sorted(nodes, key=sort_key)
+
+    if mode in ("last", "most_recent"):
+        ordered.reverse()
+
+    return ordered
+
+
+def resolve_target(scene_ir, prompt, prefer_color=None, group_name=None):
     text = prompt.lower()
-    meshes = collect_mesh_objects(scene_ir)
 
-    shape = "cube" if "cube" in text or "κύβ" in text or "κυβ" in text else None
-    color_name = prefer_color or color_name_from_text(text)
+    items = collect_mesh_objects_with_groups(scene_ir)
+    mode = reference_mode_from_text(text)
 
-    candidates = meshes
-    if shape:
-        candidates = [node for node in candidates if node.get("shape") == shape]
+    target_shape = shape_from_text(text)
+    target_color = prefer_color or color_name_from_text(text)
 
-    if color_name:
-        expected = color_value(color_name)
-        color_matches_nodes = []
-        for node in candidates:
-            actual = node.get("material", {}).get("color")
-            if color_matches(actual, expected):
-                color_matches_nodes.append(node)
-        if color_matches_nodes:
-            candidates = color_matches_nodes
+    if group_name is None:
+        group_name = group_name_from_text(text)
+
+    if group_name:
+        group_node = find_group(scene_ir, group_name)
+        if group_node is None:
+            print("[controller] Target group not found:", group_name)
+            return None, None
+
+        items = [
+            (node, parent_group)
+            for node, parent_group in items
+            if parent_group is group_node
+        ]
+
+    if mode == "most_recent":
+        target_shape = None
+        target_color = None
+
+    candidates = [node for node, parent_group in items]
+
+    if target_shape:
+        candidates = [
+            node for node in candidates
+            if str(node.get("shape", "")).lower() == target_shape
+        ]
+
+    if target_color:
+        expected = color_value(target_color)
+        candidates = [
+            node for node in candidates
+            if color_matches(node.get("material", {}).get("color"), expected)
+        ]
 
     if not candidates:
-        return None
+        print("[controller] Target resolution failed.")
+        print("[controller] prompt:", prompt)
+        print("[controller] requested shape:", target_shape)
+        print("[controller] requested color:", target_color)
+        print("[controller] requested group:", group_name)
+        print("[controller] reference mode:", mode)
+        return None, None
 
-    candidates = sorted_candidates(candidates)
-    chosen = candidates[0]
+    ordered = sort_targets_for_reference(candidates, mode)
+    chosen = ordered[0]
 
-    if len(candidates) > 1:
-        print("[controller] Multiple targets matched; chose deterministically:", chosen.get("name"))
+    parent_group = None
+    for node, group in items:
+        if node is chosen:
+            parent_group = group
+            break
+
+    if len(ordered) > 1:
+        print("[controller] Multiple targets matched.")
+        print("[controller] reference mode:", mode)
+        print("[controller] candidates:", [node.get("name") for node in ordered])
+        print("[controller] chose:", chosen.get("name"))
 
     print("[controller] Resolved target object name:", chosen.get("name"))
-    return chosen
+    print("[controller] Resolved target object id:", chosen.get("id"))
+    print("[controller] Resolved target shape:", chosen.get("shape"))
+    if parent_group is not None:
+        print("[controller] Resolved target group:", parent_group.get("name"))
+
+    return chosen, parent_group
+
+def next_object_order(scene_ir):
+    max_order = 0
+
+    for node in collect_mesh_objects(scene_ir):
+        try:
+            order = int(node.get("created_order", 0))
+        except Exception:
+            order = 0
+
+        if order > max_order:
+            max_order = order
+
+    return max_order + 1
+
+def strip_group_phrase(text):
+    text = text.strip()
+    text = re.sub(r"\s+in\s+group\s+[a-zA-Z0-9_ -]+$", "", text).strip()
+    text = re.sub(r"\s+to\s+group\s+[a-zA-Z0-9_ -]+$", "", text).strip()
+    return text
 
 
-def make_cube_node(scene_ir, position, color):
+def target_text_from_add_command(text, placement):
+    text = text.lower().strip()
+
+    if placement == "on_top_of":
+        marker = "on top of"
+        if marker in text:
+            return strip_group_phrase(text.split(marker, 1)[1])
+
+    if placement == "right_of":
+        for marker in ("to the right of", "right of"):
+            if marker in text:
+                return strip_group_phrase(text.split(marker, 1)[1])
+
+    return strip_group_phrase(text)
+
+
+
+def cube_node(scene_ir, position, color):
     name = make_unique_name(scene_ir, "cube")
 
     return {
@@ -417,16 +567,39 @@ def remove_node_by_id(node, target_id):
 
     return False
 
-
 def parse_command(prompt):
     text = prompt.lower().strip()
+    group_name = group_name_from_text(text)
+
+    if "create" in text and "group" in text:
+        return {
+            "type": "create_group",
+            "group_name": group_name
+        }
 
     if "delete" in text or "remove" in text:
-        return {"type": "delete", "target_color": color_name_from_text(text)}
+        return {
+            "type": "delete",
+            "target_color": color_name_from_text(text),
+            "group_name": group_name
+        }
 
     if "move" in text:
+        if "group" in text:
+            direction = "right" if "right" in text else None
+            return {
+                "type": "move_group",
+                "group_name": group_name,
+                "direction": direction
+            }
+
         direction = "right" if "right" in text else None
-        return {"type": "move", "direction": direction, "target_color": color_name_from_text(text)}
+        return {
+            "type": "move",
+            "direction": direction,
+            "target_color": color_name_from_text(text),
+            "group_name": group_name
+        }
 
     if "change" in text and "color" in text:
         color = None
@@ -435,23 +608,32 @@ def parse_command(prompt):
             color = match.group(1)
         if color is None:
             color = color_name_from_text(text)
-        return {"type": "change_color", "new_color": color}
+
+        return {
+            "type": "change_color",
+            "new_color": color,
+            "group_name": group_name
+        }
 
     if "add" in text or "create" in text or "cube" in text:
         placement = "next_free"
-        if "right of" in text or "to the right of" in text:
-            placement = "right_of"
-        elif "on top" in text or "πάνω" in text or "πανω" in text:
+
+        if "on top of" in text or "πάνω" in text or "πανω" in text:
             placement = "on_top_of"
+        elif "to the right of" in text or "right of" in text:
+            placement = "right_of"
 
         return {
             "type": "add_cube",
             "color": color_name_from_text(text),
             "placement": placement,
+            "group_name": group_name,
+            "target_text": target_text_from_add_command(text, placement)
         }
 
     return {"type": "unknown"}
-
+ 
+    
 
 def apply_mock_ai_prompt(scene_ir, prompt):
     new_ir = ensure_stable_object_ids(deepcopy(scene_ir))
@@ -460,33 +642,124 @@ def apply_mock_ai_prompt(scene_ir, prompt):
     print("[controller] Parsed command type:", command.get("type"))
 
     command_type = command.get("type")
+    group_name = command.get("group_name")
+
+    if command_type == "create_group":
+        if not group_name:
+            raise ValueError("Missing group name.")
+
+        existing = find_group(new_ir, group_name)
+        if existing is not None:
+            print("[controller] Group already exists:", existing.get("name"))
+            return new_ir
+
+        group_node = make_group_node(new_ir, group_name)
+        ensure_scene_children(new_ir).append(group_node)
+
+        print("[controller] Created group:", group_node.get("name"))
+        print("[controller] Group position:", group_node.get("transform", {}).get("position"))
+        return new_ir
 
     if command_type == "add_cube":
         placement = command.get("placement")
         color = color_value(command.get("color"))
+        target_text = command.get("target_text") or prompt
+
+        destination_group = None
+        if group_name:
+            destination_group = find_group(new_ir, group_name)
+            if destination_group is None:
+                raise ValueError("Group not found: " + str(group_name))
 
         if placement == "right_of":
-            target = resolve_target(new_ir, prompt)
+            target, target_group = resolve_target(
+                new_ir,
+                target_text,
+                prefer_color=None,
+                group_name=group_name
+            )
+
             if target is None:
                 raise ValueError("Could not resolve target for right-of placement.")
-            position = find_position_right_of(new_ir, target)
+
+            position = find_position_right_of_target(
+                new_ir,
+                target,
+                target_group=target_group,
+                destination_group=destination_group
+            )
+
         elif placement == "on_top_of":
-            target = resolve_target(new_ir, prompt)
+            target, target_group = resolve_target(
+                new_ir,
+                target_text,
+                prefer_color=None,
+                group_name=group_name
+            )
+
             if target is None:
                 raise ValueError("Could not resolve target for on-top placement.")
-            position = find_position_on_top_of(new_ir, target)
+
+            position = find_position_on_top_of_target(
+                new_ir,
+                target,
+                target_group=target_group,
+                destination_group=destination_group
+            )
+
         else:
-            position = find_next_free_position(new_ir)
+            if destination_group is not None:
+                position = find_next_free_position_for_group(new_ir, destination_group)
+            else:
+                position = find_next_free_world_position(new_ir)
 
         cube = make_cube_node(new_ir, position, color)
-        ensure_scene_children(new_ir).append(cube)
 
+        if destination_group is not None:
+            ensure_group_children(destination_group).append(cube)
+            print("[controller] Added object to group:", destination_group.get("name"))
+        else:
+            ensure_scene_children(new_ir).append(cube)
+
+        print("[controller] Target text for placement:", target_text)
         print("[controller] Assigned position for new object:", position)
         print("[controller] Added object name:", cube["name"])
         return new_ir
 
+    if command_type == "move_group":
+        if not group_name:
+            raise ValueError("Missing group name.")
+
+        group_node = find_group(new_ir, group_name)
+        if group_node is None:
+            raise ValueError("Group not found: " + str(group_name))
+
+        direction = command.get("direction")
+        if direction != "right":
+            raise ValueError("Only moving groups to the right is supported for now.")
+
+        current_position = get_group_world_offset(group_node)
+        new_position = [
+            current_position[0] + GRID_SPACING,
+            current_position[1],
+            current_position[2]
+        ]
+
+        group_node.setdefault("transform", {})["position"] = new_position
+        group_node.setdefault("transform", {}).setdefault("scale", [1.0, 1.0, 1.0])
+
+        print("[controller] Moved group:", group_node.get("name"))
+        print("[controller] New group position:", new_position)
+        return new_ir
+
     if command_type == "move":
-        target = resolve_target(new_ir, prompt, prefer_color=command.get("target_color"))
+        target, target_group = resolve_target(
+            new_ir,
+            prompt,
+            prefer_color=command.get("target_color"),
+            group_name=group_name
+        )
+
         if target is None:
             raise ValueError("Could not resolve target for move command.")
 
@@ -494,7 +767,14 @@ def apply_mock_ai_prompt(scene_ir, prompt):
         if direction != "right":
             raise ValueError("Only moving to the right is supported for now.")
 
-        position = find_position_right_of(new_ir, target, exclude_node=target)
+        position = find_position_right_of_target(
+            new_ir,
+            target,
+            target_group=target_group,
+            destination_group=target_group,
+            exclude_node=target
+        )
+
         set_position(target, position)
 
         print("[controller] Assigned position for moved object:", position)
@@ -505,7 +785,7 @@ def apply_mock_ai_prompt(scene_ir, prompt):
         if new_color_name is None:
             raise ValueError("No supported target color found.")
 
-        target = resolve_target(new_ir, prompt)
+        target, target_group = resolve_target(new_ir, prompt, group_name=group_name)
         if target is None:
             raise ValueError("Could not resolve target for color change.")
 
@@ -517,19 +797,26 @@ def apply_mock_ai_prompt(scene_ir, prompt):
         return new_ir
 
     if command_type == "delete":
-        target = resolve_target(new_ir, prompt, prefer_color=command.get("target_color"))
+        target, target_group = resolve_target(
+            new_ir,
+            prompt,
+            prefer_color=command.get("target_color"),
+            group_name=group_name
+        )
+
         if target is None:
             raise ValueError("Could not resolve target for delete command.")
 
         target_id = target.get("id")
         target_name = target.get("name")
+
         if not remove_node_by_id(new_ir, target_id):
             raise ValueError("Could not delete target object: " + str(target_name))
 
         print("[controller] Deleted object name:", target_name)
         return new_ir
 
-    raise ValueError("Unsupported command. Try add/move/change color/delete cube commands.")
+    raise ValueError("Unsupported command. Try add/move/change color/delete cube/group commands.")
 
 
 def load_history_stack():
@@ -724,6 +1011,217 @@ def handle_ui_actions():
         print("[controller] UI action error:", e)
         traceback.print_exc()
 
+def collect_groups(scene_ir):
+    groups = []
+
+    for node in walk_nodes(scene_ir):
+        if isinstance(node, dict) and node.get("node_type") == "group":
+            groups.append(node)
+
+    return groups
+
+
+def normalize_group_name(name):
+    return str(name).strip().lower().replace(" ", "_")
+
+
+def group_name_from_text(text):
+    text = text.lower().strip()
+
+    patterns = [
+        r"\bgroup\s+named\s+([a-zA-Z0-9_ -]+)",
+        r"\bnamed\s+([a-zA-Z0-9_ -]+)",
+        r"\bgroup\s+([a-zA-Z0-9_ -]+)",
+        r"\bin\s+group\s+([a-zA-Z0-9_ -]+)",
+        r"\bto\s+group\s+([a-zA-Z0-9_ -]+)",
+    ]
+
+    for pattern in patterns:
+        match = re.search(pattern, text)
+        if match:
+            raw = match.group(1).strip()
+            raw = re.split(r"\b(on top|to the right|right|left|with|and|at)\b", raw)[0].strip()
+            if raw:
+                return normalize_group_name(raw)
+
+    return None
+
+
+def find_group(scene_ir, group_name):
+    if not group_name:
+        return None
+
+    normalized = normalize_group_name(group_name)
+
+    groups = collect_groups(scene_ir)
+    groups = sorted(groups, key=lambda group: str(group.get("name", "")))
+
+    for group in groups:
+        if normalize_group_name(group.get("name", "")) == normalized:
+            return group
+
+    return None
+
+
+def make_group_node(scene_ir, group_name):
+    normalized = normalize_group_name(group_name)
+
+    if not normalized:
+        normalized = make_unique_name(scene_ir, "group")
+
+    existing = set()
+    for group in collect_groups(scene_ir):
+        existing.add(normalize_group_name(group.get("name", "")))
+
+    name = normalized
+    index = 2
+    while normalize_group_name(name) in existing:
+        name = normalized + "_" + str(index)
+        index += 1
+
+    return {
+        "node_type": "group",
+        "name": name,
+        "id": name,
+        "created_order": next_object_order(scene_ir),
+        "transform": {
+            "position": [0.0, 0.0, 0.0],
+            "scale": [1.0, 1.0, 1.0]
+        },
+        "children": []
+    }
+
+
+def ensure_group_children(group_node):
+    children = group_node.get("children")
+    if not isinstance(children, list):
+        children = []
+        group_node["children"] = children
+    return children
+
+
+def get_group_world_offset(group_node):
+    transform = group_node.get("transform", {})
+    position = transform.get("position", [0.0, 0.0, 0.0])
+
+    try:
+        return [float(position[0]), float(position[1]), float(position[2])]
+    except Exception:
+        return [0.0, 0.0, 0.0]
+
+
+def local_to_world_position(local_position, group_node):
+    offset = get_group_world_offset(group_node)
+    return [
+        float(local_position[0]) + offset[0],
+        float(local_position[1]) + offset[1],
+        float(local_position[2]) + offset[2]
+    ]
+
+
+def world_to_local_position(world_position, group_node):
+    offset = get_group_world_offset(group_node)
+    return [
+        float(world_position[0]) - offset[0],
+        float(world_position[1]) - offset[1],
+        float(world_position[2]) - offset[2]
+    ]
+
+
+def get_world_position(node, parent_group=None):
+    local = get_position(node)
+
+    if parent_group is None:
+        return local
+
+    return local_to_world_position(local, parent_group)
+
+
+def collect_mesh_objects_with_groups(scene_ir):
+    result = []
+
+    def walk(node, parent_group=None):
+        if not isinstance(node, dict):
+            return
+
+        if node.get("node_type") == "mesh_object":
+            result.append((node, parent_group))
+
+        next_parent = parent_group
+        if node.get("node_type") == "group":
+            next_parent = node
+
+        for child in node.get("children", []):
+            walk(child, next_parent)
+
+    walk(scene_ir, None)
+    return result
+
+
+def collect_world_positions(scene_ir, exclude_node=None):
+    positions = []
+
+    for node, parent_group in collect_mesh_objects_with_groups(scene_ir):
+        if exclude_node is not None and node is exclude_node:
+            continue
+        positions.append(get_world_position(node, parent_group))
+
+    return positions
+
+
+def is_world_position_free(scene_ir, world_position, exclude_node=None):
+    for used in collect_world_positions(scene_ir, exclude_node=exclude_node):
+        if positions_overlap(used, world_position):
+            return False
+    return True
+
+
+def find_next_free_world_position(scene_ir):
+    slot = 0
+    while True:
+        position = [slot * GRID_SPACING, CUBE_Y, CUBE_Z]
+        if is_world_position_free(scene_ir, position):
+            return position
+        slot += 1
+
+
+def find_next_free_position_for_group(scene_ir, group_node):
+    world_position = find_next_free_world_position(scene_ir)
+    return world_to_local_position(world_position, group_node)
+
+
+def find_position_right_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_node=None):
+    base = get_world_position(target_node, target_group)
+    step = 1
+
+    while True:
+        world_position = [base[0] + GRID_SPACING * step, base[1], base[2]]
+        if is_world_position_free(scene_ir, world_position, exclude_node=exclude_node):
+            if destination_group is not None:
+                return world_to_local_position(world_position, destination_group)
+            return world_position
+        step += 1
+
+
+def find_position_on_top_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_node=None):
+    base = get_world_position(target_node, target_group)
+    scale = get_scale(target_node)
+
+    world_position = [base[0], base[1] + scale[1], base[2]]
+
+    if is_world_position_free(scene_ir, world_position, exclude_node=exclude_node):
+        if destination_group is not None:
+            return world_to_local_position(world_position, destination_group)
+        return world_position
+
+    return find_position_right_of_target(
+        scene_ir,
+        target_node,
+        target_group=target_group,
+        destination_group=destination_group,
+        exclude_node=exclude_node
+    )
+
 
 def main():
     print("[controller] Mock AI controller started.")
@@ -743,3 +1241,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+
