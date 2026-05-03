@@ -30,9 +30,6 @@ scene_ir = {
         build_tree("tree2", [0.0, 0.0, -2.0]),
         build_tree("tree3", [5.5, 0.0, -1.5]),
 
-        
-        build_gift_box("gift2", [1.0, 0.0, 2.5]),
-
         build_street_light("street_light1", [-1.0, 0.0, 2.5])
     ]
 }

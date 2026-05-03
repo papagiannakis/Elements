@@ -2,7 +2,6 @@
 import json
 from copy import deepcopy
 from pathlib import Path
-from turtle import position
 from typing import Optional
 
 import numpy as np
