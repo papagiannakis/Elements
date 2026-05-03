@@ -1,13 +1,14 @@
 import json
 import os
-import re
 import shutil
 import time
 import traceback
+import re
 from copy import deepcopy
 from pathlib import Path
 
 from code_generator import generate_scene_script
+from llm_parser import parse_prompt_to_action_with_llm
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -639,14 +640,19 @@ def is_world_position_free(scene_ir, world_position, exclude_node=None):
 
 
 def find_next_free_world_position(scene_ir):
-    slot = 0
-
+    used_x = []
+    for node in collect_mesh_objects(scene_ir):
+        pos= node.get("transform", {}).get("position", [0.0, CUBE_Y, CUBE_Z])   
+        try: 
+            used_x.append(float(pos[0]))
+        except Exception:
+            pass
+    
+    slot = 0    
     while True:
-        position = [slot * GRID_SPACING, CUBE_Y, CUBE_Z]
-
-        if is_world_position_free(scene_ir, position):
-            return position
-
+        x = GRID_SPACING * slot
+        if all(abs(x - u) > 1e-6 for u in used_x):
+            return [x, CUBE_Y, CUBE_Z]
         slot += 1
 
 
@@ -938,6 +944,47 @@ def parse_command(prompt):
     return {"type": "unknown"}
 
 
+def command_to_action(command):
+    t = command.get("type")
+    if t == "new_scene":
+        return {"action": "new_scene"}
+    if t == "save_scene":
+        return {"action": "save_scene"}
+    if t == "add_cube":
+        placement_str = command.get("placement", "next_free")
+        if placement_str == "right_of":
+            placement = {"relation": "right_of", "target": command.get("target_text", "")}
+        elif placement_str == "on_top_of":
+            placement = {"relation": "on_top_of", "target": command.get("target_text", "")}
+        else:
+            placement = {"relation": "next_free_slot"}
+        return {
+            "action": "add_object",
+            "object_type": "cube",
+            "color": command.get("color") or "purple",
+            "placement": placement
+        }
+    if t == "delete":
+        return {
+            "action": "delete_object",
+            "target": command.get("target_color") or "cube"
+        }
+    if t == "move":
+        return {
+            "action": "move_object",
+            "target": command.get("target_color") or "cube",
+            "direction": command.get("direction") or "right"
+        }
+    if t == "change_color":
+        return {
+            "action": "recolor_object",
+            "target": "cube",
+            "color": command.get("new_color") or "purple"
+        }
+    if t == "create_group":
+        return {"action": "create_group", "group_name": command.get("group_name")}
+    raise ValueError("Unknown rule-based command type: " + str(t))
+############################ change for llm parser ############################
 def apply_mock_ai_prompt(scene_ir, prompt):
     new_ir = ensure_stable_object_ids(deepcopy(scene_ir))
     command = parse_command(prompt)
@@ -1215,37 +1262,71 @@ def backup_official_scene_ir(reason):
 
 def handle_pending_ai_request():
     req = read_json(AI_REQUEST_FILE, default=None)
-
-    if not isinstance(req, dict):
+    if not req:
         return
 
     if req.get("status") != "pending":
         return
 
+    print("[controller] AI request found:", req)
+
     request_id = req.get("request_id")
-    prompt = str(req.get("prompt", "")).strip()
+    prompt = req.get("prompt", "").strip()
 
     if not prompt:
-        write_status("error", error="Empty prompt", request_id=request_id)
+        req["status"] = "error"
+        req["error"] = "Empty prompt"
+        write_json(AI_REQUEST_FILE, req)
         return
 
     try:
         scene_ir = ensure_shared_scene_ir()
-        preview_ir = apply_mock_ai_prompt(scene_ir, prompt)
+
+        try:
+            action = parse_prompt_to_action_with_llm(prompt, scene_ir)
+            print("[controller] LLM action:", action.get("action"))
+        except Exception as llm_err:
+            print("[controller] LLM failed, using rule-based fallback:", llm_err)
+            command = parse_command(prompt)
+            action = command_to_action(command)
+            print("[controller] Fallback action:", action.get("action"))
+
+        validate_action(action)
+
+        if action.get("action") == "new_scene":
+            initialize_new_scene(request_id=request_id)
+            return
+
+        if action.get("action") == "save_scene":
+            handle_save_scene({"request_id": request_id})
+            return
+
+        preview_ir = apply_action_to_ir(scene_ir, action)
 
         save_preview_ir(preview_ir)
         save_preview_script(preview_ir)
 
-        write_status("preview_ready", "Preview ready.", request_id=request_id)
-        write_scene_state("preview", PREVIEW_SCENE_FILE, request_id=request_id)
+        req["status"] = "preview_ready"
+        req["message"] = "Το preview δημιουργήθηκε."
+        req["preview_file"] = PREVIEW_SCENE_FILE.name
+        req["preview_ir_file"] = PREVIEW_IR_FILE.name
+        req["parsed_action"] = action
+        write_json(AI_REQUEST_FILE, req)
+
+        write_json(SCENE_STATE_FILE, {
+            "mode": "preview",
+            "active_script": str(PREVIEW_SCENE_FILE),
+            "request_id": request_id
+        })
 
         print("[controller] Preview ready for request", request_id)
 
     except Exception as e:
-        write_status("error", error=str(e), request_id=request_id)
-        print("[controller] Error while generating preview:", e)
+        req["status"] = "error"
+        req["error"] = str(e)
+        write_json(AI_REQUEST_FILE, req)
+        print("[controller] Error while handling request:")
         traceback.print_exc()
-
 
 def handle_apply(ui):
     request_id = ui.get("request_id")
@@ -1401,6 +1482,173 @@ def handle_ui_actions():
         print("[controller] UI action error:", e)
         traceback.print_exc()
 
+
+######## new helper functions for llm parser ########
+def validate_action(action):
+    if not isinstance(action, dict):
+        raise ValueError("Parsed action must be a dictionary")
+
+    if "action" not in action:
+        raise ValueError("Parsed action missing 'action'")
+
+    allowed = {
+        "add_object",
+        "move_object",
+        "delete_object",
+        "recolor_object",
+        "scale_object",
+        "new_scene",
+        "save_scene",
+        "undo"
+    }
+
+    if action["action"] not in allowed:
+        raise ValueError("Unsupported action: " + str(action["action"]))
+
+
+def describe_node(node):
+    material = node.get("material", {})
+    color = material.get("color", [0.8, 0.0, 0.8])
+    shape = str(node.get("shape", "object"))
+    name = str(node.get("name", ""))
+
+    color_name = "unknown"
+    for key, value in COLOR_TABLE.items():
+        if value == color:
+            color_name = key
+            break
+
+    return {
+        "name": name,
+        "shape": shape,
+        "color_name": color_name
+    }
+
+
+def resolve_target_node(scene_ir, target_text):
+    if not target_text:
+        return None
+
+    target_text = str(target_text).lower().strip()
+    candidates = []
+
+    for node in collect_mesh_objects(scene_ir):
+        info = describe_node(node)
+        tokens = [info["name"].lower(), info["shape"].lower(), info["color_name"].lower()]
+        joined = " ".join(tokens)
+
+        if target_text in joined:
+            candidates.append(node)
+
+    if not candidates:
+        return None
+
+    candidates = sorted(candidates, key=lambda n: str(n.get("name", "")))
+    chosen = candidates[0]
+    print("[controller] Resolved target:", target_text, "->", chosen.get("name"))
+    return chosen
+
+def color_name_to_rgb(name):
+    return COLOR_TABLE.get(str(name).lower(), [0.8, 0.0, 0.8])
+
+
+def apply_action_to_ir(scene_ir, action):
+    new_ir = deepcopy(scene_ir)
+    action_name = action.get("action")
+
+    print("[controller] Parsed action:", action)
+
+    if action_name == "add_object":
+        object_type = str(action.get("object_type", "cube")).lower()
+        color = color_name_to_rgb(action.get("color", "purple"))
+
+        position = find_next_free_world_position(new_ir)
+        placement = action.get("placement", {})
+        relation = placement.get("relation")
+
+        if relation in ("right_of", "on_top_of"):
+            target = resolve_target_node(new_ir, placement.get("target"))
+            if target is not None:
+                target_pos = target.get("transform", {}).get("position", [0.0, CUBE_Y, CUBE_Z])
+                target_scale = target.get("transform", {}).get("scale", [1.0, 1.0, 1.0])
+
+                if relation == "right_of":
+                    position = [
+                        float(target_pos[0]) + GRID_SPACING,
+                        float(target_pos[1]),
+                        float(target_pos[2])
+                    ]
+                elif relation == "on_top_of":
+                    position = [
+                        float(target_pos[0]),
+                        float(target_pos[1]) + float(target_scale[1]),
+                        float(target_pos[2])
+                    ]
+
+        new_node = {
+            "node_type": "mesh_object",
+            "name": make_unique_name(new_ir, object_type),
+            "id": make_unique_name(new_ir, object_type),
+            "created_order": next_object_order(new_ir),
+            "shape": object_type,
+            "transform": {
+                "position": position,
+                "scale": [1.0, 1.0, 1.0]
+            },
+            "material": {
+                "color": color,
+                "texture": {
+                    "enabled": False,
+                    "path": None
+                }
+            }
+        }
+
+        ensure_scene_children(new_ir).append(new_node)
+        print("[controller] Added object at position:", position)
+        return new_ir
+
+    if action_name == "delete_object":
+        target = resolve_target_node(new_ir, action.get("target"))
+        if target is None:
+            raise ValueError("Could not resolve delete target")
+
+        children = ensure_scene_children(new_ir)
+        children[:] = [c for c in children if c is not target]
+        return new_ir
+
+    if action_name == "recolor_object":
+        target = resolve_target_node(new_ir, action.get("target"))
+        if target is None:
+            raise ValueError("Could not resolve recolor target")
+
+        target.setdefault("material", {})
+        target["material"]["color"] = color_name_to_rgb(action.get("color", "purple"))
+        target["material"].setdefault("texture", {"enabled": False, "path": None})
+        return new_ir
+
+    if action_name == "move_object":
+        target = resolve_target_node(new_ir, action.get("target"))
+        if target is None:
+            raise ValueError("Could not resolve move target")
+
+        direction = str(action.get("direction", "")).lower().strip()
+        pos = target.setdefault("transform", {}).setdefault("position", [0.0, CUBE_Y, CUBE_Z])
+
+        if direction == "right":
+            pos[0] = float(pos[0]) + GRID_SPACING
+        elif direction == "left":
+            pos[0] = float(pos[0]) - GRID_SPACING
+        elif direction == "forward":
+            pos[2] = float(pos[2]) - GRID_SPACING
+        elif direction == "backward":
+            pos[2] = float(pos[2]) + GRID_SPACING
+        else:
+            raise ValueError("Unsupported move direction: " + direction)
+
+        return new_ir
+
+    raise ValueError("Unsupported action type: " + str(action_name))
 
 def main():
     print("[controller] Mock AI controller started.")
