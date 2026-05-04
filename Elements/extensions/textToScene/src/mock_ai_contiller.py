@@ -221,13 +221,49 @@ def walk_nodes(node):
         for item in walk_nodes(child):
             yield item
 
+def collect_mesh_objects(node, out_list=None):
+    if out_list is None:
+        out_list = []
 
-def collect_mesh_objects(scene_ir):
-    return [
-        node for node in walk_nodes(scene_ir)
-        if isinstance(node, dict) and node.get("node_type") == "mesh_object"
-    ]
+    if not isinstance(node, dict):
+        return out_list
 
+    if node.get("node_type") == "mesh_object":
+        out_list.append(node)
+
+    for child in node.get("children", []):
+        collect_mesh_objects(child, out_list)
+
+    return out_list
+
+
+def delete_nodes_by_ids(scene_ir, object_ids):
+    if not object_ids:
+        return scene_ir
+
+    object_ids = set(str(x) for x in object_ids)
+
+    def filter_children(children):
+        kept = []
+        for child in children:
+            if not isinstance(child, dict):
+                kept.append(child)
+                continue
+
+            child_id = str(child.get("id", ""))
+            if child.get("node_type") == "mesh_object" and child_id in object_ids:
+                continue
+
+            if "children" in child and isinstance(child["children"], list):
+                child["children"] = filter_children(child["children"])
+
+            kept.append(child)
+        return kept
+
+    if "children" in scene_ir and isinstance(scene_ir["children"], list):
+        scene_ir["children"] = filter_children(scene_ir["children"])
+
+    return scene_ir
 
 def collect_groups(scene_ir):
     return [
@@ -1609,9 +1645,18 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
 
     if action_name == "delete_object":
+        object_ids = action.get("object_ids")
+        if object_ids:
+            print("[controller] Deleting by object_ids:", object_ids)
+            return delete_nodes_by_ids(new_ir, object_ids)
+
         target = resolve_target_node(new_ir, action.get("target"))
         if target is None:
             raise ValueError("Could not resolve delete target")
+
+        target_id = target.get("id")
+        if target_id:
+            return delete_nodes_by_ids(new_ir, [target_id])
 
         children = ensure_scene_children(new_ir)
         children[:] = [c for c in children if c is not target]

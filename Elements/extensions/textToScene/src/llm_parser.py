@@ -5,7 +5,7 @@ import re
 from openai import OpenAI
 
 API_KEY_ENV = "OPENAI_API_KEY"
-DEFAULT_MODEL = "gpt-5.5"
+DEFAULT_MODEL = "gpt-4.1-mini"
 
 
 def get_client():
