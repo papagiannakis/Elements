@@ -1672,28 +1672,92 @@ def describe_node(node):
     }
 
 
+def _node_created_order(node):
+    try:
+        return int(node.get("created_order", 0))
+    except Exception:
+        return 0
+
+
 def resolve_target_node_with_group(scene_ir, target_text):
     if not target_text:
         return None, None
 
     target_text = str(target_text).lower().strip()
-    candidates = []
+    all_nodes = collect_mesh_objects_with_groups(scene_ir)
 
-    for node, parent_group in collect_mesh_objects_with_groups(scene_ir):
-        info = describe_node(node)
-        tokens = [info["name"].lower(), info["shape"].lower(), info["color_name"].lower()]
-        joined = " ".join(tokens)
+    # Priority 1: exact id match
+    for node, parent_group in all_nodes:
+        if str(node.get("id", "")).lower() == target_text:
+            print("[controller] Resolved target by id:", target_text, "->", node.get("name"))
+            return node, parent_group
 
-        if target_text in joined:
-            candidates.append((node, parent_group))
+    # Priority 2: exact name match
+    for node, parent_group in all_nodes:
+        if str(node.get("name", "")).lower() == target_text:
+            print("[controller] Resolved target by name:", target_text, "->", node.get("name"))
+            return node, parent_group
 
-    if not candidates:
-        return None, None
+    # Determine preferred order from reference words in target_text
+    ref_mode = reference_mode_from_text(target_text)
+    prefer_last = ref_mode in ("last", "most_recent")
 
-    candidates = sorted(candidates, key=lambda item: str(item[0].get("name", "")))
-    chosen, chosen_group = candidates[0]
-    print("[controller] Resolved target:", target_text, "->", chosen.get("name"))
-    return chosen, chosen_group
+    def pick_best(candidates):
+        candidates.sort(key=lambda item: _node_created_order(item[0]), reverse=prefer_last)
+        node, pg = candidates[0]
+        return node, pg
+
+    # Extract color and shape tokens from target_text
+    target_color = None
+    for color_name in COLOR_TABLE:
+        if re.search(r"\b" + re.escape(color_name) + r"\b", target_text):
+            target_color = color_name
+            break
+
+    target_shape = None
+    for shape in SHAPE_WORDS:
+        if re.search(r"\b" + re.escape(shape) + r"\b", target_text):
+            target_shape = shape
+            break
+
+    # Priority 3: color + shape match
+    if target_color and target_shape:
+        expected_rgb = COLOR_TABLE[target_color]
+        candidates = [
+            (node, pg) for node, pg in all_nodes
+            if str(node.get("shape", "")).lower() == target_shape
+            and color_matches(node.get("material", {}).get("color"), expected_rgb)
+        ]
+        if candidates:
+            node, pg = pick_best(candidates)
+            print("[controller] Resolved target by color+shape:", target_text, "->", node.get("name"))
+            return node, pg
+
+    # Priority 4: shape-only match
+    if target_shape:
+        candidates = [
+            (node, pg) for node, pg in all_nodes
+            if str(node.get("shape", "")).lower() == target_shape
+        ]
+        if candidates:
+            node, pg = pick_best(candidates)
+            print("[controller] Resolved target by shape:", target_text, "->", node.get("name"))
+            return node, pg
+
+    # Priority 5: color-only match
+    if target_color:
+        expected_rgb = COLOR_TABLE[target_color]
+        candidates = [
+            (node, pg) for node, pg in all_nodes
+            if color_matches(node.get("material", {}).get("color"), expected_rgb)
+        ]
+        if candidates:
+            node, pg = pick_best(candidates)
+            print("[controller] Resolved target by color:", target_text, "->", node.get("name"))
+            return node, pg
+
+    print("[controller] Could not resolve target:", target_text)
+    return None, None
 
 
 def resolve_target_node(scene_ir, target_text):
