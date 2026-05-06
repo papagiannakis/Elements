@@ -1,5 +1,4 @@
 import json
-from operator import pos
 import os
 import shutil
 import time
@@ -732,6 +731,24 @@ def find_next_free_position_for_group(scene_ir, group_node):
     return world_to_local_position(world_position, group_node)
 
 
+def find_first_free_in_direction(scene_ir, start_world_position, delta, exclude_object_id=None, max_steps=50):
+    pos = [
+        float(start_world_position[0]) + delta[0],
+        float(start_world_position[1]) + delta[1],
+        float(start_world_position[2]) + delta[2],
+    ]
+    for _ in range(max_steps):
+        if is_world_position_free(scene_ir, pos, exclude_object_id=exclude_object_id):
+            return list(pos)
+        pos = [pos[0] + delta[0], pos[1] + delta[1], pos[2] + delta[2]]
+    # All slots within max_steps are occupied; return the first step as last resort
+    return [
+        float(start_world_position[0]) + delta[0],
+        float(start_world_position[1]) + delta[1],
+        float(start_world_position[2]) + delta[2],
+    ]
+
+
 def find_position_right_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_object_id=None):
     base = get_world_position(target_node, target_group)
     desired_world_position = [base[0] + GRID_SPACING, base[1], base[2]]
@@ -934,6 +951,8 @@ def remove_node_by_id(node, target_id):
     return False
 
 
+# Legacy rule-based parser — still used as LLM fallback in handle_pending_ai_request.
+# Not part of the primary (cache → LLM → validate → apply) execution path.
 def parse_command(prompt):
     text = prompt.lower().strip()
     group_name = group_name_from_text(text)
@@ -1065,6 +1084,8 @@ def find_node_by_id(scene_ir, object_id):
     return None
 
 
+# Dead code — predates the action schema. Not called from any active path.
+# Kept for reference; safe to delete once the action architecture is stable.
 def apply_mock_ai_prompt(scene_ir, prompt):
     new_ir = ensure_stable_object_ids(deepcopy(scene_ir))
     command = parse_command(prompt)
@@ -1393,6 +1414,8 @@ def handle_pending_ai_request():
                 print("[controller] Action source: fallback rule-based parser")
                 print("[controller] Fallback action:", action.get("action"))
 
+        action = normalize_action(action)
+
         if action.get("action") == "new_scene":
             initialize_new_scene(request_id=request_id)
             return
@@ -1404,7 +1427,7 @@ def handle_pending_ai_request():
         if action.get("action") == "undo":
             handle_undo({"request_id": request_id})
             return
-        
+
         preview_ir = apply_action_to_ir(scene_ir, action)
 
         save_preview_ir(preview_ir)
@@ -1651,6 +1674,37 @@ def validate_action(action):
 
     raise ValueError("Unsupported action: " + str(action_name))
 
+
+def normalize_action(action):
+    if not isinstance(action, dict):
+        return action
+
+    action = dict(action)
+
+    # Canonical identity field
+    if "object_id" in action and "id" not in action:
+        action["id"] = action.pop("object_id")
+
+    # Canonical position field
+    if "new_position" in action and "position" not in action:
+        action["position"] = action.pop("new_position")
+
+    # Canonical direction for move_object
+    if action.get("action") == "move_object" and "direction" in action:
+        _direction_aliases = {
+            "back":         "backward",
+            "front":        "forward",
+            "to the back":  "backward",
+            "to the front": "forward",
+        }
+        raw = str(action["direction"]).lower().strip()
+        action["direction"] = _direction_aliases.get(raw, raw)
+
+    # Recurse into action_sequence steps
+    if action.get("action") == "action_sequence" and isinstance(action.get("action_sequence"), list):
+        action["action_sequence"] = [normalize_action(step) for step in action["action_sequence"]]
+
+    return action
 
 
 def describe_node(node):
@@ -1985,48 +2039,44 @@ def apply_action_to_ir(scene_ir, action):
         if target is None:
             raise ValueError("Could not resolve move target")
 
+        target_id = target.get("id")
+        current_world_position = get_world_position(target, target_group)
+
         explicit_position = normalize_action_position(action.get("new_position"), "new_position")
         if explicit_position is None:
             explicit_position = normalize_action_position(action.get("position"), "position")
 
         if explicit_position is not None:
-            desired_world_position = explicit_position
+            # Explicit coordinate: snap to nearest free slot around the target point.
+            final_world_position = find_nearest_free_world_position(
+                new_ir,
+                explicit_position,
+                exclude_object_id=target_id
+            )
         else:
             direction = str(action.get("direction", "")).lower().strip()
-            current_world_position = get_world_position(target, target_group)
 
-            if direction == "right":
-                desired_world_position = [
-                    current_world_position[0] + GRID_SPACING,
-                    current_world_position[1],
-                    current_world_position[2]
-                ]
-            elif direction == "left":
-                desired_world_position = [
-                    current_world_position[0] - GRID_SPACING,
-                    current_world_position[1],
-                    current_world_position[2]
-                ]
-            elif direction == "forward":
-                desired_world_position = [
-                    current_world_position[0],
-                    current_world_position[1],
-                    current_world_position[2] - GRID_SPACING
-                ]
-            elif direction == "backward":
-                desired_world_position = [
-                    current_world_position[0],
-                    current_world_position[1],
-                    current_world_position[2] + GRID_SPACING
-                ]
-            else:
-                raise ValueError("move_object requires 'direction', 'position', or 'new_position'")
+            direction_deltas = {
+                "right":    [GRID_SPACING,  0.0,           0.0],
+                "left":     [-GRID_SPACING, 0.0,           0.0],
+                "forward":  [0.0,           0.0, -GRID_SPACING],
+                "backward": [0.0,           0.0,  GRID_SPACING],
+            }
 
-        final_world_position = find_nearest_free_world_position(
-            new_ir,
-            desired_world_position,
-            exclude_object_id=target.get("id")
-        )
+            if direction not in direction_deltas:
+                if not direction:
+                    raise ValueError("move_object requires 'direction', 'position', or 'new_position'")
+                raise ValueError("Unsupported move direction: " + direction)
+
+            # Walk strictly in the requested direction; never fall back to the
+            # opposite side (which would return the object's own current slot).
+            delta = direction_deltas[direction]
+            final_world_position = find_first_free_in_direction(
+                new_ir,
+                current_world_position,
+                delta,
+                exclude_object_id=target_id
+            )
 
         if target_group is not None:
             final_local_position = world_to_local_position(final_world_position, target_group)
