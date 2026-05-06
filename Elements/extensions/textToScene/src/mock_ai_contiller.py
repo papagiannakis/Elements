@@ -1,4 +1,5 @@
 import json
+from operator import pos
 import os
 import shutil
 import time
@@ -1026,6 +1027,19 @@ def command_to_action(command):
         return {"action": "create_group", "group_name": command.get("group_name")}
     raise ValueError("Unknown rule-based command type: " + str(t))
 ############################ change for llm parser ############################
+def find_node_by_id(scene_ir, object_id):
+    if not object_id:
+        return None
+
+    object_id = str(object_id)
+
+    for node in collect_mesh_objects(scene_ir):
+        if str(node.get("id", "")) == object_id:
+            return node
+
+    return None
+
+
 def apply_mock_ai_prompt(scene_ir, prompt):
     new_ir = ensure_stable_object_ids(deepcopy(scene_ir))
     command = parse_command(prompt)
@@ -1554,7 +1568,7 @@ def validate_action(action):
     if "action" not in action:
         raise ValueError("Parsed action missing 'action'")
 
-    allowed = {
+    allowed_single = {
         "add_object",
         "move_object",
         "delete_object",
@@ -1565,8 +1579,31 @@ def validate_action(action):
         "undo"
     }
 
-    if action["action"] not in allowed:
-        raise ValueError("Unsupported action: " + str(action["action"]))
+    action_name = action.get("action")
+
+    if action_name in allowed_single:
+        return
+
+    if action_name == "action_sequence":
+        sequence = action.get("action_sequence")
+
+        if not isinstance(sequence, list) or not sequence:
+            raise ValueError("action_sequence must be a non-empty list")
+
+        for step in sequence:
+            if not isinstance(step, dict):
+                raise ValueError("Each action_sequence step must be a dictionary")
+
+            step_name = step.get("action")
+            if step_name == "action_sequence":
+                raise ValueError("Nested action_sequence is not supported")
+
+            validate_action(step)
+
+        return
+
+    raise ValueError("Unsupported action: " + str(action_name))
+
 
 
 def describe_node(node):
@@ -1620,6 +1657,17 @@ def apply_action_to_ir(scene_ir, action):
     action_name = action.get("action")
 
     print("[controller] Parsed action:", action)
+
+    if action_name == "action_sequence":
+        current_ir = new_ir
+        sequence = action.get("action_sequence", [])
+
+        for index, step in enumerate(sequence):
+            print("[controller] Applying action_sequence step", index + 1, "of", len(sequence))
+            validate_action(step)
+            current_ir = apply_action_to_ir(current_ir, step)
+
+        return current_ir
 
     if action_name == "add_object":
         object_type = str(action.get("object_type", "cube")).lower()
@@ -1690,7 +1738,20 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
 
     if action_name == "recolor_object":
-        target = resolve_target_node(new_ir, action.get("target"))
+        target = None
+
+        object_id = action.get("id") or action.get("object_id")
+        object_ids = action.get("object_ids")
+
+        if object_id:
+            target = find_node_by_id(new_ir, object_id)
+        elif object_ids:
+            if object_ids:
+                target = find_node_by_id(new_ir, object_ids[0])
+
+        if target is None:
+            target = resolve_target_node(new_ir, action.get("target"))
+
         if target is None:
             raise ValueError("Could not resolve recolor target")
 
@@ -1698,22 +1759,53 @@ def apply_action_to_ir(scene_ir, action):
         target["material"]["color"] = color_name_to_rgb(action.get("color", "purple"))
         target["material"].setdefault("texture", {"enabled": False, "path": None})
         return new_ir
-
+    
     if action_name == "move_object":
-        target = resolve_target_node(new_ir, action.get("target"))
+        target = None
+
+        object_id = action.get("id") or action.get("object_id")
+        object_ids = action.get("object_ids")
+
+        if object_id:
+            target = find_node_by_id(new_ir, object_id)
+
+        elif object_ids:
+            if object_ids:
+                target = find_node_by_id(new_ir, object_ids[0])
+
+        if target is None:
+            target = resolve_target_node(new_ir, action.get("target"))
+
         if target is None:
             raise ValueError("Could not resolve move target")
 
-        direction = str(action.get("direction", "")).lower().strip()
-        pos = target.setdefault("transform", {}).setdefault("position", [0.0, CUBE_Y, CUBE_Z])
+        transform = target.setdefault("transform", {})
+        pos = transform.setdefault("position", [0.0, CUBE_Y, CUBE_Z])
 
-        if direction == "right":
+        absolute_position = action.get("position")
+        if absolute_position is None:
+            absolute_position = action.get("new_position")
+
+        if absolute_position is not None:
+            if not isinstance(absolute_position, (list, tuple)) or len(absolute_position) != 3:
+                raise ValueError("Invalid move position")
+
+            transform["position"] = [
+                float(absolute_position[0]),
+                float(absolute_position[1]),
+                float(absolute_position[2]),
+            ]
+            return new_ir
+
+        direction = str(action.get("direction", "")).lower().strip()
+
+        if direction in ("right", "to_the_right"):
             pos[0] = float(pos[0]) + GRID_SPACING
-        elif direction == "left":
+        elif direction in ("left", "to_the_left"):
             pos[0] = float(pos[0]) - GRID_SPACING
-        elif direction == "forward":
+        elif direction in ("forward", "front", "to_the_front"):
             pos[2] = float(pos[2]) - GRID_SPACING
-        elif direction == "backward":
+        elif direction in ("backward", "back", "to_the_back"):
             pos[2] = float(pos[2]) + GRID_SPACING
         else:
             raise ValueError("Unsupported move direction: " + direction)
@@ -1721,6 +1813,7 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
 
     raise ValueError("Unsupported action type: " + str(action_name))
+
 
 def main():
     print("[controller] Mock AI controller started.")
