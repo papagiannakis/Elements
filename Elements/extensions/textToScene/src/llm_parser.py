@@ -1,12 +1,18 @@
 import json
 import os
 import re
+import time
+from copy import deepcopy
+from pathlib import Path
 
 from openai import OpenAI
 
 API_KEY_ENV = "OPENAI_API_KEY"
 DEFAULT_MODEL = "gpt-4.1-mini"
 
+SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
+CACHE_DIR = SHARED_DIR / "cache"
+ACTION_CACHE_FILE = CACHE_DIR / "action_cache.json"
 
 def get_client():
     api_key = os.getenv(API_KEY_ENV)
@@ -84,6 +90,80 @@ User prompt:
 Scene context:
 %s
 """ % (prompt, json.dumps(scene_context, ensure_ascii=False))
+
+
+def normalize_prompt(prompt):
+    text = str(prompt or "").strip().lower()
+    text = re.sub(r"[^\w\s]", " ", text, flags=re.UNICODE)
+    text = re.sub(r"[_\s]+", " ", text, flags=re.UNICODE)
+    return text.strip()
+
+
+def load_action_cache():
+    if not ACTION_CACHE_FILE.exists():
+        return {}
+
+    try:
+        with open(str(ACTION_CACHE_FILE), "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        return {}
+
+    if isinstance(data, dict):
+        entries = data.get("entries")
+        if isinstance(entries, dict):
+            return entries
+        return data
+
+    return {}
+
+
+def save_action_cache(cache):
+    CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+    payload = {
+        "version": 1,
+        "updated_at": time.time(),
+        "entries": cache
+    }
+
+    tmp_path = ACTION_CACHE_FILE.with_suffix(ACTION_CACHE_FILE.suffix + ".tmp")
+    with open(str(tmp_path), "w", encoding="utf-8") as f:
+        json.dump(payload, f, indent=2, ensure_ascii=False)
+
+    os.replace(str(tmp_path), str(ACTION_CACHE_FILE))
+
+
+def lookup_cached_action(prompt):
+    normalized = normalize_prompt(prompt)
+    if not normalized:
+        return None
+
+    cache = load_action_cache()
+    entry = cache.get(normalized)
+
+    if isinstance(entry, dict) and "action" in entry:
+        return deepcopy(entry.get("action"))
+
+    if isinstance(entry, dict):
+        return deepcopy(entry)
+
+    return None
+
+
+def store_cached_action(prompt, action):
+    normalized = normalize_prompt(prompt)
+    if not normalized or not isinstance(action, dict):
+        return
+
+    cache = load_action_cache()
+    cache[normalized] = {
+        "prompt": str(prompt or ""),
+        "normalized_prompt": normalized,
+        "action": deepcopy(action),
+        "updated_at": time.time()
+    }
+    save_action_cache(cache)
 
 
 def extract_json_object(text):

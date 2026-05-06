@@ -8,7 +8,12 @@ from copy import deepcopy
 from pathlib import Path
 
 from code_generator import generate_scene_script
-from llm_parser import parse_prompt_to_action_with_llm
+from llm_parser import (
+    lookup_cached_action,
+    parse_prompt_to_action_with_llm,
+    store_cached_action,
+)
+
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -1318,16 +1323,36 @@ def handle_pending_ai_request():
     try:
         scene_ir = ensure_shared_scene_ir()
 
-        try:
-            action = parse_prompt_to_action_with_llm(prompt, scene_ir)
-            print("[controller] LLM action:", action.get("action"))
-        except Exception as llm_err:
-            print("[controller] LLM failed, using rule-based fallback:", llm_err)
-            command = parse_command(prompt)
-            action = command_to_action(command)
-            print("[controller] Fallback action:", action.get("action"))
+        action = None
+        action_source = None
 
-        validate_action(action)
+        cached_action = lookup_cached_action(prompt)
+        if cached_action is not None:
+            try:
+                validate_action(cached_action)
+                action = cached_action
+                action_source = "cache"
+                print("[controller] Action source: cache")
+                print("[controller] Cached action:", action.get("action"))
+            except Exception as cache_err:
+                print("[controller] Ignoring invalid cached action:", cache_err)
+
+        if action is None:
+            try:
+                action = parse_prompt_to_action_with_llm(prompt, scene_ir)
+                validate_action(action)
+                store_cached_action(prompt, action)
+                action_source = "llm"
+                print("[controller] Action source: LLM")
+                print("[controller] LLM action:", action.get("action"))
+            except Exception as llm_err:
+                print("[controller] LLM failed, using rule-based fallback:", llm_err)
+                command = parse_command(prompt)
+                action = command_to_action(command)
+                validate_action(action)
+                action_source = "fallback rule-based parser"
+                print("[controller] Action source: fallback rule-based parser")
+                print("[controller] Fallback action:", action.get("action"))
 
         if action.get("action") == "new_scene":
             initialize_new_scene(request_id=request_id)
@@ -1343,10 +1368,11 @@ def handle_pending_ai_request():
         save_preview_script(preview_ir)
 
         req["status"] = "preview_ready"
-        req["message"] = "Το preview δημιουργήθηκε."
+        req["message"] = "Ξ¤ΞΏ preview Ξ΄Ξ·ΞΌΞΉΞΏΟ…ΟΞ³Ξ®ΞΈΞ·ΞΊΞµ."
         req["preview_file"] = PREVIEW_SCENE_FILE.name
         req["preview_ir_file"] = PREVIEW_IR_FILE.name
         req["parsed_action"] = action
+        req["action_source"] = action_source
         write_json(AI_REQUEST_FILE, req)
 
         write_json(SCENE_STATE_FILE, {
@@ -1363,6 +1389,7 @@ def handle_pending_ai_request():
         write_json(AI_REQUEST_FILE, req)
         print("[controller] Error while handling request:")
         traceback.print_exc()
+
 
 def handle_apply(ui):
     request_id = ui.get("request_id")
