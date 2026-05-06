@@ -164,11 +164,17 @@ Scene context:
 """ % (prompt, json.dumps(scene_context, ensure_ascii=False))
 
 
+_FILLER_WORDS = frozenset({"a", "an", "the", "please"})
+
 def normalize_prompt(prompt):
     text = str(prompt or "").strip().lower()
+    # Replace punctuation and underscores with spaces
     text = re.sub(r"[^\w\s]", " ", text, flags=re.UNICODE)
-    text = re.sub(r"[_\s]+", " ", text, flags=re.UNICODE)
-    return text.strip()
+    text = re.sub(r"_+", " ", text)
+    # Remove filler words (whole-word match via split, no partial removal)
+    tokens = [t for t in text.split() if t not in _FILLER_WORDS]
+    # Collapse whitespace
+    return " ".join(tokens)
 
 
 def load_action_cache():
