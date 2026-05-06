@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from geometry_factory import create_geometry, create_textured_cube
+from geometry_factory import build_render_mesh, create_textured_cube
 
 
 DEFAULT_WINDOW = {
@@ -313,13 +313,19 @@ def make_translate(position):
 def make_scale(scale):
     sx, sy, sz = scale
 
-    # Elements snippet σου χρησιμοποιεί util.scale(s)
-    # κρατάμε uniform scale αν είναι ίδια.
     if sx == sy == sz:
         return "util.scale({})".format(float(sx))
 
-    # προσωρινό fallback για non-uniform scale
-    return "util.scale(1.0)"
+    return (
+        "np.array([[{sx}, 0.0, 0.0, 0.0], "
+        "[0.0, {sy}, 0.0, 0.0], "
+        "[0.0, 0.0, {sz}, 0.0], "
+        "[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)"
+    ).format(
+        sx=float(sx),
+        sy=float(sy),
+        sz=float(sz)
+    )
 
 
 def vec3_to_util_vec(v):
@@ -336,27 +342,24 @@ def emit_geometry_data(shape, material, transform, suffix):
         "scale": transform.get("scale", [1.0, 1.0, 1.0])
     }
 
-    raw_vertices, raw_indices, raw_colors = create_geometry(shape, params)
+    raw_vertices, raw_indices, raw_colors, raw_normals = build_render_mesh(shape, params)
 
     vertices_code = ndarray_to_python(raw_vertices, "float32")
     indices_code = ndarray_to_python(raw_indices, "uint32")
     colors_code = ndarray_to_python(raw_colors, "float32")
+    normals_code = ndarray_to_python(raw_normals, "float32")
 
     return """
-raw_vertices_{suffix} = {vertices_code}
-raw_indices_{suffix} = {indices_code}
-raw_colors_{suffix} = {colors_code}
-
-vertices_{suffix}, indices_{suffix}, colors_{suffix}, normals_{suffix} = norm.generateSmoothNormalsMesh(
-    raw_vertices_{suffix},
-    raw_indices_{suffix},
-    raw_colors_{suffix}
-)
+vertices_{suffix} = {vertices_code}
+indices_{suffix} = {indices_code}
+colors_{suffix} = {colors_code}
+normals_{suffix} = {normals_code}
 """.format(
         suffix=suffix,
         vertices_code=vertices_code,
         indices_code=indices_code,
-        colors_code=colors_code
+        colors_code=colors_code,
+        normals_code=normals_code
     )
 
 

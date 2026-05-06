@@ -5,6 +5,117 @@ def make_color_array(color, count):
     r, g, b = color
     return np.array([[r, g, b, 1.0]] * count, dtype=np.float32)
 
+HARD_SURFACE_SHAPES = {
+    "cube",
+    "rectangular_prism",
+    "pyramid",
+    "triangular_pyramid",
+    "plane",
+}
+
+
+def shape_uses_flat_normals(shape_type):
+    return str(shape_type).lower() in HARD_SURFACE_SHAPES
+
+
+def _safe_face_normal(v0, v1, v2):
+    edge_1 = v1[:3] - v0[:3]
+    edge_2 = v2[:3] - v0[:3]
+    normal = np.cross(edge_1, edge_2)
+    length = np.linalg.norm(normal)
+
+    if length < 1e-8:
+        return np.array([0.0, 1.0, 0.0], dtype=np.float32)
+
+    return (normal / length).astype(np.float32)
+
+
+def build_flat_shaded_mesh(vertices, indices, colors):
+    vertices = np.asarray(vertices, dtype=np.float32)
+    indices = np.asarray(indices, dtype=np.uint32)
+    colors = np.asarray(colors, dtype=np.float32)
+
+    flat_vertices = []
+    flat_colors = []
+    flat_normals = []
+    flat_indices = []
+
+    triangle_count = len(indices) // 3
+
+    for tri_idx in range(triangle_count):
+        ia = int(indices[tri_idx * 3 + 0])
+        ib = int(indices[tri_idx * 3 + 1])
+        ic = int(indices[tri_idx * 3 + 2])
+
+        v0 = vertices[ia]
+        v1 = vertices[ib]
+        v2 = vertices[ic]
+
+        c0 = colors[ia]
+        c1 = colors[ib]
+        c2 = colors[ic]
+
+        normal3 = _safe_face_normal(v0, v1, v2)
+        normal4 = np.array([normal3[0], normal3[1], normal3[2], 0.0], dtype=np.float32)
+
+        base_index = len(flat_vertices)
+
+        flat_vertices.extend([v0.tolist(), v1.tolist(), v2.tolist()])
+        flat_colors.extend([c0.tolist(), c1.tolist(), c2.tolist()])
+        flat_normals.extend([normal4.tolist(), normal4.tolist(), normal4.tolist()])
+        flat_indices.extend([base_index, base_index + 1, base_index + 2])
+
+    return (
+        np.asarray(flat_vertices, dtype=np.float32),
+        np.asarray(flat_indices, dtype=np.uint32),
+        np.asarray(flat_colors, dtype=np.float32),
+        np.asarray(flat_normals, dtype=np.float32),
+    )
+
+
+def build_smooth_shaded_mesh(vertices, indices, colors):
+    vertices = np.asarray(vertices, dtype=np.float32)
+    indices = np.asarray(indices, dtype=np.uint32)
+    colors = np.asarray(colors, dtype=np.float32)
+
+    normal_sums = np.zeros((len(vertices), 3), dtype=np.float32)
+    triangle_count = len(indices) // 3
+
+    for tri_idx in range(triangle_count):
+        ia = int(indices[tri_idx * 3 + 0])
+        ib = int(indices[tri_idx * 3 + 1])
+        ic = int(indices[tri_idx * 3 + 2])
+
+        normal3 = _safe_face_normal(vertices[ia], vertices[ib], vertices[ic])
+        normal_sums[ia] += normal3
+        normal_sums[ib] += normal3
+        normal_sums[ic] += normal3
+
+    normals = []
+    for item in normal_sums:
+        length = np.linalg.norm(item)
+        if length < 1e-8:
+            normals.append([0.0, 1.0, 0.0, 0.0])
+        else:
+            item = item / length
+            normals.append([float(item[0]), float(item[1]), float(item[2]), 0.0])
+
+    return (
+        vertices.astype(np.float32),
+        indices.astype(np.uint32),
+        colors.astype(np.float32),
+        np.asarray(normals, dtype=np.float32),
+    )
+
+
+def build_render_mesh(shape_type, params):
+    vertices, indices, colors = create_geometry(shape_type, params)
+
+    if shape_uses_flat_normals(shape_type):
+        return build_flat_shaded_mesh(vertices, indices, colors)
+
+    return build_smooth_shaded_mesh(vertices, indices, colors)
+
 
 # TEXTURED CUBE  wwith uv map for each fase
 
@@ -235,20 +346,21 @@ def create_cone(params):
     indices = []
 
     for i in range(segments):
-        angle = 2*np.pi*i/segments
-        x = radius*np.cos(angle)
-        z = radius*np.sin(angle)
-        vertices.append([x, -height/2, z, 1])
+        angle = 2 * np.pi * i / segments
+        x = radius * np.cos(angle)
+        z = radius * np.sin(angle)
+        vertices.append([x, -height / 2, z, 1.0])
 
     for i in range(1, segments):
-        indices += [0, i, i+1]
+        indices += [0, i, i + 1]
     indices += [0, segments, 1]
 
     vertices = np.array(vertices, dtype=np.float32)
     indices = np.array(indices, dtype=np.uint32)
-    colors = make_color_array(params.get("color"), len(vertices))
+    colors = make_color_array(color, len(vertices))
 
     return vertices, indices, colors
+
 
 
 # ---------------------
@@ -310,7 +422,7 @@ def create_geometry(shape_type, params):
     elif shape_type == "sphere":
         return create_sphere(params)
     elif shape_type == "textured_cube":
-        return create_textured_cube(params)
+        return create_textured_cube()
     else:
         raise ValueError("Unsupported shape type: {}".format(shape_type))
 

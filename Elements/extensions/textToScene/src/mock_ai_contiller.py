@@ -661,40 +661,69 @@ def collect_mesh_objects_with_groups(scene_ir):
     return result
 
 
-def collect_world_positions(scene_ir, exclude_node=None):
+def collect_world_positions(scene_ir, exclude_node=None,exclude_object_id=None):
     positions = []
 
     for node, parent_group in collect_mesh_objects_with_groups(scene_ir):
         if exclude_node is not None and node is exclude_node:
             continue
 
+        node_id = node.get("id")
+        if exclude_object_id is not None and str(node_id) == str(exclude_object_id):
+            continue
         positions.append(get_world_position(node, parent_group))
 
     return positions
 
 
-def is_world_position_free(scene_ir, world_position, exclude_node=None):
-    for used in collect_world_positions(scene_ir, exclude_node=exclude_node):
+def is_world_position_free(scene_ir, world_position, exclude_node=None, exclude_object_id=None):
+    for used in collect_world_positions(
+        scene_ir,
+        exclude_node=exclude_node,
+        exclude_object_id=exclude_object_id
+    ):
         if positions_overlap(used, world_position):
             return False
 
     return True
 
+def find_nearest_free_world_position(scene_ir, desired_world_position, exclude_object_id=None):
+    desired = [
+        float(desired_world_position[0]),
+        float(desired_world_position[1]),
+        float(desired_world_position[2])
+    ]
 
-def find_next_free_world_position(scene_ir):
-    used_x = []
-    for node in collect_mesh_objects(scene_ir):
-        pos= node.get("transform", {}).get("position", [0.0, CUBE_Y, CUBE_Z])   
-        try: 
-            used_x.append(float(pos[0]))
-        except Exception:
-            pass
-    
-    slot = 0    
+    if is_world_position_free(scene_ir, desired, exclude_object_id=exclude_object_id):
+        return desired
+
+    preferred_y = desired[1]
+    preferred_z = desired[2]
+    base_slot = int(round(desired[0] / GRID_SPACING))
+
+    step = 1
     while True:
-        x = GRID_SPACING * slot
-        if all(abs(x - u) > 1e-6 for u in used_x):
-            return [x, CUBE_Y, CUBE_Z]
+        right_candidate = [GRID_SPACING * (base_slot + step), preferred_y, preferred_z]
+        if is_world_position_free(scene_ir, right_candidate, exclude_object_id=exclude_object_id):
+            return right_candidate
+
+        left_candidate = [GRID_SPACING * (base_slot - step), preferred_y, preferred_z]
+        if is_world_position_free(scene_ir, left_candidate, exclude_object_id=exclude_object_id):
+            return left_candidate
+
+        step += 1
+
+def find_next_free_world_position(scene_ir, preferred_y=None, preferred_z=None, exclude_object_id=None):
+    if preferred_y is None:
+        preferred_y = CUBE_Y
+    if preferred_z is None:
+        preferred_z = CUBE_Z
+
+    slot = 0
+    while True:
+        world_position = [GRID_SPACING * slot, float(preferred_y), float(preferred_z)]
+        if is_world_position_free(scene_ir, world_position, exclude_object_id=exclude_object_id):
+            return world_position
         slot += 1
 
 
@@ -703,41 +732,37 @@ def find_next_free_position_for_group(scene_ir, group_node):
     return world_to_local_position(world_position, group_node)
 
 
-def find_position_right_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_node=None):
+def find_position_right_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_object_id=None):
     base = get_world_position(target_node, target_group)
-    step = 1
+    desired_world_position = [base[0] + GRID_SPACING, base[1], base[2]]
 
-    while True:
-        world_position = [base[0] + GRID_SPACING * step, base[1], base[2]]
-
-        if is_world_position_free(scene_ir, world_position, exclude_node=exclude_node):
-            if destination_group is not None:
-                return world_to_local_position(world_position, destination_group)
-
-            return world_position
-
-        step += 1
-
-
-def find_position_on_top_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_node=None):
-    base = get_world_position(target_node, target_group)
-    scale = get_scale(target_node)
-    world_position = [base[0], base[1] + scale[1], base[2]]
-
-    if is_world_position_free(scene_ir, world_position, exclude_node=exclude_node):
-        if destination_group is not None:
-            return world_to_local_position(world_position, destination_group)
-
-        return world_position
-
-    return find_position_right_of_target(
+    world_position = find_nearest_free_world_position(
         scene_ir,
-        target_node,
-        target_group=target_group,
-        destination_group=destination_group,
-        exclude_node=exclude_node
+        desired_world_position,
+        exclude_object_id=exclude_object_id
     )
 
+    if destination_group is not None:
+        return world_to_local_position(world_position, destination_group)
+
+    return world_position
+
+
+def find_position_on_top_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_object_id=None):
+    base = get_world_position(target_node, target_group)
+    scale = get_scale(target_node)
+    desired_world_position = [base[0], base[1] + scale[1], base[2]]
+
+    world_position = find_nearest_free_world_position(
+        scene_ir,
+        desired_world_position,
+        exclude_object_id=exclude_object_id
+    )
+
+    if destination_group is not None:
+        return world_to_local_position(world_position, destination_group)
+
+    return world_position
 
 def make_group_node(scene_ir, group_name):
     normalized = normalize_group_name(group_name)
@@ -1376,6 +1401,10 @@ def handle_pending_ai_request():
             handle_save_scene({"request_id": request_id})
             return
 
+        if action.get("action") == "undo":
+            handle_undo({"request_id": request_id})
+            return
+        
         preview_ir = apply_action_to_ir(scene_ir, action)
 
         save_preview_ir(preview_ir)
@@ -1398,6 +1427,13 @@ def handle_pending_ai_request():
         print("[controller] Preview ready for request", request_id)
 
     except Exception as e:
+        clear_preview_files()
+        write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
+        write_json(UI_STATE_FILE, {
+            "action": "idle",
+            "request_id": request_id,
+            "updated_at": time.time()
+        })
         req["status"] = "error"
         req["error"] = str(e)
         write_json(AI_REQUEST_FILE, req)
@@ -1407,6 +1443,17 @@ def handle_pending_ai_request():
 
 def handle_apply(ui):
     request_id = ui.get("request_id")
+
+    if not PREVIEW_IR_FILE.exists() or not PREVIEW_SCENE_FILE.exists():
+        write_json(UI_STATE_FILE, {
+            "action": "error",
+            "message": "Preview files missing; cannot apply.",
+            "request_id": request_id,
+            "updated_at": time.time()
+        })
+        write_status("error", "Preview files missing; cannot apply.", request_id=request_id)
+        print("[controller] Apply aborted: preview files missing.")
+        return
 
     promote_preview_files_exactly()
 
@@ -1625,28 +1672,104 @@ def describe_node(node):
     }
 
 
-def resolve_target_node(scene_ir, target_text):
+def resolve_target_node_with_group(scene_ir, target_text):
     if not target_text:
-        return None
+        return None, None
 
     target_text = str(target_text).lower().strip()
     candidates = []
 
-    for node in collect_mesh_objects(scene_ir):
+    for node, parent_group in collect_mesh_objects_with_groups(scene_ir):
         info = describe_node(node)
         tokens = [info["name"].lower(), info["shape"].lower(), info["color_name"].lower()]
         joined = " ".join(tokens)
 
         if target_text in joined:
-            candidates.append(node)
+            candidates.append((node, parent_group))
 
     if not candidates:
+        return None, None
+
+    candidates = sorted(candidates, key=lambda item: str(item[0].get("name", "")))
+    chosen, chosen_group = candidates[0]
+    print("[controller] Resolved target:", target_text, "->", chosen.get("name"))
+    return chosen, chosen_group
+
+
+def resolve_target_node(scene_ir, target_text):
+    node, parent_group = resolve_target_node_with_group(scene_ir, target_text)
+    return node
+
+#### new helper functions
+def normalize_action_position(value, field_name):
+    if value is None:
         return None
 
-    candidates = sorted(candidates, key=lambda n: str(n.get("name", "")))
-    chosen = candidates[0]
-    print("[controller] Resolved target:", target_text, "->", chosen.get("name"))
-    return chosen
+    if not isinstance(value, (list, tuple)) or len(value) != 3:
+        raise ValueError(field_name + " must be a list/tuple of length 3")
+
+    return [float(value[0]), float(value[1]), float(value[2])]
+
+
+def normalize_action_scale(value, default_scale=None):
+    if value is None:
+        if default_scale is None:
+            return [1.0, 1.0, 1.0]
+        return [
+            float(default_scale[0]),
+            float(default_scale[1]),
+            float(default_scale[2])
+        ]
+
+    if isinstance(value, (int, float)):
+        factor = float(value)
+        return [factor, factor, factor]
+
+    if not isinstance(value, (list, tuple)) or len(value) != 3:
+        raise ValueError("scale must be a number or a list/tuple of length 3")
+
+    return [float(value[0]), float(value[1]), float(value[2])]
+
+
+def resolve_target_node_by_identity(scene_ir, identity_value):
+    if identity_value is None:
+        return None, None
+
+    wanted = str(identity_value).strip()
+    if not wanted:
+        return None, None
+
+    for node, parent_group in collect_mesh_objects_with_groups(scene_ir):
+        node_id = str(node.get("id", "")).strip()
+        node_name = str(node.get("name", "")).strip()
+
+        if wanted == node_id or wanted == node_name:
+            print("[controller] Resolved identity:", wanted, "->", node.get("name"))
+            return node, parent_group
+
+    return None, None
+
+
+def resolve_action_target_node(scene_ir, action):
+    object_ids = action.get("object_ids")
+    if isinstance(object_ids, list):
+        for object_id in object_ids:
+            node, parent_group = resolve_target_node_by_identity(scene_ir, object_id)
+            if node is not None:
+                return node, parent_group
+
+    for key in ("object_id", "id", "name"):
+        node, parent_group = resolve_target_node_by_identity(scene_ir, action.get(key))
+        if node is not None:
+            return node, parent_group
+
+    target_text = action.get("target")
+    if target_text:
+        return resolve_target_node_with_group(scene_ir, target_text)
+
+    return None, None
+######### end of new helper functions for llm parser #########
+
 
 def color_name_to_rgb(name):
     return COLOR_TABLE.get(str(name).lower(), [0.8, 0.0, 0.8])
@@ -1672,29 +1795,43 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "add_object":
         object_type = str(action.get("object_type", "cube")).lower()
         color = color_name_to_rgb(action.get("color", "purple"))
+        object_scale = normalize_action_scale(action.get("scale"), default_scale=[1.0, 1.0, 1.0])
 
-        position = find_next_free_world_position(new_ir)
+        explicit_position = normalize_action_position(action.get("new_position"), "new_position")
+        if explicit_position is None:
+            explicit_position = normalize_action_position(action.get("position"), "position")
+
+        default_y = max(0.5, 0.5 * float(object_scale[1]))
+
+        if explicit_position is not None:
+            desired_world_position = find_nearest_free_world_position(new_ir, explicit_position)
+        else:
+            desired_world_position = find_next_free_world_position(new_ir, preferred_y=default_y)
+
         placement = action.get("placement", {})
         relation = placement.get("relation")
 
         if relation in ("right_of", "on_top_of"):
-            target = resolve_target_node(new_ir, placement.get("target"))
+            target, target_group = resolve_target_node_with_group(new_ir, placement.get("target"))
             if target is not None:
-                target_pos = target.get("transform", {}).get("position", [0.0, CUBE_Y, CUBE_Z])
-                target_scale = target.get("transform", {}).get("scale", [1.0, 1.0, 1.0])
-
                 if relation == "right_of":
-                    position = [
-                        float(target_pos[0]) + GRID_SPACING,
-                        float(target_pos[1]),
-                        float(target_pos[2])
-                    ]
+                    desired_world_position = find_position_right_of_target(
+                        new_ir,
+                        target,
+                        target_group=target_group
+                    )
                 elif relation == "on_top_of":
-                    position = [
-                        float(target_pos[0]),
-                        float(target_pos[1]) + float(target_scale[1]),
-                        float(target_pos[2])
-                    ]
+                    desired_world_position = find_position_on_top_of_target(
+                        new_ir,
+                        target,
+                        target_group=target_group
+                    )
+
+        position = [
+            float(desired_world_position[0]),
+            float(desired_world_position[1]),
+            float(desired_world_position[2])
+        ]
 
         new_node = {
             "node_type": "mesh_object",
@@ -1704,7 +1841,7 @@ def apply_action_to_ir(scene_ir, action):
             "shape": object_type,
             "transform": {
                 "position": position,
-                "scale": [1.0, 1.0, 1.0]
+                "scale": object_scale
             },
             "material": {
                 "color": color,
@@ -1721,11 +1858,19 @@ def apply_action_to_ir(scene_ir, action):
 
     if action_name == "delete_object":
         object_ids = action.get("object_ids")
-        if object_ids:
+        if isinstance(object_ids, list) and object_ids:
             print("[controller] Deleting by object_ids:", object_ids)
             return delete_nodes_by_ids(new_ir, object_ids)
 
-        target = resolve_target_node(new_ir, action.get("target"))
+        single_identity = action.get("object_id")
+        if single_identity is None:
+            single_identity = action.get("id")
+
+        if single_identity is not None:
+            print("[controller] Deleting by single object id:", single_identity)
+            return delete_nodes_by_ids(new_ir, [single_identity])
+
+        target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
             raise ValueError("Could not resolve delete target")
 
@@ -1738,20 +1883,7 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
 
     if action_name == "recolor_object":
-        target = None
-
-        object_id = action.get("id") or action.get("object_id")
-        object_ids = action.get("object_ids")
-
-        if object_id:
-            target = find_node_by_id(new_ir, object_id)
-        elif object_ids:
-            if object_ids:
-                target = find_node_by_id(new_ir, object_ids[0])
-
-        if target is None:
-            target = resolve_target_node(new_ir, action.get("target"))
-
+        target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
             raise ValueError("Could not resolve recolor target")
 
@@ -1759,61 +1891,89 @@ def apply_action_to_ir(scene_ir, action):
         target["material"]["color"] = color_name_to_rgb(action.get("color", "purple"))
         target["material"].setdefault("texture", {"enabled": False, "path": None})
         return new_ir
-    
-    if action_name == "move_object":
-        target = None
 
-        object_id = action.get("id") or action.get("object_id")
-        object_ids = action.get("object_ids")
-
-        if object_id:
-            target = find_node_by_id(new_ir, object_id)
-
-        elif object_ids:
-            if object_ids:
-                target = find_node_by_id(new_ir, object_ids[0])
-
+    if action_name == "scale_object":
+        target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
-            target = resolve_target_node(new_ir, action.get("target"))
+            raise ValueError("Could not resolve scale target")
 
+        transform = target.setdefault("transform", {})
+        current_scale = transform.get("scale", [1.0, 1.0, 1.0])
+
+        if "scale" in action:
+            new_scale = normalize_action_scale(action.get("scale"), default_scale=current_scale)
+        elif "factor" in action:
+            factor = float(action.get("factor"))
+            new_scale = [
+                float(current_scale[0]) * factor,
+                float(current_scale[1]) * factor,
+                float(current_scale[2]) * factor
+            ]
+        else:
+            raise ValueError("scale_object requires 'scale' or 'factor'")
+
+        transform["scale"] = new_scale
+        transform.setdefault("position", [0.0, CUBE_Y, CUBE_Z])
+        return new_ir
+
+    if action_name == "move_object":
+        target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
             raise ValueError("Could not resolve move target")
 
-        transform = target.setdefault("transform", {})
-        pos = transform.setdefault("position", [0.0, CUBE_Y, CUBE_Z])
+        explicit_position = normalize_action_position(action.get("new_position"), "new_position")
+        if explicit_position is None:
+            explicit_position = normalize_action_position(action.get("position"), "position")
 
-        absolute_position = action.get("position")
-        if absolute_position is None:
-            absolute_position = action.get("new_position")
-
-        if absolute_position is not None:
-            if not isinstance(absolute_position, (list, tuple)) or len(absolute_position) != 3:
-                raise ValueError("Invalid move position")
-
-            transform["position"] = [
-                float(absolute_position[0]),
-                float(absolute_position[1]),
-                float(absolute_position[2]),
-            ]
-            return new_ir
-
-        direction = str(action.get("direction", "")).lower().strip()
-
-        if direction in ("right", "to_the_right"):
-            pos[0] = float(pos[0]) + GRID_SPACING
-        elif direction in ("left", "to_the_left"):
-            pos[0] = float(pos[0]) - GRID_SPACING
-        elif direction in ("forward", "front", "to_the_front"):
-            pos[2] = float(pos[2]) - GRID_SPACING
-        elif direction in ("backward", "back", "to_the_back"):
-            pos[2] = float(pos[2]) + GRID_SPACING
+        if explicit_position is not None:
+            desired_world_position = explicit_position
         else:
-            raise ValueError("Unsupported move direction: " + direction)
+            direction = str(action.get("direction", "")).lower().strip()
+            current_world_position = get_world_position(target, target_group)
 
+            if direction == "right":
+                desired_world_position = [
+                    current_world_position[0] + GRID_SPACING,
+                    current_world_position[1],
+                    current_world_position[2]
+                ]
+            elif direction == "left":
+                desired_world_position = [
+                    current_world_position[0] - GRID_SPACING,
+                    current_world_position[1],
+                    current_world_position[2]
+                ]
+            elif direction == "forward":
+                desired_world_position = [
+                    current_world_position[0],
+                    current_world_position[1],
+                    current_world_position[2] - GRID_SPACING
+                ]
+            elif direction == "backward":
+                desired_world_position = [
+                    current_world_position[0],
+                    current_world_position[1],
+                    current_world_position[2] + GRID_SPACING
+                ]
+            else:
+                raise ValueError("move_object requires 'direction', 'position', or 'new_position'")
+
+        final_world_position = find_nearest_free_world_position(
+            new_ir,
+            desired_world_position,
+            exclude_object_id=target.get("id")
+        )
+
+        if target_group is not None:
+            final_local_position = world_to_local_position(final_world_position, target_group)
+            set_position(target, final_local_position)
+        else:
+            set_position(target, final_world_position)
+
+        print("[controller] Assigned position for moved object:", final_world_position)
         return new_ir
 
     raise ValueError("Unsupported action type: " + str(action_name))
-
 
 def main():
     print("[controller] Mock AI controller started.")
