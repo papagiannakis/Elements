@@ -660,7 +660,7 @@ def collect_mesh_objects_with_groups(scene_ir):
     return result
 
 
-def collect_world_positions(scene_ir, exclude_node=None,exclude_object_id=None):
+def collect_world_positions(scene_ir, exclude_node=None, exclude_object_id=None):
     positions = []
 
     for node, parent_group in collect_mesh_objects_with_groups(scene_ir):
@@ -951,7 +951,8 @@ def remove_node_by_id(node, target_id):
     return False
 
 
-# Legacy rule-based parser — still used as LLM fallback in handle_pending_ai_request.
+# --- Legacy fallback: rule-based parser ---
+# Used in handle_pending_ai_request when both cache lookup and LLM call fail.
 # Not part of the primary (cache → LLM → validate → apply) execution path.
 def parse_command(prompt):
     text = prompt.lower().strip()
@@ -1031,6 +1032,7 @@ def parse_command(prompt):
 
 
 def command_to_action(command):
+    # Converts a parse_command result into the canonical action schema.
     t = command.get("type")
     if t == "new_scene":
         return {"action": "new_scene"}
@@ -1070,7 +1072,10 @@ def command_to_action(command):
     if t == "create_group":
         return {"action": "create_group", "group_name": command.get("group_name")}
     raise ValueError("Unknown rule-based command type: " + str(t))
-############################ change for llm parser ############################
+
+# --- End legacy fallback ---
+
+
 def find_node_by_id(scene_ir, object_id):
     if not object_id:
         return None
@@ -1083,192 +1088,6 @@ def find_node_by_id(scene_ir, object_id):
 
     return None
 
-
-# Dead code — predates the action schema. Not called from any active path.
-# Kept for reference; safe to delete once the action architecture is stable.
-def apply_mock_ai_prompt(scene_ir, prompt):
-    new_ir = ensure_stable_object_ids(deepcopy(scene_ir))
-    command = parse_command(prompt)
-
-    print("[controller] Parsed command type:", command.get("type"))
-
-    command_type = command.get("type")
-    group_name = command.get("group_name")
-
-    if command_type == "create_group":
-        if not group_name:
-            raise ValueError("Missing group name.")
-
-        existing = find_group(new_ir, group_name)
-        if existing is not None:
-            print("[controller] Group already exists:", existing.get("name"))
-            return new_ir
-
-        group_node = make_group_node(new_ir, group_name)
-        ensure_scene_children(new_ir).append(group_node)
-
-        print("[controller] Created group:", group_node.get("name"))
-        print("[controller] Group position:", group_node.get("transform", {}).get("position"))
-        return new_ir
-
-    if command_type == "add_cube":
-        placement = command.get("placement")
-        color = color_value(command.get("color"))
-        target_text = command.get("target_text") or prompt
-
-        destination_group = None
-
-        if group_name:
-            destination_group = find_group(new_ir, group_name)
-            if destination_group is None:
-                raise ValueError("Group not found: " + str(group_name))
-
-        if placement == "right_of":
-            target, target_group = resolve_target(
-                new_ir,
-                target_text,
-                prefer_color=None,
-                group_name=group_name
-            )
-
-            if target is None:
-                raise ValueError("Could not resolve target for right-of placement.")
-
-            position = find_position_right_of_target(
-                new_ir,
-                target,
-                target_group=target_group,
-                destination_group=destination_group
-            )
-
-        elif placement == "on_top_of":
-            target, target_group = resolve_target(
-                new_ir,
-                target_text,
-                prefer_color=None,
-                group_name=group_name
-            )
-
-            if target is None:
-                raise ValueError("Could not resolve target for on-top placement.")
-
-            position = find_position_on_top_of_target(
-                new_ir,
-                target,
-                target_group=target_group,
-                destination_group=destination_group
-            )
-
-        else:
-            if destination_group is not None:
-                position = find_next_free_position_for_group(new_ir, destination_group)
-            else:
-                position = find_next_free_world_position(new_ir)
-
-        cube = make_cube_node(new_ir, position, color)
-
-        if destination_group is not None:
-            ensure_group_children(destination_group).append(cube)
-            print("[controller] Added object to group:", destination_group.get("name"))
-        else:
-            ensure_scene_children(new_ir).append(cube)
-
-        print("[controller] Target text for placement:", target_text)
-        print("[controller] Assigned position for new object:", position)
-        print("[controller] Added object name:", cube["name"])
-        return new_ir
-
-    if command_type == "move_group":
-        if not group_name:
-            raise ValueError("Missing group name.")
-
-        group_node = find_group(new_ir, group_name)
-        if group_node is None:
-            raise ValueError("Group not found: " + str(group_name))
-
-        direction = command.get("direction")
-        if direction != "right":
-            raise ValueError("Only moving groups to the right is supported for now.")
-
-        current_position = get_group_world_offset(group_node)
-        new_position = [
-            current_position[0] + GRID_SPACING,
-            current_position[1],
-            current_position[2]
-        ]
-
-        group_node.setdefault("transform", {})["position"] = new_position
-        group_node.setdefault("transform", {}).setdefault("scale", [1.0, 1.0, 1.0])
-
-        print("[controller] Moved group:", group_node.get("name"))
-        print("[controller] New group position:", new_position)
-        return new_ir
-
-    if command_type == "move":
-        target, target_group = resolve_target(
-            new_ir,
-            prompt,
-            prefer_color=command.get("target_color"),
-            group_name=group_name
-        )
-
-        if target is None:
-            raise ValueError("Could not resolve target for move command.")
-
-        direction = command.get("direction")
-        if direction != "right":
-            raise ValueError("Only moving to the right is supported for now.")
-
-        position = find_position_right_of_target(
-            new_ir,
-            target,
-            target_group=target_group,
-            destination_group=target_group,
-            exclude_node=target
-        )
-
-        set_position(target, position)
-
-        print("[controller] Assigned position for moved object:", position)
-        return new_ir
-
-    if command_type == "change_color":
-        new_color_name = command.get("new_color")
-        if new_color_name is None:
-            raise ValueError("No supported target color found.")
-
-        target, target_group = resolve_target(new_ir, prompt, group_name=group_name)
-        if target is None:
-            raise ValueError("Could not resolve target for color change.")
-
-        material = target.setdefault("material", {})
-        material["color"] = color_value(new_color_name)
-        material.setdefault("texture", {"enabled": False, "path": None})
-
-        print("[controller] Changed object color:", target.get("name"), "->", new_color_name)
-        return new_ir
-
-    if command_type == "delete":
-        target, target_group = resolve_target(
-            new_ir,
-            prompt,
-            prefer_color=command.get("target_color"),
-            group_name=group_name
-        )
-
-        if target is None:
-            raise ValueError("Could not resolve target for delete command.")
-
-        target_id = target.get("id")
-        target_name = target.get("name")
-
-        if not remove_node_by_id(new_ir, target_id):
-            raise ValueError("Could not delete target object: " + str(target_name))
-
-        print("[controller] Deleted object name:", target_name)
-        return new_ir
-
-    raise ValueError("Unsupported command.")
 
 
 def load_history_stack():
@@ -1630,7 +1449,6 @@ def handle_ui_actions():
         traceback.print_exc()
 
 
-######## new helper functions for llm parser ########
 def validate_action(action):
     if not isinstance(action, dict):
         raise ValueError("Parsed action must be a dictionary")
@@ -1818,7 +1636,6 @@ def resolve_target_node(scene_ir, target_text):
     node, parent_group = resolve_target_node_with_group(scene_ir, target_text)
     return node
 
-#### new helper functions
 def normalize_action_position(value, field_name):
     if value is None:
         return None
@@ -1886,7 +1703,6 @@ def resolve_action_target_node(scene_ir, action):
         return resolve_target_node_with_group(scene_ir, target_text)
 
     return None, None
-######### end of new helper functions for llm parser #########
 
 
 def color_name_to_rgb(name):
