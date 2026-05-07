@@ -114,15 +114,41 @@ def read_json(path, default=None):
         return default
 
 
+_WRITE_RETRIES = 5
+_WRITE_RETRY_DELAY = 0.1  # seconds between retries
+
+
 def write_json(path, data):
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
 
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    with open(str(tmp_path), "w", encoding="utf-8") as f:
-        json.dump(data, f, indent=2, ensure_ascii=False)
+    try:
+        with open(str(tmp_path), "w", encoding="utf-8") as f:
+            json.dump(data, f, indent=2, ensure_ascii=False)
+    except Exception:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise
 
-    os.replace(str(tmp_path), str(path))
+    last_exc = None
+    for attempt in range(_WRITE_RETRIES):
+        try:
+            os.replace(str(tmp_path), str(path))
+            return
+        except PermissionError as exc:
+            last_exc = exc
+            time.sleep(_WRITE_RETRY_DELAY * (attempt + 1))
+
+    try:
+        tmp_path.unlink(missing_ok=True)
+    except Exception:
+        pass
+    raise PermissionError(
+        f"[controller] write_json failed after {_WRITE_RETRIES} retries: {path}"
+    ) from last_exc
 
 
 def write_text_atomic(path, text):
@@ -179,16 +205,21 @@ def reset_request_and_ui_files(status=None, message=None, request_id=None):
         "updated_at": time.time()
     }
 
-    write_json(AI_REQUEST_FILE, req)
+    try:
+        write_json(AI_REQUEST_FILE, req)
+        print("[controller] Reset request file:", AI_REQUEST_FILE)
+    except Exception as exc:
+        print(f"[controller] reset_request_and_ui_files: could not write AI_REQUEST_FILE: {exc}")
 
-    write_json(UI_STATE_FILE, {
-        "action": "idle",
-        "request_id": request_id,
-        "updated_at": time.time()
-    })
-
-    print("[controller] Reset request file:", AI_REQUEST_FILE)
-    print("[controller] Reset UI file:", UI_STATE_FILE)
+    try:
+        write_json(UI_STATE_FILE, {
+            "action": "idle",
+            "request_id": request_id,
+            "updated_at": time.time()
+        })
+        print("[controller] Reset UI file:", UI_STATE_FILE)
+    except Exception as exc:
+        print(f"[controller] reset_request_and_ui_files: could not write UI_STATE_FILE: {exc}")
 
 
 def write_scene_state(mode, active_script, request_id=None):
@@ -217,7 +248,10 @@ def write_status(status, message=None, request_id=None, error=None):
     if error is not None:
         data["error"] = error
 
-    write_json(AI_REQUEST_FILE, data)
+    try:
+        write_json(AI_REQUEST_FILE, data)
+    except Exception as exc:
+        print(f"[controller] write_status failed ({status}): {exc}")
 
 
 def walk_nodes(node):
