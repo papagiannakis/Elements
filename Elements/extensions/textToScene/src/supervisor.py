@@ -4,15 +4,27 @@ import sys
 import time
 from pathlib import Path
 
+try:
+    from config import (
+        OFFICIAL_SCENE_FILE,
+        POLL_INTERVAL,
+        PREVIEW_SCENE_FILE,
+        SCENE_STATE_FILE,
+        SHARED_DIR,
+        ensure_runtime_dirs,
+    )
+except ImportError:
+    from .config import (
+        OFFICIAL_SCENE_FILE,
+        POLL_INTERVAL,
+        PREVIEW_SCENE_FILE,
+        SCENE_STATE_FILE,
+        SHARED_DIR,
+        ensure_runtime_dirs,
+    )
 
-SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
-SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
-SCENE_STATE_FILE = SHARED_DIR / "scene_state.json"
-OFFICIAL_SCENE_FILE = Path.home() / "Desktop" / "scene_out.py"
-PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
-
-POLL_INTERVAL = 0.5
+ensure_runtime_dirs()
 
 
 def read_json(path, default=None):

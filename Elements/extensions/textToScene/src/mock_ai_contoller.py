@@ -7,6 +7,48 @@ import re
 from copy import deepcopy
 from pathlib import Path
 
+try:
+    from config import (
+        AI_REQUEST_FILE,
+        CUBE_Y,
+        CUBE_Z,
+        GRID_SPACING,
+        HISTORY_DIR,
+        HISTORY_STACK_FILE,
+        POLL_INTERVAL,
+        PREFABS_DIR,
+        PREVIEW_IR_FILE,
+        PREVIEW_SCENE_FILE,
+        PROJECT_SCENE_IR_FILE,
+        SAVED_SCENES_DIR,
+        SCENE_IR_FILE,
+        SCENE_OUT_FILE,
+        SCENE_STATE_FILE,
+        SHARED_DIR,
+        UI_STATE_FILE,
+        ensure_runtime_dirs,
+    )
+except ImportError:
+    from .config import (
+        AI_REQUEST_FILE,
+        CUBE_Y,
+        CUBE_Z,
+        GRID_SPACING,
+        HISTORY_DIR,
+        HISTORY_STACK_FILE,
+        POLL_INTERVAL,
+        PREFABS_DIR,
+        PREVIEW_IR_FILE,
+        PREVIEW_SCENE_FILE,
+        PROJECT_SCENE_IR_FILE,
+        SAVED_SCENES_DIR,
+        SCENE_IR_FILE,
+        SCENE_OUT_FILE,
+        SCENE_STATE_FILE,
+        SHARED_DIR,
+        UI_STATE_FILE,
+        ensure_runtime_dirs,
+    )
 from code_generator import generate_scene_script
 from llm_parser import (
     lookup_cached_action,
@@ -16,37 +58,8 @@ from llm_parser import (
 from prefarbs import build_house, build_tree, build_gift_box, build_street_light
 
 
-
 PROJECT_DIR = Path(__file__).resolve().parent
-PROJECT_SCENE_IR_FILE = PROJECT_DIR / "scene_ir.json"
-
-SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
-SHARED_DIR.mkdir(parents=True, exist_ok=True)
-
-HISTORY_DIR = SHARED_DIR / "history"
-HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-
-SAVED_SCENES_DIR = SHARED_DIR / "saved_scenes"
-SAVED_SCENES_DIR.mkdir(parents=True, exist_ok=True)
-
-PREFABS_DIR = SHARED_DIR / "prefabs"
-PREFABS_DIR.mkdir(parents=True, exist_ok=True)
-
-HISTORY_STACK_FILE = HISTORY_DIR / "undo_stack.json"
-
-SCENE_IR_FILE = SHARED_DIR / "scene_ir.json"
-PREVIEW_IR_FILE = SHARED_DIR / "preview_scene_ir.json"
-AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
-UI_STATE_FILE = SHARED_DIR / "ui_state.json"
-SCENE_STATE_FILE = SHARED_DIR / "scene_state.json"
-
-SCENE_OUT_FILE = Path.home() / "Desktop" / "scene_out.py"
-PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
-
-POLL_INTERVAL = 0.5
-GRID_SPACING = 1.5
-CUBE_Y = 0.5
-CUBE_Z = 0.0
+ensure_runtime_dirs()
 
 COLOR_TABLE = {
     "red": [1.0, 0.0, 0.0],

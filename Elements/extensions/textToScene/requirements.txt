@@ -1,0 +1,9 @@
+numpy
+openai
+PyOpenGL
+imgui
+pytest
+
+# Local project dependency:
+# This extension imports the in-repo `Elements` framework/package.
+# Install/use it from the parent repository workspace.

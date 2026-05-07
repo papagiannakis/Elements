@@ -1,153 +1,69 @@
-# Text to Scene: Code Generator Using an Intermediate Representation (IR)
+# Text to Scene
 
-**csd5116**  
-**Elisavet Kourkounaki**
+`textToScene` is an extension inside the `Elements` repository. It generates runnable Python scene scripts for the `Elements` graphics framework from a structured scene representation, and it also supports an experimental text-driven scene editing loop with preview, apply, reject, and undo actions.
 
-This project is my undergraduate thesis. It generates executable Python scene files for the **Elements** graphics framework from structured scene representations.
+The core idea is a hierarchical scene IR. A scene is represented as a tree of nodes, and the generator converts that IR into executable `Elements` / OpenGL code.
 
-The system is based on a hierarchical **Intermediate Representation (scene IR)**. The IR describes the scene as a tree of nodes, and `code_generator.py` converts that tree into a runnable Elements/OpenGL Python script.
+## Features
 
-The current version also includes an experimental **text-to-scene editing loop**. A generated scene contains a small ImGui editor panel where the user can type simple commands, preview the result, apply it, reject it, or undo the last applied change.
+- Hierarchical scene representation using a scene IR
+- Deterministic Python code generation for `Elements`
+- Preview/apply workflow for text-driven edits
+- In-scene ImGui editor controls
+- Undo support through saved scene history
+- Prefab support for reusable scene objects
+- Basic lighting, materials, and textured cube support
 
-## Overview
+## Architecture
 
-The project combines:
+The current editing loop is split into three main parts.
 
-- hierarchical scene representation through scene IR
-- deterministic Python code generation for Elements
-- generated Elements/OpenGL scene scripts
-- an in-scene ImGui editor panel
-- a file-based bridge between the scene UI, the controller, and the supervisor
-- preview/apply/reject workflow using process restart
-- undo support using saved scene IR history
-- rule-based command parsing for simple editing commands
-- stable object names/IDs for deterministic targeting
+### 1. Scene generator
 
-## Current Features
-
-### Scene Representation
-
-- Hierarchical scene representation using scene IR
-- Tree-based scene structure rather than a flat list of objects
-- Support for composite structures using groups
-- Prefab scene composition
-
-### Code Generation
-
-- Deterministic Python code generation for Elements
-- Generated runnable Elements/OpenGL scene scripts
-- Shared support for preview and official scene generation
-
-### Editing Workflow
-
-- In-scene ImGui editor panel
-- `Send to AI`, `Apply`, `Reject`, and `Undo` workflow
-- Preview scene generation before commit
-- File-based communication between the UI and backend processes
-- Supervisor-based scene switching through process restart
-- Undo support through scene IR history
-
-### Materials and Rendering
-
-- Basic material color support
-- Basic global lighting support
-- Textured cube support
-
-## Supported IR Node Types
-
-The current IR supports the following node types:
-
-- `scene`
-- `group`
-- `mesh_object`
-- `light`
-
-The design also considers `camera` as part of the scene structure, but the current editing pipeline is centered around the four node types above.
-
-## Supported Geometry Types
-
-The geometry factory currently supports:
-
-- `cube`
-- `rectangular prism`
-- `plane`
-- `sphere`
-- `cylinder`
-- `cone`
-- `pyramid`
-- `triangular_pyramid`
-
-## Project Structure
-
-```text
-extensions/textToScene
-|-- README
-|-- src
-|   |-- code_generator.py
-|   |-- geometry_factory.py
-|   |-- ir_schema.py
-|   |-- tester_1.py
-|   |-- mock_ai_contiller.py
-|   |-- supervisor.py
-|   |-- scene_ir.json
-|   |-- text_parser.py
-|   |-- prefarbs
-|       |-- prefarbs.py
-|-- tests
-```
-
-## Main Architecture
-
-The editing loop is split into three parts.
-
-### Generated Scene
-
-`tester_1.py` generates the official scene script:
+`src/legacy/tester_1.py` creates the initial official scene script and saves it to:
 
 ```text
 Desktop/scene_out.py
 ```
 
-The generated scene handles only:
+That generated scene is responsible for:
 
 - rendering the scene
-- showing the ImGui editor panel
+- showing the ImGui controls
 - writing `ai_request.json`
 - writing `ui_state.json`
-- reading status from bridge files
+- reading status from the shared bridge files
 
-It does not inject OpenGL entities into the running process.
+### 2. Controller
 
-### Controller
+`src/mock_ai_contoller.py` is the controller for scene edits. It:
 
-`mock_ai_contiller.py` is the rule-based controller. It handles:
+- reads user requests
+- parses simple commands
+- optionally calls the OpenAI API for structured actions
+- updates the scene IR
+- generates preview scene files
+- applies or rejects previews
+- handles undo, save, and load actions
 
-- reading user commands from `ai_request.json`
-- parsing simple editing commands
-- updating scene IR
-- generating `preview_scene_ir.json`
-- generating `preview_scene.py`
-- applying or rejecting previews
-- saving and restoring undo history
+### 3. Supervisor
 
-### Supervisor
+`src/supervisor.py` watches the shared state and restarts the scene process when switching between:
 
-`supervisor.py` watches `scene_state.json` and switches processes:
+- official mode
+- preview mode
 
-- official mode runs `Desktop/scene_out.py`
-- preview mode runs `Desktop/scene_bridge/preview_scene.py`
+This keeps the preview stable by swapping generated scripts instead of mutating the live OpenGL scene in place.
 
-This keeps preview stable by restarting the scene process instead of modifying OpenGL objects live.
+## Shared runtime files
 
-## Bridge Files
-
-The shared bridge folder is:
+At runtime the extension writes data under:
 
 ```text
 Desktop/scene_bridge
 ```
 
-Important files:
+Important files include:
 
 ```text
 scene_ir.json
@@ -157,44 +73,118 @@ ai_request.json
 ui_state.json
 scene_state.json
 history/undo_stack.json
+saved_scenes/
+cache/action_cache.json
 ```
 
-## How to Run
+## Project structure
 
-From:
+```text
+extensions/textToScene
+|-- README
+|-- requirements.txt
+|-- src
+|   |-- config.py
+|   |-- code_generator.py
+|   |-- geometry_factory.py
+|   |-- ir_schema.py
+|   |-- llm_parser.py
+|   |-- mock_ai_contoller.py
+|   |-- prefabs.py
+|   |-- scene_ir.json
+|   |-- scene_ir.py
+|   |-- supervisor.py
+|   |-- text_parser.py
+|   |-- legacy
+|       |-- tester_1.py
+|       |-- tester2_group.py
+|       |-- tester3_geom1.py
+|       |-- tester4_allShapes.py
+|       |-- tester5_house.py
+|       |-- tester6_prefabs.py
+|       |-- tester7_pointlight.py
+|       |-- tester8_directional.py
+|       |-- tester9_texture_cube.py
+|       |-- tester10_demo.py
+|-- tests
+|   |-- test_prefabs.py
+```
+
+## Installation
+
+This extension depends on the parent `Elements` repository because it imports the in-repo `Elements` package directly. It is not intended to be copied out and used as a standalone folder.
+
+From the `extensions/textToScene` directory:
+
+```bash
+pip install -r requirements.txt
+```
+
+If you want to use the OpenAI-powered parsing flow, set your API key before starting the controller.
+
+PowerShell:
+
+```powershell
+$env:OPENAI_API_KEY="your_key_here"
+```
+
+## Configuration
+
+Shared paths and runtime constants now live in:
+
+```text
+src/config.py
+```
+
+This file centralizes:
+
+- Desktop output paths
+- `scene_bridge` paths
+- cache/history directories
+- default OpenAI model name
+- polling interval and placement constants
+
+## How to run
+
+Run the commands below from:
 
 ```text
 extensions/textToScene/src
 ```
 
-Run these in separate terminals:
+Open three terminals.
+
+Terminal 1:
 
 ```bash
-python tester_1.py
+python legacy\tester_1.py
 ```
 
+Terminal 2:
+
 ```bash
-python mock_ai_contiller.py
+python mock_ai_contoller.py
 ```
+
+Terminal 3:
 
 ```bash
 python supervisor.py
 ```
 
-Workflow:
+Runtime flow:
 
-1. `tester_1.py` generates the official scene.
-2. `mock_ai_contiller.py` starts the controller.
-3. `supervisor.py` opens the official scene.
-4. Type a command in the scene UI.
-5. Click `Send to AI`.
-6. The controller generates a preview scene.
-7. The supervisor switches to the preview.
-8. Click `Apply`, `Reject`, or `Undo`.
+1. `legacy/tester_1.py` generates the official scene script.
+2. `mock_ai_contoller.py` starts the controller loop.
+3. `supervisor.py` launches `Desktop/scene_out.py`.
+4. You type a command in the scene UI.
+5. The controller creates a preview IR and preview script.
+6. The supervisor switches to preview mode.
+7. You can apply, reject, or undo the change.
 
-## Supported Commands
+## Supported commands
 
-The current parser is rule-based. Supported examples:
+The controller supports simple editing requests such as:
 
 ```text
 add a red cube
@@ -203,9 +193,13 @@ add a blue cube on top of the cube
 move the red cube to the right
 change the cube color to green
 delete the red cube
+save scene
+load scene my_tower
+add prefab tree
+undo
 ```
 
-Supported object references:
+Supported object references include examples like:
 
 ```text
 the cube
@@ -216,128 +210,29 @@ the last cube
 the most recently added object
 ```
 
-If more than one object matches a reference, the controller chooses a predictable target and prints the selected object in the logs.
+If multiple objects match a target, the controller chooses a deterministic target and reports that choice in the logs.
 
-## Preview, Apply, Reject, and Undo
+## Testing
 
-Preview writes:
+Run tests from the project root:
 
-```text
-preview_scene_ir.json
-preview_scene.py
+```bash
+pytest
 ```
 
-Apply promotes those exact preview files to the official files:
+Current tests cover prefab-related controller behavior.
 
-```text
-preview_scene_ir.json -> scene_ir.json
-preview_scene.py -> Desktop/scene_out.py
-```
+## Notes
 
-Reject clears the preview files and returns to the official scene.
+- The generated official scene script is written to `Desktop/scene_out.py`.
+- Preview files are written to `Desktop/scene_bridge`.
+- `src/text_parser.py` exists as a simple text-to-IR utility, but the current interactive workflow is centered around the generated scene, the controller, and the supervisor.
+- The `legacy/` folder contains scene-generation examples and test scripts from earlier stages of the project.
 
-Undo restores the previous official scene IR from:
+## Current limitations
 
-```text
-Desktop/scene_bridge/history
-```
-
-Then it regenerates `scene_out.py` and switches back to official mode.
-
-## Errors and Fixes
-
-Important problems fixed during development:
-
-- The generated footer used `.format()` on a large Python string and broke when literal braces appeared.
-- Live OpenGL/entity injection during preview caused instability and was removed.
-- Preview and Apply could diverge when placement was recomputed.
-- New cubes could overlap existing cubes, making them appear missing.
-- Stale bridge files could keep old pending or preview states.
-- The generated scene process lost the current `request_id` after supervisor restarts.
-- Apply and Reject needed to be synchronized through the controller.
-
-Current solution:
-
-- no live OpenGL injection
-- preview uses generated files and process restart
-- Apply promotes the exact preview files
-- new objects use deterministic non-overlapping placement
-- the UI reads current state from bridge files
-- the controller owns all scene IR changes
-- the supervisor only switches processes
-
-## Current Limitations
-
-- Rule-based command parsing only
-- No external LLM/API integration yet
-- Limited object types in text commands
-- Texture support is still basic
-- Lighting support is basic
-- More robust natural language parsing is planned
-- More prefab editing commands are planned
-
-## Planned Next Steps
-
-- Expand text-to-IR parsing
-- Add more object types to command parsing
-- Add prefab commands
-- Add better target selection
-- Add richer material and texture commands
-- Later, connect an LLM for structured scene generation
-
-## PHASE 2 
-Ξ’Ξ‘Ξ£Ξ™ΞΞ— Ξ™Ξ”Ξ•Ξ‘ 
-Ξ©Οƒ Ο„ΟΟΞ± Ξ­Ο‡Ο‰ Ο„ΞΏ code generation Ο€ΞΏΟ… Ο€Ξ±ΟΞ¬Ξ³ΞµΞΉ Ξ­Ξ½Ξ± Ξ±ΟΟ‡ΞµΞ―ΞΏ ΞΊΞ±ΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ Ο€ΟΞ­Ο€ΞµΞΉ Ξ½Ξ± Ο„ΞΏ Ο„ΟΞ­ΞΎΞµΞΉ. ΞΈΞ­Ξ»Ο‰ Ξ½Ξ± ΞΌΟ€ΞΏΟΞµΞ― ΞµΞ½Ο Ο„ΟΞ­Ο‡ΞµΞΉ Ξ· ΟƒΞΊΞ·Ξ½Ξ® Ξ½Ξ± ΞΌΟ€ΞΏΟΞµΞ― Ξ½Ξ± Ξ³ΟΞ¬Ο†ΞµΞΉ ΟƒΞµ Ξ­Ξ½Ξ± Ο„ΞµΟ„ΟΞ±Ξ³Ο‰Ξ½Ξ¬ΞΊΞΉ ΞΌΞ­ΟƒΞ± ΟƒΟ„Ξ· ΟƒΞΊΞ·Ξ½Ξ® Ο€Ο‡ Ξ²Ξ¬Ξ»Ξµ Ξ­Ξ½Ξ±Ξ½ Ξ±ΞΊΟΞΌΞ· ΞΊΟΞ²ΞΏ Ο€Ξ±Ξ½Ο‰ ΟƒΟ„ΞΏΞ½ ΞΊΟΞ²ΞΏ (Ο€ΞΏΟ… Ο…Ο€Ξ¬ΟΟ‡ΞµΞΉ Ξ®Ξ΄Ξ·). Ο„ΞΏ Ο€ΟΟΞ³ΟΞ±ΞΌΞΌΞ± Ξ½Ξ± Ο€ΟΞΏΟƒΞΈΞ­Ο„ΞµΞΉ Ο„ΞΏΞ½ ΞΊΟΞ²ΞΏ ΞΊΞ±ΞΉ Ξ±Ξ½ ΞµΞ―Ξ½Ξ±ΞΉ ΟΟ€Ο‰Ο‚ Ο„ΞΏ ΞΈΞ­Ξ»ΞµΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ Ξ½Ξ± Ο€Ξ±Ο„Ξ¬ΞµΞΉ Ο„ΞΉΞΊ ΞΊΞ±ΞΉ Ξ½Ξ± Ξ±Ο€ΞΏΞΈΞ·ΞΊΞ­Ο…ΞµΟ„Ξ±ΞΉ Ο„ΞΏ Ξ±ΟΟ‡ΞµΞ―ΞΏ ΞΌΞ±Ξ¶Ξ― ΞΌΞµ Ο„Ξ·Ξ½ Ο€ΟΞΏΟƒΞΈΞ®ΞΊΞ·. Ξ±Ξ»Ξ»ΞΉΟΟ‚ Ξ±Ξ½ Ο€Ξ±Ο„Ξ®ΟƒΞµΞΉ Ο‡ Ξ½Ξ± ΞΌΞ·Ξ½ Ξ±Ο€ΞΏΞΈΞ·ΞΊΞµΟ…ΞµΟ„Ξ±ΞΉ ΞΊΞ¬Ο„ΞΉ Ο€ΟΞ±Ο€Ξ¬Ξ½Ο‰.
-
-Ξ¤ΞΉ Ο†Ο„ΞΉΞ¬Ο‡Ξ½Ο‰ 
-1) ΞΌΞµΟ„Ξ±Ξ²Ξ»Ξ·Ο„Ξ® Ξ³ΞΉΞ± Ο„ΞΏ ΞΊΞµΞΉΞΌΞµΞ½ΞΏ Ο€ΞΏΟ… ΞΈΞ± Ξ³ΟΞ¬Ο†ΞµΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ 
-2) ΞΊΞΏΟ…ΞΌΟ€ΞΉ send Ο€ΞΏΟ… ΞΈΞ± ΞΊΞ±Ξ»ΞµΞ― Ο„ΞΏ LLM 
-3) Ξ΄Ο…ΞΏ ΞΊΞΏΟ…ΞΌΟ€ΞΉΞ¬ Accept and reject Ο€ΞΏΟ… ΞΈΞ± ΞµΞΌΟ†Ξ±Ξ½Ξ―Ξ¶ΞµΟ„Ξ±ΞΉ ΟΟ„Ξ±Ξ½ Ξ­Ο‡ΞµΞΉ Ο€ΟΞΏΟƒΞΈΞµΞΈΞµΞ― ΞΊΞ¬Ο„ΞΉ ΟƒΟ„Ξ·Ξ½ ΟƒΞΊΞ·Ξ½Ξ® (ΞµΟ€ΞΉΟ€ΟΟΟƒΞΈΞµΟ„ΞΏ) 
-Ξ‘Ξ΅Ξ‘ 
-1) Ξ±Ξ»Ξ»Ξ¬Ξ¶Ο‰ header gia decorator imgui 
-2) Ο€ΞµΞ΄Ξ―ΞΏ Ο€ΞΏΟ… Ξ³ΞΉΞ± Ξ³ΟΞ¬Ο†ΞµΞΉ ΞΏ Ο‡ΟΞ®ΟƒΟ„Ξ·Ο‚ --> imgui.imput_text
-3) ai_responce_ready flag ΟΟ„Ξ±Ξ½ Ο„ΞΏ API ΞΈΞ± ΟƒΟ„ΞµΞ―Ξ»ΞµΞΉ Ο„ΞΏ JSON -->true + show_buttons
-4) imgui bottons for accept/reject
-
-
-Send to AI β†’ Ξ³ΟΞ¬Ο†ΞµΞΉ ai_request.json
-Apply β†’ Ξ³ΟΞ¬Ο†ΞµΞΉ ui_state.json ΞΌΞµ action apply
-Reject β†’ Ξ³ΟΞ¬Ο†ΞµΞΉ ui_state.json ΞΌΞµ action reject
-
-
-## current errors 
-1) generated file is saved in desktop
-2) directional light DOESNT work - only compile ! DONE 
-3) add gui box in scene to add nodes ' DONE
-4) CustomImGUI and ImGUIecssDecorator2 incompatible cannot synchronize with elements ! [alt text](image.png) DONE
-5) [controller] AI request found: {'request_id': 1, 'status': 'error', 'prompt': 'cube', 'error': "'path'"}
-[controller] UI action found: {'action': 'error', 'message': '[Errno 9] Bad file descriptor'}
-[controller] AI request found: {'request_id': 1, 'status': 'error', 'prompt': 'cube', 'error': "'path'"}
-DONE 
-Observed problems:
-1. I type e.g. "red cube", the preview opens and shows the red cube in one position.
-2. Then I click Apply, it switches back to the official scene, but the cube appears in a different position than in the preview.
-3. Then if I type e.g. "green cube", I can see a new node in the hierarchy, but the cube is not visibly rendered.
-
-Requirements:
-1. Preview and Apply must be visually identical.
-   - Apply must NOT recompute placement.
-   - Apply must NOT regenerate from a different baseline.
-   - The preview_scene_ir.json and preview_scene.py must be treated the same.
-   - On Apply, atomically promote:
-     - preview_scene_ir.json -> official shared scene_ir.json
-     - preview_scene.py -> Desktop scene_out.py
-   - Only after both files are updated should scene_state.json switch back to official mode.
- DONE 
-
-
-
-
-
-
-
-
-
-
- 
- readme preview ctrl + shift + v
+- Some command parsing is still rule-based
+- The editing workflow is built around file-based coordination
+- Rendering and texture support are still basic
+- The run flow still depends on the Desktop bridge/output convention
+- Several example entry points still live under `src/legacy/`

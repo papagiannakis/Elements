@@ -7,12 +7,10 @@ from pathlib import Path
 
 from openai import OpenAI
 
-API_KEY_ENV = "OPENAI_API_KEY"
-DEFAULT_MODEL = "gpt-4.1-mini"
-
-SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
-CACHE_DIR = SHARED_DIR / "cache"
-ACTION_CACHE_FILE = CACHE_DIR / "action_cache.json"
+try:
+    from config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
+except ImportError:
+    from .config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
 
 ACTION_SEQUENCE_ALIASES = (
     "action_sequence",
