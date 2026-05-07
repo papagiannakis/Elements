@@ -964,6 +964,10 @@ def parse_command(prompt):
     if "save scene" in text:
         return {"type": "save_scene"}
 
+    if "load" in text and "scene" in text:
+        m = re.search(r"\bload\s+(?:scene\s+)?([a-zA-Z0-9_]+)", text)
+        return {"type": "load_scene", "scene_name": m.group(1) if m else None}
+
     if "create" in text and "group" in text:
         return {
             "type": "create_group",
@@ -1071,6 +1075,8 @@ def command_to_action(command):
         }
     if t == "create_group":
         return {"action": "create_group", "group_name": command.get("group_name")}
+    if t == "load_scene":
+        return {"action": "load_scene", "scene_name": command.get("scene_name")}
     raise ValueError("Unknown rule-based command type: " + str(t))
 
 # --- End legacy fallback ---
@@ -1180,6 +1186,74 @@ def backup_official_scene_ir(reason):
     return backup_path
 
 
+def save_named_scene(scene_ir, name):
+    safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", str(name).strip().lower()).strip("_")
+    if not safe_name:
+        safe_name = "scene_" + now_timestamp()
+    path = SAVED_SCENES_DIR / (safe_name + ".json")
+    write_json(path, scene_ir)
+    print("[controller] Saved named scene:", path)
+    return path, safe_name
+
+
+def initialize_load_scene(scene_name, request_id=None):
+    if not scene_name:
+        raise ValueError("No scene name provided for load.")
+
+    safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", str(scene_name).strip().lower()).strip("_")
+    if not safe_name:
+        raise ValueError("Invalid scene name.")
+
+    path = SAVED_SCENES_DIR / (safe_name + ".json")
+
+    if not path.exists():
+        raise FileNotFoundError("Saved scene not found: " + safe_name)
+
+    scene_ir = read_json(path, default=None)
+    if not isinstance(scene_ir, dict):
+        raise ValueError("Saved scene file is corrupted: " + safe_name)
+
+    scene_ir = ensure_stable_object_ids(scene_ir)
+
+    clear_preview_files()
+    clear_history_files()
+
+    write_json(SCENE_IR_FILE, scene_ir)
+    write_text_atomic(SCENE_OUT_FILE, generate_scene_script(scene_ir))
+
+    reset_request_and_ui_files(
+        status="scene_loaded",
+        message="Scene loaded: " + safe_name,
+        request_id=request_id
+    )
+
+    write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
+
+    print("[controller] Loaded scene:", safe_name)
+    print("[controller] From:", path)
+
+
+def handle_load_scene(ui):
+    scene_name = ui.get("scene_name") or ui.get("name")
+    request_id = ui.get("request_id")
+
+    try:
+        initialize_load_scene(scene_name, request_id=request_id)
+    except FileNotFoundError as e:
+        write_status(
+            "load_failed",
+            "Scene not found: " + str(scene_name or "(none)"),
+            request_id=request_id,
+            error=str(e)
+        )
+        write_json(UI_STATE_FILE, {
+            "action": "idle",
+            "request_id": request_id,
+            "updated_at": time.time()
+        })
+        print("[controller] Load failed:", e)
+
+
 def handle_pending_ai_request():
     req = read_json(AI_REQUEST_FILE, default=None)
     if not req:
@@ -1240,7 +1314,11 @@ def handle_pending_ai_request():
             return
 
         if action.get("action") == "save_scene":
-            handle_save_scene({"request_id": request_id})
+            handle_save_scene({"request_id": request_id, "scene_name": action.get("scene_name")})
+            return
+
+        if action.get("action") == "load_scene":
+            handle_load_scene({"request_id": request_id, "scene_name": action.get("scene_name")})
             return
 
         if action.get("action") == "undo":
@@ -1362,6 +1440,7 @@ def handle_new_scene(ui):
 
 def handle_save_scene(ui):
     request_id = ui.get("request_id")
+    scene_name = ui.get("scene_name") or ui.get("name")
     scene_state = read_json(SCENE_STATE_FILE, default={}) or {}
 
     if scene_state.get("mode") == "preview":
@@ -1386,21 +1465,28 @@ def handle_save_scene(ui):
 
     backup_path = backup_official_scene_ir("manual_save")
 
+    named_path = None
+    safe_name = None
+    if scene_name:
+        named_path, safe_name = save_named_scene(scene_ir, scene_name)
+
     write_json(UI_STATE_FILE, {
         "action": "idle",
         "request_id": request_id,
         "updated_at": time.time()
     })
 
-    write_status(
-        "scene_saved",
-        "Scene saved. Backup: " + backup_path.name,
-        request_id=request_id
-    )
+    if named_path:
+        status_message = "Scene saved as '" + safe_name + "'. Backup: " + backup_path.name
+    else:
+        status_message = "Scene saved. Backup: " + backup_path.name
 
+    write_status("scene_saved", status_message, request_id=request_id)
     write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
 
     print("[controller] Scene saved.")
+    if named_path:
+        print("[controller] Named save:", named_path)
     print("[controller] Current official scene path:", SCENE_OUT_FILE)
 
 
@@ -1428,6 +1514,8 @@ def handle_ui_actions():
             handle_new_scene(ui)
         elif action == "save_scene":
             handle_save_scene(ui)
+        elif action == "load_scene":
+            handle_load_scene(ui)
         else:
             write_json(UI_STATE_FILE, {
                 "action": "error",
@@ -1464,6 +1552,7 @@ def validate_action(action):
         "scale_object",
         "new_scene",
         "save_scene",
+        "load_scene",
         "undo"
     }
 
@@ -1502,6 +1591,11 @@ def normalize_action(action):
     # Canonical identity field
     if "object_id" in action and "id" not in action:
         action["id"] = action.pop("object_id")
+
+    # Canonical scene_name field (LLM sometimes returns "name")
+    if action.get("action") in ("save_scene", "load_scene"):
+        if "name" in action and "scene_name" not in action:
+            action["scene_name"] = action.pop("name")
 
     # Canonical position field
     if "new_position" in action and "position" not in action:

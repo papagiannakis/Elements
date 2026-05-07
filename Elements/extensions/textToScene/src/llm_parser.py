@@ -82,6 +82,7 @@ Allowed top-level action values:
 - scale_object
 - new_scene
 - save_scene
+- load_scene
 - undo
 - action_sequence
 
@@ -156,13 +157,26 @@ Examples:
   ]
 }
 
+{
+  "action": "save_scene"
+}
+
+{
+  "action": "save_scene",
+  "scene_name": "my_tower"
+}
+
+{
+  "action": "load_scene",
+  "scene_name": "my_tower"
+}
+
 User prompt:
 %s
 
 Scene context:
 %s
 """ % (prompt, json.dumps(scene_context, ensure_ascii=False))
-
 
 _FILLER_WORDS = frozenset({"a", "an", "the", "please"})
 
