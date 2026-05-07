@@ -13,6 +13,7 @@ from llm_parser import (
     parse_prompt_to_action_with_llm,
     store_cached_action,
 )
+from prefarbs import build_house, build_tree, build_gift_box, build_street_light
 
 
 
@@ -27,6 +28,9 @@ HISTORY_DIR.mkdir(parents=True, exist_ok=True)
 
 SAVED_SCENES_DIR = SHARED_DIR / "saved_scenes"
 SAVED_SCENES_DIR.mkdir(parents=True, exist_ok=True)
+
+PREFABS_DIR = SHARED_DIR / "prefabs"
+PREFABS_DIR.mkdir(parents=True, exist_ok=True)
 
 HISTORY_STACK_FILE = HISTORY_DIR / "undo_stack.json"
 
@@ -411,6 +415,7 @@ def initialize_bridge_state():
     ensure_shared_scene_ir()
     ensure_official_scene_script()
     clear_preview_files()
+    seed_builtin_prefabs()
 
     req = read_json(AI_REQUEST_FILE, default=None)
     if isinstance(req, dict) and req.get("status") in ("pending", "preview_ready"):
@@ -671,6 +676,16 @@ def collect_world_positions(scene_ir, exclude_node=None, exclude_object_id=None)
         if exclude_object_id is not None and str(node_id) == str(exclude_object_id):
             continue
         positions.append(get_world_position(node, parent_group))
+
+    for node in scene_ir.get("children", []):
+        if not isinstance(node, dict) or node.get("node_type") != "group":
+            continue
+        if exclude_node is not None and node is exclude_node:
+            continue
+        node_id = node.get("id")
+        if exclude_object_id is not None and str(node_id) == str(exclude_object_id):
+            continue
+        positions.append(get_position(node))
 
     return positions
 
@@ -961,8 +976,11 @@ def parse_command(prompt):
     if "new scene" in text:
         return {"type": "new_scene"}
 
-    if "save scene" in text:
-        return {"type": "save_scene"}
+    if "save" in text and "scene" in text:
+        m = re.search(r"\bsave\s+(?:scene\s+)?(?:as\s+)?([a-zA-Z0-9_]+)", text)
+        raw = m.group(1) if m else None
+        scene_name = raw if raw and raw not in ("scene", "as") else None
+        return {"type": "save_scene", "scene_name": scene_name}
 
     if "load" in text and "scene" in text:
         m = re.search(r"\bload\s+(?:scene\s+)?([a-zA-Z0-9_]+)", text)
@@ -1016,6 +1034,11 @@ def parse_command(prompt):
             "group_name": group_name
         }
 
+    if "prefab" in text:
+        m = re.search(r"\bprefab\s+([a-zA-Z0-9_]+)", text)
+        prefab_name = m.group(1) if m else None
+        return {"type": "add_prefab", "prefab_name": prefab_name}
+
     if "add" in text or "create" in text or "cube" in text:
         placement = "next_free"
 
@@ -1041,7 +1064,7 @@ def command_to_action(command):
     if t == "new_scene":
         return {"action": "new_scene"}
     if t == "save_scene":
-        return {"action": "save_scene"}
+        return {"action": "save_scene", "scene_name": command.get("scene_name")}
     if t == "add_cube":
         placement_str = command.get("placement", "next_free")
         if placement_str == "right_of":
@@ -1077,6 +1100,8 @@ def command_to_action(command):
         return {"action": "create_group", "group_name": command.get("group_name")}
     if t == "load_scene":
         return {"action": "load_scene", "scene_name": command.get("scene_name")}
+    if t == "add_prefab":
+        return {"action": "add_prefab", "prefab_name": command.get("prefab_name")}
     raise ValueError("Unknown rule-based command type: " + str(t))
 
 # --- End legacy fallback ---
@@ -1252,6 +1277,81 @@ def handle_load_scene(ui):
             "updated_at": time.time()
         })
         print("[controller] Load failed:", e)
+
+
+def find_prefab_by_name(name):
+    safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", str(name).strip().lower()).strip("_")
+    if not safe_name:
+        return None
+    path = PREFABS_DIR / (safe_name + ".json")
+    return path if path.exists() else None
+
+
+def load_prefab(name):
+    path = find_prefab_by_name(name)
+    if path is None:
+        raise FileNotFoundError("Prefab not found: " + str(name))
+    data = read_json(path, default=None)
+    if not isinstance(data, dict):
+        raise ValueError("Prefab file is corrupted: " + str(name))
+    return data
+
+
+def instantiate_prefab(scene_ir, prefab_ir, position=None):
+    instance = deepcopy(prefab_ir)
+
+    base_name = str(instance.get("name", "prefab"))
+    unique_name = make_unique_name(scene_ir, base_name)
+
+    instance["name"] = unique_name
+    instance["id"] = unique_name
+    instance["created_order"] = next_object_order(scene_ir)
+
+    if position is None:
+        position = find_next_free_world_position(scene_ir)
+    instance.setdefault("transform", {})["position"] = [
+        float(position[0]), float(position[1]), float(position[2])
+    ]
+    instance["transform"].setdefault("scale", [1.0, 1.0, 1.0])
+
+    def suffix_children(node, prefix):
+        for child in node.get("children", []):
+            if not isinstance(child, dict):
+                continue
+            old = str(child.get("name", "node"))
+            tail = old[len(base_name) + 1:] if old.startswith(base_name + "_") else old
+            child["name"] = prefix + "_" + tail
+            child["id"] = child["name"]
+            suffix_children(child, prefix)
+
+    suffix_children(instance, unique_name)
+
+    ensure_scene_children(scene_ir).append(instance)
+    ensure_stable_object_ids(scene_ir)
+    return scene_ir
+
+
+def seed_builtin_prefabs():
+    PREFABS_DIR.mkdir(parents=True, exist_ok=True)
+
+    try:
+        from prefarbs import build_house, build_tree, build_gift_box, build_street_light
+    except ImportError:
+        print("[controller] prefarbs.py not found; skipping built-in prefab seeding.")
+        return
+
+    seeds = {
+        "house": build_house("house", [0.0, 0.0, 0.0]),
+        "tree": build_tree("tree", [0.0, 0.0, 0.0]),
+        "gift_box": build_gift_box("gift_box", [0.0, 0.0, 0.0]),
+        "street_light": build_street_light("street_light", [0.0, 0.0, 0.0]),
+    }
+
+    for name, ir in seeds.items():
+        path = PREFABS_DIR / (name + ".json")
+        if not path.exists():
+            write_json(path, ir)
+            print("[controller] Seeded prefab:", name, "->", path)
 
 
 def handle_pending_ai_request():
@@ -1553,6 +1653,7 @@ def validate_action(action):
         "new_scene",
         "save_scene",
         "load_scene",
+        "add_prefab",
         "undo"
     }
 
@@ -1596,6 +1697,11 @@ def normalize_action(action):
     if action.get("action") in ("save_scene", "load_scene"):
         if "name" in action and "scene_name" not in action:
             action["scene_name"] = action.pop("name")
+
+    # Canonical prefab_name field (LLM sometimes returns "name")
+    if action.get("action") == "add_prefab":
+        if "name" in action and "prefab_name" not in action:
+            action["prefab_name"] = action.pop("name")
 
     # Canonical position field
     if "new_position" in action and "position" not in action:
@@ -1995,6 +2101,25 @@ def apply_action_to_ir(scene_ir, action):
             set_position(target, final_world_position)
 
         print("[controller] Assigned position for moved object:", final_world_position)
+        return new_ir
+
+    if action_name == "add_prefab":
+        prefab_name = str(action.get("prefab_name") or action.get("name") or "").lower()
+        if not prefab_name:
+            raise ValueError("add_prefab requires 'prefab_name'")
+        position = find_next_free_world_position(new_ir, preferred_y=0.0)
+        builders = {
+            "house": build_house,
+            "tree": build_tree,
+            "gift_box": build_gift_box,
+            "street_light": build_street_light,
+        }
+        builder = builders.get(prefab_name)
+        if builder is None:
+            raise ValueError("Unknown prefab name: " + prefab_name)
+        node = builder(name=make_unique_name(new_ir, prefab_name), position=position)
+        ensure_scene_children(new_ir).append(node)
+        print("[controller] Added prefab:", prefab_name)
         return new_ir
 
     raise ValueError("Unsupported action type: " + str(action_name))

@@ -875,8 +875,8 @@ def emit_group_node(node, idx, parent_entity_var, parent_trs_expr, state):
     entity_var = "group_node_{}".format(suffix)
     trans_var = "group_trans_{}".format(suffix)
 
-    trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
-    local_trs_expr = "{} @ {}".format(make_scale(scale), make_translate(position))
+    trs_expr = make_translate(position)
+    local_trs_expr = make_translate(position)
     world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
     object_code = """
 # ===== group: {name} =====

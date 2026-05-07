@@ -83,6 +83,7 @@ Allowed top-level action values:
 - new_scene
 - save_scene
 - load_scene
+- add_prefab
 - undo
 - action_sequence
 
@@ -169,6 +170,16 @@ Examples:
 {
   "action": "load_scene",
   "scene_name": "my_tower"
+}
+
+{
+  "action": "add_prefab",
+  "prefab_name": "tree"
+}
+
+{
+  "action": "add_prefab",
+  "prefab_name": "house"
 }
 
 User prompt:
