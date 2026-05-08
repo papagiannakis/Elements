@@ -114,8 +114,27 @@ def read_json(path, default=None):
         return default
 
 
-_WRITE_RETRIES = 5
-_WRITE_RETRY_DELAY = 0.1  # seconds between retries
+_WRITE_RETRIES = 8
+_WRITE_RETRY_DELAY = 0.15  # seconds between retries; total budget ≈ 5.4 s
+
+
+def _atomic_replace(tmp_path, dest_path):
+    """os.replace with retry loop to handle Windows file-lock races."""
+    last_exc = None
+    for attempt in range(_WRITE_RETRIES):
+        try:
+            os.replace(str(tmp_path), str(dest_path))
+            return
+        except OSError as exc:  # covers PermissionError, WinError 32 (sharing), etc.
+            last_exc = exc
+            time.sleep(_WRITE_RETRY_DELAY * (attempt + 1))
+    try:
+        Path(tmp_path).unlink(missing_ok=True)
+    except Exception:
+        pass
+    raise PermissionError(
+        f"[controller] atomic replace failed after {_WRITE_RETRIES} retries: {dest_path}"
+    ) from last_exc
 
 
 def write_json(path, data):
@@ -133,22 +152,7 @@ def write_json(path, data):
             pass
         raise
 
-    last_exc = None
-    for attempt in range(_WRITE_RETRIES):
-        try:
-            os.replace(str(tmp_path), str(path))
-            return
-        except PermissionError as exc:
-            last_exc = exc
-            time.sleep(_WRITE_RETRY_DELAY * (attempt + 1))
-
-    try:
-        tmp_path.unlink(missing_ok=True)
-    except Exception:
-        pass
-    raise PermissionError(
-        f"[controller] write_json failed after {_WRITE_RETRIES} retries: {path}"
-    ) from last_exc
+    _atomic_replace(tmp_path, path)
 
 
 def write_text_atomic(path, text):
@@ -156,10 +160,17 @@ def write_text_atomic(path, text):
     path.parent.mkdir(parents=True, exist_ok=True)
 
     tmp_path = path.with_suffix(path.suffix + ".tmp")
-    with open(str(tmp_path), "w", encoding="utf-8") as f:
-        f.write(text)
+    try:
+        with open(str(tmp_path), "w", encoding="utf-8") as f:
+            f.write(text)
+    except Exception:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise
 
-    os.replace(str(tmp_path), str(path))
+    _atomic_replace(tmp_path, path)
 
 
 def copy_file_atomic(source_path, target_path):
@@ -168,8 +179,16 @@ def copy_file_atomic(source_path, target_path):
     target_path.parent.mkdir(parents=True, exist_ok=True)
 
     tmp_path = target_path.with_suffix(target_path.suffix + ".tmp")
-    shutil.copyfile(str(source_path), str(tmp_path))
-    os.replace(str(tmp_path), str(target_path))
+    try:
+        shutil.copyfile(str(source_path), str(tmp_path))
+    except Exception:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise
+
+    _atomic_replace(tmp_path, target_path)
 
 
 def clear_preview_files():
@@ -1482,15 +1501,24 @@ def handle_pending_ai_request():
 
     except Exception as e:
         clear_preview_files()
-        write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
-        write_json(UI_STATE_FILE, {
-            "action": "idle",
-            "request_id": request_id,
-            "updated_at": time.time()
-        })
+        try:
+            write_scene_state("official", SCENE_OUT_FILE, request_id=request_id)
+        except Exception as _wse:
+            print(f"[controller] handle_pending_ai_request: write_scene_state failed: {_wse}")
+        try:
+            write_json(UI_STATE_FILE, {
+                "action": "idle",
+                "request_id": request_id,
+                "updated_at": time.time()
+            })
+        except Exception as _uie:
+            print(f"[controller] handle_pending_ai_request: UI_STATE_FILE write failed: {_uie}")
         req["status"] = "error"
         req["error"] = str(e)
-        write_json(AI_REQUEST_FILE, req)
+        try:
+            write_json(AI_REQUEST_FILE, req)
+        except Exception as _rfe:
+            print(f"[controller] handle_pending_ai_request: AI_REQUEST_FILE write failed: {_rfe}")
         print("[controller] Error while handling request:")
         traceback.print_exc()
 
@@ -1658,14 +1686,22 @@ def handle_ui_actions():
             })
 
     except Exception as e:
-        write_json(UI_STATE_FILE, {
-            "action": "error",
-            "message": str(e),
-            "updated_at": time.time()
-        })
-
-        write_status("error", error=str(e), request_id=ui.get("request_id"))
-        write_scene_state("official", SCENE_OUT_FILE, request_id=ui.get("request_id"))
+        try:
+            write_json(UI_STATE_FILE, {
+                "action": "error",
+                "message": str(e),
+                "updated_at": time.time()
+            })
+        except Exception as _uie:
+            print(f"[controller] handle_ui_actions: UI_STATE_FILE write failed: {_uie}")
+        try:
+            write_status("error", error=str(e), request_id=ui.get("request_id"))
+        except Exception as _wse:
+            print(f"[controller] handle_ui_actions: write_status failed: {_wse}")
+        try:
+            write_scene_state("official", SCENE_OUT_FILE, request_id=ui.get("request_id"))
+        except Exception as _sse:
+            print(f"[controller] handle_ui_actions: write_scene_state failed: {_sse}")
 
         print("[controller] UI action error:", e)
         traceback.print_exc()
@@ -2141,7 +2177,7 @@ def apply_action_to_ir(scene_ir, action):
         prefab_name = str(action.get("prefab_name") or action.get("name") or "").lower()
         if not prefab_name:
             raise ValueError("add_prefab requires 'prefab_name'")
-        position = find_next_free_world_position(new_ir, preferred_y=0.0)
+
         builders = {
             "house": build_house,
             "tree": build_tree,
@@ -2151,7 +2187,34 @@ def apply_action_to_ir(scene_ir, action):
         builder = builders.get(prefab_name)
         if builder is None:
             raise ValueError("Unknown prefab name: " + prefab_name)
-        node = builder(name=make_unique_name(new_ir, prefab_name), position=position)
+
+        # Probe at CUBE_Y so existing cubes (all at y=CUBE_Y) are correctly
+        # detected as occupying their X/Z slot.  Then set the group root Y to
+        # 0.0 so children with local y-offsets sit at natural ground-relative
+        # heights (e.g. trunk at world y≈0.22, crown at y≈0.62).
+        ref_pos = find_next_free_world_position(new_ir, preferred_y=CUBE_Y)
+        position = [ref_pos[0], 0.0, ref_pos[2]]
+
+        unique_name = make_unique_name(new_ir, prefab_name)
+        node = builder(name=unique_name, position=position)
+
+        print(f"[controller] add_prefab: name={prefab_name!r}  unique={unique_name!r}")
+        print(f"[controller] add_prefab: root node_type={node.get('node_type')!r}")
+        print(f"[controller] add_prefab: group root position={position}")
+        for _child in node.get("children", []):
+            if not isinstance(_child, dict):
+                continue
+            _local = _child.get("transform", {}).get("position")
+            if isinstance(_local, list) and len(_local) == 3:
+                _world = [round(position[i] + _local[i], 4) for i in range(3)]
+            else:
+                _world = "?"
+            print(
+                f"[controller] add_prefab:   child {_child.get('name')!r}"
+                f"  shape={_child.get('shape')!r}"
+                f"  local={_local}  world≈{_world}"
+            )
+
         ensure_scene_children(new_ir).append(node)
         print("[controller] Added prefab:", prefab_name)
         return new_ir
@@ -2170,8 +2233,16 @@ def main():
     initialize_bridge_state()
 
     while True:
-        handle_pending_ai_request()
-        handle_ui_actions()
+        try:
+            handle_pending_ai_request()
+        except Exception as e:
+            print("[controller] Unhandled error in handle_pending_ai_request:", e)
+            traceback.print_exc()
+        try:
+            handle_ui_actions()
+        except Exception as e:
+            print("[controller] Unhandled error in handle_ui_actions:", e)
+            traceback.print_exc()
         time.sleep(POLL_INTERVAL)
 
 
