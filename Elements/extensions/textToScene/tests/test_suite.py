@@ -1,6 +1,10 @@
 import sys
 from pathlib import Path
+
+# src/ — textToScene source modules
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
+# repo root — so "import Elements" resolves to the parent framework package
+sys.path.insert(0, str(Path(__file__).parent.parent.parent.parent.parent))
 
 import pytest
 from copy import deepcopy
