@@ -3,7 +3,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 import pytest
-from mock_ai_contiller import validate_action, apply_action_to_ir
+from mock_ai_contoller import validate_action, apply_action_to_ir
 BASE_SCENE = {
     "node_type": "scene", "name": "root",
     "window": {"width": 800, "height": 600, "title": "Test"},
