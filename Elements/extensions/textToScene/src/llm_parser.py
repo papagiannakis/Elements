@@ -84,6 +84,8 @@ Allowed top-level action values:
 - add_prefab
 - undo
 - action_sequence
+- generate_pattern
+- generate_composite
 
 If the request needs multiple steps, use:
 {
@@ -180,6 +182,64 @@ Examples:
   "prefab_name": "house"
 }
 
+Use generate_pattern for procedural arrangements of identical objects.
+Supported pattern values: ring
+
+generate_pattern schema:
+{
+  "action": "generate_pattern",
+  "pattern": "ring",
+  "object_type": "<shape>",
+  "count": <integer, 2-32>,
+  "radius": <float, default 2.5>,
+  "color": "<color name>"
+}
+
+Examples:
+{
+  "action": "generate_pattern",
+  "pattern": "ring",
+  "object_type": "cube",
+  "count": 8,
+  "radius": 2.5,
+  "color": "red"
+}
+
+{
+  "action": "generate_pattern",
+  "pattern": "ring",
+  "object_type": "sphere",
+  "count": 12,
+  "radius": 3.0,
+  "color": "blue"
+}
+
+Use generate_composite for multi-part procedural structures.
+Supported composite values: tree
+
+generate_composite schema:
+{
+  "action": "generate_composite",
+  "composite": "tree",
+  "object_type": "<shape>",
+  "color": "<color name>"
+}
+
+Examples:
+{
+  "action": "generate_composite",
+  "composite": "tree",
+  "object_type": "cube",
+  "color": "green"
+}
+
+{
+  "action": "generate_composite",
+  "composite": "tree",
+  "object_type": "sphere",
+  "color": "green"
+}
+
 User prompt:
 %s
 
@@ -270,20 +330,21 @@ def is_cacheable_action(action):
 
         return True
 
-    if action_name != "add_object":
+    _CACHEABLE = {"add_object", "generate_pattern", "generate_composite"}
+    if action_name not in _CACHEABLE:
         return False
 
     if _contains_scene_dependent_fields(action):
         return False
 
-    placement = action.get("placement", {})
-    if isinstance(placement, dict):
-        if placement.get("target"):
-            return False
-
-        relation = str(placement.get("relation", "")).strip().lower()
-        if relation and relation != "next_free_slot":
-            return False
+    if action_name == "add_object":
+        placement = action.get("placement", {})
+        if isinstance(placement, dict):
+            if placement.get("target"):
+                return False
+            relation = str(placement.get("relation", "")).strip().lower()
+            if relation and relation != "next_free_slot":
+                return False
 
     return True
 
@@ -368,6 +429,89 @@ def normalize_parsed_action(action):
                 raise ValueError("Each action_sequence step must contain 'action'")
 
     return normalized
+
+
+def build_composite_spec_prompt(object_name, primitive_type):
+    return """
+You are a 3D scene layout designer. Describe a real-world object as a list of non-overlapping 3D primitive parts.
+
+Object to design: {object_name}
+Preferred primitive shape: {primitive_type}
+
+Return exactly one JSON object. No markdown, no code fences, no extra text.
+
+Format:
+{{
+  "parts": [
+    {{"name": "part_name", "shape": "cube", "position": [x, y, z], "scale": [sx, sy, sz]}},
+    ...
+  ]
+}}
+
+Spatial rules — CRITICAL, violations will break the scene:
+1. Each part occupies the box  [x - sx/2, x + sx/2]  x  [y - sy/2, y + sy/2]  x  [z - sz/2, z + sz/2].
+2. No two parts may share interior volume — bounding boxes must NOT intersect.
+3. Ground plane is y = 0. Every part must satisfy  y >= sy/2  (bottom edge at or above ground).
+4. To stack B directly on top of A:  B_y = A_y + A_sy/2 + B_sy/2.
+5. To place B beside A along X:  |B_x - A_x| >= (A_sx + B_sx) / 2.
+
+Work through the layout step by step before writing the JSON:
+  a. Place the lowest / largest part first (set its y so the bottom touches y = 0).
+  b. Stack or offset each subsequent part so its bounding box clears all previous parts.
+  c. Verify every pair is non-overlapping before writing the JSON.
+
+Other rules:
+- Use 3 to 8 parts with unique descriptive names.
+- Each part must have: "name", "shape" (one of: cube, sphere, cylinder, cone, pyramid, plane), "position" ([x,y,z] floats), "scale" ([sx,sy,sz] positive floats).
+- Total footprint: 1–3 units per axis.
+- Prefer the specified primitive; other shapes allowed for detail parts.
+- Do NOT use "rectangular_prism" — use "cube" for box shapes.
+- Return only the JSON object.
+
+Example — a floor lamp (3 parts, stacked vertically, no overlap):
+{{
+  "parts": [
+    {{"name": "base",  "shape": "cylinder", "position": [0.0, 0.10, 0.0], "scale": [0.5, 0.20, 0.5]}},
+    {{"name": "pole",  "shape": "cylinder", "position": [0.0, 1.10, 0.0], "scale": [0.1, 2.00, 0.1]}},
+    {{"name": "shade", "shape": "cone",     "position": [0.0, 2.30, 0.0], "scale": [0.7, 0.40, 0.7]}}
+  ]
+}}
+base:  y in [0.00, 0.20]
+pole:  y in [0.10, 2.10]  — base top = 0.20, pole bottom = 0.10: overlap! FIX: pole_y = 0.10 + 1.00 = 1.10 → y in [0.10, 2.10]. Still wrong. Correct: base_top=0.20, pole_sy=2.0, pole_y = 0.20 + 1.00 = 1.20 → y in [0.20, 2.20]. shade_y = 2.20 + 0.20 = 2.40 → y in [2.20, 2.60]. Use these corrected values.
+""".format(object_name=object_name, primitive_type=primitive_type)
+
+
+def parse_composite_spec_with_llm(object_name, primitive_type, model_name=None):
+    """Call the LLM with a focused object-design prompt.
+
+    Returns a validated list of part dicts, each with keys:
+    name, shape, position ([x,y,z]), scale ([sx,sy,sz]).
+
+    Raises ValueError if the LLM response is unusable.
+    """
+    client = get_client()
+    full_prompt = build_composite_spec_prompt(object_name, primitive_type)
+
+    response = client.responses.create(
+        model=model_name or DEFAULT_MODEL,
+        input=full_prompt
+    )
+
+    raw_text = getattr(response, "output_text", None)
+    if not raw_text:
+        raise ValueError("LLM returned empty response for composite spec")
+
+    json_text = extract_json_object(raw_text)
+    data = json.loads(json_text)
+
+    if not isinstance(data, dict) or "parts" not in data:
+        raise ValueError("LLM composite spec missing 'parts' key")
+
+    parts = data["parts"]
+    if not isinstance(parts, list) or len(parts) == 0:
+        raise ValueError("LLM composite spec 'parts' must be a non-empty list")
+
+    return parts
 
 
 def parse_prompt_to_action_with_llm(prompt, scene_ir, model_name=None):
