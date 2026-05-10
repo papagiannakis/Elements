@@ -119,6 +119,12 @@ Allowed color names:
 - white
 - black
 - purple
+- orange
+- cyan
+- pink
+- brown
+- gray
+- grey
 
 Examples:
 {
