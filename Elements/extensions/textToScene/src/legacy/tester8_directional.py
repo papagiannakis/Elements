@@ -40,9 +40,6 @@ scene_ir = {
         build_gift_box("gift1", [1.0, 0.0, 2.0])
     ]
 }
-print("CHILDREN DEBUG:")
-for i, child in enumerate(scene_ir["children"]):
-    print(i, type(child), child)
 script = generate_scene_script(scene_ir)
 compile(script, "scene_out.py", "exec")
 print("Syntax OK")

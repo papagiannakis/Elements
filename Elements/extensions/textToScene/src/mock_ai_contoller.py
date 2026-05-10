@@ -549,6 +549,36 @@ def shape_from_text(text):
     return None
 
 
+_DIRECTION_WORD_MAP = {
+    "right":    "right",
+    "left":     "left",
+    "up":       "up",
+    "upward":   "up",
+    "upwards":  "up",
+    "above":    "up",
+    "higher":   "up",
+    "down":     "down",
+    "downward": "down",
+    "downwards":"down",
+    "below":    "down",
+    "lower":    "down",
+    "forward":  "forward",
+    "front":    "forward",
+    "ahead":    "forward",
+    "backward": "backward",
+    "back":     "backward",
+    "behind":   "backward",
+}
+
+
+def direction_from_text(text):
+    text = text.lower()
+    for word, canonical in _DIRECTION_WORD_MAP.items():
+        if re.search(r"\b" + re.escape(word) + r"\b", text):
+            return canonical
+    return None
+
+
 def reference_mode_from_text(text):
     text = text.lower()
 
@@ -1056,19 +1086,15 @@ def parse_command(prompt):
 
     if "move" in text:
         if "group" in text:
-            direction = "right" if "right" in text else None
-
             return {
                 "type": "move_group",
                 "group_name": group_name,
-                "direction": direction
+                "direction": direction_from_text(text),
             }
-
-        direction = "right" if "right" in text else None
 
         return {
             "type": "move",
-            "direction": direction,
+            "direction": direction_from_text(text),
             "target_color": color_name_from_text(text),
             "group_name": group_name
         }
@@ -1169,7 +1195,7 @@ def command_to_action(command):
         return {
             "action": "move_object",
             "target": command.get("target_color") or "cube",
-            "direction": command.get("direction") or "right"
+            "direction": command.get("direction") or "right",
         }
     if t == "change_color":
         return {
@@ -1430,12 +1456,6 @@ def instantiate_prefab(scene_ir, prefab_ir, position=None):
 
 def seed_builtin_prefabs():
     PREFABS_DIR.mkdir(parents=True, exist_ok=True)
-
-    try:
-        from prefabs import build_house, build_tree, build_gift_box, build_street_light
-    except ImportError:
-        print("[controller] prefabs.py not found; skipping built-in prefab seeding.")
-        return
 
     seeds = {
         "house": build_house("house", [0.0, 0.0, 0.0]),
@@ -1951,14 +1971,8 @@ def normalize_action(action):
 
     # Canonical direction for move_object
     if action.get("action") == "move_object" and "direction" in action:
-        _direction_aliases = {
-            "back":         "backward",
-            "front":        "forward",
-            "to the back":  "backward",
-            "to the front": "forward",
-        }
         raw = str(action["direction"]).lower().strip()
-        action["direction"] = _direction_aliases.get(raw, raw)
+        action["direction"] = _DIRECTION_WORD_MAP.get(raw, raw)
 
     # Recurse into action_sequence steps
     if action.get("action") == "action_sequence" and isinstance(action.get("action_sequence"), list):
@@ -2717,10 +2731,12 @@ def apply_action_to_ir(scene_ir, action):
             direction = str(action.get("direction", "")).lower().strip()
 
             direction_deltas = {
-                "right":    [GRID_SPACING,  0.0,           0.0],
-                "left":     [-GRID_SPACING, 0.0,           0.0],
-                "forward":  [0.0,           0.0, -GRID_SPACING],
-                "backward": [0.0,           0.0,  GRID_SPACING],
+                "right":    [ GRID_SPACING,  0.0,           0.0],
+                "left":     [-GRID_SPACING,  0.0,           0.0],
+                "up":       [ 0.0,           GRID_SPACING,  0.0],
+                "down":     [ 0.0,          -GRID_SPACING,  0.0],
+                "forward":  [ 0.0,           0.0,          -GRID_SPACING],
+                "backward": [ 0.0,           0.0,           GRID_SPACING],
             }
 
             if direction not in direction_deltas:

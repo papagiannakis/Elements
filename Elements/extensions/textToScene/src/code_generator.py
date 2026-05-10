@@ -20,8 +20,6 @@ DEFAULT_TRANSFORM = {
     "scale": [1.0, 1.0, 1.0]
 }
 
-#Add support for texture in material normalization
-
 DEFAULT_MATERIAL = {
     "color": [0.8, 0.0, 0.8],
     "texture":{
@@ -387,7 +385,6 @@ from Elements.definitions import TEXTURE_DIR
 from Elements.utils.Shortcuts import displayGUI_text
 
 import OpenGL.GL as gl
-import Elements.utils.normals as norm
 
 TEXTURE_VERTEX_SHADER = """
 #version 410
