@@ -550,24 +550,28 @@ def shape_from_text(text):
 
 
 _DIRECTION_WORD_MAP = {
-    "right":    "right",
-    "left":     "left",
-    "up":       "up",
-    "upward":   "up",
-    "upwards":  "up",
-    "above":    "up",
-    "higher":   "up",
-    "down":     "down",
-    "downward": "down",
-    "downwards":"down",
-    "below":    "down",
-    "lower":    "down",
-    "forward":  "forward",
-    "front":    "forward",
-    "ahead":    "forward",
-    "backward": "backward",
-    "back":     "backward",
-    "behind":   "backward",
+    # multi-word forms first (matched before the single words they contain)
+    "to the back":  "backward",
+    "to the front": "forward",
+    # single words
+    "right":     "right",
+    "left":      "left",
+    "up":        "up",
+    "upward":    "up",
+    "upwards":   "up",
+    "above":     "up",
+    "higher":    "up",
+    "down":      "down",
+    "downward":  "down",
+    "downwards": "down",
+    "below":     "down",
+    "lower":     "down",
+    "forward":   "forward",
+    "front":     "forward",
+    "ahead":     "forward",
+    "backward":  "backward",
+    "back":      "backward",
+    "behind":    "backward",
 }
 
 

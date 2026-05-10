@@ -127,10 +127,18 @@ Examples:
   "color": "red"
 }
 
+Allowed direction values for move_object: right, left, up, down, forward, backward
+
 {
   "action": "move_object",
   "target": "blue cube",
   "direction": "right"
+}
+
+{
+  "action": "move_object",
+  "target": "red sphere",
+  "direction": "up"
 }
 
 {
