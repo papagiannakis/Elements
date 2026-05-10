@@ -151,10 +151,20 @@ class TestNormalizeAction:
         assert result["position"] == [1.0, 0.5, 0.0]
 
     @pytest.mark.parametrize("alias,canonical", [
-        ("back", "backward"),
-        ("front", "forward"),
+        ("back",        "backward"),
+        ("front",       "forward"),
         ("to the back", "backward"),
-        ("to the front", "forward"),
+        ("to the front","forward"),
+        ("upward",      "up"),
+        ("upwards",     "up"),
+        ("above",       "up"),
+        ("higher",      "up"),
+        ("downward",    "down"),
+        ("downwards",   "down"),
+        ("below",       "down"),
+        ("lower",       "down"),
+        ("behind",      "backward"),
+        ("ahead",       "forward"),
     ])
     def test_normalizes_direction_aliases(self, alias, canonical):
         action = {"action": "move_object", "direction": alias}
