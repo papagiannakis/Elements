@@ -1,4 +1,5 @@
 import json
+import math
 import os
 import shutil
 import time
@@ -10,6 +11,7 @@ from pathlib import Path
 from code_generator import generate_scene_script
 from llm_parser import (
     lookup_cached_action,
+    parse_composite_spec_with_llm,
     parse_prompt_to_action_with_llm,
     store_cached_action,
 )
@@ -1087,6 +1089,32 @@ def parse_command(prompt):
             "group_name": group_name
         }
 
+    if "ring" in text:
+        object_type = shape_from_text(text) or "cube"
+        m_n = re.search(r"\b(\d+)\s+(?:objects?|" + object_type + r"s?)\b", text)
+        if not m_n:
+            m_n = re.search(r"\bof\s+(\d+)\b", text)
+        count = int(m_n.group(1)) if m_n else 8
+        m_r = re.search(r"\bradius\s*[=:]?\s*(\d+(?:\.\d+)?)\b", text)
+        radius = float(m_r.group(1)) if m_r else 2.5
+        return {
+            "type": "generate_pattern",
+            "pattern": "ring",
+            "object_type": object_type,
+            "count": count,
+            "radius": radius,
+            "color": color_name_from_text(text) or "purple",
+        }
+
+    if "tree" in text and ("with" in text or shape_from_text(text)):
+        object_type = shape_from_text(text) or "cube"
+        return {
+            "type": "generate_composite",
+            "composite": "tree",
+            "object_type": object_type,
+            "color": color_name_from_text(text) or "green",
+        }
+
     if "prefab" in text:
         m = re.search(r"\bprefab\s+([a-zA-Z0-9_]+)", text)
         prefab_name = m.group(1) if m else None
@@ -1155,6 +1183,22 @@ def command_to_action(command):
         return {"action": "load_scene", "scene_name": command.get("scene_name")}
     if t == "add_prefab":
         return {"action": "add_prefab", "prefab_name": command.get("prefab_name")}
+    if t == "generate_pattern":
+        return {
+            "action": "generate_pattern",
+            "pattern": command.get("pattern", "ring"),
+            "object_type": command.get("object_type", "cube"),
+            "count": command.get("count", 8),
+            "radius": command.get("radius", 2.5),
+            "color": command.get("color") or "purple",
+        }
+    if t == "generate_composite":
+        return {
+            "action": "generate_composite",
+            "composite": command.get("composite", "tree"),
+            "object_type": command.get("object_type", "cube"),
+            "color": command.get("color") or "green",
+        }
     raise ValueError("Unknown rule-based command type: " + str(t))
 
 # --- End legacy fallback ---
@@ -1407,6 +1451,100 @@ def seed_builtin_prefabs():
             print("[controller] Seeded prefab:", name, "->", path)
 
 
+_OPEN_COMPOSITE_SKIP = frozenset(SHAPE_WORDS) | {
+    "ring", "tree", "table", "lamp", "scene", "prefab", "object", "objects",
+}
+
+_MAKE_VERB_RE = re.compile(
+    r"\b(?:make|create|build|generate|draw)\s+(?:a|an)\s+(\w+)\b"
+)
+
+
+def detect_procedural_action(prompt):
+    """Map explicit procedural / composite prompts to a structured action dict
+    without touching the cache or the general LLM action-router.
+
+    Known deterministic composites are returned fully resolved.
+    Unknown object names are returned with composite='open' so that
+    handle_pending_ai_request can call parse_composite_spec_with_llm to fill
+    in the parts array before apply_action_to_ir is called.
+
+    Returns an action dict, or None if the prompt is not a recognised
+    procedural pattern.
+    """
+    text = prompt.lower().strip()
+
+    # ---- ring ----
+    if re.search(r"\bring\b", text):
+        object_type = shape_from_text(text) or "cube"
+        m_n = re.search(r"\bof\s+(\d+)\b", text)
+        if not m_n:
+            m_n = re.search(r"\b(\d+)\s+(?:objects?|" + re.escape(object_type) + r"s?)\b", text)
+        count = int(m_n.group(1)) if m_n else 8
+        m_r = re.search(r"\bradius\s*[=:]?\s*(\d+(?:\.\d+)?)\b", text)
+        radius = float(m_r.group(1)) if m_r else 2.5
+        return {
+            "action": "generate_pattern",
+            "pattern": "ring",
+            "object_type": object_type,
+            "count": count,
+            "radius": radius,
+            "color": color_name_from_text(text) or "purple",
+        }
+
+    # ---- deterministic tree ----
+    if re.search(r"\btree\b", text) and (
+        re.search(r"\bwith\b", text) or
+        re.search(r"\bof\b", text) or
+        shape_from_text(text)
+    ):
+        object_type = shape_from_text(text) or "cube"
+        return {
+            "action": "generate_composite",
+            "composite": "tree",
+            "object_type": object_type,
+            "color": color_name_from_text(text) or "green",
+        }
+
+    # ---- deterministic table ----
+    if re.search(r"\btable\b", text):
+        object_type = shape_from_text(text) or "cube"
+        return {
+            "action": "generate_composite",
+            "composite": "table",
+            "object_type": object_type,
+            "color": color_name_from_text(text) or "white",
+        }
+
+    # ---- deterministic lamp ----
+    if re.search(r"\blamp\b", text):
+        object_type = shape_from_text(text) or "cube"
+        return {
+            "action": "generate_composite",
+            "composite": "lamp",
+            "object_type": object_type,
+            "color": color_name_from_text(text) or "yellow",
+        }
+
+    # ---- open-ended composite ----
+    # Catches "make/create/build/generate a <noun>" where <noun> is not a
+    # shape, ring, tree, table, lamp, or other reserved word.
+    m = _MAKE_VERB_RE.search(text)
+    if m:
+        noun = m.group(1)
+        if noun not in _OPEN_COMPOSITE_SKIP:
+            primitive_type = shape_from_text(text) or "cube"
+            return {
+                "action": "generate_composite",
+                "composite": "open",
+                "object_name": noun,
+                "primitive_type": primitive_type,
+                "color": color_name_from_text(text) or "white",
+            }
+
+    return None
+
+
 def handle_pending_ai_request():
     req = read_json(AI_REQUEST_FILE, default=None)
     if not req:
@@ -1432,16 +1570,28 @@ def handle_pending_ai_request():
         action = None
         action_source = None
 
-        cached_action = lookup_cached_action(prompt)
-        if cached_action is not None:
+        procedural_action = detect_procedural_action(prompt)
+        if procedural_action is not None:
             try:
-                validate_action(cached_action)
-                action = cached_action
-                action_source = "cache"
-                print("[controller] Action source: cache")
-                print("[controller] Cached action:", action.get("action"))
-            except Exception as cache_err:
-                print("[controller] Ignoring invalid cached action:", cache_err)
+                validate_action(procedural_action)
+                action = procedural_action
+                action_source = "procedural_detector"
+                print("[controller] Action source: procedural_detector")
+                print("[controller] Procedural action:", action.get("action"))
+            except Exception as proc_err:
+                print("[controller] Procedural detector produced invalid action:", proc_err)
+
+        if action is None:
+            cached_action = lookup_cached_action(prompt)
+            if cached_action is not None:
+                try:
+                    validate_action(cached_action)
+                    action = cached_action
+                    action_source = "cache"
+                    print("[controller] Action source: cache")
+                    print("[controller] Cached action:", action.get("action"))
+                except Exception as cache_err:
+                    print("[controller] Ignoring invalid cached action:", cache_err)
 
         if action is None:
             try:
@@ -1461,6 +1611,26 @@ def handle_pending_ai_request():
                 print("[controller] Fallback action:", action.get("action"))
 
         action = normalize_action(action)
+
+        # Resolve open-ended composite: the detector returned composite='open'
+        # without a parts list; ask the LLM now with a focused design prompt.
+        if (action.get("action") == "generate_composite"
+                and action.get("composite") == "open"
+                and action.get("parts") is None):
+            object_name = action.get("object_name", "object")
+            primitive_type = action.get("primitive_type", "cube")
+            print("[controller] Resolving open composite '{}' via LLM".format(object_name))
+            try:
+                parts = parse_composite_spec_with_llm(object_name, primitive_type)
+                parts = resolve_composite_overlaps(parts)
+                validate_composite_parts(parts)
+                action = dict(action)
+                action["parts"] = parts
+                print("[controller] Composite spec resolved: {} parts".format(len(parts)))
+            except Exception as spec_err:
+                raise ValueError(
+                    "Could not generate composite for '{}': {}".format(object_name, spec_err)
+                )
 
         if action.get("action") == "new_scene":
             initialize_new_scene(request_id=request_id)
@@ -1724,7 +1894,9 @@ def validate_action(action):
         "save_scene",
         "load_scene",
         "add_prefab",
-        "undo"
+        "undo",
+        "generate_pattern",
+        "generate_composite",
     }
 
     action_name = action.get("action")
@@ -1979,6 +2151,408 @@ def color_name_to_rgb(name):
     return COLOR_TABLE.get(str(name).lower(), [0.8, 0.0, 0.8])
 
 
+_VALID_COMPOSITE_SHAPES = frozenset(SHAPE_WORDS)
+
+
+def validate_composite_parts(parts):
+    """Raise ValueError if *parts* does not conform to the composite parts schema."""
+    if not isinstance(parts, list) or len(parts) == 0:
+        raise ValueError("Composite parts must be a non-empty list")
+    if len(parts) > 20:
+        raise ValueError("Composite parts list too long (max 20, got {})".format(len(parts)))
+
+    seen_names = set()
+    for i, part in enumerate(parts):
+        if not isinstance(part, dict):
+            raise ValueError("Part {} must be a dict, got {}".format(i, type(part).__name__))
+
+        name = part.get("name")
+        if not name or not isinstance(name, str):
+            raise ValueError("Part {} missing required 'name' field".format(i))
+        if name in seen_names:
+            raise ValueError("Duplicate part name: '{}'".format(name))
+        seen_names.add(name)
+
+        shape = str(part.get("shape", "")).lower()
+        if shape not in _VALID_COMPOSITE_SHAPES:
+            raise ValueError(
+                "Part '{}' has invalid shape '{}'. Allowed: {}".format(
+                    name, shape, ", ".join(sorted(_VALID_COMPOSITE_SHAPES))
+                )
+            )
+
+        pos = part.get("position")
+        if not isinstance(pos, list) or len(pos) != 3:
+            raise ValueError("Part '{}' position must be [x, y, z], got {}".format(name, pos))
+        try:
+            [float(v) for v in pos]
+        except (TypeError, ValueError):
+            raise ValueError("Part '{}' position values must be numbers".format(name))
+
+        scale = part.get("scale")
+        if not isinstance(scale, list) or len(scale) != 3:
+            raise ValueError("Part '{}' scale must be [sx, sy, sz], got {}".format(name, scale))
+        for j, s in enumerate(scale):
+            try:
+                sv = float(s)
+            except (TypeError, ValueError):
+                raise ValueError("Part '{}' scale[{}] must be a number".format(name, j))
+            if sv <= 0:
+                raise ValueError("Part '{}' scale[{}] must be positive, got {}".format(name, j, sv))
+
+
+def resolve_composite_overlaps(parts, max_iterations=30, min_gap=0.05):
+    """Push apart any axis-aligned bounding boxes that overlap.
+
+    Strategy per overlapping pair:
+    - Find the axis of minimum penetration depth.
+    - On the Y axis, push the higher part upward only (the lower part may be
+      ground-resting and cannot go down).
+    - On X and Z axes, split the push evenly between the two parts.
+    - After moving, clamp every part so its bottom (y - sy/2) stays at y >= 0.
+
+    Returns a new list with adjusted positions; scales are never changed.
+    Converges in O(n^2 * max_iterations) steps; in practice one or two
+    passes suffice for 3-8 part objects.
+    """
+    parts = deepcopy(parts)
+    n = len(parts)
+
+    for _pass in range(max_iterations):
+        any_moved = False
+
+        for i in range(n):
+            for j in range(i + 1, n):
+                pi = [float(v) for v in parts[i]["position"]]
+                si = [float(v) for v in parts[i]["scale"]]
+                pj = [float(v) for v in parts[j]["position"]]
+                sj = [float(v) for v in parts[j]["scale"]]
+
+                # Per-axis overlap: positive means the boxes intersect on that axis
+                ov = []
+                for ax in range(3):
+                    ov.append(
+                        min(pi[ax] + si[ax] / 2.0, pj[ax] + sj[ax] / 2.0)
+                        - max(pi[ax] - si[ax] / 2.0, pj[ax] - sj[ax] / 2.0)
+                    )
+
+                if not all(o > 1e-6 for o in ov):
+                    continue  # no intersection — nothing to do
+
+                # Choose axis of minimum penetration
+                min_ax = int(min(range(3), key=lambda a: ov[a]))
+                push = ov[min_ax] + min_gap
+
+                if min_ax == 1:
+                    # Vertical: push the higher-centre part upward only so the
+                    # lower part is not forced below ground.
+                    if pj[1] >= pi[1]:
+                        pj[1] += push
+                    else:
+                        pi[1] += push
+                else:
+                    # Horizontal: split evenly
+                    if pj[min_ax] >= pi[min_ax]:
+                        pj[min_ax] += push / 2.0
+                        pi[min_ax] -= push / 2.0
+                    else:
+                        pj[min_ax] -= push / 2.0
+                        pi[min_ax] += push / 2.0
+
+                # Ground clamp — bottom of each part must stay at or above y=0
+                for p, s in ((pi, si), (pj, sj)):
+                    floor = s[1] / 2.0
+                    if p[1] < floor:
+                        p[1] = floor
+
+                parts[i]["position"] = [round(v, 4) for v in pi]
+                parts[j]["position"] = [round(v, 4) for v in pj]
+                any_moved = True
+
+        if not any_moved:
+            break
+
+    return parts
+
+
+def build_open_composite(scene_ir, object_name, parts, primitive_type, color):
+    """Assemble an arbitrary object from a validated *parts* list into a group node.
+
+    Each part specifies its own shape, local position, and scale.  The group
+    root is placed at the next free world slot; all part positions are local
+    relative to that root.
+    """
+    group_name = make_unique_name(scene_ir, object_name)
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=0.0)
+    base_order = next_object_order(scene_ir)
+    rgb = color_name_to_rgb(color)
+
+    children = []
+    for idx, part in enumerate(parts):
+        child_name = "{}_{}".format(group_name, part["name"])
+        pos = [float(v) for v in part["position"]]
+        scale = [float(v) for v in part["scale"]]
+        shape = str(part.get("shape", primitive_type)).lower()
+        children.append({
+            "node_type": "mesh_object",
+            "name": child_name,
+            "id": child_name,
+            "created_order": base_order + idx + 1,
+            "shape": shape,
+            "transform": {"position": pos, "scale": scale},
+            "material": {
+                "color": list(rgb),
+                "texture": {"enabled": False, "path": None},
+            },
+        })
+
+    group = {
+        "node_type": "group",
+        "name": group_name,
+        "id": group_name,
+        "created_order": base_order,
+        "transform": {
+            "position": [float(ref_pos[0]), 0.0, float(ref_pos[2])],
+            "scale": [1.0, 1.0, 1.0],
+        },
+        "children": children,
+    }
+
+    ensure_scene_children(scene_ir).append(group)
+    print("[controller] build_open_composite: group={} object={} parts={}".format(
+        group_name, object_name, len(parts)))
+    return scene_ir
+
+
+def build_table_composite(scene_ir, object_type, color):
+    """Deterministic table: flat top + four legs.
+
+    Dimensions (local): top at y=1.6, scale [2.0, 0.12, 1.2];
+    legs at corners, y=0.8, scale [0.12, 1.6, 0.12].
+    """
+    group_name = make_unique_name(scene_ir, "table_composite")
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
+    base_order = next_object_order(scene_ir)
+    rgb = color_name_to_rgb(color)
+    child_idx = 0
+
+    def _mesh(suffix, pos, scale):
+        nonlocal child_idx
+        child_idx += 1
+        name = "{}_{}".format(group_name, suffix)
+        return {
+            "node_type": "mesh_object",
+            "name": name, "id": name,
+            "created_order": base_order + child_idx,
+            "shape": str(object_type).lower(),
+            "transform": {"position": list(pos), "scale": list(scale)},
+            "material": {"color": list(rgb), "texture": {"enabled": False, "path": None}},
+        }
+
+    children = [
+        _mesh("top",    [0.0,  1.66, 0.0],  [2.0,  0.12, 1.2]),
+        _mesh("leg_fl", [-0.88, 0.8, -0.54], [0.12, 1.6,  0.12]),
+        _mesh("leg_fr", [ 0.88, 0.8, -0.54], [0.12, 1.6,  0.12]),
+        _mesh("leg_bl", [-0.88, 0.8,  0.54], [0.12, 1.6,  0.12]),
+        _mesh("leg_br", [ 0.88, 0.8,  0.54], [0.12, 1.6,  0.12]),
+    ]
+
+    group = {
+        "node_type": "group",
+        "name": group_name, "id": group_name,
+        "created_order": base_order,
+        "transform": {
+            "position": [float(ref_pos[0]), 0.0, float(ref_pos[2])],
+            "scale": [1.0, 1.0, 1.0],
+        },
+        "children": children,
+    }
+
+    ensure_scene_children(scene_ir).append(group)
+    print("[controller] build_table_composite: group={} type={}".format(group_name, object_type))
+    return scene_ir
+
+
+def build_lamp_composite(scene_ir, object_type, color):
+    """Deterministic floor lamp: weighted base + tall pole + conical shade.
+
+    Dimensions (local): base at y=0.1 scale [0.5, 0.2, 0.5];
+    pole at y=1.0 scale [0.1, 2.0, 0.1]; shade at y=2.15 scale [0.7, 0.4, 0.7].
+    """
+    group_name = make_unique_name(scene_ir, "lamp_composite")
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
+    base_order = next_object_order(scene_ir)
+    rgb = color_name_to_rgb(color)
+    child_idx = 0
+
+    def _mesh(suffix, pos, scale):
+        nonlocal child_idx
+        child_idx += 1
+        name = "{}_{}".format(group_name, suffix)
+        return {
+            "node_type": "mesh_object",
+            "name": name, "id": name,
+            "created_order": base_order + child_idx,
+            "shape": str(object_type).lower(),
+            "transform": {"position": list(pos), "scale": list(scale)},
+            "material": {"color": list(rgb), "texture": {"enabled": False, "path": None}},
+        }
+
+    children = [
+        _mesh("base",  [0.0, 0.1,  0.0], [0.5, 0.2, 0.5]),
+        _mesh("pole",  [0.0, 1.1,  0.0], [0.1, 2.0, 0.1]),
+        _mesh("shade", [0.0, 2.15, 0.0], [0.7, 0.4, 0.7]),
+    ]
+
+    group = {
+        "node_type": "group",
+        "name": group_name, "id": group_name,
+        "created_order": base_order,
+        "transform": {
+            "position": [float(ref_pos[0]), 0.0, float(ref_pos[2])],
+            "scale": [1.0, 1.0, 1.0],
+        },
+        "children": children,
+    }
+
+    ensure_scene_children(scene_ir).append(group)
+    print("[controller] build_lamp_composite: group={} type={}".format(group_name, object_type))
+    return scene_ir
+
+
+def build_ring_pattern(scene_ir, object_type, count, radius, color):
+    """Place *count* objects of *object_type* evenly on a circle of *radius*.
+
+    All objects are children of a single group node so the whole pattern
+    can be moved / deleted as a unit.  Placement uses the same free-slot
+    logic as the rest of the controller so the ring never overlaps existing
+    objects.
+    """
+    count = max(2, min(int(count), 32))
+    radius = max(0.5, float(radius))
+
+    group_name = make_unique_name(scene_ir, "ring")
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
+    base_order = next_object_order(scene_ir)
+    child_idx = 0
+
+    group = {
+        "node_type": "group",
+        "name": group_name,
+        "id": group_name,
+        "created_order": base_order,
+        "transform": {
+            "position": [float(ref_pos[0]), 0.0, float(ref_pos[2])],
+            "scale": [1.0, 1.0, 1.0],
+        },
+        "children": [],
+    }
+
+    rgb = color_name_to_rgb(color)
+
+    for i in range(count):
+        angle = 2.0 * math.pi * i / count
+        x = round(radius * math.cos(angle), 4)
+        z = round(radius * math.sin(angle), 4)
+        child_idx += 1
+        child_name = "{}_obj_{}".format(group_name, child_idx)
+        group["children"].append({
+            "node_type": "mesh_object",
+            "name": child_name,
+            "id": child_name,
+            "created_order": base_order + child_idx,
+            "shape": str(object_type).lower(),
+            "transform": {
+                "position": [x, CUBE_Y, z],
+                "scale": [1.0, 1.0, 1.0],
+            },
+            "material": {
+                "color": list(rgb),
+                "texture": {"enabled": False, "path": None},
+            },
+        })
+
+    ensure_scene_children(scene_ir).append(group)
+    print("[controller] build_ring_pattern: group={} count={} radius={} type={}".format(
+        group_name, count, radius, object_type))
+    return scene_ir
+
+
+def build_tree_composite(scene_ir, object_type, color):
+    """Build a stylised tree entirely from *object_type* mesh objects.
+
+    Structure (all local coords, group root at a free world slot):
+      - trunk  : 1 object at [0, 0.75, 0], scale [0.4, 1.5, 0.4]
+      - canopy1: 6 objects at y=2.2, r=1.2, scale [1.0, 1.0, 1.0]
+      - canopy2: 4 objects at y=3.1, r=0.75, scale [0.9, 0.9, 0.9]  (offset 45°)
+      - top    : 1 object at [0, 3.9, 0], scale [0.8, 0.8, 0.8]
+    """
+    group_name = make_unique_name(scene_ir, "tree_composite")
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
+    base_order = next_object_order(scene_ir)
+    rgb = color_name_to_rgb(color)
+    child_idx = 0
+
+    def _mesh(suffix, pos, scale):
+        nonlocal child_idx
+        child_idx += 1
+        name = "{}_{}".format(group_name, suffix)
+        return {
+            "node_type": "mesh_object",
+            "name": name,
+            "id": name,
+            "created_order": base_order + child_idx,
+            "shape": str(object_type).lower(),
+            "transform": {"position": list(pos), "scale": list(scale)},
+            "material": {
+                "color": list(rgb),
+                "texture": {"enabled": False, "path": None},
+            },
+        }
+
+    children = []
+
+    # trunk — tall and narrow
+    children.append(_mesh("trunk", [0.0, 0.75, 0.0], [0.4, 1.5, 0.4]))
+
+    # canopy layer 1 — 6 objects, r=1.2, y=2.2
+    for i in range(6):
+        a = 2.0 * math.pi * i / 6
+        children.append(_mesh(
+            "canopy1_{}".format(i + 1),
+            [round(1.2 * math.cos(a), 4), 2.2, round(1.2 * math.sin(a), 4)],
+            [1.0, 1.0, 1.0],
+        ))
+
+    # canopy layer 2 — 4 objects, r=0.75, y=3.1, offset 45°
+    for i in range(4):
+        a = 2.0 * math.pi * i / 4 + math.pi / 4
+        children.append(_mesh(
+            "canopy2_{}".format(i + 1),
+            [round(0.75 * math.cos(a), 4), 3.1, round(0.75 * math.sin(a), 4)],
+            [0.9, 0.9, 0.9],
+        ))
+
+    # top — crown apex
+    children.append(_mesh("top", [0.0, 3.9, 0.0], [0.8, 0.8, 0.8]))
+
+    group = {
+        "node_type": "group",
+        "name": group_name,
+        "id": group_name,
+        "created_order": base_order,
+        "transform": {
+            "position": [float(ref_pos[0]), 0.0, float(ref_pos[2])],
+            "scale": [1.0, 1.0, 1.0],
+        },
+        "children": children,
+    }
+
+    ensure_scene_children(scene_ir).append(group)
+    print("[controller] build_tree_composite: group={} type={}".format(group_name, object_type))
+    return scene_ir
+
+
 def apply_action_to_ir(scene_ir, action):
     new_ir = deepcopy(scene_ir)
     action_name = action.get("action")
@@ -2218,6 +2792,44 @@ def apply_action_to_ir(scene_ir, action):
         ensure_scene_children(new_ir).append(node)
         print("[controller] Added prefab:", prefab_name)
         return new_ir
+
+    if action_name == "generate_pattern":
+        pattern = str(action.get("pattern", "")).lower().strip()
+        object_type = str(action.get("object_type", "cube")).lower()
+        color = action.get("color") or "purple"
+        if pattern == "ring":
+            count = action.get("count", 8)
+            radius = action.get("radius", 2.5)
+            return build_ring_pattern(new_ir, object_type, count, radius, color)
+        raise ValueError("Unknown pattern: " + pattern)
+
+    if action_name == "generate_composite":
+        composite = str(action.get("composite", "")).lower().strip()
+        object_type = str(action.get("object_type", "cube")).lower()
+        color = action.get("color") or "green"
+
+        if composite == "tree":
+            return build_tree_composite(new_ir, object_type, color)
+
+        if composite == "table":
+            return build_table_composite(new_ir, object_type, color)
+
+        if composite == "lamp":
+            return build_lamp_composite(new_ir, object_type, color)
+
+        # Open-ended composite: requires a 'parts' list already resolved by
+        # handle_pending_ai_request before this function is called.
+        parts = action.get("parts")
+        if parts is not None:
+            object_name = str(action.get("object_name", "object"))
+            primitive_type = str(action.get("primitive_type", object_type))
+            validate_composite_parts(parts)
+            return build_open_composite(new_ir, object_name, parts, primitive_type, color)
+
+        raise ValueError(
+            "Unknown composite '{}'. Supported: tree, table, lamp, "
+            "or any composite with a 'parts' list.".format(composite)
+        )
 
     raise ValueError("Unsupported action type: " + str(action_name))
 
