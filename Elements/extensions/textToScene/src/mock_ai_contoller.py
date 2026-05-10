@@ -1774,7 +1774,10 @@ def handle_undo(ui):
     previous_ir = pop_history_state()
 
     if not isinstance(previous_ir, dict):
-        raise ValueError("No undo history available.")
+        print("[controller] Undo requested but history stack is empty.")
+        write_json(UI_STATE_FILE, {"action": "idle", "request_id": request_id, "updated_at": time.time()})
+        write_status("error", error="No undo history available.", request_id=request_id)
+        return
 
     previous_ir = ensure_stable_object_ids(previous_ir)
 
