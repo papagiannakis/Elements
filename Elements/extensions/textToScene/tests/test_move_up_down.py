@@ -64,4 +64,73 @@ def test_invalid_direction_raises():
     with pytest.raises(ValueError, match="Unsupported move direction"):
         _move(_cube(), "diagonal")
 
-# pytest tests/test_move_up_down.py -v
+_scene_with_cube = _cube
+
+
+class TestScaleObject:
+    def test_scale_with_explicit_list(self):
+        scene = _scene_with_cube()
+        result = apply_action_to_ir(scene, {"action": "scale_object", "target": "cube_1", "scale": [2.0, 3.0, 2.0]})
+        scale = collect_mesh_objects(result)[0]["transform"]["scale"]
+        assert abs(scale[0] - 2.0) < 0.01 and abs(scale[1] - 3.0) < 0.01
+
+    def test_scale_with_factor(self):
+        result = apply_action_to_ir(_scene_with_cube(), {"action": "scale_object", "target": "cube_1", "factor": 2.0})
+        assert all(abs(v - 2.0) < 0.01 for v in collect_mesh_objects(result)[0]["transform"]["scale"])
+
+    def test_scale_missing_args_raises(self):
+        with pytest.raises(ValueError, match="scale_object requires"):
+            apply_action_to_ir(_scene_with_cube(), {"action": "scale_object", "target": "cube_1"})
+
+
+class TestNormalizeAction:
+    @pytest.mark.parametrize("raw,expected", [
+        ("upward", "up"), ("above", "up"), ("higher", "up"),
+        ("downward", "down"), ("below", "down"),
+        ("front", "forward"), ("ahead", "forward"),
+        ("back", "backward"), ("behind", "backward"),
+    ])
+    def test_direction_alias_normalised(self, raw, expected):
+        result = normalize_action({"action": "move_object", "target": "cube", "direction": raw})
+        assert result["direction"] == expected
+
+    def test_object_id_becomes_id(self):
+        result = normalize_action({"action": "delete_object", "object_id": "cube_1"})
+        assert result.get("id") == "cube_1" and "object_id" not in result
+
+    def test_non_dict_returns_unchanged(self):
+        assert normalize_action("not a dict") == "not a dict"
+
+
+from mock_ai_contoller import pop_history_state
+import mock_ai_contoller as ctrl
+
+
+class TestUndoEmptyStack:
+    def test_pop_history_returns_non_dict_when_empty(self, tmp_path, monkeypatch):
+        monkeypatch.setattr(ctrl, "HISTORY_STACK_FILE", tmp_path / "undo_stack.json")
+        result = pop_history_state()
+        assert not isinstance(result, dict)
+
+
+class TestActionSequenceFailure:
+    def test_sequence_with_unknown_action_raises(self):
+        with pytest.raises(Exception):
+            apply_action_to_ir(deepcopy(EMPTY), {
+                "action": "action_sequence",
+                "action_sequence": [
+                    {"action": "add_object", "object_type": "cube", "color": "red"},
+                    {"action": "teleport_object", "target": "cube_1"},
+                ],
+            })
+
+    def test_sequence_two_valid_steps_both_applied(self):
+        result = apply_action_to_ir(deepcopy(EMPTY), {
+            "action": "action_sequence",
+            "action_sequence": [
+                {"action": "add_object", "object_type": "cube", "color": "red"},
+                {"action": "add_object", "object_type": "sphere", "color": "blue"},
+            ],
+        })
+        shapes = {o["shape"] for o in collect_mesh_objects(result)}
+        assert shapes == {"cube", "sphere"}
