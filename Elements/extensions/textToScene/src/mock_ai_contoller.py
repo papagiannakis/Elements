@@ -1068,6 +1068,9 @@ def parse_command(prompt):
     text = prompt.lower().strip()
     group_name = group_name_from_text(text)
 
+    if "undo" in text:
+        return {"type": "undo"}
+
     if "new scene" in text:
         return {"type": "new_scene"}
 
@@ -1156,7 +1159,31 @@ def parse_command(prompt):
         prefab_name = m.group(1) if m else None
         return {"type": "add_prefab", "prefab_name": prefab_name}
 
-    if "add" in text or "create" in text or "cube" in text:
+    _SCALE_PATTERNS = [
+        (r"\bdouble\b",                 2.0),
+        (r"\bhalf\b|\bhalve\b",         0.5),
+        (r"\bbigger\b|\blarger\b|\benlarge\b", 1.5),
+        (r"\bsmaller\b|\bshrink\b",    0.66),
+    ]
+    for _pat, _factor in _SCALE_PATTERNS:
+        if re.search(_pat, text):
+            return {
+                "type": "scale_object",
+                "factor": _factor,
+                "target_color": color_name_from_text(text),
+                "target_shape": shape_from_text(text),
+            }
+
+    if "scale" in text:
+        m_f = re.search(r"\bby\s+(\d+(?:\.\d+)?)\b", text)
+        return {
+            "type": "scale_object",
+            "factor": float(m_f.group(1)) if m_f else 1.5,
+            "target_color": color_name_from_text(text),
+            "target_shape": shape_from_text(text),
+        }
+
+    if "add" in text or "create" in text or "cube" in text or "sphere" in text or "cylinder" in text or "cone" in text or "pyramid" in text or "plane" in text:
         placement = "next_free"
 
         if "on top of" in text or "πάνω" in text or "πανω" in text:
@@ -1167,6 +1194,7 @@ def parse_command(prompt):
         return {
             "type": "add_cube",
             "color": color_name_from_text(text),
+            "shape": shape_from_text(text) or "cube",
             "placement": placement,
             "group_name": group_name,
             "target_text": target_text_from_add_command(text, placement)
@@ -1178,10 +1206,21 @@ def parse_command(prompt):
 def command_to_action(command):
     # Converts a parse_command result into the canonical action schema.
     t = command.get("type")
+    if t == "undo":
+        return {"action": "undo"}
     if t == "new_scene":
         return {"action": "new_scene"}
     if t == "save_scene":
         return {"action": "save_scene", "scene_name": command.get("scene_name")}
+    if t == "scale_object":
+        color = command.get("target_color")
+        shape = command.get("target_shape")
+        target = " ".join(filter(None, [color, shape])) or "last"
+        return {
+            "action": "scale_object",
+            "target": target,
+            "factor": command.get("factor", 1.5),
+        }
     if t == "add_cube":
         placement_str = command.get("placement", "next_free")
         if placement_str == "right_of":
@@ -1192,7 +1231,7 @@ def command_to_action(command):
             placement = {"relation": "next_free_slot"}
         return {
             "action": "add_object",
-            "object_type": "cube",
+            "object_type": command.get("shape") or "cube",
             "color": command.get("color") or "purple",
             "placement": placement
         }
@@ -2698,11 +2737,12 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
 
     if action_name == "scale_object":
-        target, target_group = resolve_action_target_node(new_ir, action)
+        target, target_group = resolve_target_node_with_group(new_ir, action.get("target", ""))
         if target is None:
             raise ValueError("Could not resolve scale target")
 
-        transform = target.setdefault("transform", {})
+        scale_node = target_group if target_group is not None else target
+        transform = scale_node.setdefault("transform", {})
         current_scale = transform.get("scale", [1.0, 1.0, 1.0])
 
         if "scale" in action:
@@ -2718,7 +2758,6 @@ def apply_action_to_ir(scene_ir, action):
             raise ValueError("scale_object requires 'scale' or 'factor'")
 
         transform["scale"] = new_scale
-        transform.setdefault("position", [0.0, CUBE_Y, CUBE_Z])
         return new_ir
 
     if action_name == "move_object":

@@ -102,6 +102,7 @@ Rules:
 - If you refer to an existing object, prefer abstract references like "target".
 - Avoid scene-specific ids unless the scene context makes them necessary.
 - Return valid JSON only.
+- For scale_object: "make it bigger" → factor 1.5, "make it smaller" → factor 0.66, "double" → factor 2.0, "half" → factor 0.5.
 
 Allowed object_type values:
 - cube
@@ -150,6 +151,18 @@ Allowed direction values for move_object: right, left, up, down, forward, backwa
 {
   "action": "delete_object",
   "target": "red cube"
+}
+
+{
+  "action": "scale_object",
+  "target": "red cube",
+  "factor": 2.0
+}
+
+{
+  "action": "scale_object",
+  "target": "cube_1",
+  "scale": [1.0, 2.0, 1.0]
 }
 
 {
