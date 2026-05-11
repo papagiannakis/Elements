@@ -2629,8 +2629,24 @@ def apply_action_to_ir(scene_ir, action):
         current_ir = new_ir
         sequence = action.get("action_sequence", [])
 
-        for index, step in enumerate(sequence):
-            print("[controller] Applying action_sequence step", index + 1, "of", len(sequence))
+        # Deduplicate scale_object steps that all resolve to the same group.
+        # The LLM often targets every child by id; we must scale the group only once.
+        # Keep the first matching step unchanged — its child target resolves fine and
+        # the branch promotes it to the group. Skip every subsequent step for that group.
+        deduped = []
+        seen_group_names = set()
+        for step in sequence:
+            if step.get("action") == "scale_object":
+                _node, _group = resolve_target_node_with_group(current_ir, step.get("target", ""))
+                if _group is not None:
+                    gname = _group.get("name", "")
+                    if gname in seen_group_names:
+                        continue
+                    seen_group_names.add(gname)
+            deduped.append(step)
+
+        for index, step in enumerate(deduped):
+            print("[controller] Applying action_sequence step", index + 1, "of", len(deduped))
             validate_action(step)
             current_ir = apply_action_to_ir(current_ir, step)
 
