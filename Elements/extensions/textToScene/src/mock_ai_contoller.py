@@ -637,10 +637,39 @@ def get_scale(node):
     return [float(scale[0]), float(scale[1]), float(scale[2])]
 
 
+def get_rotation(node):
+    rotation = node.get("transform", {}).get("rotation", [0.0, 0.0, 0.0])
+    return [float(rotation[0]), float(rotation[1]), float(rotation[2])]
+
+
 def set_position(node, position):
     transform = node.setdefault("transform", {})
     transform["position"] = [float(position[0]), float(position[1]), float(position[2])]
     transform.setdefault("scale", [1.0, 1.0, 1.0])
+
+
+def ensure_rotation(node):
+    transform = node.setdefault("transform", {})
+    rotation = transform.get("rotation")
+
+    if not isinstance(rotation, list) or len(rotation) != 3:
+        rotation = [0.0, 0.0, 0.0]
+    else:
+        rotation = [float(rotation[0]), float(rotation[1]), float(rotation[2])]
+
+    transform["rotation"] = rotation
+    return rotation
+
+
+def normalize_rotation_axis(axis):
+    axis = str(axis).strip().lower()
+    if axis not in ("x", "y", "z"):
+        raise ValueError("rotate_object axis must be one of: x, y, z")
+    return axis
+
+
+def rotation_axis_index(axis):
+    return {"x": 0, "y": 1, "z": 2}[normalize_rotation_axis(axis)]
 
 
 def positions_overlap(a, b):
@@ -1159,6 +1188,24 @@ def parse_command(prompt):
         prefab_name = m.group(1) if m else None
         return {"type": "add_prefab", "prefab_name": prefab_name}
 
+    if "rotate" in text:
+        axis = None
+        for candidate in ("x", "y", "z"):
+            if re.search(r"\b" + re.escape(candidate) + r"(?:-axis|\s+axis)?\b", text):
+                axis = candidate
+                break
+
+        m_deg = re.search(r"(-?\d+(?:\.\d+)?)\s*(?:degrees?|deg)\b", text)
+        degrees = float(m_deg.group(1)) if m_deg else 45.0
+
+        return {
+            "type": "rotate_object",
+            "axis": axis or "y",
+            "degrees": degrees,
+            "target_color": color_name_from_text(text),
+            "target_shape": shape_from_text(text),
+        }
+
     _SCALE_PATTERNS = [
         (r"\bdouble\b",                 2.0),
         (r"\bhalf\b|\bhalve\b",         0.5),
@@ -1220,6 +1267,16 @@ def command_to_action(command):
             "action": "scale_object",
             "target": target,
             "factor": command.get("factor", 1.5),
+        }
+    if t == "rotate_object":
+        color = command.get("target_color")
+        shape = command.get("target_shape")
+        target = " ".join(filter(None, [color, shape])) or "last"
+        return {
+            "action": "rotate_object",
+            "target": target,
+            "axis": command.get("axis", "y"),
+            "degrees": command.get("degrees", 45.0),
         }
     if t == "add_cube":
         placement_str = command.get("placement", "next_free")
@@ -1962,6 +2019,7 @@ def validate_action(action):
         "delete_object",
         "recolor_object",
         "scale_object",
+        "rotate_object",
         "new_scene",
         "save_scene",
         "load_scene",
@@ -1972,6 +2030,20 @@ def validate_action(action):
     }
 
     action_name = action.get("action")
+
+    if action_name == "rotate_object":
+        target = action.get("target")
+        if not isinstance(target, str) or not target.strip():
+            raise ValueError("rotate_object requires a non-empty 'target' string")
+
+        normalize_rotation_axis(action.get("axis"))
+
+        try:
+            float(action.get("degrees"))
+        except Exception:
+            raise ValueError("rotate_object requires numeric 'degrees'")
+
+        return
 
     if action_name in allowed_single:
         return
@@ -2025,6 +2097,12 @@ def normalize_action(action):
     if action.get("action") == "move_object" and "direction" in action:
         raw = str(action["direction"]).lower().strip()
         action["direction"] = _DIRECTION_WORD_MAP.get(raw, raw)
+
+    if action.get("action") == "rotate_object":
+        if "axis" in action:
+            action["axis"] = normalize_rotation_axis(action["axis"])
+        if "degrees" in action:
+            action["degrees"] = float(action["degrees"])
 
     # Recurse into action_sequence steps
     if action.get("action") == "action_sequence" and isinstance(action.get("action_sequence"), list):
@@ -2774,6 +2852,30 @@ def apply_action_to_ir(scene_ir, action):
             raise ValueError("scale_object requires 'scale' or 'factor'")
 
         transform["scale"] = new_scale
+        return new_ir
+
+    if action_name == "rotate_object":
+        target, target_group = resolve_target_node_with_group(new_ir, action.get("target", ""))
+        if target is None:
+            raise ValueError("Could not resolve rotate target")
+
+        transform = target.setdefault("transform", {})
+        current_rotation = ensure_rotation(target)
+        axis = normalize_rotation_axis(action.get("axis", "y"))
+        axis_index = rotation_axis_index(axis)
+        degrees = float(action.get("degrees", 0.0))
+
+        new_rotation = list(current_rotation)
+        new_rotation[axis_index] = float(new_rotation[axis_index]) + degrees
+        transform["rotation"] = new_rotation
+
+        print(
+            "[controller] Applied rotation:",
+            target.get("name"),
+            "axis=" + axis,
+            "degrees=" + str(degrees),
+            "rotation=" + str(new_rotation)
+        )
         return new_ir
 
     if action_name == "move_object":
