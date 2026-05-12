@@ -78,6 +78,7 @@ Allowed top-level action values:
 - delete_object
 - recolor_object
 - scale_object
+- rotate_object
 - new_scene
 - save_scene
 - load_scene
@@ -102,6 +103,9 @@ Rules:
 - If you refer to an existing object, prefer abstract references like "target".
 - Avoid scene-specific ids unless the scene context makes them necessary.
 - Return valid JSON only.
+- For rotate_object: use the canonical schema { "action": "rotate_object", "target": "...", "axis": "x|y|z", "degrees": <number> }.
+- For rotate_object: if the user does not specify an axis, default to "y".
+- For rotate_object: if the user says only "rotate" without an amount, default to 45 degrees.
 - For scale_object: "make it bigger" → factor 1.5, "make it smaller" → factor 0.66, "double" → factor 2.0, "half" → factor 0.5.
 
 Allowed object_type values:
@@ -163,6 +167,36 @@ Allowed direction values for move_object: right, left, up, down, forward, backwa
   "action": "scale_object",
   "target": "cube_1",
   "scale": [1.0, 2.0, 1.0]
+}
+
+Allowed axis values for rotate_object: x, y, z
+
+{
+  "action": "rotate_object",
+  "target": "cube",
+  "axis": "y",
+  "degrees": 45
+}
+
+{
+  "action": "rotate_object",
+  "target": "red cube",
+  "axis": "y",
+  "degrees": 45
+}
+
+{
+  "action": "rotate_object",
+  "target": "cube",
+  "axis": "y",
+  "degrees": 45
+}
+
+{
+  "action": "rotate_object",
+  "target": "cube",
+  "axis": "y",
+  "degrees": 90
 }
 
 {
@@ -440,6 +474,17 @@ def normalize_parsed_action(action):
 
     if normalized.get("action") == "composite":
         normalized["action"] = "action_sequence"
+
+    if normalized.get("action") == "rotate":
+        normalized["action"] = "rotate_object"
+
+    if normalized.get("action") == "rotate_object":
+        if "name" in normalized and "target" not in normalized:
+            normalized["target"] = normalized.pop("name")
+        if "object" in normalized and "target" not in normalized:
+            normalized["target"] = normalized.pop("object")
+        if "angle" in normalized and "degrees" not in normalized:
+            normalized["degrees"] = normalized.pop("angle")
 
     if "action" not in normalized:
         raise ValueError("LLM output missing 'action' field")
