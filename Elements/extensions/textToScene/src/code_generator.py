@@ -17,6 +17,7 @@ DEFAULT_WINDOW = {
 
 DEFAULT_TRANSFORM = {
     "position": [0.0, 0.5, 0.0],
+    "rotation": [0.0, 0.0, 0.0],
     "scale": [1.0, 1.0, 1.0]
 }
 
@@ -84,6 +85,8 @@ def normalize_transform(transform):
 
     if "position" in transform:
         normalized["position"] = ensure_vec3(transform["position"], "position")
+    if "rotation" in transform:
+        normalized["rotation"] = ensure_vec3(transform["rotation"], "rotation")
     if "scale" in transform:
         normalized["scale"] = ensure_vec3(transform["scale"], "scale")
 
@@ -323,6 +326,19 @@ def make_scale(scale):
         sx=float(sx),
         sy=float(sy),
         sz=float(sz)
+    )
+
+
+def make_rotate(rotation):
+    rx, ry, rz = rotation
+
+    if rx == ry == rz == 0.0:
+        return "util.identity()"
+
+    return "util.eulerAnglesToRotationMatrix(np.radians([{}, {}, {}]))".format(
+        float(rx),
+        float(ry),
+        float(rz)
     )
 
 
@@ -778,7 +794,7 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
         return emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr)    
 
     position = transform["position"]
-    scale = transform["scale"]
+    rotation = transform["rotation"]
     color = material["color"]
 
     suffix = str(idx)
@@ -788,7 +804,7 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     mesh_var = "mesh_{}".format(suffix)
     shader_var = "shader_{}".format(suffix)
 
-    local_trs_expr = "util.identity() @ {}".format(make_translate(position))
+    local_trs_expr = "{} @ {}".format(make_translate(position), make_rotate(rotation))
     world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
 
     mat_color_expr = vec3_to_util_vec(color)
@@ -866,13 +882,18 @@ def emit_group_node(node, idx, parent_entity_var, parent_trs_expr, state):
     transform = node["transform"]
 
     position = transform["position"]
+    rotation = transform["rotation"]
     scale = transform["scale"]
 
     suffix = str(idx)
     entity_var = "group_node_{}".format(suffix)
     trans_var = "group_trans_{}".format(suffix)
 
-    trs_expr = "{} @ {}".format(make_translate(position), make_scale(scale))
+    trs_expr = "{} @ {} @ {}".format(
+        make_translate(position),
+        make_rotate(rotation),
+        make_scale(scale)
+    )
     local_trs_expr = trs_expr
     world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
     object_code = """
@@ -954,6 +975,7 @@ def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr
     material = node["material"]
 
     position = transform["position"]
+    rotation = transform["rotation"]
     texture_path = (material.get("texture") or {}).get("path")
     if not texture_path:
         raise ValueError("Textured material is missing texture.path")
@@ -965,7 +987,7 @@ def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr
     shader_var = "shader_{}".format(suffix)
     texture_var = "texture_{}".format(suffix)
 
-    local_trs_expr = "{} ".format( make_translate(position))
+    local_trs_expr = "{} @ {}".format(make_translate(position), make_rotate(rotation))
     world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
     if shape != "cube":
         raise ValueError("Currently only 'cube' shape is supported for textured mesh_object nodes")
