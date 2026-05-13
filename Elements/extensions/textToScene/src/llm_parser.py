@@ -87,6 +87,8 @@ Allowed top-level action values:
 - action_sequence
 - generate_pattern
 - generate_composite
+- apply_texture
+- remove_texture
 
 If the request needs multiple steps, use:
 {
@@ -107,6 +109,7 @@ Rules:
 - For rotate_object: if the user does not specify an axis, default to "y".
 - For rotate_object: if the user says only "rotate" without an amount, default to 45 degrees.
 - For scale_object: "make it bigger" → factor 1.5, "make it smaller" → factor 0.66, "double" → factor 2.0, "half" → factor 0.5.
+- For apply_texture, texture_name must be one of: brick, wood, stone, grass, metal, sand, marble, concrete
 
 Allowed object_type values:
 - cube
@@ -299,6 +302,17 @@ Examples:
   "composite": "tree",
   "object_type": "sphere",
   "color": "green"
+}
+
+{
+  "action": "apply_texture",
+  "target": "red cube",
+  "texture_name": "brick"
+}
+
+{
+  "action": "remove_texture",
+  "target": "cube_1"
 }
 
 User prompt:
