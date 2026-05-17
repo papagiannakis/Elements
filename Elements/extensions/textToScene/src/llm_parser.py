@@ -8,9 +8,13 @@ from pathlib import Path
 from openai import OpenAI
 
 try:
-    from config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
+   # from config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
+#except ImportError:
+    #from .config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
+
+    from config import ACTION_CACHE_FILE, OPENAI_API_KEY, CACHE_DIR, DEFAULT_MODEL
 except ImportError:
-    from .config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
+    from .config import ACTION_CACHE_FILE, OPENAI_API_KEY, CACHE_DIR, DEFAULT_MODEL
 
 ACTION_SEQUENCE_ALIASES = (
     "action_sequence",
@@ -29,7 +33,7 @@ SCENE_DEPENDENT_KEYS = {
 
 
 def get_client():
-    api_key = os.getenv(API_KEY_ENV)
+    api_key = os.getenv(OPENAI_API_KEY)
     if not api_key:
         raise RuntimeError("Missing OPENAI_API_KEY environment variable")
     return OpenAI()

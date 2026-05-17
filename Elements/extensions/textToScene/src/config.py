@@ -5,7 +5,7 @@ This module defines all runtime paths, generated files, bridge files,
 model settings, and layout constants used by the controller, parser,
 supervisor, and code generator.
 """
-
+import os 
 from pathlib import Path
 
 
@@ -18,6 +18,21 @@ HISTORY_DIR = SHARED_DIR / "history"
 SAVED_SCENES_DIR = SHARED_DIR / "saved_scenes"
 PREFABS_DIR = SHARED_DIR / "prefabs"
 CACHE_DIR = SHARED_DIR / "cache"
+
+TEXTURES_DIR = SHARED_DIR / "textures"
+
+TEXTURE_CATALOGUE = {
+    "brick":    "brick.jpg",
+    "wood":     "wood.jpg",
+    "stone":    "stone.jpg",
+    "grass":    "grass.jpg",
+    "metal":    "metal.jpg",
+    "sand":     "sand.jpg",
+    "marble":   "marble.jpg",
+    "concrete": "concrete.jpg",
+}
+
+CUSTOM_MODELS_DIR = SHARED_DIR / "custom_models"
 
 PROJECT_SCENE_IR_FILE = SRC_DIR / "scene_ir.json"
 SCENE_IR_FILE = SHARED_DIR / "scene_ir.json"
@@ -32,7 +47,7 @@ SCENE_OUT_FILE = DESKTOP_DIR / "scene_out.py"
 OFFICIAL_SCENE_FILE = SCENE_OUT_FILE
 PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
 
-API_KEY_ENV = "OPENAI_API_KEY"
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 DEFAULT_MODEL = "gpt-4.1-mini"
 
 POLL_INTERVAL = 0.5
@@ -42,5 +57,5 @@ CUBE_Z = 0.0
 
 
 def ensure_runtime_dirs():
-    for path in (SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR, CACHE_DIR):
+    for path in (SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR, CACHE_DIR, TEXTURES_DIR, CUSTOM_MODELS_DIR):
         path.mkdir(parents=True, exist_ok=True)

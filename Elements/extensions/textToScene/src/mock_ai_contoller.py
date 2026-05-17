@@ -17,6 +17,7 @@ from llm_parser import (
 )
 from prefabs import build_house, build_tree, build_gift_box, build_street_light
 
+from config import TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR
 
 
 PROJECT_DIR = Path(__file__).resolve().parent
@@ -519,13 +520,50 @@ def initialize_new_scene(request_id=None):
 
 
 def color_name_from_text(text):
-    text = text.lower()
+   def color_name_to_rgb(name):
+    """Convert color name or hex to RGB list. Falls back to purple if unknown."""
+    name = str(name).strip().lower()
+    
+    # Check COLOR_TABLE first (common names)
+    if name in COLOR_TABLE:
+        return COLOR_TABLE[name]
+    
+    # Handle hex colors (#FF5733 or #F57)
+    if name.startswith('#'):
+        hex_str = name[1:]
+        if len(hex_str) == 3:  # #F57 → #FF5577
+            hex_str = ''.join([c*2 for c in hex_str])
+        if len(hex_str) == 6:
+            try:
+                r = int(hex_str[0:2], 16) / 255.0
+                g = int(hex_str[2:4], 16) / 255.0
+                b = int(hex_str[4:6], 16) / 255.0
+                return [r, g, b]
+            except ValueError:
+                pass
+    
+    # Extended CSS color names (common ones not in COLOR_TABLE)
+    extended = {
+        "silver": [0.75, 0.75, 0.75],
+        "maroon": [0.5, 0.0, 0.0],
+        "olive": [0.5, 0.5, 0.0],
+        "lime": [0.0, 1.0, 0.0],
+        "aqua": [0.0, 1.0, 1.0],
+        "navy": [0.0, 0.0, 0.5],
+        "fuchsia": [1.0, 0.0, 1.0],
+        "teal": [0.0, 0.5, 0.5],
+        "gold": [1.0, 0.84, 0.0],
+        "coral": [1.0, 0.5, 0.31],
+        "indigo": [0.29, 0.0, 0.51],
+        "violet": [0.93, 0.51, 0.93],
+        "turquoise": [0.25, 0.88, 0.82],
+    }
+    if name in extended:
+        return extended[name]
+    
+    # Fallback to purple for unknown
+    return [0.8, 0.0, 0.8]
 
-    for name in COLOR_TABLE:
-        if re.search(r"\b" + re.escape(name) + r"\b", text):
-            return name
-
-    return None
 
 
 def color_value(color_name):
@@ -637,39 +675,10 @@ def get_scale(node):
     return [float(scale[0]), float(scale[1]), float(scale[2])]
 
 
-def get_rotation(node):
-    rotation = node.get("transform", {}).get("rotation", [0.0, 0.0, 0.0])
-    return [float(rotation[0]), float(rotation[1]), float(rotation[2])]
-
-
 def set_position(node, position):
     transform = node.setdefault("transform", {})
     transform["position"] = [float(position[0]), float(position[1]), float(position[2])]
     transform.setdefault("scale", [1.0, 1.0, 1.0])
-
-
-def ensure_rotation(node):
-    transform = node.setdefault("transform", {})
-    rotation = transform.get("rotation")
-
-    if not isinstance(rotation, list) or len(rotation) != 3:
-        rotation = [0.0, 0.0, 0.0]
-    else:
-        rotation = [float(rotation[0]), float(rotation[1]), float(rotation[2])]
-
-    transform["rotation"] = rotation
-    return rotation
-
-
-def normalize_rotation_axis(axis):
-    axis = str(axis).strip().lower()
-    if axis not in ("x", "y", "z"):
-        raise ValueError("rotate_object axis must be one of: x, y, z")
-    return axis
-
-
-def rotation_axis_index(axis):
-    return {"x": 0, "y": 1, "z": 2}[normalize_rotation_axis(axis)]
 
 
 def positions_overlap(a, b):
@@ -1188,24 +1197,6 @@ def parse_command(prompt):
         prefab_name = m.group(1) if m else None
         return {"type": "add_prefab", "prefab_name": prefab_name}
 
-    if "rotate" in text:
-        axis = None
-        for candidate in ("x", "y", "z"):
-            if re.search(r"\b" + re.escape(candidate) + r"(?:-axis|\s+axis)?\b", text):
-                axis = candidate
-                break
-
-        m_deg = re.search(r"(-?\d+(?:\.\d+)?)\s*(?:degrees?|deg)\b", text)
-        degrees = float(m_deg.group(1)) if m_deg else 45.0
-
-        return {
-            "type": "rotate_object",
-            "axis": axis or "y",
-            "degrees": degrees,
-            "target_color": color_name_from_text(text),
-            "target_shape": shape_from_text(text),
-        }
-
     _SCALE_PATTERNS = [
         (r"\bdouble\b",                 2.0),
         (r"\bhalf\b|\bhalve\b",         0.5),
@@ -1267,16 +1258,6 @@ def command_to_action(command):
             "action": "scale_object",
             "target": target,
             "factor": command.get("factor", 1.5),
-        }
-    if t == "rotate_object":
-        color = command.get("target_color")
-        shape = command.get("target_shape")
-        target = " ".join(filter(None, [color, shape])) or "last"
-        return {
-            "action": "rotate_object",
-            "target": target,
-            "axis": command.get("axis", "y"),
-            "degrees": command.get("degrees", 45.0),
         }
     if t == "add_cube":
         placement_str = command.get("placement", "next_free")
@@ -2019,7 +2000,6 @@ def validate_action(action):
         "delete_object",
         "recolor_object",
         "scale_object",
-        "rotate_object",
         "new_scene",
         "save_scene",
         "load_scene",
@@ -2027,23 +2007,12 @@ def validate_action(action):
         "undo",
         "generate_pattern",
         "generate_composite",
+        "apply_texture",
+        "remove_texture",
+        "add_custom_object"
     }
 
     action_name = action.get("action")
-
-    if action_name == "rotate_object":
-        target = action.get("target")
-        if not isinstance(target, str) or not target.strip():
-            raise ValueError("rotate_object requires a non-empty 'target' string")
-
-        normalize_rotation_axis(action.get("axis"))
-
-        try:
-            float(action.get("degrees"))
-        except Exception:
-            raise ValueError("rotate_object requires numeric 'degrees'")
-
-        return
 
     if action_name in allowed_single:
         return
@@ -2097,12 +2066,6 @@ def normalize_action(action):
     if action.get("action") == "move_object" and "direction" in action:
         raw = str(action["direction"]).lower().strip()
         action["direction"] = _DIRECTION_WORD_MAP.get(raw, raw)
-
-    if action.get("action") == "rotate_object":
-        if "axis" in action:
-            action["axis"] = normalize_rotation_axis(action["axis"])
-        if "degrees" in action:
-            action["degrees"] = float(action["degrees"])
 
     # Recurse into action_sequence steps
     if action.get("action") == "action_sequence" and isinstance(action.get("action_sequence"), list):
@@ -2708,8 +2671,8 @@ def apply_action_to_ir(scene_ir, action):
         sequence = action.get("action_sequence", [])
 
         # Deduplicate scale_object steps that all resolve to the same group.
-        # The LLM often targets every child by id; we must scale the group only once.
-        # Keep the first matching step unchanged — its child target resolves fine and
+        # The LLM often targets every child by id so we must scale the group only once.
+        # Keep the first matching step unchanged and its child target resolves fine and
         # the branch promotes it to the group. Skip every subsequent step for that group.
         deduped = []
         seen_group_names = set()
@@ -2830,6 +2793,60 @@ def apply_action_to_ir(scene_ir, action):
         target["material"].setdefault("texture", {"enabled": False, "path": None})
         return new_ir
 
+    if action_name == "apply_texture":
+        target, _ = resolve_action_target_node(new_ir, action)
+        if target is None:
+            raise ValueError("Could not resolve apply_texture target")
+        texture_name = action.get("texture_name")
+        if texture_name not in TEXTURE_CATALOGUE:
+            raise ValueError(
+                "Unknown texture: {}. Available: {}".format(
+                    texture_name, list(TEXTURE_CATALOGUE.keys())
+                )
+            )
+        full_path = TEXTURES_DIR / TEXTURE_CATALOGUE[texture_name]
+        target.setdefault("material", {})
+        target["material"]["texture"] = {"enabled": True, "path": str(full_path)}
+        return new_ir
+
+    if action_name == "remove_texture":
+        target, _ = resolve_action_target_node(new_ir, action)
+        if target is None:
+            raise ValueError("Could not resolve remove_texture target")
+        target.setdefault("material", {})
+        target["material"]["texture"] = {"enabled": False, "path": None}
+        return new_ir
+    if action_name == "add_custom_model":
+        model_path = action.get("model_path", "")
+        full_path = CUSTOM_MODELS_DIR / model_path
+        if not full_path.exists():
+            raise ValueError(
+                "Custom model not found: {}".format(full_path)
+            )
+        if full_path.suffix.lower() not in (".usd", ".obj"):
+            raise ValueError(
+                "Unsupported model format '{}'. Must be .usd or .obj".format(full_path.suffix)
+            )
+        position = list(find_next_free_world_position(new_ir, preferred_y=CUBE_Y))
+        new_node = {
+            "node_type": "mesh_object",
+            "name": make_unique_name(new_ir, "custom_model"),
+            "id": make_unique_name(new_ir, "custom_model"),
+            "created_order": next_object_order(new_ir),
+            "shape": "custom",
+            "custom_model_path": str(full_path),
+            "transform": {
+                "position": position,
+                "rotation": [0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0],
+            },
+            "material": {"color": [0.8, 0.8, 0.8], "texture": {"enabled": False, "path": None}},
+        }
+        ensure_scene_children(new_ir).append(new_node)
+        return new_ir
+
+
+
     if action_name == "scale_object":
         target, target_group = resolve_target_node_with_group(new_ir, action.get("target", ""))
         if target is None:
@@ -2852,30 +2869,6 @@ def apply_action_to_ir(scene_ir, action):
             raise ValueError("scale_object requires 'scale' or 'factor'")
 
         transform["scale"] = new_scale
-        return new_ir
-
-    if action_name == "rotate_object":
-        target, target_group = resolve_target_node_with_group(new_ir, action.get("target", ""))
-        if target is None:
-            raise ValueError("Could not resolve rotate target")
-
-        transform = target.setdefault("transform", {})
-        current_rotation = ensure_rotation(target)
-        axis = normalize_rotation_axis(action.get("axis", "y"))
-        axis_index = rotation_axis_index(axis)
-        degrees = float(action.get("degrees", 0.0))
-
-        new_rotation = list(current_rotation)
-        new_rotation[axis_index] = float(new_rotation[axis_index]) + degrees
-        transform["rotation"] = new_rotation
-
-        print(
-            "[controller] Applied rotation:",
-            target.get("name"),
-            "axis=" + axis,
-            "degrees=" + str(degrees),
-            "rotation=" + str(new_rotation)
-        )
         return new_ir
 
     if action_name == "move_object":

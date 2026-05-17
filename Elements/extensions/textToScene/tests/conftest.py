@@ -106,5 +106,12 @@ for _sub in (
 # ---------------------------------------------------------------------------
 # Other optional heavy deps (not always installed in test environments)
 # ---------------------------------------------------------------------------
-for _pkg in ("OpenGL", "OpenGL.GL", "imgui"):
+for _pkg in ("OpenGL", "OpenGL.GL", "imgui", "openai"):
     _stub(_pkg)
+
+# openai.OpenAI class stub (llm_parser does `from openai import OpenAI`)
+import sys as _sys
+_openai = _sys.modules["openai"]
+class _OpenAI:
+    def __init__(self, **kwargs): pass
+_openai.OpenAI = _OpenAI
