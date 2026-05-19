@@ -791,7 +791,60 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     material = node["material"]
 
     if is_textured_material(material):
-        return emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr)    
+        return emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr)
+
+    if shape == "custom":
+        model_path = node.get("custom_model_path")
+        if not model_path:
+            raise ValueError("custom shape requires 'custom_model_path'")
+
+        position = transform["position"]
+        rotation = transform["rotation"]
+        suffix = str(idx)
+        entity_var = "node_{}".format(suffix)
+        trans_var  = "trans_{}".format(suffix)
+        mesh_var   = "mesh_{}".format(suffix)
+        shader_var = "shader_{}".format(suffix)
+        local_trs_expr = "{} @ {}".format(make_translate(position), make_rotate(rotation))
+        world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
+        mat_color_expr = vec3_to_util_vec(material["color"])
+
+        object_code = """
+# ===== mesh_object (custom): {name} =====
+{entity_var} = scene.world.createEntity(Entity(name="{name}"))
+scene.world.addEntityChild({parent_entity_var}, {entity_var})
+{trans_var} = scene.world.addComponent(
+    {entity_var},
+    BasicTransform(name="{name}_TRS", trs={local_trs_expr})
+)
+{mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
+{mesh_var}.mesh = Mesh.loadMesh("{model_path}")
+scene.world.addComponent({entity_var}, VertexArray())
+{shader_var} = scene.world.addComponent(
+    {entity_var},
+    ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
+)
+""".format(name=name, entity_var=entity_var, parent_entity_var=parent_entity_var,
+           trans_var=trans_var, local_trs_expr=local_trs_expr, mesh_var=mesh_var,
+           model_path=model_path, shader_var=shader_var)
+
+        uniform_code = """
+model_{suffix} = {world_trs_expr}
+mvp_{suffix} = projMat @ view @ model_{suffix}
+{shader_var}.setUniformVariable(key='modelViewProj', value=mvp_{suffix}, mat4=True)
+{shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
+{shader_var}.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
+{shader_var}.setUniformVariable(key='ambientStr', value=Lambientstr, float1=True)
+{shader_var}.setUniformVariable(key='viewPos', value=LviewPos, float3=True)
+{shader_var}.setUniformVariable(key='lightPos', value=activeLightPos, float3=True)
+{shader_var}.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
+{shader_var}.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
+{shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
+{shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
+""".format(suffix=suffix, shader_var=shader_var, world_trs_expr=world_trs_expr,
+           mat_color_expr=mat_color_expr)
+
+        return object_code, uniform_code, ""
 
     position = transform["position"]
     rotation = transform["rotation"]

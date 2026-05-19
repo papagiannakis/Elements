@@ -307,6 +307,25 @@ def collect_mesh_objects(node, out_list=None):
 
     return out_list
 
+def collect_lights(scene_ir):
+    out = []
+    for node in walk_nodes(scene_ir):
+        if isinstance(node, dict) and node.get("node_type") == "light":
+            out.append(node)
+    return out
+
+def resolve_light_node(scene_ir, target_text):
+    if not target_text:
+        return None
+    target_text = str(target_text).lower().strip()
+    lights = collect_lights(scene_ir)
+    for light in lights:
+        if str(light.get("id", "")).lower() == target_text:
+            return light
+    for light in lights:
+        if str(light.get("name", "")).lower() == target_text:
+            return light
+    return None
 
 def delete_nodes_by_ids(scene_ir, object_ids):
     if not object_ids:
@@ -2009,7 +2028,12 @@ def validate_action(action):
         "generate_composite",
         "apply_texture",
         "remove_texture",
-        "add_custom_object"
+        "add_custom_object",
+        "add_light",
+        "delete_light",
+        "move_light",
+        "change_light_color",
+        "change_light_intensity",
     }
 
     action_name = action.get("action")
@@ -3009,6 +3033,104 @@ def apply_action_to_ir(scene_ir, action):
             "Unknown composite '{}'. Supported: tree, table, lamp, "
             "or any composite with a 'parts' list.".format(composite)
         )
+    if action_name == "add_custom_model":
+        model_path = action.get("model_path", "")
+        full_path = CUSTOM_MODELS_DIR / model_path
+        if not full_path.exists():
+            raise ValueError("Custom model not found: {}".format(full_path))
+        if full_path.suffix.lower() not in (".usd", ".obj"):
+            raise ValueError(
+                "Unsupported model format '{}'. Must be .usd or .obj".format(full_path.suffix)
+            )
+        position = list(find_next_free_world_position(new_ir, preferred_y=CUBE_Y))
+        unique_name = make_unique_name(new_ir, "custom_model")
+        new_node = {
+            "node_type": "mesh_object",
+            "name": unique_name,
+            "id": unique_name,
+            "created_order": next_object_order(new_ir),
+            "shape": "custom",
+            "custom_model_path": str(full_path),
+            "transform": {
+                "position": position,
+                "rotation": [0.0, 0.0, 0.0],
+                "scale": [1.0, 1.0, 1.0],
+            },
+            "material": {"color": [0.8, 0.8, 0.8], "texture": {"enabled": False, "path": None}},
+        }
+        ensure_scene_children(new_ir).append(new_node)
+        return new_ir
+
+    if action_name == "add_light":
+        light_type = str(action.get("light_type", "point")).lower()
+        if light_type not in ("point", "directional"):
+            raise ValueError("add_light: light_type must be 'point' or 'directional'")
+
+        color = color_name_to_rgb(action.get("color", "white"))
+        intensity = float(action.get("intensity", 1.2))
+
+        props = {
+            "position": [2.0, 5.5, 2.0],
+            "direction": [1.0, -1.0, -1.0],
+            "color": color,
+            "intensity": intensity,
+        }
+
+        if "position" in action:
+            raw = action["position"]
+            if isinstance(raw, list) and len(raw) == 3:
+                props["position"] = [float(v) for v in raw]
+
+        if "direction" in action:
+            raw = action["direction"]
+            if isinstance(raw, list) and len(raw) == 3:
+                props["direction"] = [float(v) for v in raw]
+
+        unique_name = make_unique_name(new_ir, "light")
+        new_node = {
+            "node_type": "light",
+            "name": unique_name,
+            "id": unique_name,
+            "light_type": light_type,
+            "properties": props,
+        }
+        ensure_scene_children(new_ir).append(new_node)
+        return new_ir
+
+    if action_name == "delete_light":
+        target = resolve_light_node(new_ir, action.get("target", ""))
+        if target is None:
+            raise ValueError("Could not resolve delete_light target")
+        target_id = target.get("id")
+        children = ensure_scene_children(new_ir)
+        children[:] = [c for c in children if not (
+            isinstance(c, dict) and c.get("node_type") == "light" and c.get("id") == target_id
+        )]
+        return new_ir
+
+    if action_name == "move_light":
+        target = resolve_light_node(new_ir, action.get("target", ""))
+        if target is None:
+            raise ValueError("Could not resolve move_light target")
+        raw = action.get("position")
+        if not isinstance(raw, list) or len(raw) != 3:
+            raise ValueError("move_light requires 'position': [x, y, z]")
+        target["properties"]["position"] = [float(v) for v in raw]
+        return new_ir
+
+    if action_name == "change_light_color":
+        target = resolve_light_node(new_ir, action.get("target", ""))
+        if target is None:
+            raise ValueError("Could not resolve change_light_color target")
+        target["properties"]["color"] = color_name_to_rgb(action.get("color", "white"))
+        return new_ir
+
+    if action_name == "change_light_intensity":
+        target = resolve_light_node(new_ir, action.get("target", ""))
+        if target is None:
+            raise ValueError("Could not resolve change_light_intensity target")
+        target["properties"]["intensity"] = float(action.get("intensity", 1.0))
+        return new_ir
 
     raise ValueError("Unsupported action type: " + str(action_name))
 

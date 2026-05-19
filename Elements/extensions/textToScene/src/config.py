@@ -1,3 +1,20 @@
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+from pathlib import Path
+
+# Load .env from project root
+env_path = Path(__file__).parent.parent / ".env"
+load_dotenv(dotenv_path=env_path)
+
+# Debug - check if key is loaded
+OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
+if not OPENAI_API_KEY:
+    print(f"WARNING: OPENAI_API_KEY not found. Checked {env_path}")
+    print(f".env exists: {env_path.exists()}")
+else:
+    print(f"✓ API key loaded (length: {len(OPENAI_API_KEY)})")
 """
 Central configuration for the Text-to-Scene extension.
 

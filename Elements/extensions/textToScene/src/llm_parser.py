@@ -33,10 +33,9 @@ SCENE_DEPENDENT_KEYS = {
 
 
 def get_client():
-    api_key = os.getenv(OPENAI_API_KEY)
-    if not api_key:
+    if not OPENAI_API_KEY:
         raise RuntimeError("Missing OPENAI_API_KEY environment variable")
-    return OpenAI()
+    return OpenAI(api_key=OPENAI_API_KEY)
 
 
 def build_scene_context(scene_ir):
@@ -93,6 +92,12 @@ Allowed top-level action values:
 - generate_composite
 - apply_texture
 - remove_texture
+- add_custom_model
+- add_light
+- delete_light
+- move_light
+- change_light_color
+- change_light_intensity
 
 If the request needs multiple steps, use:
 {
@@ -114,6 +119,8 @@ Rules:
 - For rotate_object: if the user says only "rotate" without an amount, default to 45 degrees.
 - For scale_object: "make it bigger" → factor 1.5, "make it smaller" → factor 0.66, "double" → factor 2.0, "half" → factor 0.5.
 - For apply_texture, texture_name must be one of: brick, wood, stone, grass, metal, sand, marble, concrete
+- model_path must be a filename (no directories) ending in .usd or .obj
+- The file must exist in the custom_models directory
 
 Allowed object_type values:
 - cube
@@ -123,21 +130,7 @@ Allowed object_type values:
 - pyramid
 - plane
 
-Allowed color names:
-- red
-- green
-- blue
-- yellow
-- white
-- black
-- purple
-- orange
-- cyan
-- pink
-- brown
-- gray
-- grey
-
+Color: any CSS color name or hex code (e.g. "red", "teal", "#FF5733")
 Examples:
 {
   "action": "add_object",
@@ -317,6 +310,55 @@ Examples:
 {
   "action": "remove_texture",
   "target": "cube_1"
+}
+Light actions:
+- add_light: add a point or directional light. light_type defaults to "point".
+- delete_light: remove a light by name or target description.
+- move_light: move a point light to a new position.
+- change_light_color: change the color of a light.
+- change_light_intensity: change the brightness of a light (float, e.g. 0.5–2.0).
+- For add_light, light_type must be "point" or "directional".
+- For directional lights, use "direction": [x, y, z] instead of "position".
+- For point lights, "position": [x, y, z] is optional (defaults to [2.0, 5.5, 2.0]).
+- color for lights follows the same allowed color names as objects.
+
+{
+  "action": "add_light",
+  "light_type": "point",
+  "color": "white",
+  "intensity": 1.2,
+  "position": [3.0, 5.0, 3.0]
+}
+
+{
+  "action": "add_light",
+  "light_type": "directional",
+  "color": "white",
+  "intensity": 1.0,
+  "direction": [1.0, -1.0, -1.0]
+}
+
+{
+  "action": "delete_light",
+  "target": "light_1"
+}
+
+{
+  "action": "move_light",
+  "target": "light_1",
+  "position": [0.0, 8.0, 0.0]
+}
+
+{
+  "action": "change_light_color",
+  "target": "light_1",
+  "color": "orange"
+}
+
+{
+  "action": "change_light_intensity",
+  "target": "light_1",
+  "intensity": 0.5
 }
 
 User prompt:
