@@ -145,7 +145,7 @@ def test_scale_object_missing_factor_and_scale_raises():
 # ---------------------------------------------------------------------------
 # move_object
 # ---------------------------------------------------------------------------
-@pytest.mark.parametrize("direction", ["right", "left", "forward", "backward"])
+@pytest.mark.parametrize("direction", ["right", "left", "forward", "backward", "up", "down"])
 def test_move_object_valid_directions(direction):
     scene = _add_cube(EMPTY, name="cube_1", position=[0.0, 0.5, 0.0])
     result = apply_action_to_ir(scene, {
@@ -161,7 +161,7 @@ def test_move_object_valid_directions(direction):
 def test_move_object_invalid_direction_raises():
     scene = _add_cube(EMPTY, name="cube_1")
     with pytest.raises(ValueError):
-        apply_action_to_ir(scene, {"action": "move_object", "target": "cube", "direction": "up"})
+        apply_action_to_ir(scene, {"action": "move_object", "target": "cube", "direction": "diagonal"})
 
 
 def test_move_object_no_direction_raises():
