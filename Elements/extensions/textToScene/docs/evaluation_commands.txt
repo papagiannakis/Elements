@@ -1,0 +1,154 @@
+# Object Creation (10 commands)
+add a red cube
+add a blue sphere
+add a green cylinder
+add a yellow cone
+add a white pyramid
+add an orange cube
+add a purple sphere
+add a pink cylinder
+add a gray cone
+add a teal pyramid
+
+# Movement - Directional (15 commands)
+move the red cube to the right
+move the blue sphere up
+move the green cylinder left
+move the yellow cone down
+move the orange cube forward
+move the purple sphere backward
+move the pink cylinder to the right
+move the gray cone up
+move the teal pyramid left
+move the red cube down
+move the blue sphere forward
+move the green cylinder backward
+move the yellow cone to the right
+move the orange cube up
+move the purple sphere left
+
+# Movement - Positional (5 commands)
+move the pink cylinder to 5,0,0
+move the gray cone to 0,3,0
+move the teal pyramid to -3,0,0
+move the red cube to 1.5,2,3
+move the blue sphere to -2,1,0
+
+# Recolor (10 commands)
+recolor the red cube to blue
+recolor the blue sphere to purple
+recolor the green cylinder to yellow
+change the yellow cone color to red
+recolor the orange cube to green
+change the purple sphere to white
+recolor the pink cylinder to gray
+change the gray cone to orange
+recolor the teal pyramid to pink
+change the red cube to teal
+
+# Scale - Natural Language (10 commands)
+make the blue cube bigger
+make the purple sphere smaller
+double the yellow cylinder
+make the red cone half the size
+make the green cube twice as big
+make the white sphere smaller
+double the gray cylinder
+make the orange cone half the size
+make the pink cube bigger
+make the teal sphere smaller
+
+# Scale - Explicit (5 commands)
+scale the blue cube by 2
+scale the purple sphere by 0.5
+scale the yellow cylinder to 1.5
+scale the red cone by 0.75
+scale the green cube to 3
+
+# Rotation - Simple (10 commands)
+rotate the blue cube
+rotate the purple sphere
+turn the yellow cylinder
+spin the red cone
+rotate the green cube 45 degrees
+rotate the white sphere 90 degrees
+rotate the gray cylinder 180 degrees
+turn the orange cone 30 degrees
+rotate the pink cube -45 degrees
+spin the teal sphere 60 degrees
+
+# Rotation - Axis Specified (10 commands)
+rotate the blue cube around y axis
+rotate the purple sphere around x axis by 45 degrees
+rotate the yellow cylinder around z axis by 90 degrees
+turn the red cone around y axis by 30 degrees
+rotate the green cube around x axis
+spin the white sphere around z axis by 60 degrees
+rotate the gray cylinder around y axis by -45 degrees
+rotate the orange cone around x axis by 180 degrees
+turn the pink cube around z axis
+rotate the teal sphere around y axis by 90 degrees
+
+# Deletion (5 commands)
+delete the blue cube
+remove the purple sphere
+delete the yellow cylinder
+remove the red cone
+delete the green cube
+
+# Prefabs - Add (8 commands)
+add prefab house
+add a tree
+add prefab chair
+add a table
+add prefab bed
+add street_light
+add a lamp
+add a bench
+
+# Prefabs - Transform (12 commands)
+move the house to the right
+move the tree forward
+make the chair smaller
+make the table bigger
+rotate the bed 90 degrees
+rotate the street_light 180 degrees
+move the lamp up
+move the bench to the left
+double the house
+make the tree half the size
+rotate the chair 45 degrees
+move the table backward
+
+# Composite Objects (10 commands)
+make a house with cubes
+make a tree with cylinders
+make a chair with cubes
+make a table with cubes
+make a bed with cubes
+make a lamp with cylinders
+make a bench with cubes
+make a fence with cubes
+make a tree with spheres
+make a house with spheres
+
+# Scene Management (5 commands)
+save the scene
+save the scene as test_scene
+load test_scene
+new scene
+undo
+
+# Undo/Redo Tests (5 commands)
+add a red cube
+make it bigger
+undo
+add a blue sphere
+move it to the right
+
+# Action Sequences (5 commands)
+add a purple cube and move it right
+create a green sphere and make it bigger
+add a yellow cone and rotate it 45 degrees
+make a red cylinder and move it up
+add an orange pyramid and make it smaller

@@ -128,6 +128,75 @@ def build_gift_box(name, position):
         ]
     }
 
+def build_chair(name, position):
+    return {
+        "node_type": "group",
+        "name": name,
+        "transform": {"position": position, "scale": [1.0, 1.0, 1.0]},
+        "children": [
+            {"node_type": "mesh_object", "name": f"{name}_seat",
+             "shape": "cube", "transform": {"position": [0.0, 0.45, 0.0], "scale": [0.5, 0.05, 0.5]},
+             "material": {"color": [0.6, 0.4, 0.2]}},
+            {"node_type": "mesh_object", "name": f"{name}_back",
+             "shape": "cube", "transform": {"position": [0.0, 0.80, -0.23], "scale": [0.5, 0.70, 0.05]},
+             "material": {"color": [0.6, 0.4, 0.2]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_fl",
+             "shape": "cube", "transform": {"position": [-0.22, 0.225, 0.22], "scale": [0.05, 0.45, 0.05]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_fr",
+             "shape": "cube", "transform": {"position": [0.22, 0.225, 0.22], "scale": [0.05, 0.45, 0.05]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_bl",
+             "shape": "cube", "transform": {"position": [-0.22, 0.225, -0.22], "scale": [0.05, 0.45, 0.05]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_br",
+             "shape": "cube", "transform": {"position": [0.22, 0.225, -0.22], "scale": [0.05, 0.45, 0.05]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+        ]
+    }
+
+
+def build_bench(name, position):
+    return {
+        "node_type": "group",
+        "name": name,
+        "transform": {"position": position, "scale": [1.0, 1.0, 1.0]},
+        "children": [
+            {"node_type": "mesh_object", "name": f"{name}_top",
+             "shape": "cube", "transform": {"position": [0.0, 0.50, 0.0], "scale": [1.0, 0.08, 0.35]},
+             "material": {"color": [0.55, 0.35, 0.15]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_l",
+             "shape": "cube", "transform": {"position": [-0.45, 0.25, 0.0], "scale": [0.08, 0.50, 0.35]},
+             "material": {"color": [0.45, 0.28, 0.10]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_r",
+             "shape": "cube", "transform": {"position": [0.45, 0.25, 0.0], "scale": [0.08, 0.50, 0.35]},
+             "material": {"color": [0.45, 0.28, 0.10]}},
+        ]
+    }
+
+
+def build_bed(name, position):
+    return {
+        "node_type": "group",
+        "name": name,
+        "transform": {"position": position, "scale": [1.0, 1.0, 1.0]},
+        "children": [
+            {"node_type": "mesh_object", "name": f"{name}_frame",
+             "shape": "cube", "transform": {"position": [0.0, 0.12, 0.0], "scale": [0.95, 0.24, 1.8]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_mattress",
+             "shape": "cube", "transform": {"position": [0.0, 0.38, 0.0], "scale": [0.9, 0.28, 1.7]},
+             "material": {"color": [0.9, 0.9, 0.85]}},
+            {"node_type": "mesh_object", "name": f"{name}_headboard",
+             "shape": "cube", "transform": {"position": [0.0, 0.75, -0.88], "scale": [0.95, 0.80, 0.08]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_pillow",
+             "shape": "cube", "transform": {"position": [0.0, 0.55, -0.65], "scale": [0.7, 0.12, 0.35]},
+             "material": {"color": [1.0, 1.0, 1.0]}},
+        ]
+    }
+
+
 def build_street_light(name, position):
     return {
         "node_type": "group",

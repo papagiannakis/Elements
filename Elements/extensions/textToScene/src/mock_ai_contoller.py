@@ -15,7 +15,7 @@ from llm_parser import (
     parse_prompt_to_action_with_llm,
     store_cached_action,
 )
-from prefabs import build_house, build_tree, build_gift_box, build_street_light
+from prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed
 
 from config import TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR
 
@@ -65,6 +65,7 @@ COLOR_TABLE = {
     "brown":  [0.55, 0.27, 0.07],
     "gray":   [0.5, 0.5, 0.5],
     "grey":   [0.5, 0.5, 0.5],
+    "teal":   [0.0, 0.5, 0.5],
 }
 
 SHAPE_WORDS = [
@@ -539,49 +540,11 @@ def initialize_new_scene(request_id=None):
 
 
 def color_name_from_text(text):
-   def color_name_to_rgb(name):
-    """Convert color name or hex to RGB list. Falls back to purple if unknown."""
-    name = str(name).strip().lower()
-    
-    # Check COLOR_TABLE first (common names)
-    if name in COLOR_TABLE:
-        return COLOR_TABLE[name]
-    
-    # Handle hex colors (#FF5733 or #F57)
-    if name.startswith('#'):
-        hex_str = name[1:]
-        if len(hex_str) == 3:  # #F57 → #FF5577
-            hex_str = ''.join([c*2 for c in hex_str])
-        if len(hex_str) == 6:
-            try:
-                r = int(hex_str[0:2], 16) / 255.0
-                g = int(hex_str[2:4], 16) / 255.0
-                b = int(hex_str[4:6], 16) / 255.0
-                return [r, g, b]
-            except ValueError:
-                pass
-    
-    # Extended CSS color names (common ones not in COLOR_TABLE)
-    extended = {
-        "silver": [0.75, 0.75, 0.75],
-        "maroon": [0.5, 0.0, 0.0],
-        "olive": [0.5, 0.5, 0.0],
-        "lime": [0.0, 1.0, 0.0],
-        "aqua": [0.0, 1.0, 1.0],
-        "navy": [0.0, 0.0, 0.5],
-        "fuchsia": [1.0, 0.0, 1.0],
-        "teal": [0.0, 0.5, 0.5],
-        "gold": [1.0, 0.84, 0.0],
-        "coral": [1.0, 0.5, 0.31],
-        "indigo": [0.29, 0.0, 0.51],
-        "violet": [0.93, 0.51, 0.93],
-        "turquoise": [0.25, 0.88, 0.82],
-    }
-    if name in extended:
-        return extended[name]
-    
-    # Fallback to purple for unknown
-    return [0.8, 0.0, 0.8]
+    text = str(text).lower()
+    for color_name in COLOR_TABLE:
+        if re.search(r"\b" + re.escape(color_name) + r"\b", text):
+            return color_name
+    return None
 
 
 
@@ -2279,7 +2242,19 @@ def resolve_action_target_node(scene_ir, action):
 
 
 def color_name_to_rgb(name):
-    return COLOR_TABLE.get(str(name).lower(), [0.8, 0.0, 0.8])
+    name = str(name).strip().lower()
+    if name in COLOR_TABLE:
+        return list(COLOR_TABLE[name])
+    if name.startswith('#'):
+        hex_str = name[1:]
+        if len(hex_str) == 3:
+            hex_str = ''.join([c * 2 for c in hex_str])
+        if len(hex_str) == 6:
+            try:
+                return [int(hex_str[i:i+2], 16) / 255.0 for i in (0, 2, 4)]
+            except ValueError:
+                pass
+    return [0.8, 0.0, 0.8]
 
 
 _VALID_COMPOSITE_SHAPES = frozenset(SHAPE_WORDS)
@@ -2960,6 +2935,9 @@ def apply_action_to_ir(scene_ir, action):
             "tree": build_tree,
             "gift_box": build_gift_box,
             "street_light": build_street_light,
+            "chair": build_chair,
+            "bench": build_bench,
+            "bed": build_bed,
         }
         builder = builders.get(prefab_name)
         if builder is None:
@@ -3131,6 +3109,38 @@ def apply_action_to_ir(scene_ir, action):
             raise ValueError("Could not resolve change_light_intensity target")
         target["properties"]["intensity"] = float(action.get("intensity", 1.0))
         return new_ir
+
+    if action_name == "rotate_object":
+        target, target_group = resolve_action_target_node(new_ir, action)
+        if target is None:
+            raise ValueError("Could not resolve rotate_object target")
+
+        axis = str(action.get("axis", "y")).lower().strip()
+        degrees = float(action.get("degrees", 45))
+        axis_idx = {"x": 0, "y": 1, "z": 2}.get(axis, 1)
+
+        scale_node = target_group if target_group is not None else target
+        transform = scale_node.setdefault("transform", {})
+        rotation = list(transform.get("rotation", [0.0, 0.0, 0.0]))
+        if len(rotation) != 3:
+            rotation = [0.0, 0.0, 0.0]
+        rotation[axis_idx] = (rotation[axis_idx] + degrees) % 360
+        transform["rotation"] = rotation
+        print("[controller] Rotated object on axis={} by {}°, total={}°".format(
+            axis, degrees, rotation[axis_idx]))
+        return new_ir
+
+    if action_name == "undo":
+        print("[controller] apply_action_to_ir: undo is a no-op in direct IR mode")
+        return new_ir
+
+    if action_name in ("save_scene", "load_scene"):
+        print("[controller] apply_action_to_ir: {} is a no-op in direct IR mode".format(action_name))
+        return new_ir
+
+    if action_name == "new_scene":
+        print("[controller] apply_action_to_ir: new_scene resets to empty scene")
+        return ensure_stable_object_ids(deepcopy(DEFAULT_NEW_SCENE_IR))
 
     raise ValueError("Unsupported action type: " + str(action_name))
 

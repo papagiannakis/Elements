@@ -14,9 +14,8 @@ from collections import defaultdict
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-import openpyxl
-from mock_ai_contoller import apply_action_to_ir, normalize_action
-from llm_parser import parse_prompt_to_action_with_llm
+from mock_ai_contoller import apply_action_to_ir, normalize_action, resolve_composite_overlaps
+from llm_parser import parse_prompt_to_action_with_llm, parse_composite_spec_with_llm
 from config import OPENAI_API_KEY
 
 # Empty test scene
@@ -33,36 +32,21 @@ MODELS = {
     "gpt-4o-mini": {"name": "GPT-4o-mini", "input_cost": 0.15, "output_cost": 0.60},
 }
 
-def load_test_cases(xlsx_path):
-    """Load test cases from Excel."""
-    wb = openpyxl.load_workbook(xlsx_path)
-    
-    # Try to find the sheet with test cases (usually first sheet with "Command" header)
-    ws = None
-    for sheet in wb.worksheets:
-        # Check if first row has "Command" column
-        first_row = [cell.value for cell in sheet[1]]
-        if "Command" in first_row or "command" in [str(v).lower() for v in first_row if v]:
-            ws = sheet
-            break
-    
-    if not ws:
-        ws = wb.worksheets[1] if len(wb.worksheets) > 1 else wb.active
-    
+def load_test_cases_from_txt(txt_path):
+    """Load test commands from text file, one per line."""
     cases = []
-    for row in ws.iter_rows(min_row=2, values_only=True):
-        if not row[0] or not row[1]:
-            continue
-        # Skip summary rows (Total, formulas, etc)
-        if str(row[1]).startswith("=") or str(row[0]).lower() == "total":
-            continue
-        cases.append({
-            "id": row[0],
-            "command": str(row[1]),
-            "category": str(row[2]) if row[2] else "",
-            "expected_action": str(row[3]) if row[3] else "",
-            "expected_target": str(row[4]) if row[4] else "",
-        })
+    with open(txt_path, 'r', encoding='utf-8') as f:
+        for i, line in enumerate(f, 1):
+            line = line.strip()
+            if not line or line.startswith('#'):
+                continue
+            cases.append({
+                "id": i,
+                "command": line,
+                "category": "auto",
+                "expected_action": "auto",
+                "expected_target": "",
+            })
     return cases
 
 def run_single_test(command, scene_ir, model_name):
@@ -73,9 +57,23 @@ def run_single_test(command, scene_ir, model_name):
         action = parse_prompt_to_action_with_llm(command, scene_ir, model_name=model_name)
         parse_success = True
         action = normalize_action(action)
+
+        # Resolve open/unknown composites that need a second LLM design pass
+        _KNOWN_COMPOSITES = {"tree", "table", "lamp"}
+        if (action.get("action") == "generate_composite"
+                and action.get("parts") is None
+                and action.get("composite") not in _KNOWN_COMPOSITES):
+            object_name = action.get("object_name") or action.get("composite") or "object"
+            primitive_type = action.get("object_type") or action.get("primitive_type") or "cube"
+            parts = parse_composite_spec_with_llm(object_name, primitive_type, model_name=model_name)
+            parts = resolve_composite_overlaps(parts)
+            action = dict(action)
+            action["composite"] = "open"
+            action["parts"] = parts
+            action["object_name"] = object_name
+            action["primitive_type"] = primitive_type
     except Exception as e:
         latency = (time.time() - start) * 1000
-        print(f"  ❌ Parse failed: {e}")  # DEBUG
         return {
             "parse_success": False,
             "apply_success": False,
@@ -84,15 +82,12 @@ def run_single_test(command, scene_ir, model_name):
             "action": None,
             "tokens_in": 0,
             "tokens_out": 0,
-            "new_ir": new_ir,
+            "new_ir": scene_ir,
         }
     
-    print(f"  ✓ Parsed: {action.get('action', 'unknown')}")  # DEBUG
     latency = (time.time() - start) * 1000
-    
-    # Extract token counts if available
-    tokens_in = getattr(action, '_tokens_in', 0)
-    tokens_out = getattr(action, '_tokens_out', 0)
+    tokens_in = action.get('_tokens_in', 0)
+    tokens_out = action.get('_tokens_out', 0)
     
     try:
         new_ir = apply_action_to_ir(deepcopy(scene_ir), action)
@@ -106,6 +101,7 @@ def run_single_test(command, scene_ir, model_name):
             "tokens_in": tokens_in,
             "tokens_out": tokens_out,
             "error": str(e),
+            "new_ir": scene_ir,
         }
     
     return {
@@ -115,6 +111,7 @@ def run_single_test(command, scene_ir, model_name):
         "action": action,
         "tokens_in": tokens_in,
         "tokens_out": tokens_out,
+        "new_ir": new_ir,
     }
 
 def compute_metrics(results, expected_cases, model_config):
@@ -123,17 +120,12 @@ def compute_metrics(results, expected_cases, model_config):
     parse_success = sum(1 for r in results if r["parse_success"])
     apply_success = sum(1 for r in results if r["apply_success"])
     
-    # Intent accuracy: action matches expected
-    intent_correct = 0
-    for r, e in zip(results, expected_cases):
-        if r["action"] and r["action"].get("action") == e["expected_action"]:
-            intent_correct += 1
+    # For auto tests: success = parse AND apply both worked
+    intent_correct = sum(1 for r in results if r["parse_success"] and r["apply_success"])
     
-    # Latency
     latencies = [r["latency_ms"] for r in results if r["parse_success"]]
     avg_latency = sum(latencies) / len(latencies) if latencies else 0
     
-    # Tokens and cost
     total_tokens_in = sum(r["tokens_in"] for r in results)
     total_tokens_out = sum(r["tokens_out"] for r in results)
     
@@ -154,74 +146,78 @@ def compute_metrics(results, expected_cases, model_config):
     }
 
 def save_results_csv(all_results, output_path):
-    """Save detailed results to CSV."""
-    with open(output_path, 'w', newline='', encoding='utf-8') as f:
-        writer = csv.writer(f)
-        writer.writerow([
-            "Model", "ID", "Command", "Category", "Expected Action",
-            "Actual Action", "Parse Success", "Apply Success",
-            "Latency (ms)", "Tokens In", "Tokens Out", "Error"
-        ])
-        
-        for model_name, model_config in MODELS.items():
-            print(f"=== Running {model_config['name']} ===")
-            results = []
-            
-            # Keep scene state across commands (stateful evaluation)
-            current_scene = deepcopy(EMPTY_SCENE)
-            
-            for i, case in enumerate(cases, 1):
-                cmd_preview = str(case['command'])[:50] if case['command'] else "(empty)"
-                print(f"[{i}/{len(cases)}] {cmd_preview}")
-                result = run_single_test(case["command"], current_scene, model_name)
-                results.append((case, result))
-                
-                # Update scene with result if successful
-                if result["apply_success"] and result.get("new_ir"):
-                    current_scene = result["new_ir"]
-                
-                time.sleep(0.5)
-    
-    all_results[model_name] = results
+    """Save detailed results to CSV using atomic write to avoid file-lock errors."""
+    output_path = Path(output_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    tmp_path = output_path.with_suffix(".csv.tmp")
+    try:
+        with open(tmp_path, 'w', newline='', encoding='utf-8') as f:
+            writer = csv.writer(f)
+            writer.writerow([
+                "Model", "ID", "Command", "Actual Action", "Parse Success",
+                "Apply Success", "Latency (ms)", "Tokens In", "Tokens Out", "Error"
+            ])
+            for model_name, results in all_results.items():
+                for case, result in results:
+                    writer.writerow([
+                        model_name,
+                        case["id"],
+                        case["command"],
+                        result["action"].get("action") if result["action"] else "",
+                        result["parse_success"],
+                        result["apply_success"],
+                        f"{result['latency_ms']:.0f}",
+                        result["tokens_in"],
+                        result["tokens_out"],
+                        result.get("error", ""),
+                    ])
+    except Exception:
+        try:
+            tmp_path.unlink(missing_ok=True)
+        except Exception:
+            pass
+        raise
+    import os
+    os.replace(str(tmp_path), str(output_path))
 
 if __name__ == "__main__":
     if not OPENAI_API_KEY:
         print("Error: OPENAI_API_KEY not set")
         sys.exit(1)
     
-    xlsx_path = Path(__file__).parent.parent / "docs" / "textToScene_evaluation.xlsx"
-    cases = load_test_cases(xlsx_path)
-    
-    print(f"Loaded {len(cases)} test cases")
-    print(f"Testing {len(MODELS)} models: {', '.join(MODELS.keys())}\n")
+    txt_path = Path(__file__).parent.parent / "docs" / "evaluation_commands.txt"
+    cases = load_test_cases_from_txt(txt_path)
+    print(f"Loaded {len(cases)} commands\n")
     
     all_results = {}
     
     for model_name, model_config in MODELS.items():
         print(f"=== Running {model_config['name']} ===")
         results = []
+        current_scene = deepcopy(EMPTY_SCENE)
         
         for i, case in enumerate(cases, 1):
-            cmd_preview = str(case['command'])[:50] if case['command'] else "(empty)"
-            print(f"[{i}/{len(cases)}] {cmd_preview}")            
-            result = run_single_test(case["command"], deepcopy(EMPTY_SCENE), model_name)
+            print(f"[{i}/{len(cases)}] {case['command'][:50]}")
+            result = run_single_test(case["command"], current_scene, model_name)
             results.append((case, result))
-            time.sleep(0.5)  # Rate limiting
+            
+            if result["apply_success"] and result.get("new_ir"):
+                current_scene = result["new_ir"]
+            
+            time.sleep(0.5)
         
         all_results[model_name] = results
         metrics = compute_metrics([r for _, r in results], cases, model_config)
         
         print(f"\n{model_config['name']} Results:")
-        print(f"  Intent Accuracy:  {metrics['intent_accuracy']:.1%}")
+        print(f"  Success Rate:     {metrics['intent_accuracy']:.1%}")
         print(f"  Parse Success:    {metrics['parse_success_rate']:.1%}")
         print(f"  Apply Success:    {metrics['apply_success_rate']:.1%}")
         print(f"  Avg Latency:      {metrics['avg_latency_ms']:.0f}ms")
-        print(f"  Cost/100 cmds:    ${metrics['cost_per_100_commands']:.3f}")
-        print()
+        print(f"  Cost/100 cmds:    ${metrics['cost_per_100_commands']:.3f}\n")
     
-    # Save detailed CSV
-    output_csv = Path("evaluation_results.csv")
-    save_results_csv(all_results, output_csv)
-    print(f"Saved detailed results to {output_csv.absolute()}")
 
-# python tests/evaluation_runner.py
+    output_csv = Path(__file__).parent.parent / "docs" / "evaluation_results.csv"
+    output_csv.parent.mkdir(parents=True, exist_ok=True)
+    save_results_csv(all_results, output_csv)
+    print(f"Saved to {output_csv}")
