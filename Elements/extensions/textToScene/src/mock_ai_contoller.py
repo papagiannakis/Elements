@@ -50,6 +50,7 @@ POLL_INTERVAL = 0.5
 GRID_SPACING = 1.5
 CUBE_Y = 0.5
 CUBE_Z = 0.0
+_OBJECT_MIN_CLEARANCE = 0.1  # minimum gap between object footprints
 
 COLOR_TABLE = {
     "red": [1.0, 0.0, 0.0],
@@ -106,6 +107,23 @@ DEFAULT_NEW_SCENE_IR = {
         }
     ]
 }
+
+
+# In-memory undo stack for apply_action_to_ir (used by evaluation runner and
+# any direct caller).  The live extension manages its own file-based stack via
+# push_history_state / pop_history_state; this one is separate and lightweight.
+_IR_UNDO_STACK = []
+_IR_UNDO_STACK_MAX = 50
+
+
+def _ir_undo_push(scene_ir):
+    _IR_UNDO_STACK.append(deepcopy(scene_ir))
+    if len(_IR_UNDO_STACK) > _IR_UNDO_STACK_MAX:
+        _IR_UNDO_STACK.pop(0)
+
+
+def _ir_undo_pop():
+    return _IR_UNDO_STACK.pop() if _IR_UNDO_STACK else None
 
 
 def now_timestamp():
@@ -805,25 +823,85 @@ def collect_world_positions(scene_ir, exclude_node=None, exclude_object_id=None)
     return positions
 
 
-def is_world_position_free(scene_ir, world_position, exclude_node=None, exclude_object_id=None):
-    for used in collect_world_positions(
+def compute_footprint_radius(node):
+    """Return the conservative XZ half-width of *node* for collision clearance.
+
+    For a mesh_object: max(scale_x, scale_z) / 2.
+    For a group: max over children of (|local_x| + sx/2, |local_z| + sz/2).
+    """
+    if not isinstance(node, dict):
+        return 0.5
+    if node.get("node_type") == "group":
+        max_r = 0.0
+        for child in node.get("children", []):
+            if not isinstance(child, dict):
+                continue
+            pos = child.get("transform", {}).get("position", [0.0, 0.0, 0.0])
+            scale = child.get("transform", {}).get("scale", [1.0, 1.0, 1.0])
+            x_reach = abs(float(pos[0])) + float(scale[0]) / 2.0
+            z_reach = abs(float(pos[2])) + float(scale[2]) / 2.0
+            max_r = max(max_r, x_reach, z_reach)
+        return max(max_r, 0.5)
+    scale = node.get("transform", {}).get("scale", [1.0, 1.0, 1.0])
+    return max(float(scale[0]), float(scale[2])) / 2.0
+
+
+def collect_world_footprints(scene_ir, exclude_node=None, exclude_object_id=None):
+    """Return [(world_position, footprint_radius)] for every top-level object.
+
+    Groups are treated as a single footprint (their children are not listed
+    separately to avoid double-counting).  Standalone mesh_objects use their
+    own scale for the radius.
+    """
+    footprints = []
+    for node in scene_ir.get("children", []):
+        if not isinstance(node, dict):
+            continue
+        if exclude_node is not None and node is exclude_node:
+            continue
+        node_id = node.get("id")
+        if exclude_object_id is not None and str(node_id) == str(exclude_object_id):
+            continue
+        node_type = node.get("node_type")
+        if node_type == "group":
+            footprints.append((get_position(node), compute_footprint_radius(node)))
+        elif node_type == "mesh_object":
+            footprints.append((get_position(node), compute_footprint_radius(node)))
+    return footprints
+
+
+def is_world_position_free(scene_ir, world_position, needed_radius=0.5,
+                            exclude_node=None, exclude_object_id=None):
+    """Return True if *world_position* is clear for an object of *needed_radius*.
+
+    Uses footprint-radius clearance so that large composites / prefabs push new
+    objects far enough away to avoid visual overlap.
+    """
+    wx, _, wz = float(world_position[0]), float(world_position[1]), float(world_position[2])
+    for pos, radius in collect_world_footprints(
         scene_ir,
         exclude_node=exclude_node,
-        exclude_object_id=exclude_object_id
+        exclude_object_id=exclude_object_id,
     ):
-        if positions_overlap(used, world_position):
+        dx = wx - float(pos[0])
+        dz = wz - float(pos[2])
+        dist_xz = math.sqrt(dx * dx + dz * dz)
+        if dist_xz < needed_radius + radius + _OBJECT_MIN_CLEARANCE:
             return False
-
     return True
 
-def find_nearest_free_world_position(scene_ir, desired_world_position, exclude_object_id=None):
+
+def find_nearest_free_world_position(scene_ir, desired_world_position,
+                                     exclude_object_id=None, needed_radius=0.5):
     desired = [
         float(desired_world_position[0]),
         float(desired_world_position[1]),
         float(desired_world_position[2])
     ]
 
-    if is_world_position_free(scene_ir, desired, exclude_object_id=exclude_object_id):
+    if is_world_position_free(scene_ir, desired,
+                              needed_radius=needed_radius,
+                              exclude_object_id=exclude_object_id):
         return desired
 
     preferred_y = desired[1]
@@ -833,16 +911,22 @@ def find_nearest_free_world_position(scene_ir, desired_world_position, exclude_o
     step = 1
     while True:
         right_candidate = [GRID_SPACING * (base_slot + step), preferred_y, preferred_z]
-        if is_world_position_free(scene_ir, right_candidate, exclude_object_id=exclude_object_id):
+        if is_world_position_free(scene_ir, right_candidate,
+                                  needed_radius=needed_radius,
+                                  exclude_object_id=exclude_object_id):
             return right_candidate
 
         left_candidate = [GRID_SPACING * (base_slot - step), preferred_y, preferred_z]
-        if is_world_position_free(scene_ir, left_candidate, exclude_object_id=exclude_object_id):
+        if is_world_position_free(scene_ir, left_candidate,
+                                  needed_radius=needed_radius,
+                                  exclude_object_id=exclude_object_id):
             return left_candidate
 
         step += 1
 
-def find_next_free_world_position(scene_ir, preferred_y=None, preferred_z=None, exclude_object_id=None):
+
+def find_next_free_world_position(scene_ir, preferred_y=None, preferred_z=None,
+                                  exclude_object_id=None, needed_radius=0.5):
     if preferred_y is None:
         preferred_y = CUBE_Y
     if preferred_z is None:
@@ -851,7 +935,9 @@ def find_next_free_world_position(scene_ir, preferred_y=None, preferred_z=None, 
     slot = 0
     while True:
         world_position = [GRID_SPACING * slot, float(preferred_y), float(preferred_z)]
-        if is_world_position_free(scene_ir, world_position, exclude_object_id=exclude_object_id):
+        if is_world_position_free(scene_ir, world_position,
+                                  needed_radius=needed_radius,
+                                  exclude_object_id=exclude_object_id):
             return world_position
         slot += 1
 
@@ -2049,6 +2135,10 @@ def normalize_action(action):
         if "name" in action and "prefab_name" not in action:
             action["prefab_name"] = action.pop("name")
 
+    # add_custom_object is an alias for add_custom_model
+    if action.get("action") == "add_custom_object":
+        action["action"] = "add_custom_model"
+
     # Canonical position field
     if "new_position" in action and "position" not in action:
         action["position"] = action.pop("new_position")
@@ -2418,7 +2508,6 @@ def build_open_composite(scene_ir, object_name, parts, primitive_type, color):
     relative to that root.
     """
     group_name = make_unique_name(scene_ir, object_name)
-    ref_pos = find_next_free_world_position(scene_ir, preferred_y=0.0)
     base_order = next_object_order(scene_ir)
     rgb = color_name_to_rgb(color)
 
@@ -2441,6 +2530,9 @@ def build_open_composite(scene_ir, object_name, parts, primitive_type, color):
             },
         })
 
+    footprint_r = _children_footprint_radius(children)
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=0.0, needed_radius=footprint_r)
+
     group = {
         "node_type": "group",
         "name": group_name,
@@ -2459,6 +2551,20 @@ def build_open_composite(scene_ir, object_name, parts, primitive_type, color):
     return scene_ir
 
 
+def _children_footprint_radius(children):
+    """Compute footprint radius from a list of child dicts (local coords)."""
+    max_r = 0.0
+    for child in children:
+        if not isinstance(child, dict):
+            continue
+        pos = child.get("transform", {}).get("position", [0.0, 0.0, 0.0])
+        scale = child.get("transform", {}).get("scale", [1.0, 1.0, 1.0])
+        x_reach = abs(float(pos[0])) + float(scale[0]) / 2.0
+        z_reach = abs(float(pos[2])) + float(scale[2]) / 2.0
+        max_r = max(max_r, x_reach, z_reach)
+    return max(max_r, 0.5)
+
+
 def build_table_composite(scene_ir, object_type, color):
     """Deterministic table: flat top + four legs.
 
@@ -2466,7 +2572,6 @@ def build_table_composite(scene_ir, object_type, color):
     legs at corners, y=0.8, scale [0.12, 1.6, 0.12].
     """
     group_name = make_unique_name(scene_ir, "table_composite")
-    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
     base_order = next_object_order(scene_ir)
     rgb = color_name_to_rgb(color)
     child_idx = 0
@@ -2492,6 +2597,9 @@ def build_table_composite(scene_ir, object_type, color):
         _mesh("leg_br", [ 0.88, 0.8,  0.54], [0.12, 1.6,  0.12]),
     ]
 
+    footprint_r = _children_footprint_radius(children)
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=0.0, needed_radius=footprint_r)
+
     group = {
         "node_type": "group",
         "name": group_name, "id": group_name,
@@ -2515,7 +2623,6 @@ def build_lamp_composite(scene_ir, object_type, color):
     pole at y=1.0 scale [0.1, 2.0, 0.1]; shade at y=2.15 scale [0.7, 0.4, 0.7].
     """
     group_name = make_unique_name(scene_ir, "lamp_composite")
-    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
     base_order = next_object_order(scene_ir)
     rgb = color_name_to_rgb(color)
     child_idx = 0
@@ -2538,6 +2645,9 @@ def build_lamp_composite(scene_ir, object_type, color):
         _mesh("pole",  [0.0, 1.1,  0.0], [0.1, 2.0, 0.1]),
         _mesh("shade", [0.0, 2.15, 0.0], [0.7, 0.4, 0.7]),
     ]
+
+    footprint_r = _children_footprint_radius(children)
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=0.0, needed_radius=footprint_r)
 
     group = {
         "node_type": "group",
@@ -2623,7 +2733,6 @@ def build_tree_composite(scene_ir, object_type, color):
       - top    : 1 object at [0, 3.9, 0], scale [0.8, 0.8, 0.8]
     """
     group_name = make_unique_name(scene_ir, "tree_composite")
-    ref_pos = find_next_free_world_position(scene_ir, preferred_y=CUBE_Y)
     base_order = next_object_order(scene_ir)
     rgb = color_name_to_rgb(color)
     child_idx = 0
@@ -2671,6 +2780,9 @@ def build_tree_composite(scene_ir, object_type, color):
     # top — crown apex
     children.append(_mesh("top", [0.0, 3.9, 0.0], [0.8, 0.8, 0.8]))
 
+    footprint_r = _children_footprint_radius(children)
+    ref_pos = find_next_free_world_position(scene_ir, preferred_y=0.0, needed_radius=footprint_r)
+
     group = {
         "node_type": "group",
         "name": group_name,
@@ -2693,6 +2805,11 @@ def apply_action_to_ir(scene_ir, action):
     action_name = action.get("action")
 
     print("[controller] Parsed action:", action)
+
+    # Push current state to in-memory undo stack before any mutating action.
+    # Skipped for undo itself (would pollute the stack with redundant states).
+    if action_name not in ("undo",):
+        _ir_undo_push(scene_ir)
 
     if action_name == "action_sequence":
         current_ir = new_ir
@@ -2981,14 +3098,13 @@ def apply_action_to_ir(scene_ir, action):
         if builder is None:
             raise ValueError("Unknown prefab name: " + prefab_name)
 
-        # Probe at CUBE_Y so existing cubes (all at y=CUBE_Y) are correctly
-        # detected as occupying their X/Z slot.  Then set the group root Y to
-        # 0.0 so children with local y-offsets sit at natural ground-relative
-        # heights (e.g. trunk at world y≈0.22, crown at y≈0.62).
-        ref_pos = find_next_free_world_position(new_ir, preferred_y=CUBE_Y)
-        position = [ref_pos[0], 0.0, ref_pos[2]]
-
+        # Build at origin first so we can measure the footprint, then find a
+        # free world slot wide enough to accommodate it.
         unique_name = make_unique_name(new_ir, prefab_name)
+        probe_node = builder(name=unique_name, position=[0.0, 0.0, 0.0])
+        footprint_r = compute_footprint_radius(probe_node)
+        ref_pos = find_next_free_world_position(new_ir, preferred_y=0.0, needed_radius=footprint_r)
+        position = [ref_pos[0], 0.0, ref_pos[2]]
         node = builder(name=unique_name, position=position)
 
         print(f"[controller] add_prefab: name={prefab_name!r}  unique={unique_name!r}")
@@ -3169,12 +3285,33 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
 
     if action_name == "undo":
-        print("[controller] apply_action_to_ir: undo is a no-op in direct IR mode")
+        previous = _ir_undo_pop()
+        if previous is not None:
+            print("[controller] apply_action_to_ir: undo restored previous state")
+            return ensure_stable_object_ids(previous)
+        print("[controller] apply_action_to_ir: undo requested but history is empty")
         return new_ir
 
-    if action_name in ("save_scene", "load_scene"):
-        print("[controller] apply_action_to_ir: {} is a no-op in direct IR mode".format(action_name))
+    if action_name == "save_scene":
+        scene_name = action.get("scene_name") or action.get("name") or "quicksave"
+        safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", str(scene_name).strip().lower()).strip("_") or "quicksave"
+        SAVED_SCENES_DIR.mkdir(parents=True, exist_ok=True)
+        save_path = SAVED_SCENES_DIR / (safe_name + ".json")
+        write_json(save_path, new_ir)
+        print("[controller] apply_action_to_ir: scene saved as '{}'".format(safe_name))
         return new_ir
+
+    if action_name == "load_scene":
+        scene_name = action.get("scene_name") or action.get("name") or ""
+        safe_name = re.sub(r"[^a-zA-Z0-9_]", "_", str(scene_name).strip().lower()).strip("_")
+        load_path = SAVED_SCENES_DIR / (safe_name + ".json")
+        if not load_path.exists():
+            raise ValueError("load_scene: saved scene '{}' not found".format(safe_name))
+        loaded = read_json(load_path, default=None)
+        if not isinstance(loaded, dict):
+            raise ValueError("load_scene: file for '{}' is corrupted".format(safe_name))
+        print("[controller] apply_action_to_ir: loaded scene '{}'".format(safe_name))
+        return ensure_stable_object_ids(loaded)
 
     if action_name == "new_scene":
         print("[controller] apply_action_to_ir: new_scene resets to empty scene")
