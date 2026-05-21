@@ -147,11 +147,12 @@ def compute_metrics(results, expected_cases, model_config):
 
 def save_results_csv(all_results, output_path):
     """Save detailed results to CSV using atomic write to avoid file-lock errors."""
+    import os
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = output_path.with_suffix(".csv.tmp")
+    tmp_path = output_path.parent / (output_path.name + ".tmp")
     try:
-        with open(tmp_path, 'w', newline='', encoding='utf-8') as f:
+        with open(str(tmp_path), 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
                 "Model", "ID", "Command", "Actual Action", "Parse Success",
@@ -177,7 +178,6 @@ def save_results_csv(all_results, output_path):
         except Exception:
             pass
         raise
-    import os
     os.replace(str(tmp_path), str(output_path))
 
 if __name__ == "__main__":

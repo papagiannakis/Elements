@@ -1049,10 +1049,14 @@ def resolve_target(scene_ir, prompt, prefer_color=None, group_name=None):
             break
 
     if len(ordered) > 1:
-        print("[controller] Multiple targets matched.")
-        print("[controller] reference mode:", mode)
-        print("[controller] candidates:", [node.get("name") for node in ordered])
-        print("[controller] chose:", chosen.get("name"))
+        candidate_names = [node.get("name") for node in ordered]
+        print("[controller] WARNING: {} objects matched '{}'. Candidates: {}. Chose: '{}' ({}). "
+              "Use a more specific description to target a different object.".format(
+                  len(ordered), prompt,
+                  candidate_names,
+                  chosen.get("name"),
+                  "most recent" if mode in ("last", "most_recent") else "oldest"
+              ))
 
     print("[controller] Resolved target object name:", chosen.get("name"))
     print("[controller] Resolved target object id:", chosen.get("id"))
@@ -2241,6 +2245,31 @@ def resolve_action_target_node(scene_ir, action):
     return None, None
 
 
+def _target_not_found_error(action_name, action, scene_ir):
+    """Build an informative error message when target resolution fails."""
+    target = (
+        action.get("target")
+        or action.get("id")
+        or action.get("object_id")
+        or action.get("name")
+        or "(unspecified)"
+    )
+    all_objects = collect_mesh_objects(scene_ir)
+    scene_summary = ", ".join(
+        "{} {}".format(
+            next((k for k, v in COLOR_TABLE.items()
+                  if color_matches(n.get("material", {}).get("color"), v)), "?"),
+            n.get("shape", "?")
+        )
+        for n in all_objects[:8]
+    )
+    suffix = " ... ({} total)".format(len(all_objects)) if len(all_objects) > 8 else ""
+    return (
+        "{}: target '{}' not found in scene. "
+        "Objects present: [{}{}]".format(action_name, target, scene_summary, suffix)
+    )
+
+
 def color_name_to_rgb(name):
     name = str(name).strip().lower()
     if name in COLOR_TABLE:
@@ -2688,7 +2717,16 @@ def apply_action_to_ir(scene_ir, action):
         for index, step in enumerate(deduped):
             print("[controller] Applying action_sequence step", index + 1, "of", len(deduped))
             validate_action(step)
-            current_ir = apply_action_to_ir(current_ir, step)
+            try:
+                current_ir = apply_action_to_ir(current_ir, step)
+            except Exception as step_err:
+                raise ValueError(
+                    "action_sequence failed at step {}/{} ({}): {}".format(
+                        index + 1, len(deduped),
+                        step.get("action", "unknown"),
+                        step_err,
+                    )
+                ) from step_err
 
         return current_ir
 
@@ -2772,7 +2810,7 @@ def apply_action_to_ir(scene_ir, action):
 
         target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
-            raise ValueError("Could not resolve delete target")
+            raise ValueError(_target_not_found_error("delete_object", action, new_ir))
 
         target_id = target.get("id")
         if target_id:
@@ -2785,7 +2823,7 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "recolor_object":
         target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
-            raise ValueError("Could not resolve recolor target")
+            raise ValueError(_target_not_found_error("recolor_object", action, new_ir))
 
         target.setdefault("material", {})
         target["material"]["color"] = color_name_to_rgb(action.get("color", "purple"))
@@ -2795,7 +2833,7 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "apply_texture":
         target, _ = resolve_action_target_node(new_ir, action)
         if target is None:
-            raise ValueError("Could not resolve apply_texture target")
+            raise ValueError(_target_not_found_error("apply_texture", action, new_ir))
         texture_name = action.get("texture_name")
         if texture_name not in TEXTURE_CATALOGUE:
             raise ValueError(
@@ -2811,7 +2849,7 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "remove_texture":
         target, _ = resolve_action_target_node(new_ir, action)
         if target is None:
-            raise ValueError("Could not resolve remove_texture target")
+            raise ValueError(_target_not_found_error("remove_texture", action, new_ir))
         target.setdefault("material", {})
         target["material"]["texture"] = {"enabled": False, "path": None}
         return new_ir
@@ -2849,7 +2887,7 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "scale_object":
         target, target_group = resolve_target_node_with_group(new_ir, action.get("target", ""))
         if target is None:
-            raise ValueError("Could not resolve scale target")
+            raise ValueError(_target_not_found_error("scale_object", action, new_ir))
 
         scale_node = target_group if target_group is not None else target
         transform = scale_node.setdefault("transform", {})
@@ -2873,7 +2911,7 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "move_object":
         target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
-            raise ValueError("Could not resolve move target")
+            raise ValueError(_target_not_found_error("move_object", action, new_ir))
 
         target_id = target.get("id")
         current_world_position = get_world_position(target, target_group)
@@ -3113,7 +3151,7 @@ def apply_action_to_ir(scene_ir, action):
     if action_name == "rotate_object":
         target, target_group = resolve_action_target_node(new_ir, action)
         if target is None:
-            raise ValueError("Could not resolve rotate_object target")
+            raise ValueError(_target_not_found_error("rotate_object", action, new_ir))
 
         axis = str(action.get("axis", "y")).lower().strip()
         degrees = float(action.get("degrees", 45))
