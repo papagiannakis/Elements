@@ -15,7 +15,7 @@ from llm_parser import (
     parse_prompt_to_action_with_llm,
     store_cached_action,
 )
-from prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed
+from prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed, build_table, build_lamp
 
 from config import TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR
 
@@ -1175,6 +1175,18 @@ def remove_node_by_id(node, target_id):
 # Used in handle_pending_ai_request when both cache lookup and LLM call fail.
 # Not part of the primary (cache → LLM → validate → apply) execution path.
 def parse_command(prompt):
+    if prompt.startswith("!model:"):
+        model_path = prompt[7:].strip()
+        return {"type": "add_custom_model", "model_path": model_path}
+
+    _model_file_match = re.search(
+        r'([^\s,;\'\"]+\.(?:obj|usda|usdz|usd))\b',
+        prompt, re.IGNORECASE
+    )
+    if _model_file_match:
+        model_path = _model_file_match.group(1).strip("\"'")
+        return {"type": "add_custom_model", "model_path": model_path}
+
     text = prompt.lower().strip()
     group_name = group_name_from_text(text)
 
@@ -1316,6 +1328,8 @@ def parse_command(prompt):
 def command_to_action(command):
     # Converts a parse_command result into the canonical action schema.
     t = command.get("type")
+    if t == "add_custom_model":
+        return {"action": "add_custom_model", "model_path": command.get("model_path", "")}
     if t == "undo":
         return {"action": "undo"}
     if t == "new_scene":
@@ -1651,6 +1665,22 @@ def detect_procedural_action(prompt):
     Returns an action dict, or None if the prompt is not a recognised
     procedural pattern.
     """
+    # Direct file-load shortcut written by the UI's "Add OBJ / Add USD" buttons.
+    if prompt.startswith("!model:"):
+        model_path = prompt[7:].strip()
+        return {"action": "add_custom_model", "model_path": model_path}
+
+    # Natural language: "load chair.usd", "add chair.obj", "import model.usda", etc.
+    # Matches any token that ends with a supported model extension.
+    _model_file_match = re.search(
+        r'([^\s,;\'\"]+\.(?:obj|usda|usdz|usd))\b',
+        prompt, re.IGNORECASE
+    )
+    if _model_file_match:
+        model_path = _model_file_match.group(1).strip("\"'")
+        print("[controller] Detected model file in prompt:", model_path)
+        return {"action": "add_custom_model", "model_path": model_path}
+
     text = prompt.lower().strip()
 
     # ---- ring ----
@@ -2082,6 +2112,7 @@ def validate_action(action):
         "apply_texture",
         "remove_texture",
         "add_custom_object",
+        "add_custom_model",
         "add_light",
         "delete_light",
         "move_light",
@@ -2972,20 +3003,27 @@ def apply_action_to_ir(scene_ir, action):
         return new_ir
     if action_name == "add_custom_model":
         model_path = action.get("model_path", "")
-        full_path = CUSTOM_MODELS_DIR / model_path
+        path_obj = Path(model_path)
+        if path_obj.is_absolute():
+            full_path = path_obj
+        else:
+            full_path = CUSTOM_MODELS_DIR / model_path
         if not full_path.exists():
             raise ValueError(
-                "Custom model not found: {}".format(full_path)
+                "Model file not found: {}\n"
+                "Place your .obj / .usd / .usda files in: {}".format(full_path, CUSTOM_MODELS_DIR)
             )
-        if full_path.suffix.lower() not in (".usd", ".obj"):
+        if full_path.suffix.lower() not in (".usd", ".usda", ".usdz", ".obj"):
             raise ValueError(
-                "Unsupported model format '{}'. Must be .usd or .obj".format(full_path.suffix)
+                "Unsupported format '{}'. Supported: .obj, .usd, .usda, .usdz".format(full_path.suffix)
             )
         position = list(find_next_free_world_position(new_ir, preferred_y=CUBE_Y))
+        stem = Path(model_path).stem or "custom_model"
+        unique_name = make_unique_name(new_ir, stem)
         new_node = {
             "node_type": "mesh_object",
-            "name": make_unique_name(new_ir, "custom_model"),
-            "id": make_unique_name(new_ir, "custom_model"),
+            "name": unique_name,
+            "id": unique_name,
             "created_order": next_object_order(new_ir),
             "shape": "custom",
             "custom_model_path": str(full_path),
@@ -2997,9 +3035,8 @@ def apply_action_to_ir(scene_ir, action):
             "material": {"color": [0.8, 0.8, 0.8], "texture": {"enabled": False, "path": None}},
         }
         ensure_scene_children(new_ir).append(new_node)
+        print("[controller] Added custom model '{}' from: {}".format(unique_name, full_path))
         return new_ir
-
-
 
     if action_name == "scale_object":
         target, target_group = resolve_target_node_with_group(new_ir, action.get("target", ""))
@@ -3088,6 +3125,8 @@ def apply_action_to_ir(scene_ir, action):
         builders = {
             "house": build_house,
             "tree": build_tree,
+            "table": build_table,
+            "lamp": build_lamp,
             "gift_box": build_gift_box,
             "street_light": build_street_light,
             "chair": build_chair,
@@ -3167,15 +3206,23 @@ def apply_action_to_ir(scene_ir, action):
         )
     if action_name == "add_custom_model":
         model_path = action.get("model_path", "")
-        full_path = CUSTOM_MODELS_DIR / model_path
+        path_obj = Path(model_path)
+        if path_obj.is_absolute():
+            full_path = path_obj
+        else:
+            full_path = CUSTOM_MODELS_DIR / model_path
         if not full_path.exists():
-            raise ValueError("Custom model not found: {}".format(full_path))
-        if full_path.suffix.lower() not in (".usd", ".obj"):
             raise ValueError(
-                "Unsupported model format '{}'. Must be .usd or .obj".format(full_path.suffix)
+                "Model file not found: {}\n"
+                "Place your .obj / .usd / .usda files in: {}".format(full_path, CUSTOM_MODELS_DIR)
+            )
+        if full_path.suffix.lower() not in (".usd", ".usda", ".usdz", ".obj"):
+            raise ValueError(
+                "Unsupported format '{}'. Supported: .obj, .usd, .usda, .usdz".format(full_path.suffix)
             )
         position = list(find_next_free_world_position(new_ir, preferred_y=CUBE_Y))
-        unique_name = make_unique_name(new_ir, "custom_model")
+        stem = Path(model_path).stem or "custom_model"
+        unique_name = make_unique_name(new_ir, stem)
         new_node = {
             "node_type": "mesh_object",
             "name": unique_name,
@@ -3191,6 +3238,7 @@ def apply_action_to_ir(scene_ir, action):
             "material": {"color": [0.8, 0.8, 0.8], "texture": {"enabled": False, "path": None}},
         }
         ensure_scene_children(new_ir).append(new_node)
+        print("[controller] Added custom model '{}' from: {}".format(unique_name, full_path))
         return new_ir
 
     if action_name == "add_light":

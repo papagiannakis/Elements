@@ -197,6 +197,50 @@ def build_bed(name, position):
     }
 
 
+def build_table(name, position):
+    return {
+        "node_type": "group",
+        "name": name,
+        "transform": {"position": position, "scale": [1.0, 1.0, 1.0]},
+        "children": [
+            {"node_type": "mesh_object", "name": f"{name}_top",
+             "shape": "cube", "transform": {"position": [0.0, 1.66, 0.0], "scale": [2.0, 0.12, 1.2]},
+             "material": {"color": [0.6, 0.4, 0.2]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_fl",
+             "shape": "cube", "transform": {"position": [-0.88, 0.8, -0.54], "scale": [0.12, 1.6, 0.12]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_fr",
+             "shape": "cube", "transform": {"position": [0.88, 0.8, -0.54], "scale": [0.12, 1.6, 0.12]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_bl",
+             "shape": "cube", "transform": {"position": [-0.88, 0.8, 0.54], "scale": [0.12, 1.6, 0.12]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+            {"node_type": "mesh_object", "name": f"{name}_leg_br",
+             "shape": "cube", "transform": {"position": [0.88, 0.8, 0.54], "scale": [0.12, 1.6, 0.12]},
+             "material": {"color": [0.5, 0.3, 0.1]}},
+        ]
+    }
+
+
+def build_lamp(name, position):
+    return {
+        "node_type": "group",
+        "name": name,
+        "transform": {"position": position, "scale": [1.0, 1.0, 1.0]},
+        "children": [
+            {"node_type": "mesh_object", "name": f"{name}_base",
+             "shape": "cylinder", "transform": {"position": [0.0, 0.1, 0.0], "scale": [0.5, 0.2, 0.5]},
+             "material": {"color": [0.3, 0.3, 0.3]}},
+            {"node_type": "mesh_object", "name": f"{name}_pole",
+             "shape": "cylinder", "transform": {"position": [0.0, 1.2, 0.0], "scale": [0.08, 2.0, 0.08]},
+             "material": {"color": [0.3, 0.3, 0.3]}},
+            {"node_type": "mesh_object", "name": f"{name}_shade",
+             "shape": "cone", "transform": {"position": [0.0, 2.35, 0.0], "scale": [0.7, 0.4, 0.7]},
+             "material": {"color": [1.0, 0.95, 0.6]}},
+        ]
+    }
+
+
 def build_street_light(name, position):
     return {
         "node_type": "group",

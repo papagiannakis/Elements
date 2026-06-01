@@ -426,11 +426,283 @@ def create_geometry(shape_type, params):
     else:
         raise ValueError("Unsupported shape type: {}".format(shape_type))
 
-#  Main idea: code_generator.py asks for geometry code 
+#  Main idea: code_generator.py asks for geometry code
 #  for a given shape type and parameters,
 #  and it uses the appropriate function to generate
 #  that code. Each shape type has its own function
-#  that knows how to create the geometry for that 
-#  shape based on the provided parameters. 
-#  The create_geometry function acts as a dispatcher 
+#  that knows how to create the geometry for that
+#  shape based on the provided parameters.
+#  The create_geometry function acts as a dispatcher
 #  that routes the request to the correct function.
+
+
+# ============================================================
+# Textured mesh builders — return (vertices, indices, uvs)
+# Vertices are unit-sized; the transform TRS handles position/rotation.
+# UV coordinates are in [0,1]² appropriate for each shape's geometry.
+# ============================================================
+
+def _textured_box(params):
+    """Box/cube UV mapping — six faces each tiled [0,1]²."""
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    sx, sy, sz = 0.5 * scale[0], 0.5 * scale[1], 0.5 * scale[2]
+
+    # 24 unique vertices (4 per face) so each face gets clean [0,1]² UVs
+    verts = np.array([
+        # +Z front
+        [-sx, -sy,  sz, 1], [ sx, -sy,  sz, 1], [ sx,  sy,  sz, 1], [-sx,  sy,  sz, 1],
+        # -Z back
+        [ sx, -sy, -sz, 1], [-sx, -sy, -sz, 1], [-sx,  sy, -sz, 1], [ sx,  sy, -sz, 1],
+        # +X right
+        [ sx, -sy,  sz, 1], [ sx, -sy, -sz, 1], [ sx,  sy, -sz, 1], [ sx,  sy,  sz, 1],
+        # -X left
+        [-sx, -sy, -sz, 1], [-sx, -sy,  sz, 1], [-sx,  sy,  sz, 1], [-sx,  sy, -sz, 1],
+        # +Y top
+        [-sx,  sy,  sz, 1], [ sx,  sy,  sz, 1], [ sx,  sy, -sz, 1], [-sx,  sy, -sz, 1],
+        # -Y bottom
+        [-sx, -sy, -sz, 1], [ sx, -sy, -sz, 1], [ sx, -sy,  sz, 1], [-sx, -sy,  sz, 1],
+    ], dtype=np.float32)
+
+    face_uvs = np.array([[0,0],[1,0],[1,1],[0,1]], dtype=np.float32)
+    uvs = np.tile(face_uvs, (6, 1))
+
+    # Two triangles per face
+    base = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+    indices = np.concatenate([base + i * 4 for i in range(6)])
+
+    return verts, indices, uvs
+
+
+def _textured_plane(params):
+    """Flat plane, UVs span [0,1]² across the surface."""
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    sx, sz = 0.5 * scale[0], 0.5 * scale[2]
+
+    verts = np.array([
+        [-sx, 0,  sz, 1], [ sx, 0,  sz, 1],
+        [ sx, 0, -sz, 1], [-sx, 0, -sz, 1],
+    ], dtype=np.float32)
+    uvs = np.array([[0, 1], [1, 1], [1, 0], [0, 0]], dtype=np.float32)
+    indices = np.array([0, 1, 2, 0, 2, 3], dtype=np.uint32)
+
+    return verts, indices, uvs
+
+
+def _textured_sphere(params):
+    """Spherical UV mapping: u = longitude / 2π, v = latitude / π."""
+    lat = params.get("lat", 20)
+    lon = params.get("lon", 20)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    rx, ry, rz = 0.5 * scale[0], 0.5 * scale[1], 0.5 * scale[2]
+
+    verts, uvs = [], []
+    for i in range(lat + 1):
+        theta = np.pi * i / lat
+        v = i / lat
+        for j in range(lon + 1):
+            phi = 2 * np.pi * j / lon
+            u = j / lon
+            verts.append([rx * np.sin(theta) * np.cos(phi),
+                           ry * np.cos(theta),
+                           rz * np.sin(theta) * np.sin(phi), 1.0])
+            uvs.append([u, v])
+
+    indices = []
+    for i in range(lat):
+        for j in range(lon):
+            a = i * (lon + 1) + j
+            b = a + lon + 1
+            indices += [a, b, a + 1, b, b + 1, a + 1]
+
+    return (np.array(verts, dtype=np.float32),
+            np.array(indices, dtype=np.uint32),
+            np.array(uvs, dtype=np.float32))
+
+
+def _textured_cylinder(params):
+    """Cylindrical UV: side uses u=angle, v=height; caps use planar disk UV."""
+    segments = params.get("segments", 20)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    r, h = 0.5 * scale[0], 0.5 * scale[1]
+
+    verts, uvs, indices = [], [], []
+
+    # --- Side (segments+1 pairs of bottom/top) ---
+    for i in range(segments + 1):
+        u = i / segments
+        angle = 2 * np.pi * i / segments
+        x, z = r * np.cos(angle), r * np.sin(angle)
+        verts.append([x, -h, z, 1.0]); uvs.append([u, 0.0])
+        verts.append([x,  h, z, 1.0]); uvs.append([u, 1.0])
+
+    for i in range(segments):
+        b1, t1 = i * 2, i * 2 + 1
+        b2, t2 = b1 + 2, t1 + 2
+        indices += [b1, b2, t2, b1, t2, t1]
+
+    # --- Top cap ---
+    tc = len(verts)
+    verts.append([0.0, h, 0.0, 1.0]); uvs.append([0.5, 0.5])
+    for i in range(segments):
+        angle = 2 * np.pi * i / segments
+        x, z = r * np.cos(angle), r * np.sin(angle)
+        verts.append([x, h, z, 1.0])
+        uvs.append([0.5 + 0.5 * np.cos(angle), 0.5 + 0.5 * np.sin(angle)])
+    for i in range(segments):
+        a = tc + 1 + i
+        b = tc + 1 + (i + 1) % segments
+        indices += [tc, a, b]
+
+    # --- Bottom cap ---
+    bc = len(verts)
+    verts.append([0.0, -h, 0.0, 1.0]); uvs.append([0.5, 0.5])
+    for i in range(segments):
+        angle = 2 * np.pi * i / segments
+        x, z = r * np.cos(angle), r * np.sin(angle)
+        verts.append([x, -h, z, 1.0])
+        uvs.append([0.5 + 0.5 * np.cos(angle), 0.5 + 0.5 * np.sin(angle)])
+    for i in range(segments):
+        a = bc + 1 + i
+        b = bc + 1 + (i + 1) % segments
+        indices += [bc, b, a]  # reversed winding for bottom
+
+    return (np.array(verts, dtype=np.float32),
+            np.array(indices, dtype=np.uint32),
+            np.array(uvs, dtype=np.float32))
+
+
+def _textured_cone(params):
+    """Conical UV: side uses u=angle, v=0 at apex → 1 at base; base cap planar."""
+    segments = params.get("segments", 20)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    r, h = 0.5 * scale[0], 0.5 * scale[1]
+
+    verts, uvs, indices = [], [], []
+
+    # --- Side: apex + base ring, unique vertex per segment for clean UVs ---
+    for i in range(segments):
+        u = i / segments
+        u_next = (i + 1) / segments
+        angle      = 2 * np.pi * i / segments
+        angle_next = 2 * np.pi * (i + 1) / segments
+
+        apex = len(verts)
+        verts.append([0.0, h, 0.0, 1.0]);                                       uvs.append([u + 0.5 / segments, 0.0])
+        verts.append([r * np.cos(angle),      -h, r * np.sin(angle),      1.0]); uvs.append([u,      1.0])
+        verts.append([r * np.cos(angle_next), -h, r * np.sin(angle_next), 1.0]); uvs.append([u_next, 1.0])
+        indices += [apex, apex + 1, apex + 2]
+
+    # --- Base cap ---
+    bc = len(verts)
+    verts.append([0.0, -h, 0.0, 1.0]); uvs.append([0.5, 0.5])
+    for i in range(segments):
+        angle = 2 * np.pi * i / segments
+        x, z = r * np.cos(angle), r * np.sin(angle)
+        verts.append([x, -h, z, 1.0])
+        uvs.append([0.5 + 0.5 * np.cos(angle), 0.5 + 0.5 * np.sin(angle)])
+    for i in range(segments):
+        a = bc + 1 + i
+        b = bc + 1 + (i + 1) % segments
+        indices += [bc, b, a]
+
+    return (np.array(verts, dtype=np.float32),
+            np.array(indices, dtype=np.uint32),
+            np.array(uvs, dtype=np.float32))
+
+
+def _textured_pyramid(params):
+    """Square-base pyramid: base gets [0,1]² UV, each side face gets a unit triangle UV."""
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    sx, sy, sz = 0.5 * scale[0], scale[1], 0.5 * scale[2]
+
+    base_corners = [
+        [-sx, 0, -sz, 1], [ sx, 0, -sz, 1],
+        [ sx, 0,  sz, 1], [-sx, 0,  sz, 1],
+    ]
+    apex = [0, sy, 0, 1]
+
+    verts, uvs, indices = [], [], []
+
+    # Base (2 triangles, 4 unique verts)
+    base_start = 0
+    for c in base_corners:
+        verts.append(c)
+    uvs += [[0, 0], [1, 0], [1, 1], [0, 1]]
+    indices += [0, 1, 2, 0, 2, 3]
+
+    # Four side faces
+    side_order = [(0, 1), (1, 2), (2, 3), (3, 0)]
+    for a_idx, b_idx in side_order:
+        s = len(verts)
+        verts.append(base_corners[a_idx])
+        verts.append(base_corners[b_idx])
+        verts.append(apex)
+        uvs += [[0, 0], [1, 0], [0.5, 1]]
+        indices += [s, s + 1, s + 2]
+
+    return (np.array(verts, dtype=np.float32),
+            np.array(indices, dtype=np.uint32),
+            np.array(uvs, dtype=np.float32))
+
+
+def _textured_triangular_pyramid(params):
+    """Tetrahedron: each of the 4 faces gets an independent unit triangle UV."""
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    sx, sy, sz = 0.5 * scale[0], scale[1], 0.5 * scale[2]
+
+    p = [
+        [ 0.0,  sy,  0.0, 1.0],
+        [-sx,  0.0,  sz,  1.0],
+        [ sx,  0.0,  sz,  1.0],
+        [ 0.0, 0.0, -sz,  1.0],
+    ]
+    faces = [(0, 1, 2), (0, 2, 3), (0, 3, 1), (1, 3, 2)]
+    tri_uvs = [[0, 0], [1, 0], [0.5, 1]]
+
+    verts, uvs, indices = [], [], []
+    for f in faces:
+        s = len(verts)
+        for vi in f:
+            verts.append(p[vi])
+        uvs += tri_uvs
+        indices += [s, s + 1, s + 2]
+
+    return (np.array(verts, dtype=np.float32),
+            np.array(indices, dtype=np.uint32),
+            np.array(uvs, dtype=np.float32))
+
+
+def create_textured_mesh(shape_type, params):
+    """Return (vertices, indices, uvs) for *shape_type* with UV coordinates.
+
+    Each returned array has matching length (len(vertices) == len(uvs)).
+    Use this instead of create_textured_cube() when the shape is not known
+    to be a cube at generation time.
+    """
+    shape_type = str(shape_type).lower()
+    dispatch = {
+        "cube":               _textured_box,
+        "rectangular_prism":  _textured_box,
+        "plane":              _textured_plane,
+        "sphere":             _textured_sphere,
+        "cylinder":           _textured_cylinder,
+        "cone":               _textured_cone,
+        "pyramid":            _textured_pyramid,
+        "triangular_pyramid": _textured_triangular_pyramid,
+    }
+    fn = dispatch.get(shape_type)
+    if fn is None:
+        # Fallback for unknown shapes: spherical UV projection on the untextured mesh
+        vertices, indices, colors = create_geometry(shape_type, params)
+        uvs = []
+        for v in vertices:
+            x, y, z = float(v[0]), float(v[1]), float(v[2])
+            length = (x*x + y*y + z*z) ** 0.5
+            if length < 1e-8:
+                uvs.append([0.5, 0.5])
+            else:
+                u = 0.5 + np.arctan2(z, x) / (2 * np.pi)
+                v_coord = 0.5 - np.arcsin(max(-1.0, min(1.0, y / length))) / np.pi
+                uvs.append([float(u), float(v_coord)])
+        return vertices, indices, np.array(uvs, dtype=np.float32)
+    return fn(params)

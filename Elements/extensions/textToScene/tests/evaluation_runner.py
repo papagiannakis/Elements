@@ -32,20 +32,65 @@ MODELS = {
     "gpt-4o-mini": {"name": "GPT-4o-mini", "input_cost": 0.15, "output_cost": 0.60},
 }
 
+# Maps section header keywords (lowercase) to expected action type.
+# None means "mixed" — action type check is skipped for those commands.
+_SECTION_ACTION_MAP = {
+    "object creation":        "add_object",
+    "movement - directional": "move_object",
+    "movement - positional":  "move_object",
+    "recolor":                "recolor_object",
+    "scale - natural":        "scale_object",
+    "scale - explicit":       "scale_object",
+    "rotation - simple":      "rotate_object",
+    "rotation - axis":        "rotate_object",
+    "deletion":               "delete_object",
+    "prefabs - add":          "add_prefab",
+    "prefabs - transform":    None,
+    "composite objects":      "generate_composite",
+    "scene management":       None,
+    "undo/redo":              None,
+    "action sequences":       "action_sequence",
+}
+
+def _expected_action_for_section(header_text):
+    """Return expected action string for a section header, or None for mixed."""
+    h = header_text.lower()
+    for key, action in _SECTION_ACTION_MAP.items():
+        if key in h:
+            return action
+    return None
+
+
 def load_test_cases_from_txt(txt_path):
-    """Load test commands from text file, one per line."""
+    """Load test commands from text file, one per line.
+
+    Section headers (lines starting with #) determine the expected_action for
+    all commands that follow, enabling per-command intent verification.
+    """
     cases = []
+    current_category = "unknown"
+    current_expected_action = None
+    cmd_id = 0
+
     with open(txt_path, 'r', encoding='utf-8') as f:
-        for i, line in enumerate(f, 1):
+        for line in f:
             line = line.strip()
-            if not line or line.startswith('#'):
+            if not line:
                 continue
+            if line.startswith('#'):
+                # Strip leading # and whitespace to get the section title
+                section_title = line.lstrip('#').strip()
+                # Remove parenthetical counts like "(10 commands)"
+                section_title = section_title.split('(')[0].strip()
+                current_category = section_title
+                current_expected_action = _expected_action_for_section(section_title)
+                continue
+            cmd_id += 1
             cases.append({
-                "id": i,
+                "id": cmd_id,
                 "command": line,
-                "category": "auto",
-                "expected_action": "auto",
-                "expected_target": "",
+                "category": current_category,
+                "expected_action": current_expected_action,
             })
     return cases
 
@@ -114,26 +159,45 @@ def run_single_test(command, scene_ir, model_name):
         "new_ir": new_ir,
     }
 
-def compute_metrics(results, expected_cases, model_config):
-    """Compute aggregate metrics for a model."""
-    total = len(results)
-    parse_success = sum(1 for r in results if r["parse_success"])
-    apply_success = sum(1 for r in results if r["apply_success"])
-    
-    # For auto tests: success = parse AND apply both worked
-    intent_correct = sum(1 for r in results if r["parse_success"] and r["apply_success"])
-    
-    latencies = [r["latency_ms"] for r in results if r["parse_success"]]
+def action_type_matches(result, case):
+    """Return True if the parsed action type matches the expected action for this case.
+
+    Cases with expected_action=None are 'mixed' sections — always pass this check.
+    """
+    expected = case.get("expected_action")
+    if expected is None:
+        return True  # mixed section, skip action-type check
+    if not result.get("parse_success") or result.get("action") is None:
+        return False
+    return result["action"].get("action") == expected
+
+
+def compute_metrics(results_with_cases, model_config):
+    """Compute aggregate metrics for a model.
+
+    results_with_cases: list of (case, result) tuples.
+    """
+    total = len(results_with_cases)
+    parse_success = sum(1 for _, r in results_with_cases if r["parse_success"])
+    apply_success = sum(1 for _, r in results_with_cases if r["apply_success"])
+
+    # Intent = parsed correct action type AND apply succeeded
+    intent_correct = sum(
+        1 for case, r in results_with_cases
+        if r["parse_success"] and r["apply_success"] and action_type_matches(r, case)
+    )
+
+    latencies = [r["latency_ms"] for _, r in results_with_cases if r["parse_success"]]
     avg_latency = sum(latencies) / len(latencies) if latencies else 0
-    
-    total_tokens_in = sum(r["tokens_in"] for r in results)
-    total_tokens_out = sum(r["tokens_out"] for r in results)
-    
+
+    total_tokens_in  = sum(r["tokens_in"]  for _, r in results_with_cases)
+    total_tokens_out = sum(r["tokens_out"] for _, r in results_with_cases)
+
     cost_per_100 = (
         (total_tokens_in / 1_000_000 * model_config["input_cost"]) +
         (total_tokens_out / 1_000_000 * model_config["output_cost"])
     ) * (100 / total) if total > 0 else 0
-    
+
     return {
         "total": total,
         "parse_success_rate": parse_success / total if total > 0 else 0,
@@ -146,27 +210,43 @@ def compute_metrics(results, expected_cases, model_config):
     }
 
 def save_results_csv(all_results, output_path):
-    """Save detailed results to CSV using atomic write to avoid file-lock errors."""
-    import os
+    """Save detailed results to CSV.
+
+    Writes to a temp file in the system temp directory first, then moves it
+    atomically to the final location. This avoids Windows file-lock issues and
+    never fails because of missing intermediate directories.
+    """
+    import os, tempfile
     output_path = Path(output_path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    tmp_path = output_path.parent / (output_path.name + ".tmp")
+
+    tmp_fd, tmp_path_str = tempfile.mkstemp(suffix='.tmp', prefix='eval_results_')
     try:
-        with open(str(tmp_path), 'w', newline='', encoding='utf-8') as f:
+        with os.fdopen(tmp_fd, 'w', newline='', encoding='utf-8') as f:
             writer = csv.writer(f)
             writer.writerow([
-                "Model", "ID", "Command", "Actual Action", "Parse Success",
-                "Apply Success", "Latency (ms)", "Tokens In", "Tokens Out", "Error"
+                "Model", "ID", "Category", "Command",
+                "Expected Action", "Actual Action", "Action Match",
+                "Parse Success", "Apply Success", "Intent Correct",
+                "Latency (ms)", "Tokens In", "Tokens Out", "Error"
             ])
             for model_name, results in all_results.items():
                 for case, result in results:
+                    expected = case.get("expected_action") or ""
+                    actual   = result["action"].get("action") if result["action"] else ""
+                    match    = action_type_matches(result, case)
+                    intent   = result["parse_success"] and result["apply_success"] and match
                     writer.writerow([
                         model_name,
                         case["id"],
+                        case.get("category", ""),
                         case["command"],
-                        result["action"].get("action") if result["action"] else "",
+                        expected,
+                        actual,
+                        match,
                         result["parse_success"],
                         result["apply_success"],
+                        intent,
                         f"{result['latency_ms']:.0f}",
                         result["tokens_in"],
                         result["tokens_out"],
@@ -174,11 +254,11 @@ def save_results_csv(all_results, output_path):
                     ])
     except Exception:
         try:
-            tmp_path.unlink(missing_ok=True)
+            os.unlink(tmp_path_str)
         except Exception:
             pass
         raise
-    os.replace(str(tmp_path), str(output_path))
+    os.replace(tmp_path_str, str(output_path))
 
 if __name__ == "__main__":
     if not OPENAI_API_KEY:
@@ -207,7 +287,7 @@ if __name__ == "__main__":
             time.sleep(0.5)
         
         all_results[model_name] = results
-        metrics = compute_metrics([r for _, r in results], cases, model_config)
+        metrics = compute_metrics(results, model_config)
         
         print(f"\n{model_config['name']} Results:")
         print(f"  Success Rate:     {metrics['intent_accuracy']:.1%}")
@@ -218,6 +298,5 @@ if __name__ == "__main__":
     
 
     output_csv = Path(__file__).parent.parent / "docs" / "evaluation_results.csv"
-    output_csv.parent.mkdir(parents=True, exist_ok=True)
     save_results_csv(all_results, output_csv)
     print(f"Saved to {output_csv}")

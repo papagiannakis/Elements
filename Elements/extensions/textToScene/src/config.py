@@ -14,7 +14,7 @@ if not OPENAI_API_KEY:
     print(f"WARNING: OPENAI_API_KEY not found. Checked {env_path}")
     print(f".env exists: {env_path.exists()}")
 else:
-    print(f"✓ API key loaded (length: {len(OPENAI_API_KEY)})")
+    print(f"[config] API key loaded (length: {len(OPENAI_API_KEY)})")
 """
 Central configuration for the Text-to-Scene extension.
 

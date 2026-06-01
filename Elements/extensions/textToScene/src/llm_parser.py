@@ -99,7 +99,7 @@ Allowed top-level action values:
 - change_light_color
 - change_light_intensity
 
-If the request needs multiple steps, use:
+If the request needs multiple steps (e.g. "add X and move it Y", "create X and make it bigger"), use:
 {
   "action": "action_sequence",
   "action_sequence": [
@@ -121,6 +121,7 @@ Rules:
 - For apply_texture, texture_name must be one of: brick, wood, stone, grass, metal, sand, marble, concrete
 - model_path must be a filename (no directories) ending in .usd or .obj
 - The file must exist in the custom_models directory
+- add_prefab vs generate_composite: use add_prefab when the user says "add a/an [object]" or "add prefab [name]" with NO shape specified. Use generate_composite when the user says "make a [object] with [shape]" or "make a [object] using [shape]" — the explicit shape keyword signals procedural generation.
 
 Allowed object_type values:
 - cube
@@ -204,6 +205,38 @@ Allowed axis values for rotate_object: x, y, z
   "action_sequence": [
     {
       "action": "add_object",
+      "object_type": "cube",
+      "color": "purple"
+    },
+    {
+      "action": "move_object",
+      "target": "purple cube",
+      "direction": "right"
+    }
+  ]
+}
+
+{
+  "action": "action_sequence",
+  "action_sequence": [
+    {
+      "action": "add_object",
+      "object_type": "sphere",
+      "color": "green"
+    },
+    {
+      "action": "scale_object",
+      "target": "green sphere",
+      "factor": 1.5
+    }
+  ]
+}
+
+{
+  "action": "action_sequence",
+  "action_sequence": [
+    {
+      "action": "add_object",
       "object_type": "cylinder",
       "color": "white"
     },
@@ -233,6 +266,8 @@ Allowed axis values for rotate_object: x, y, z
   "scene_name": "my_tower"
 }
 
+Available prefab names: house, tree, chair, bench, bed, table, lamp, street_light, gift_box
+
 {
   "action": "add_prefab",
   "prefab_name": "tree"
@@ -241,6 +276,16 @@ Allowed axis values for rotate_object: x, y, z
 {
   "action": "add_prefab",
   "prefab_name": "house"
+}
+
+{
+  "action": "add_prefab",
+  "prefab_name": "table"
+}
+
+{
+  "action": "add_prefab",
+  "prefab_name": "lamp"
 }
 
 Use generate_pattern for procedural arrangements of identical objects.
@@ -275,13 +320,14 @@ Examples:
   "color": "blue"
 }
 
-Use generate_composite for multi-part procedural structures.
-Supported composite values: tree
+Use generate_composite for multi-part procedural structures built from a specified primitive shape.
+Supported composite values: tree, table, lamp, house, chair, bed, bench, fence, and any other named real-world object.
+Use this action when the user says "make a [object] with [shape]" or "make a [object] using [shape]".
 
 generate_composite schema:
 {
   "action": "generate_composite",
-  "composite": "tree",
+  "composite": "<object name>",
   "object_type": "<shape>",
   "color": "<color name>"
 }
@@ -290,15 +336,29 @@ Examples:
 {
   "action": "generate_composite",
   "composite": "tree",
-  "object_type": "cube",
+  "object_type": "cylinder",
   "color": "green"
 }
 
 {
   "action": "generate_composite",
-  "composite": "tree",
-  "object_type": "sphere",
-  "color": "green"
+  "composite": "house",
+  "object_type": "cube",
+  "color": "white"
+}
+
+{
+  "action": "generate_composite",
+  "composite": "table",
+  "object_type": "cube",
+  "color": "brown"
+}
+
+{
+  "action": "generate_composite",
+  "composite": "fence",
+  "object_type": "cube",
+  "color": "gray"
 }
 
 {

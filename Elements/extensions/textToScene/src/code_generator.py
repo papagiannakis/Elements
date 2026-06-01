@@ -6,7 +6,7 @@ from typing import Optional
 
 import numpy as np
 
-from geometry_factory import build_render_mesh, create_textured_cube
+from geometry_factory import build_render_mesh, create_textured_cube, create_textured_mesh
 
 
 DEFAULT_WINDOW = {
@@ -146,17 +146,21 @@ def normalize_node(node, idx=1):
         if shape is None:
             raise ValueError("mesh_object node is missing 'shape'")
 
-        shape = node.get("shape")
-        if shape is None:
-            raise ValueError("mesh_object node is missing 'shape'")
-        
-        return {
+        normalized = {
             "node_type": "mesh_object",
             "name": str(node.get("name", "mesh_object_{}".format(idx))),
             "shape": shape,
             "transform": normalize_transform(node.get("transform", {})),
             "material": normalize_material(node.get("material", {}))
         }
+
+        if shape == "custom":
+            custom_path = node.get("custom_model_path")
+            if not custom_path:
+                raise ValueError("mesh_object with shape='custom' requires 'custom_model_path'")
+            normalized["custom_model_path"] = str(custom_path)
+
+        return normalized
     
     #add support for group nodes 
     elif node_type == "group":
@@ -782,6 +786,273 @@ scene.shutdown()
     )
 
 # -----------------------------
+# OBJ loader (generation-time)
+# -----------------------------
+def _parse_obj_for_codegen(obj_path, color_rgb):
+    """Parse a Wavefront .obj file and return numpy arrays ready for the renderer.
+
+    Returns (vertices, indices, normals, colors) as numpy arrays.
+    Supports triangulated meshes only; quads are split into two triangles.
+    Normals are computed per-face (flat shading) if not provided in the file.
+    """
+    positions = []   # list of [x, y, z]
+    face_indices = []  # list of [i0, i1, i2] (0-based)
+    obj_normals = {}   # vertex-index -> accumulated normal
+
+    with open(str(obj_path), "r", encoding="utf-8") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            if parts[0] == "v":
+                positions.append([float(parts[1]), float(parts[2]), float(parts[3])])
+            elif parts[0] == "f":
+                # Each token is v or v/vt or v/vt/vn  (1-based)
+                verts = [int(tok.split("/")[0]) - 1 for tok in parts[1:]]
+                # Fan-triangulate
+                for k in range(1, len(verts) - 1):
+                    face_indices.append([verts[0], verts[k], verts[k + 1]])
+
+    if not positions:
+        raise ValueError("OBJ file has no vertex positions: {}".format(obj_path))
+    if not face_indices:
+        raise ValueError("OBJ file has no faces: {}".format(obj_path))
+
+    n_verts = len(positions)
+    smooth_normals = [[0.0, 0.0, 0.0] for _ in range(n_verts)]
+
+    for tri in face_indices:
+        i0, i1, i2 = tri
+        p0, p1, p2 = positions[i0], positions[i1], positions[i2]
+        # Edge vectors
+        e1 = [p1[k] - p0[k] for k in range(3)]
+        e2 = [p2[k] - p0[k] for k in range(3)]
+        # Cross product
+        nx = e1[1]*e2[2] - e1[2]*e2[1]
+        ny = e1[2]*e2[0] - e1[0]*e2[2]
+        nz = e1[0]*e2[1] - e1[1]*e2[0]
+        for vi in (i0, i1, i2):
+            smooth_normals[vi][0] += nx
+            smooth_normals[vi][1] += ny
+            smooth_normals[vi][2] += nz
+
+    # Normalize
+    for i, n in enumerate(smooth_normals):
+        length = (n[0]**2 + n[1]**2 + n[2]**2) ** 0.5
+        if length > 1e-8:
+            smooth_normals[i] = [n[k] / length for k in range(3)]
+        else:
+            smooth_normals[i] = [0.0, 1.0, 0.0]
+
+    r, g, b = float(color_rgb[0]), float(color_rgb[1]), float(color_rgb[2])
+
+    verts_array   = np.array([[p[0], p[1], p[2], 1.0] for p in positions],  dtype=np.float32)
+    normals_array = np.array([[n[0], n[1], n[2]]       for n in smooth_normals], dtype=np.float32)
+    colors_array  = np.array([[r, g, b, 1.0]            for _ in positions],  dtype=np.float32)
+    indices_array = np.array(face_indices, dtype=np.uint32)
+
+    return verts_array, indices_array, normals_array, colors_array
+
+
+# -----------------------------
+# USD loader (generation-time)
+# -----------------------------
+def _parse_usda_text(usda_path, color_rgb):
+    """Parse a USDA (text-format USD) file without requiring the pxr library.
+
+    Extracts the first Mesh prim's points, faceVertexCounts, and
+    faceVertexIndices, triangulates, computes smooth normals, and returns
+    (vertices, indices, normals, colors) as numpy arrays.
+    """
+    import re as _re
+
+    text = Path(str(usda_path)).read_text(encoding="utf-8")
+
+    # Match 'point3f[] points = [...]' or 'float3[] points = [...]'
+    points_match = _re.search(
+        r'(?:point3f|float3|Vec3f)\[\]\s+points\s*=\s*\[(.*?)\]',
+        text, _re.DOTALL | _re.IGNORECASE
+    )
+    if not points_match:
+        raise ValueError("No 'points' array found in USDA file: {}".format(usda_path))
+
+    positions = []
+    for m in _re.finditer(
+        r'\(?\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*,\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*,\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*\)?',
+        points_match.group(1)
+    ):
+        positions.append([float(m.group(1)), float(m.group(2)), float(m.group(3))])
+
+    if not positions:
+        raise ValueError("Could not parse vertex positions from USDA file: {}".format(usda_path))
+
+    indices_match = _re.search(
+        r'int\[\]\s+faceVertexIndices\s*=\s*\[(.*?)\]', text, _re.DOTALL
+    )
+    if not indices_match:
+        raise ValueError("No 'faceVertexIndices' found in USDA file: {}".format(usda_path))
+    raw_indices = [int(x) for x in _re.findall(r'-?\d+', indices_match.group(1))]
+
+    counts_match = _re.search(
+        r'int\[\]\s+faceVertexCounts\s*=\s*\[(.*?)\]', text, _re.DOTALL
+    )
+    if not counts_match:
+        raise ValueError("No 'faceVertexCounts' found in USDA file: {}".format(usda_path))
+    counts = [int(x) for x in _re.findall(r'\d+', counts_match.group(1))]
+
+    face_indices = []
+    offset = 0
+    for count in counts:
+        verts = raw_indices[offset:offset + count]
+        for k in range(1, len(verts) - 1):
+            face_indices.append([verts[0], verts[k], verts[k + 1]])
+        offset += count
+
+    if not face_indices:
+        raise ValueError("No faces found in USDA file: {}".format(usda_path))
+
+    return _build_mesh_arrays(positions, face_indices, color_rgb)
+
+
+def _parse_usd_with_pxr(usd_path, color_rgb):
+    """Parse any USD/USDZ format using the pxr library.
+
+    Collects ALL Mesh prims, applies their world transforms, converts to
+    meters (metersPerUnit), then normalises the whole model to fit inside
+    a 2-unit bounding box so it appears at a sane scale in the scene.
+    """
+    from pxr import Usd, UsdGeom, Gf  # noqa: PLC0415
+
+    stage = Usd.Stage.Open(str(usd_path))
+
+    # USD may store geometry in centimeters (0.01) or other units.
+    meters_per_unit = UsdGeom.GetStageMetersPerUnit(stage)
+    if not meters_per_unit or meters_per_unit <= 0:
+        meters_per_unit = 0.01  # USD default: centimeters
+
+    all_positions = []
+    all_faces = []
+    vertex_offset = 0
+    time_code = Usd.TimeCode.Default()
+
+    for prim in stage.Traverse():
+        if prim.GetTypeName() != "Mesh":
+            continue
+
+        mesh = UsdGeom.Mesh(prim)
+        pts        = mesh.GetPointsAttr().Get(time_code)
+        face_cnts  = mesh.GetFaceVertexCountsAttr().Get(time_code)
+        face_idx   = mesh.GetFaceVertexIndicesAttr().Get(time_code)
+
+        if pts is None or face_cnts is None or face_idx is None:
+            continue
+
+        # World transform: local → world, then apply unit scale
+        try:
+            xform_cache = UsdGeom.XformCache(time_code)
+            world_xform = xform_cache.GetLocalToWorldTransform(prim)
+        except Exception:
+            world_xform = Gf.Matrix4d(1.0)
+
+        for p in pts:
+            wp = world_xform.Transform(Gf.Vec3d(p[0], p[1], p[2]))
+            all_positions.append([
+                float(wp[0]) * meters_per_unit,
+                float(wp[1]) * meters_per_unit,
+                float(wp[2]) * meters_per_unit,
+            ])
+
+        raw = list(face_idx)
+        off = 0
+        for cnt in face_cnts:
+            verts = [raw[off + k] + vertex_offset for k in range(cnt)]
+            for k in range(1, len(verts) - 1):
+                all_faces.append([verts[0], verts[k], verts[k + 1]])
+            off += cnt
+
+        vertex_offset += len(pts)
+
+    if not all_positions:
+        raise ValueError("No Mesh geometry found in USD file: {}".format(usd_path))
+    if not all_faces:
+        raise ValueError("No faces found in USD file: {}".format(usd_path))
+
+    # Normalise: centre on XZ, sit on Y=0, scale to 2-unit bounding box
+    all_positions = _normalize_positions(all_positions)
+
+    return _build_mesh_arrays(all_positions, all_faces, color_rgb)
+
+
+def _normalize_positions(positions, target_size=2.0):
+    """Centre on XZ plane, sit on Y=0, scale longest axis to target_size."""
+    xs = [p[0] for p in positions]
+    ys = [p[1] for p in positions]
+    zs = [p[2] for p in positions]
+
+    cx = (min(xs) + max(xs)) / 2.0
+    cz = (min(zs) + max(zs)) / 2.0
+    cy = min(ys)  # sit on ground
+
+    span = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+    scale = target_size / span if span > 1e-6 else 1.0
+
+    return [
+        [(p[0] - cx) * scale, (p[1] - cy) * scale, (p[2] - cz) * scale]
+        for p in positions
+    ]
+
+
+def _build_mesh_arrays(positions, face_indices, color_rgb):
+    """Shared helper: compute smooth normals and pack into numpy arrays."""
+    n_verts = len(positions)
+    smooth_normals = [[0.0, 0.0, 0.0] for _ in range(n_verts)]
+
+    for tri in face_indices:
+        i0, i1, i2 = tri
+        p0, p1, p2 = positions[i0], positions[i1], positions[i2]
+        e1 = [p1[k] - p0[k] for k in range(3)]
+        e2 = [p2[k] - p0[k] for k in range(3)]
+        nx = e1[1]*e2[2] - e1[2]*e2[1]
+        ny = e1[2]*e2[0] - e1[0]*e2[2]
+        nz = e1[0]*e2[1] - e1[1]*e2[0]
+        for vi in (i0, i1, i2):
+            smooth_normals[vi][0] += nx
+            smooth_normals[vi][1] += ny
+            smooth_normals[vi][2] += nz
+
+    for i, n in enumerate(smooth_normals):
+        length = (n[0]**2 + n[1]**2 + n[2]**2) ** 0.5
+        if length > 1e-8:
+            smooth_normals[i] = [n[k] / length for k in range(3)]
+        else:
+            smooth_normals[i] = [0.0, 1.0, 0.0]
+
+    r, g, b = float(color_rgb[0]), float(color_rgb[1]), float(color_rgb[2])
+    verts_array   = np.array([[p[0], p[1], p[2], 1.0] for p in positions],      dtype=np.float32)
+    normals_array = np.array([[n[0], n[1], n[2]]       for n in smooth_normals], dtype=np.float32)
+    colors_array  = np.array([[r, g, b, 1.0]            for _ in positions],      dtype=np.float32)
+    indices_array = np.array(face_indices,                                        dtype=np.uint32)
+    return verts_array, indices_array, normals_array, colors_array
+
+
+def _parse_usd_for_codegen(usd_path, color_rgb):
+    """Dispatch USD parsing: USDA text without pxr, binary USD/USDZ via pxr."""
+    suffix = str(usd_path).lower()
+    if suffix.endswith(".usda"):
+        return _parse_usda_text(usd_path, color_rgb)
+    try:
+        return _parse_usd_with_pxr(usd_path, color_rgb)
+    except ImportError:
+        raise ValueError(
+            "Binary USD files require the OpenUSD Python library (pxr).\n"
+            "Install with: pip install usd-core\n"
+            "Or export your model as .usda (text USD) or .obj instead.\n"
+            "File: {}".format(usd_path)
+        )
+
+
+# -----------------------------
 # Recursive node emission
 # -----------------------------
 def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
@@ -798,6 +1069,16 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
         if not model_path:
             raise ValueError("custom shape requires 'custom_model_path'")
 
+        suffix_lower = str(model_path).lower()
+        if suffix_lower.endswith(".usd") or suffix_lower.endswith(".usda") or suffix_lower.endswith(".usdz"):
+            vertices, indices, normals, colors = _parse_usd_for_codegen(model_path, material["color"])
+        elif suffix_lower.endswith(".obj"):
+            vertices, indices, normals, colors = _parse_obj_for_codegen(model_path, material["color"])
+        else:
+            raise ValueError(
+                "Unsupported custom model format. Supported: .obj, .usd, .usda. File: {}".format(model_path)
+            )
+
         position = transform["position"]
         rotation = transform["rotation"]
         suffix = str(idx)
@@ -809,8 +1090,18 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
         world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
         mat_color_expr = vec3_to_util_vec(material["color"])
 
+        vertices_code = ndarray_to_python(vertices, "float32")
+        indices_code  = ndarray_to_python(indices,  "uint32")
+        colors_code   = ndarray_to_python(colors,   "float32")
+        normals_code  = ndarray_to_python(normals,  "float32")
+
         object_code = """
-# ===== mesh_object (custom): {name} =====
+# ===== mesh_object (custom OBJ): {name} =====
+vertices_{suffix} = {vertices_code}
+indices_{suffix} = {indices_code}
+colors_{suffix} = {colors_code}
+normals_{suffix} = {normals_code}
+
 {entity_var} = scene.world.createEntity(Entity(name="{name}"))
 scene.world.addEntityChild({parent_entity_var}, {entity_var})
 {trans_var} = scene.world.addComponent(
@@ -818,15 +1109,19 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
     BasicTransform(name="{name}_TRS", trs={local_trs_expr})
 )
 {mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
-{mesh_var}.mesh = Mesh.loadMesh("{model_path}")
+{mesh_var}.vertex_attributes.append(vertices_{suffix})
+{mesh_var}.vertex_attributes.append(colors_{suffix})
+{mesh_var}.vertex_attributes.append(normals_{suffix})
+{mesh_var}.vertex_index.append(indices_{suffix})
 scene.world.addComponent({entity_var}, VertexArray())
 {shader_var} = scene.world.addComponent(
     {entity_var},
     ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
 )
-""".format(name=name, entity_var=entity_var, parent_entity_var=parent_entity_var,
+""".format(name=name, suffix=suffix, entity_var=entity_var, parent_entity_var=parent_entity_var,
            trans_var=trans_var, local_trs_expr=local_trs_expr, mesh_var=mesh_var,
-           model_path=model_path, shader_var=shader_var)
+           shader_var=shader_var, vertices_code=vertices_code, indices_code=indices_code,
+           colors_code=colors_code, normals_code=normals_code)
 
         uniform_code = """
 model_{suffix} = {world_trs_expr}
@@ -1042,10 +1337,9 @@ def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr
 
     local_trs_expr = "{} @ {}".format(make_translate(position), make_rotate(rotation))
     world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
-    if shape != "cube":
-        raise ValueError("Currently only 'cube' shape is supported for textured mesh_object nodes")
-    
-    raw_vertices, raw_indices, raw_uvs = create_textured_cube()
+
+    params = {"scale": transform.get("scale", [1.0, 1.0, 1.0])}
+    raw_vertices, raw_indices, raw_uvs = create_textured_mesh(shape, params)
     vertices_code = ndarray_to_python(raw_vertices, "float32")
     indices_code = ndarray_to_python(raw_indices, "uint32")
     uv_code = ndarray_to_python(raw_uvs, "float32")
