@@ -1,0 +1,166 @@
+{
+  "generated_at": "2026-06-02",
+  "note": "125 evaluation commands, cumulative scene mode",
+  "models": {
+    "rule_based": {
+      "name": "Rule-Based (no LLM)",
+      "provider": "Baseline",
+      "tier": "baseline",
+      "metrics": {
+        "total": 125,
+        "intent_accuracy": 0.552,
+        "parse_success_rate": 0.976,
+        "apply_success_rate": 0.928,
+        "avg_latency_ms": 2.8,
+        "total_tokens_in": 0,
+        "total_tokens_out": 0,
+        "cost_per_100_commands": 0.0
+      },
+      "per_category": {
+        "Object Creation":          {"intent_ok": 10, "total": 10},
+        "Movement - Directional":   {"intent_ok": 15, "total": 15},
+        "Movement - Positional":    {"intent_ok": 5,  "total": 5},
+        "Recolor":                  {"intent_ok": 1,  "total": 10},
+        "Scale - Natural Language": {"intent_ok": 9,  "total": 10},
+        "Scale - Explicit":         {"intent_ok": 5,  "total": 5},
+        "Rotation - Simple":        {"intent_ok": 0,  "total": 10},
+        "Rotation - Axis Specified":{"intent_ok": 0,  "total": 10},
+        "Deletion":                 {"intent_ok": 5,  "total": 5},
+        "Prefabs - Add":            {"intent_ok": 3,  "total": 8},
+        "Prefabs - Transform":      {"intent_ok": 5,  "total": 12},
+        "Composite Objects":        {"intent_ok": 2,  "total": 10},
+        "Scene Management":         {"intent_ok": 5,  "total": 5},
+        "Undo/Redo Tests":          {"intent_ok": 4,  "total": 5},
+        "Action Sequences":         {"intent_ok": 0,  "total": 5}
+      }
+    },
+    "gpt-4o-mini": {
+      "name": "GPT-4o-mini",
+      "provider": "OpenAI",
+      "tier": "small",
+      "metrics": {
+        "total": 125,
+        "intent_accuracy": 0.928,
+        "parse_success_rate": 1.0,
+        "apply_success_rate": 0.928,
+        "avg_latency_ms": 2972,
+        "total_tokens_in": 519922,
+        "total_tokens_out": 4058,
+        "cost_per_100_commands": 0.0643
+      },
+      "per_category": {
+        "Object Creation":        {"intent_ok": 6,  "total": 10},
+        "Movement - Directional": {"intent_ok": 14, "total": 15},
+        "Movement - Positional":  {"intent_ok": 4,  "total": 5},
+        "Recolor":                {"intent_ok": 9,  "total": 10},
+        "Scale - Natural Language":{"intent_ok": 10, "total": 10},
+        "Scale - Explicit":       {"intent_ok": 5,  "total": 5},
+        "Rotation - Simple":      {"intent_ok": 10, "total": 10},
+        "Rotation - Axis Specified":{"intent_ok": 10,"total": 10},
+        "Deletion":               {"intent_ok": 5,  "total": 5},
+        "Prefabs - Add":          {"intent_ok": 8,  "total": 8},
+        "Prefabs - Transform":    {"intent_ok": 12, "total": 12},
+        "Composite Objects":      {"intent_ok": 10, "total": 10},
+        "Scene Management":       {"intent_ok": 5,  "total": 5},
+        "Undo/Redo Tests":        {"intent_ok": 5,  "total": 5},
+        "Action Sequences":       {"intent_ok": 3,  "total": 5}
+      }
+    },
+    "gpt-4.1-mini": {
+      "name": "GPT-4.1-mini",
+      "provider": "OpenAI",
+      "tier": "medium",
+      "metrics": {
+        "total": 125,
+        "intent_accuracy": 0.960,
+        "parse_success_rate": 1.0,
+        "apply_success_rate": 0.960,
+        "avg_latency_ms": 2913,
+        "total_tokens_in": 568044,
+        "total_tokens_out": 3832,
+        "cost_per_100_commands": 0.1867
+      },
+      "per_category": {
+        "Object Creation":        {"intent_ok": 10, "total": 10},
+        "Movement - Directional": {"intent_ok": 15, "total": 15},
+        "Movement - Positional":  {"intent_ok": 5,  "total": 5},
+        "Recolor":                {"intent_ok": 10, "total": 10},
+        "Scale - Natural Language":{"intent_ok": 10,"total": 10},
+        "Scale - Explicit":       {"intent_ok": 5,  "total": 5},
+        "Rotation - Simple":      {"intent_ok": 10, "total": 10},
+        "Rotation - Axis Specified":{"intent_ok": 10,"total": 10},
+        "Deletion":               {"intent_ok": 5,  "total": 5},
+        "Prefabs - Add":          {"intent_ok": 8,  "total": 8},
+        "Prefabs - Transform":    {"intent_ok": 8,  "total": 12},
+        "Composite Objects":      {"intent_ok": 10, "total": 10},
+        "Scene Management":       {"intent_ok": 5,  "total": 5},
+        "Undo/Redo Tests":        {"intent_ok": 5,  "total": 5},
+        "Action Sequences":       {"intent_ok": 4,  "total": 5}
+      }
+    },
+    "gemini-2.5-flash-lite": {
+      "name": "Gemini-2.5-Flash-Lite",
+      "provider": "Google",
+      "tier": "small",
+      "metrics": {
+        "total": 125,
+        "intent_accuracy": 0.992,
+        "parse_success_rate": 1.0,
+        "apply_success_rate": 0.992,
+        "avg_latency_ms": 1526,
+        "total_tokens_in": 632008,
+        "total_tokens_out": 4124,
+        "cost_per_100_commands": 0.0519
+      },
+      "per_category": {
+        "Object Creation":        {"intent_ok": 10, "total": 10},
+        "Movement - Directional": {"intent_ok": 15, "total": 15},
+        "Movement - Positional":  {"intent_ok": 5,  "total": 5},
+        "Recolor":                {"intent_ok": 10, "total": 10},
+        "Scale - Natural Language":{"intent_ok": 10,"total": 10},
+        "Scale - Explicit":       {"intent_ok": 5,  "total": 5},
+        "Rotation - Simple":      {"intent_ok": 10, "total": 10},
+        "Rotation - Axis Specified":{"intent_ok": 10,"total": 10},
+        "Deletion":               {"intent_ok": 5,  "total": 5},
+        "Prefabs - Add":          {"intent_ok": 8,  "total": 8},
+        "Prefabs - Transform":    {"intent_ok": 12, "total": 12},
+        "Composite Objects":      {"intent_ok": 10, "total": 10},
+        "Scene Management":       {"intent_ok": 5,  "total": 5},
+        "Undo/Redo Tests":        {"intent_ok": 5,  "total": 5},
+        "Action Sequences":       {"intent_ok": 4,  "total": 5}
+      }
+    },
+    "gemini-2.5-flash": {
+      "name": "Gemini-2.5-Flash",
+      "provider": "Google",
+      "tier": "medium",
+      "metrics": {
+        "total": 125,
+        "intent_accuracy": 0.928,
+        "parse_success_rate": 1.0,
+        "apply_success_rate": 0.928,
+        "avg_latency_ms": 4162,
+        "total_tokens_in": 641936,
+        "total_tokens_out": 3531,
+        "cost_per_100_commands": 0.0787
+      },
+      "per_category": {
+        "Object Creation":        {"intent_ok": 10, "total": 10},
+        "Movement - Directional": {"intent_ok": 15, "total": 15},
+        "Movement - Positional":  {"intent_ok": 5,  "total": 5},
+        "Recolor":                {"intent_ok": 10, "total": 10},
+        "Scale - Natural Language":{"intent_ok": 10,"total": 10},
+        "Scale - Explicit":       {"intent_ok": 5,  "total": 5},
+        "Rotation - Simple":      {"intent_ok": 10, "total": 10},
+        "Rotation - Axis Specified":{"intent_ok": 10,"total": 10},
+        "Deletion":               {"intent_ok": 5,  "total": 5},
+        "Prefabs - Add":          {"intent_ok": 8,  "total": 8},
+        "Prefabs - Transform":    {"intent_ok": 4,  "total": 12},
+        "Composite Objects":      {"intent_ok": 10, "total": 10},
+        "Scene Management":       {"intent_ok": 5,  "total": 5},
+        "Undo/Redo Tests":        {"intent_ok": 5,  "total": 5},
+        "Action Sequences":       {"intent_ok": 4,  "total": 5}
+      }
+    }
+  }
+}
