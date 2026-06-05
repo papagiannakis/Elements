@@ -3,7 +3,7 @@
 `textToScene` is an extension inside the `Elements` repository. It generates runnable Python scene scripts for the `Elements` graphics framework from a structured scene representation, and it also supports an experimental text-driven scene editing loop with preview, apply, reject, and undo actions.
 
 The core idea is a hierarchical scene IR. A scene is represented as a tree of nodes, and the generator converts that IR into executable `Elements` / OpenGL code.
-
+## DEMO link : https://www.youtube.com/playlist?list=PLf1EzQl7CZ7MkCu0miatQ6SBcNevK5I1s
 ## Features
 
 - Hierarchical scene representation using a scene IR
@@ -228,11 +228,3 @@ Current tests cover prefab-related controller behavior.
 - Preview files are written to `Desktop/scene_bridge`.
 - `src/text_parser.py` exists as a simple text-to-IR utility, but the current interactive workflow is centered around the generated scene, the controller, and the supervisor.
 - The `legacy/` folder contains scene-generation examples and test scripts from earlier stages of the project.
-
-## Current limitations
-
-- Some command parsing is still rule-based
-- The editing workflow is built around file-based coordination
-- Rendering and texture support are still basic
-- The run flow still depends on the Desktop bridge/output convention
-- Several example entry points still live under `src/legacy/`
