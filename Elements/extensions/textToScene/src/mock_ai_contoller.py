@@ -17,39 +17,19 @@ from llm_parser import (
 )
 from prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed, build_table, build_lamp
 
-from config import TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR
+from config import (
+    TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR,
+    SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
+    PROJECT_SCENE_IR_FILE,
+    SCENE_IR_FILE, PREVIEW_IR_FILE, AI_REQUEST_FILE,
+    UI_STATE_FILE, SCENE_STATE_FILE,
+    SCENE_OUT_FILE, PREVIEW_SCENE_FILE,
+    HISTORY_STACK_FILE,
+    POLL_INTERVAL, GRID_SPACING, CUBE_Y, CUBE_Z,
+    ensure_runtime_dirs,
+)
 
-
-PROJECT_DIR = Path(__file__).resolve().parent
-PROJECT_SCENE_IR_FILE = PROJECT_DIR / "scene_ir.json"
-
-SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
-SHARED_DIR.mkdir(parents=True, exist_ok=True)
-
-HISTORY_DIR = SHARED_DIR / "history"
-HISTORY_DIR.mkdir(parents=True, exist_ok=True)
-
-SAVED_SCENES_DIR = SHARED_DIR / "saved_scenes"
-SAVED_SCENES_DIR.mkdir(parents=True, exist_ok=True)
-
-PREFABS_DIR = SHARED_DIR / "prefabs"
-PREFABS_DIR.mkdir(parents=True, exist_ok=True)
-
-HISTORY_STACK_FILE = HISTORY_DIR / "undo_stack.json"
-
-SCENE_IR_FILE = SHARED_DIR / "scene_ir.json"
-PREVIEW_IR_FILE = SHARED_DIR / "preview_scene_ir.json"
-AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
-UI_STATE_FILE = SHARED_DIR / "ui_state.json"
-SCENE_STATE_FILE = SHARED_DIR / "scene_state.json"
-
-SCENE_OUT_FILE = Path.home() / "Desktop" / "scene_out.py"
-PREVIEW_SCENE_FILE = SHARED_DIR / "preview_scene.py"
-
-POLL_INTERVAL = 0.5
-GRID_SPACING = 1.5
-CUBE_Y = 0.5
-CUBE_Z = 0.0
+ensure_runtime_dirs()
 _OBJECT_MIN_CLEARANCE = 0.1  # minimum gap between object footprints
 
 COLOR_TABLE = {
@@ -981,16 +961,12 @@ def find_position_right_of_target(scene_ir, target_node, target_group=None, dest
     return world_position
 
 
-def find_position_on_top_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_object_id=None):
+def find_position_on_top_of_target(scene_ir, target_node, target_group=None, destination_group=None, exclude_object_id=None, new_object_scale=None):
     base = get_world_position(target_node, target_group)
     scale = get_scale(target_node)
-    desired_world_position = [base[0], base[1] + scale[1], base[2]]
-
-    world_position = find_nearest_free_world_position(
-        scene_ir,
-        desired_world_position,
-        exclude_object_id=exclude_object_id
-    )
+    target_top = base[1] + scale[1] / 2.0
+    new_half_height = (new_object_scale[1] / 2.0) if new_object_scale else 0.5
+    world_position = [base[0], target_top + new_half_height, base[2]]
 
     if destination_group is not None:
         return world_to_local_position(world_position, destination_group)
@@ -2113,6 +2089,8 @@ def validate_action(action):
         "remove_texture",
         "add_custom_object",
         "add_custom_model",
+        "rotate_object",
+        "create_group",
         "add_light",
         "delete_light",
         "move_light",
@@ -2889,11 +2867,6 @@ def apply_action_to_ir(scene_ir, action):
 
         default_y = max(0.5, 0.5 * float(object_scale[1]))
 
-        if explicit_position is not None:
-            desired_world_position = find_nearest_free_world_position(new_ir, explicit_position)
-        else:
-            desired_world_position = find_next_free_world_position(new_ir, preferred_y=default_y)
-
         placement = action.get("placement", {})
         relation = placement.get("relation")
 
@@ -2910,8 +2883,20 @@ def apply_action_to_ir(scene_ir, action):
                     desired_world_position = find_position_on_top_of_target(
                         new_ir,
                         target,
-                        target_group=target_group
+                        target_group=target_group,
+                        new_object_scale=object_scale
                     )
+            else:
+                # Target not found — use explicit position as-is (no XZ collision shift)
+                # or fall back to next free slot
+                if explicit_position is not None:
+                    desired_world_position = explicit_position
+                else:
+                    desired_world_position = find_next_free_world_position(new_ir, preferred_y=default_y)
+        elif explicit_position is not None:
+            desired_world_position = find_nearest_free_world_position(new_ir, explicit_position)
+        else:
+            desired_world_position = find_next_free_world_position(new_ir, preferred_y=default_y)
 
         position = [
             float(desired_world_position[0]),

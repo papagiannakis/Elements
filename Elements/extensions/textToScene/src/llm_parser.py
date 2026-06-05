@@ -8,13 +8,9 @@ from pathlib import Path
 from openai import OpenAI
 
 try:
-   # from config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
-#except ImportError:
-    #from .config import ACTION_CACHE_FILE, API_KEY_ENV, CACHE_DIR, DEFAULT_MODEL
-
-    from config import ACTION_CACHE_FILE, OPENAI_API_KEY, CACHE_DIR, DEFAULT_MODEL
+    from config import ACTION_CACHE_FILE, OPENAI_API_KEY, GEMINI_API_KEY, CACHE_DIR, DEFAULT_MODEL
 except ImportError:
-    from .config import ACTION_CACHE_FILE, OPENAI_API_KEY, CACHE_DIR, DEFAULT_MODEL
+    from .config import ACTION_CACHE_FILE, OPENAI_API_KEY, GEMINI_API_KEY, CACHE_DIR, DEFAULT_MODEL
 
 ACTION_SEQUENCE_ALIASES = (
     "action_sequence",
@@ -36,6 +32,79 @@ def get_client():
     if not OPENAI_API_KEY:
         raise RuntimeError("Missing OPENAI_API_KEY environment variable")
     return OpenAI(api_key=OPENAI_API_KEY)
+
+
+# ------------------------------------------------------------------
+# Low-level API callers — one per provider
+# ------------------------------------------------------------------
+
+def _call_openai(model_name, prompt_text):
+    """Call OpenAI Responses API. Returns (text, tokens_in, tokens_out)."""
+    client = get_client()
+    response = client.responses.create(model=model_name, input=prompt_text)
+    text = getattr(response, "output_text", None)
+    if not text:
+        raise ValueError("OpenAI returned empty response")
+    usage = getattr(response, "usage", None)
+    tokens_in  = int(getattr(usage, "input_tokens",  0) or 0) if usage else 0
+    tokens_out = int(getattr(usage, "output_tokens", 0) or 0) if usage else 0
+    return text, tokens_in, tokens_out
+
+
+def _call_gemini(model_name, prompt_text):
+    """Call Google Gemini API. Returns (text, tokens_in, tokens_out).
+
+    Uses the google-genai SDK (pip install google-genai).
+    Retries up to 3 times on 429 rate-limit errors with exponential backoff.
+    """
+    if not GEMINI_API_KEY:
+        raise RuntimeError("GEMINI_API_KEY not set. Add it to your .env file.")
+    try:
+        from google import genai as google_genai
+        from google.genai import errors as genai_errors
+    except ImportError:
+        raise RuntimeError(
+            "Google GenAI package not installed.\nRun: pip install google-genai"
+        )
+
+    client = google_genai.Client(api_key=GEMINI_API_KEY)
+
+    max_retries = 3
+    wait = 30  # seconds – free tier allows ~15 req/min
+    for attempt in range(max_retries):
+        try:
+            response = client.models.generate_content(
+                model=model_name,
+                contents=prompt_text,
+            )
+            text = response.text
+            usage = getattr(response, "usage_metadata", None)
+            tokens_in  = int(getattr(usage, "prompt_token_count",     0) or 0) if usage else 0
+            tokens_out = int(getattr(usage, "candidates_token_count", 0) or 0) if usage else 0
+            return text, tokens_in, tokens_out
+        except genai_errors.ClientError as e:
+            if "429" in str(e) or "RESOURCE_EXHAUSTED" in str(e):
+                if attempt < max_retries - 1:
+                    print(f"\n  [Gemini] Rate limit hit — waiting {wait}s before retry {attempt + 2}/{max_retries}...")
+                    time.sleep(wait)
+                    wait *= 2  # exponential backoff
+                else:
+                    raise RuntimeError(
+                        f"Gemini quota exhausted after {max_retries} retries.\n"
+                        "Options:\n"
+                        "  1. Enable billing at https://ai.google.dev\n"
+                        "  2. Wait and retry later\n"
+                        f"  Original error: {e}"
+                    )
+            else:
+                raise
+
+
+def _call_llm(model_name, prompt_text):
+    """Route to the appropriate provider based on model name prefix."""
+    if str(model_name).lower().startswith("gemini"):
+        return _call_gemini(model_name, prompt_text)
+    return _call_openai(model_name, prompt_text)
 
 
 def build_scene_context(scene_ir):
@@ -230,6 +299,16 @@ Allowed axis values for rotate_object: x, y, z
       "factor": 1.5
     }
   ]
+}
+
+{
+  "action": "add_object",
+  "object_type": "sphere",
+  "color": "blue",
+  "placement": {
+    "relation": "on_top_of",
+    "target": "red cube"
+  }
 }
 
 {
@@ -676,20 +755,12 @@ pole:  y in [0.10, 2.10]  — base top = 0.20, pole bottom = 0.10: overlap! FIX:
 def parse_composite_spec_with_llm(object_name, primitive_type, model_name=None):
     """Call the LLM with a focused object-design prompt.
 
-    Returns a validated list of part dicts, each with keys:
-    name, shape, position ([x,y,z]), scale ([sx,sy,sz]).
-
-    Raises ValueError if the LLM response is unusable.
+    Returns a validated list of part dicts (name, shape, position, scale).
+    Raises ValueError if the response is unusable.
     """
-    client = get_client()
     full_prompt = build_composite_spec_prompt(object_name, primitive_type)
+    raw_text, _, _ = _call_llm(model_name or DEFAULT_MODEL, full_prompt)
 
-    response = client.responses.create(
-        model=model_name or DEFAULT_MODEL,
-        input=full_prompt
-    )
-
-    raw_text = getattr(response, "output_text", None)
     if not raw_text:
         raise ValueError("LLM returned empty response for composite spec")
 
@@ -707,21 +778,23 @@ def parse_composite_spec_with_llm(object_name, primitive_type, model_name=None):
 
 
 def parse_prompt_to_action_with_llm(prompt, scene_ir, model_name=None):
-    client = get_client()
+    """Parse a user prompt into a structured action dict using the LLM.
+
+    Attaches _tokens_in / _tokens_out to the returned action dict so the
+    evaluation runner can compute cost metrics.
+    """
     scene_context = build_scene_context(scene_ir)
     full_prompt = build_prompt(prompt, scene_context)
 
-    response = client.responses.create(
-        model=model_name or DEFAULT_MODEL,
-        input=full_prompt
-    )
+    raw_text, tokens_in, tokens_out = _call_llm(model_name or DEFAULT_MODEL, full_prompt)
 
-    raw_text = getattr(response, "output_text", None)
     if not raw_text:
-        raise ValueError("OpenAI returned empty text")
+        raise ValueError("LLM returned empty text")
 
     json_text = extract_json_object(raw_text)
     action = json.loads(json_text)
     action = normalize_parsed_action(action)
+    action["_tokens_in"]  = tokens_in
+    action["_tokens_out"] = tokens_out
 
     return action
