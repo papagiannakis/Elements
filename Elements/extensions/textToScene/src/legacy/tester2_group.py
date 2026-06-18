@@ -51,5 +51,5 @@ script = generate_scene_script(scene_ir)
 compile(script, "scene_out.py", "exec")
 print("Syntax OK")
 
-save_script(script, r"C:\Users\yanni\Desktop\scene_out.py")
+save_script(script)
 print("Saved successfully")

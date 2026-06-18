@@ -1,4 +1,5 @@
 import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+from pathlib import Path
 from code_generator import generate_scene_script, save_script
 
 scene_ir = {
@@ -22,7 +23,7 @@ scene_ir = {
             "material": {
                 "texture": {
                     "enabled": True,
-                    "path": r"C:\Users\yanni\Desktop\brick.jpg"
+                    "path": str(Path.home() / "Desktop" / "brick.jpg")
                 }
             }
         }
@@ -34,5 +35,5 @@ script = generate_scene_script(scene_ir)
 compile(script, "scene_out.py", "exec")
 print("Syntax OK")
 
-save_script(script, r"C:\Users\yanni\Desktop\scene_out.py")
+save_script(script)
 print("Saved successfully")
