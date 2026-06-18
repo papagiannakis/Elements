@@ -19,7 +19,7 @@ from pathlib import Path
 from copy import deepcopy
 
 # Suppress FutureWarnings from google-auth on Python 3.9 EOL
-warnings.filterwarnings("ignore", category=FutureWarning, module="google")
+warnings.filterwarnings("ignore", category=FutureWarning, module="gemini")
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 

@@ -6,10 +6,10 @@ ask it to generate a new scene from a natural language prompt.
 Compare success rate against textToScene (which always produces valid code).
 
 Metrics:
-  syntax_ok   – generated code is valid Python (ast.compile)
-  api_ok      – contains required Elements API patterns
-  no_halluc   – does NOT use known hallucinated API patterns
-  full_ok     – all three pass  (the "apples-to-apples" success criterion)
+  syntax_ok  generated code is valid Python (ast.compile)
+  api_ok     contains required Elements API patterns
+  no_halluc  does NOT use known hallucinated API patterns
+  full_ok    all three pass  (the "apples-to-apples" success criterion)
 
 Run: python tests/evaluate_fewshot.py
 """
@@ -32,7 +32,7 @@ from config import GEMINI_API_KEY, OPENAI_API_KEY
 DOCS     = Path(__file__).parent.parent / "docs"
 OUT_JSON = DOCS / "all_results.json"
 
-# ── generate 3 compact example scenes from the IR ─────────────────────────────
+# generate 3 compact example scenes from the IR 
 
 def _gen(ir_children, title="Scene"):
     ir = {
@@ -89,7 +89,7 @@ EXAMPLE_3 = _trim(_gen([
     },
 ], "Cone and Pyramid"))
 
-# ── few-shot system prompt ─────────────────────────────────────────────────────
+#few-shot system prompt
 
 FEW_SHOT_SYSTEM = """You are an expert in the Elements Python computer graphics framework.
 Generate complete, runnable Python scene scripts using the Elements API.
@@ -222,7 +222,7 @@ def evaluate_generated_code(code):
                       ([f"Hallucination: {halluc}"] if not noh_ok else [])),
     }
 
-# ── run evaluation ─────────────────────────────────────────────────────────────
+# run evaluation
 
 def run_fewshot_eval(model_id, delay=4.5):
     print(f"\n{'#'*60}")

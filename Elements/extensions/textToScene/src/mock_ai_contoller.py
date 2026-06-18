@@ -3353,6 +3353,7 @@ def apply_action_to_ir(scene_ir, action):
     raise ValueError("Unsupported action type: " + str(action_name))
 
 def main():
+    from config import EXTENSION_DIR as PROJECT_DIR
     print("[controller] Mock AI controller started.")
     print("[controller] PROJECT_DIR =", PROJECT_DIR)
     print("[controller] official scene_ir path used:", SCENE_IR_FILE)
