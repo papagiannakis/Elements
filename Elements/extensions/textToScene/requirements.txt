@@ -3,6 +3,8 @@ openai
 PyOpenGL
 imgui
 pytest
+python-dotenv
+matplotlib
 
 # Local project dependency:
 # This extension imports the in-repo `Elements` framework/package.
