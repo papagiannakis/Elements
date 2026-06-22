@@ -234,10 +234,10 @@ def create_pyramid(params):
 
     indices = np.array((
         0,1,2, 0,2,3,
-        0,1,4,
-        1,2,4,
-        2,3,4,
-        3,0,4
+        0,4,1,
+        1,4,2,
+        2,4,3,
+        3,4,0
     ), dtype=np.uint32)
     colors = make_color_array(color, len(vertices))
     return vertices, indices, colors
@@ -284,18 +284,15 @@ def create_cylinder(params):
     vertices = []
     indices = []
 
-    # ring vertices
+    # Side vertices.
     for i in range(segments):
         angle = 2 * np.pi * i / segments
         x = radius_x * np.cos(angle)
         z = radius_z * np.sin(angle)
 
-        # bottom
         vertices.append([x, -height / 2, z, 1.0])
-        # top
         vertices.append([x, height / 2, z, 1.0])
 
-    # side faces
     for i in range(segments):
         i_bottom_1 = i * 2
         i_top_1 = i * 2 + 1
@@ -305,24 +302,35 @@ def create_cylinder(params):
         indices += [i_bottom_1, i_top_1, i_top_2]
         indices += [i_bottom_1, i_top_2, i_bottom_2]
 
-    # center vertices for caps
+    # Top cap uses separate vertices so its flat normal does not blend into the side.
     top_center_index = len(vertices)
     vertices.append([0.0, height / 2, 0.0, 1.0])
+    top_ring_start = len(vertices)
+    for i in range(segments):
+        angle = 2 * np.pi * i / segments
+        x = radius_x * np.cos(angle)
+        z = radius_z * np.sin(angle)
+        vertices.append([x, height / 2, z, 1.0])
 
+    for i in range(segments):
+        top_1 = top_ring_start + i
+        top_2 = top_ring_start + (i + 1) % segments
+        indices += [top_center_index, top_2, top_1]
+
+    # Bottom cap uses separate vertices for the same reason.
     bottom_center_index = len(vertices)
     vertices.append([0.0, -height / 2, 0.0, 1.0])
-
-    # top cap
+    bottom_ring_start = len(vertices)
     for i in range(segments):
-        top_1 = i * 2 + 1
-        top_2 = (i * 2 + 3) % (segments * 2)
-        indices += [top_center_index, top_1, top_2]
+        angle = 2 * np.pi * i / segments
+        x = radius_x * np.cos(angle)
+        z = radius_z * np.sin(angle)
+        vertices.append([x, -height / 2, z, 1.0])
 
-    # bottom cap
     for i in range(segments):
-        bottom_1 = i * 2
-        bottom_2 = (i * 2 + 2) % (segments * 2)
-        indices += [bottom_center_index, bottom_2, bottom_1]
+        bottom_1 = bottom_ring_start + i
+        bottom_2 = bottom_ring_start + (i + 1) % segments
+        indices += [bottom_center_index, bottom_1, bottom_2]
 
     vertices = np.array(vertices, dtype=np.float32)
     indices = np.array(indices, dtype=np.uint32)
@@ -345,15 +353,32 @@ def create_cone(params):
     vertices = [[0.0, height / 2, 0.0, 1.0]]
     indices = []
 
+    # Side ring.
     for i in range(segments):
         angle = 2 * np.pi * i / segments
         x = radius * np.cos(angle)
         z = radius * np.sin(angle)
         vertices.append([x, -height / 2, z, 1.0])
 
-    for i in range(1, segments):
-        indices += [0, i, i + 1]
-    indices += [0, segments, 1]
+    for i in range(segments):
+        current_base = 1 + i
+        next_base = 1 + (i + 1) % segments
+        indices += [0, next_base, current_base]
+
+    # Base cap uses separate vertices so the flat bottom normal is preserved.
+    base_center_index = len(vertices)
+    vertices.append([0.0, -height / 2, 0.0, 1.0])
+    base_ring_start = len(vertices)
+    for i in range(segments):
+        angle = 2 * np.pi * i / segments
+        x = radius * np.cos(angle)
+        z = radius * np.sin(angle)
+        vertices.append([x, -height / 2, z, 1.0])
+
+    for i in range(segments):
+        base_1 = base_ring_start + i
+        base_2 = base_ring_start + (i + 1) % segments
+        indices += [base_center_index, base_1, base_2]
 
     vertices = np.array(vertices, dtype=np.float32)
     indices = np.array(indices, dtype=np.uint32)
@@ -367,8 +392,8 @@ def create_cone(params):
 # Sphere 
 # ---------------------
 def create_sphere(params):
-    lat = params.get("lat", 10)
-    lon = params.get("lon", 10)
+    lat = params.get("lat", 30)
+    lon = params.get("lon", 30)
     scale = params.get("scale", [1.0, 1.0, 1.0])
     color = params.get("color", [0.8, 0.0, 0.8])
 
@@ -376,31 +401,48 @@ def create_sphere(params):
     ry = 0.5 * scale[1]
     rz = 0.5 * scale[2]
 
-    vertices = []
+    vertices = [
+        [0.0, ry, 0.0, 1.0],
+    ]
     indices = []
 
-    for i in range(lat+1):
+    for i in range(1, lat):
         theta = np.pi * i / lat
-        for j in range(lon+1):
-            phi = 2*np.pi*j/lon
-
-            x = rx*np.sin(theta)*np.cos(phi)
-            y = ry*np.cos(theta)
-            z = rz*np.sin(theta)*np.sin(phi)
-
-            vertices.append([x,y,z,1])
-
-    for i in range(lat):
         for j in range(lon):
-            a = i*(lon+1)+j
-            b = a+lon+1
+            phi = 2 * np.pi * j / lon
 
-            indices += [a,b,a+1]
-            indices += [b,b+1,a+1]
+            x = rx * np.sin(theta) * np.cos(phi)
+            y = ry * np.cos(theta)
+            z = rz * np.sin(theta) * np.sin(phi)
+
+            vertices.append([x, y, z, 1])
+
+    bottom_index = len(vertices)
+    vertices.append([0.0, -ry, 0.0, 1.0])
+
+    def ring_index(ring, column):
+        return 1 + ring * lon + (column % lon)
+
+    for j in range(lon):
+        indices += [0, ring_index(0, j + 1), ring_index(0, j)]
+
+    for i in range(lat - 2):
+        for j in range(lon):
+            a = ring_index(i, j)
+            b = ring_index(i, j + 1)
+            c = ring_index(i + 1, j)
+            d = ring_index(i + 1, j + 1)
+
+            indices += [a, b, c]
+            indices += [c, b, d]
+
+    last_ring = lat - 2
+    for j in range(lon):
+        indices += [bottom_index, ring_index(last_ring, j), ring_index(last_ring, j + 1)]
 
     vertices = np.array(vertices, dtype=np.float32)
     indices = np.array(indices, dtype=np.uint32)
-    colors = make_color_array(params.get("color"), len(vertices))
+    colors = make_color_array(color, len(vertices))
 
     return vertices, indices, colors
 
