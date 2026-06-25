@@ -26,8 +26,10 @@ HISTORY_DIR     = SHARED_DIR  / "history"
 SAVED_SCENES_DIR= SHARED_DIR  / "saved_scenes"
 PREFABS_DIR     = SHARED_DIR  / "prefabs"
 CACHE_DIR       = SHARED_DIR  / "cache"
-TEXTURES_DIR    = SHARED_DIR  / "textures"
 CUSTOM_MODELS_DIR = SHARED_DIR / "custom_models"
+
+# Textures live in the repo so they are always available after cloning
+TEXTURES_DIR    = EXTENSION_DIR / "assets" / "textures"
 
 # ── File paths ────────────────────────────────────────────────────────────────
 PROJECT_SCENE_IR_FILE = SRC_DIR / "scene_ir.json"
@@ -82,6 +84,6 @@ def ensure_runtime_dirs():
     """Create all runtime directories that must exist before the system starts."""
     for path in (
         RUNTIME_DIR, SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
-        CACHE_DIR, TEXTURES_DIR, CUSTOM_MODELS_DIR,
+        CACHE_DIR, CUSTOM_MODELS_DIR,
     ):
         os.makedirs(str(path), exist_ok=True)
