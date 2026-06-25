@@ -5,6 +5,7 @@ Defines all runtime paths, bridge files, model settings, and layout constants
 used by the controller, parser, supervisor, and code generator.
 """
 import os
+import os.path
 from pathlib import Path
 from dotenv import load_dotenv
 
@@ -14,10 +15,13 @@ load_dotenv(dotenv_path=_env_path)
 
 # ── Directory layout ──────────────────────────────────────────────────────────
 SRC_DIR       = Path(__file__).resolve().parent
-EXTENSION_DIR = SRC_DIR.parent
+EXTENSION_DIR = SRC_DIR.parent          # extensions/textToScene/
 DESKTOP_DIR   = Path.home() / "Desktop"
 
-SHARED_DIR      = DESKTOP_DIR / "scene_bridge"
+# Runtime state lives in ~/.textToScene/ — inside the user's home directory,
+# NOT on the Desktop. This directory is always writable on all platforms.
+RUNTIME_DIR     = Path.home() / ".textToScene"
+SHARED_DIR      = RUNTIME_DIR / "scene_bridge"
 HISTORY_DIR     = SHARED_DIR  / "history"
 SAVED_SCENES_DIR= SHARED_DIR  / "saved_scenes"
 PREFABS_DIR     = SHARED_DIR  / "prefabs"
@@ -28,22 +32,32 @@ CUSTOM_MODELS_DIR = SHARED_DIR / "custom_models"
 # ── File paths ────────────────────────────────────────────────────────────────
 PROJECT_SCENE_IR_FILE = SRC_DIR / "scene_ir.json"
 
-SCENE_IR_FILE     = SHARED_DIR / "scene_ir.json"
-PREVIEW_IR_FILE   = SHARED_DIR / "preview_scene_ir.json"
-AI_REQUEST_FILE   = SHARED_DIR / "ai_request.json"
-UI_STATE_FILE     = SHARED_DIR / "ui_state.json"
-SCENE_STATE_FILE  = SHARED_DIR / "scene_state.json"
+SCENE_IR_FILE     = SHARED_DIR  / "scene_ir.json"
+PREVIEW_IR_FILE   = SHARED_DIR  / "preview_scene_ir.json"
+AI_REQUEST_FILE   = SHARED_DIR  / "ai_request.json"
+UI_STATE_FILE     = SHARED_DIR  / "ui_state.json"
+SCENE_STATE_FILE  = SHARED_DIR  / "scene_state.json"
 HISTORY_STACK_FILE= HISTORY_DIR / "undo_stack.json"
-ACTION_CACHE_FILE = CACHE_DIR  / "action_cache.json"
+ACTION_CACHE_FILE = CACHE_DIR   / "action_cache.json"
 
-SCENE_OUT_FILE    = DESKTOP_DIR / "scene_out.py"
+SCENE_OUT_FILE      = RUNTIME_DIR / "scene_out.py"
 OFFICIAL_SCENE_FILE = SCENE_OUT_FILE
-PREVIEW_SCENE_FILE  = SHARED_DIR / "preview_scene.py"
+PREVIEW_SCENE_FILE  = SHARED_DIR  / "preview_scene.py"
 
 # ── API keys & model ──────────────────────────────────────────────────────────
 OPENAI_API_KEY = os.environ.get("OPENAI_API_KEY", "")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
-DEFAULT_MODEL  = "gemini-2.5-flash-lite"
+
+# ── LLM model selection ───────────────────────────────────────────────────────
+# Uncomment the backend you want to use and set the matching API key in .env.
+#
+# Google Gemini (requires GEMINI_API_KEY):
+DEFAULT_MODEL = "gemini-2.5-flash-lite"   # fastest / best accuracy in eval
+# DEFAULT_MODEL = "gemini-2.5-flash"      # larger Gemini model — more capable
+#
+# OpenAI (requires OPENAI_API_KEY):
+# DEFAULT_MODEL = "gpt-4o-mini"           # fast and cheap
+# DEFAULT_MODEL = "gpt-4.1-mini"          # newer OpenAI mini model
 
 # ── Layout constants ──────────────────────────────────────────────────────────
 POLL_INTERVAL  = 0.5
@@ -67,7 +81,7 @@ TEXTURE_CATALOGUE = {
 def ensure_runtime_dirs():
     """Create all runtime directories that must exist before the system starts."""
     for path in (
-        SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
+        RUNTIME_DIR, SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
         CACHE_DIR, TEXTURES_DIR, CUSTOM_MODELS_DIR,
     ):
-        path.mkdir(parents=True, exist_ok=True)
+        os.makedirs(str(path), exist_ok=True)
