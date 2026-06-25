@@ -9,8 +9,8 @@ from types import ModuleType
 import numpy as np
 
 # ── paths ──────────────────────────────────────────────────────────────────
-_SRC = Path(__file__).resolve().parent.parent / "Documents" / "GitHub" / "Elements" / "Elements" / "extensions" / "textToScene" / "src"
-_REPO = _SRC.parent.parent.parent.parent.parent  # Elements repo root
+_SRC  = Path(__file__).resolve().parent.parent / "src"
+_REPO = _SRC.parent.parent.parent.parent        # Elements repo root
 sys.path.insert(0, str(_SRC))
 sys.path.insert(0, str(_REPO))
 

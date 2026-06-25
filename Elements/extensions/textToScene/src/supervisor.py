@@ -24,9 +24,6 @@ except ImportError:
     )
 
 
-ensure_runtime_dirs()
-
-
 def read_json(path, default=None):
     path = Path(path)
 
@@ -128,17 +125,25 @@ def stop_scene(proc):
         proc.wait(timeout=5)
 
 
+MAX_RESTART_ATTEMPTS = 5   # max quick consecutive crashes before giving up
+CRASH_WINDOW_SECONDS  = 10  # a crash counts as "quick" if it happens within this window
+
+
 def main():
+    ensure_runtime_dirs()
     print("[supervisor] Starting.")
     print("[supervisor] SHARED_DIR =", SHARED_DIR)
     print("[supervisor] SCENE_STATE_FILE =", SCENE_STATE_FILE)
     print("[supervisor] OFFICIAL_SCENE_FILE =", OFFICIAL_SCENE_FILE)
     print("[supervisor] PREVIEW_SCENE_FILE =", PREVIEW_SCENE_FILE)
+    print("[supervisor] To exit: press Ctrl+C here (do NOT close the scene window with ESC).")
 
     ensure_initial_state()
 
     current_proc = None
-    current_key = None
+    current_key  = None
+    crash_count  = 0
+    last_launch_time = 0.0
 
     try:
         while True:
@@ -147,14 +152,28 @@ def main():
             desired_key = scene_state_key(scene_state, desired_script)
 
             if current_proc is not None and current_proc.poll() is not None:
-                print("[supervisor] Scene process exited.")
+                elapsed = time.time() - last_launch_time
+                if elapsed < CRASH_WINDOW_SECONDS:
+                    crash_count += 1
+                else:
+                    crash_count = 1  # slow exit — reset counter
+                print(f"[supervisor] Scene process exited (crash #{crash_count} in {elapsed:.1f}s).")
                 current_proc = None
-                current_key = None
+                current_key  = None
+
+                if crash_count >= MAX_RESTART_ATTEMPTS:
+                    print("[supervisor] ERROR: scene crashed too many times in a row.")
+                    print("[supervisor] Check for Python errors in the scene script above.")
+                    print("[supervisor] Stopping. Fix the error and restart the supervisor.")
+                    break
 
             if current_proc is None or current_key != desired_key:
                 stop_scene(current_proc)
                 current_proc = launch_scene(desired_script)
-                current_key = desired_key
+                current_key  = desired_key
+                last_launch_time = time.time()
+                if current_key == desired_key:
+                    crash_count = 0  # successful launch of a new scene resets counter
 
             time.sleep(POLL_INTERVAL)
 

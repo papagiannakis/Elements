@@ -1,5 +1,6 @@
 # code_generator.py
 import json
+import os
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional
@@ -496,7 +497,7 @@ import json
 import time
 from pathlib import Path
 
-SHARED_DIR = Path.home() / "Desktop" / "scene_bridge"
+SHARED_DIR = Path.home() / ".textToScene" / "scene_bridge"
 SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
@@ -1445,15 +1446,17 @@ def save_script(script, output_path: Optional[str] = None):
     ''' #ISSUE WITH PATHS RESTRICTIONS AND SAVING 
 def save_script(script, output_path: Optional[str] = None):
     if output_path is None:
-        output_file = Path.home() / "Desktop" / "scene_out.py"
+        try:
+            from config import SCENE_OUT_FILE
+            output_file = SCENE_OUT_FILE
+        except ImportError:
+            output_file = Path.home() / ".textToScene" / "scene_out.py"
     else:
         output_file = Path(output_path).resolve()
 
+    os.makedirs(str(output_file.parent), exist_ok=True)
     with open(str(output_file), "w", encoding="utf-8") as f:
         f.write(script)
 
     print("Saved script to:", output_file)
-
-    #keep the old saving method as a fallback in case of issues with desktop path
-    # base_dir = Path(__file__).resolve().parent 
 

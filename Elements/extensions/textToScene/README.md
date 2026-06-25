@@ -44,7 +44,7 @@ The core idea is a **hierarchical scene IR** (intermediate representation). A sc
 
 ## Architecture
 
-The system runs as **three independent processes** that communicate through JSON files on the Desktop (`scene_bridge/`). No sockets or shared memory are used.
+The system runs as **three independent processes** that communicate through JSON files in `extensions/textToScene/runtime/scene_bridge/`. No sockets or shared memory are used.
 
 
 ### Edit loop (step by step)
@@ -116,9 +116,7 @@ extensions/textToScene/
     ├── test_rotate_object.py      rotation action tests
     ├── evaluation_runner.py       automated evaluation harness
     ├── evaluate_baseline.py       baseline (no few-shot) evaluation
-    ├── evaluate_fewshot.py        few-shot LLM evaluation
-    ├── consolidate_results.py     merge evaluation JSON results
-    └── generate_charts.py         plot evaluation charts
+    └── evaluate_fewshot.py        few-shot LLM evaluation
 ```
 
 ---
@@ -134,25 +132,28 @@ git clone <elements-repo-url>
 cd Elements
 ```
 
-### 2. Create and activate a virtual environment (recommended)
+### 2. Create and activate a conda environment
+
+`textToScene` requires **Python 3.9** — this is a hard requirement for `google-genai`. Use conda to create an isolated environment with the correct version and the OpenGL/SDL2 packages the `Elements` framework needs.
+
+**Windows / macOS / Linux:**
 
 ```bash
-python -m venv elementtest
-# Windows
-elementtest\Scripts\activate
-# macOS / Linux
-source elementtest/bin/activate
+conda create -n elementtest python=3.9
+conda activate elementtest
+conda install -c conda-forge pysdl2 pyopengl numpy
 ```
 
-### 3. Install dependencies
+### 3. Install Python dependencies
 
-From `extensions/textToScene/`:
+Navigate into the extension folder (all commands from this point on run from here):
 
 ```bash
+cd extensions/textToScene
 pip install -r requirements.txt
 ```
 
-The `Elements` package itself is imported from the parent repository workspace and does **not** need a separate install step, provided the repo root is on your `PYTHONPATH` (the legacy scripts handle this with `sys.path.insert`).
+This installs `google-genai`, `openai`, `python-dotenv`, and other pure-Python packages. The `Elements` framework itself is imported from the parent repository and does not need a separate install step — scripts add the repo root to `sys.path` automatically.
 
 ---
 
@@ -163,69 +164,114 @@ The `Elements` package itself is imported from the parent repository workspace a
 Create a file called `.env` in `extensions/textToScene/` (it is gitignored):
 
 ```
+GEMINI_API_KEY=your-google-ai-key-here
 OPENAI_API_KEY=sk-...
-GEMINI_API_KEY=...        # optional, not used in current code
 ```
 
 `config.py` loads this file automatically via `python-dotenv` at startup.
 
-If you skip the API key the controller still runs — it falls back to rule-based parsing for simple commands. You will see a warning in the terminal for any prompt that requires the LLM.
+**To verify the keys are loaded correctly**, run this from `extensions/textToScene/` (do **not** run from inside `src/` — the `.env` file lives one level up):
 
-### `src/config.py`
+```bash
+python -c "from dotenv import load_dotenv; load_dotenv('.env'); import os; print('Gemini key present:', bool(os.environ.get('GEMINI_API_KEY'))); print('OpenAI key present:', bool(os.environ.get('OPENAI_API_KEY')))"
+```
 
-All runtime paths and constants live here. The important ones:
+If both print `False`, the `.env` file is missing or is in the wrong directory. Make sure it is at `extensions/textToScene/.env`, not inside `src/`.
 
-| Constant | Default | Description |
+If you skip the API key the controller still runs — it falls back to rule-based parsing for simple commands. You will see a yellow warning in the controller terminal whenever the LLM is not reached.
+
+### Choosing an LLM model (`src/config.py`)
+
+Open `src/config.py` and uncomment the `DEFAULT_MODEL` line for the backend you want. Make sure the matching API key is in `.env`.
+
+```python
+# Google Gemini (best accuracy in evaluation — requires GEMINI_API_KEY):
+DEFAULT_MODEL = "gemini-2.5-flash-lite"   # default — fast
+# DEFAULT_MODEL = "gemini-2.5-flash"      # larger, slower
+
+# OpenAI (requires OPENAI_API_KEY):
+# DEFAULT_MODEL = "gpt-4o-mini"
+# DEFAULT_MODEL = "gpt-4.1-mini"
+```
+
+### Runtime file locations
+
+All bridge files are written to `~/.textToScene/` (inside the user's home directory) — **not on the Desktop**. The directory is created automatically on first run.
+
+| Constant | Location | Description |
 |---|---|---|
-| `SHARED_DIR` | `~/Desktop/scene_bridge` | All shared JSON files |
-| `SCENE_IR_FILE` | `SHARED_DIR/scene_ir.json` | Live scene state |
-| `SCENE_OUT_FILE` | `~/Desktop/scene_out.py` | Generated official scene |
-| `POLL_INTERVAL` | `0.5` | Seconds between controller polls |
-| `GRID_SPACING` | configurable | Default spacing for pattern generation |
+| `SHARED_DIR` | `~/.textToScene/scene_bridge/` | All shared JSON files |
+| `SCENE_OUT_FILE` | `~/.textToScene/scene_out.py` | Generated official scene |
+| `POLL_INTERVAL` | `0.5 s` | Seconds between controller polls |
 
-If you want to change where files are written (e.g. not on the Desktop) edit `config.py` — everything else picks up the change automatically.
+On Windows this resolves to `C:\Users\<you>\.textToScene\`.
 
 ---
 
 ## How to run
 
-All commands below are run from `extensions/textToScene/src/`.
+All commands below are run from `extensions/textToScene/` — **never** `cd` into `src/`.
 
-### Full interactive mode (2 terminals)
+### Full interactive mode (3 terminals)
+
+You need three terminals, all opened in `extensions/textToScene/` with the conda env active:
 
 **Terminal 1 — generate the initial scene:**
 
 ```bash
-python legacy/tester_1.py
+# Windows
+python src\legacy\tester_1.py
+
+# macOS / Linux
+python src/legacy/tester_1.py
 ```
 
-This writes `~/Desktop/scene_out.py`. Only needs to run once per session (or when you want to reset the scene).
+Run this once at the start of each session or when you want to reset the scene.
 
-** Start the controller:**
+> **Why do you see a pink cube?** The initial scene is a single untextured cube. The `Elements` default material is pink/magenta (it signals "no shader assigned yet"). Once the controller starts and you issue commands, objects appear with the colours you specify.
+>
+> ![Initial scene — pink cube with ImGui panel](docs/fig_002_firstScene.png)
+
+**Terminal 2 — start the controller:**
 
 ```bash
-python mock_ai_contoller.py
+# Windows
+python src\mock_ai_contoller.py
+
+# macOS / Linux
+python src/mock_ai_contoller.py
 ```
 
-Keep this running. It polls for requests and updates the scene IR.
+Keep this running. It polls for AI requests and updates the scene IR. If the LLM key is missing or unreachable, you will see a warning and the system falls back to rule-based parsing.
 
-**Terminal 2 — start the supervisor:**
+**Terminal 3 — start the supervisor:**
 
 ```bash
-python supervisor.py
+# Windows
+python src\supervisor.py
+
+# macOS / Linux
+python src/supervisor.py
 ```
 
-The supervisor launches `scene_out.py` and manages process switching between official and preview modes.
+The supervisor launches the scene and manages process switching between official and preview modes. You will now see the `Elements` OpenGL window.
 
-You will now see the `Elements` OpenGL window. Type a command in the text box and press Enter.
+Type a command in the ImGui text box and press Enter.
+
+**To stop the system:** press `Ctrl+C` in the supervisor terminal (Terminal 3). Pressing `Esc` inside the scene window will be caught by the supervisor and the window will reopen — use `Ctrl+C` to fully exit.
 
 ### Run a legacy/demo scene directly
 
-Any script in `legacy/` is self-contained. It generates a scene script and writes it to `~/Desktop/scene_out.py`, then you can open that file manually or let the supervisor pick it up:
+Any script in `src/legacy/` is self-contained (no controller or supervisor needed):
 
 ```bash
-python legacy/tester6_prefabs.py   # village street scene
-python legacy/tester11_nice_scene.py  # neighbourhood park
+# Windows
+python src\legacy\tester6_prefabs.py       # village street scene
+python src\legacy\tester11_nice_scene.py   # neighbourhood park
+
+# macOS / Linux
+python src/legacy/tester6_prefabs.py
+python src/legacy/tester11_nice_scene.py
 ```
 
 ---
@@ -415,7 +461,7 @@ If multiple objects match, the controller picks deterministically and logs its c
 
 ## Bridge protocol
 
-The three processes communicate entirely through files in `~/Desktop/scene_bridge/`. The full specification (owners, formats, status values) is in:
+The three processes communicate entirely through files in `~/.textToScene/scene_bridge/`. The full specification (owners, formats, status values) is in:
 
 ```
 docs/bridge_protocol.md
@@ -437,10 +483,13 @@ Quick reference:
 
 ## Testing & evaluation
 
-Run all unit tests from the repo root (where `pytest.ini` is):
+Run all unit tests from `extensions/textToScene/` (where `pytest.ini` lives):
 
 ```bash
-cd extensions/textToScene
+# activate the env first
+conda activate elementtest
+
+# run all tests
 pytest
 ```
 
@@ -453,15 +502,16 @@ pytest tests/test_apply_action.py -v
 
 ### Evaluation harness
 
-The evaluation scripts in `tests/` measure how accurately the system parses and executes a set of natural-language commands.
+The evaluation scripts measure how accurately the system parses and executes natural-language commands. Run from `extensions/textToScene/`:
 
 ```bash
-# Baseline evaluation (no few-shot examples in LLM prompt)
+# Windows
+python tests\evaluate_baseline.py   # no few-shot examples
+python tests\evaluate_fewshot.py    # few-shot examples injected into prompt
+
+# macOS / Linux
 python tests/evaluate_baseline.py
-
-# Few-shot evaluation (examples injected into prompt)
 python tests/evaluate_fewshot.py
-
 ```
 
 Results are written to `docs/all_results.json`.
@@ -473,7 +523,7 @@ Results are written to `docs/all_results.json`.
 ### Getting oriented
 
 1. Read `docs/architecture.md` and `docs/bridge_protocol.md` first.
-2. Run `legacy/tester4_allShapes.py` to see all shapes, then `legacy/tester6_prefabs.py` for the village scene. These are quick sanity checks that require no controller or supervisor.
+2. Run `python src/legacy/tester4_allShapes.py` to see all shapes, then `python src/legacy/tester6_prefabs.py` for the village scene. These require no controller or supervisor.
 3. Run the full system once (`tester_1.py` + `mock_ai_contoller.py` + `supervisor.py`) and try a few commands to understand the live loop.
 
 ### Adding a new shape
@@ -501,51 +551,56 @@ Results are written to `docs/all_results.json`.
 
 ### Key design decisions to be aware of
 
-- **All state lives in JSON files on disk.** There is no in-memory shared state between the three processes. If you add a new piece of state, add a new file or field in the bridge directory and document it in `docs/bridge_protocol.md`.
+- **All state lives in JSON files on disk.** There is no in-memory shared state between the three processes. If you add a new piece of state, add a new file or field in `~/.textToScene/scene_bridge/` and document it in `docs/bridge_protocol.md`.
 - **The supervisor always restarts the scene from scratch.** There is no hot-reload. When mode changes, the old process is killed and a new one is launched. This is intentional — it avoids incremental OpenGL state corruption.
 - **The LLM is a fallback, not the primary path.** Simple commands (add, move, delete, color) are handled by `text_parser.py` without any API call. The LLM is only invoked when rule-based parsing fails.
 - **The action cache (`cache/action_cache.json`) persists across sessions.** If you change the LLM prompt or action schema, delete this file so stale cached responses are not replayed.
 
 ### Running a quick manual test (no full system)
 
+From `extensions/textToScene/`:
+
 ```bash
-cd extensions/textToScene/src
-python -c "
-from code_generator import generate_scene_script
-ir = {'node_type':'scene','name':'root','window':{'width':800,'height':600,'title':'test'},'children':[]}
-print(generate_scene_script(ir)[:200])
-"
+# Windows
+python -c "import sys; sys.path.insert(0,'src'); from code_generator import generate_scene_script; ir={'node_type':'scene','name':'root','window':{'width':800,'height':600,'title':'test'},'children':[]}; print(generate_scene_script(ir)[:200])"
+
+# macOS / Linux
+python -c "import sys; sys.path.insert(0,'src'); from code_generator import generate_scene_script; ir={'node_type':'scene','name':'root','window':{'width':800,'height':600,'title':'test'},'children':[]}; print(generate_scene_script(ir)[:200])"
 ```
 
 ---
 
 ## Troubleshooting
 
-### `NameError: name 'PROJECT_DIR' is not defined`
+### `NameError: name 'PROJECT_DIR' is not defined` or `ModuleNotFoundError: No module named 'config'`
 
-`PROJECT_DIR` is imported locally inside `main()` in `mock_ai_contoller.py`. Make sure you are running from the correct directory (`src/`) and that `config.py` is importable.
+You are running from inside `src/` instead of `extensions/textToScene/`. Always run with the full `src/` prefix: `python src/supervisor.py`, not `cd src && python supervisor.py`.
 
 ### Scene window does not open
 
-- Check that `~/Desktop/scene_out.py` exists (run `tester_1.py` first).
-- Check that `supervisor.py` is running and has write access to the Desktop.
+- Check that `~/.textToScene/scene_out.py` exists — run `python src/legacy/tester_1.py` first.
 - Check the supervisor terminal for Python tracebacks.
+- Make sure the conda environment is active: `conda activate elementtest`.
 
 ### Commands are ignored / controller shows no output
 
 - The controller polls every 0.5 s. Check the controller terminal for errors.
-- Make sure `~/Desktop/scene_bridge/ai_request.json` is being written by the scene. If the scene crashed, the file will not be updated.
+- Make sure `~/.textToScene/scene_bridge/ai_request.json` is being written by the scene.
 
 ### LLM parsing always fails
 
-- Check that `OPENAI_API_KEY` is set in `.env` and that the file is in `extensions/textToScene/`.
+- Verify keys are loaded: `python -c "from dotenv import load_dotenv; load_dotenv('.env'); import os; print(bool(os.environ.get('GEMINI_API_KEY')))"`
 - The controller logs `[llm]` prefixed lines — look for HTTP error codes.
-- Delete `cache/action_cache.json` if you suspect a stale cached bad response.
+- Delete `~/.textToScene/scene_bridge/cache/action_cache.json` if you suspect a stale cached bad response.
+
+### `pip install google-genai` fails with Python version error
+
+You need Python 3.9. Check your active environment: `python --version`. If it shows 3.10 or later, you are in the wrong conda env — run `conda activate elementtest`.
 
 ---
 
 ## Notes
 
-- The `legacy/` scripts are **standalone**: they write directly to `~/Desktop/scene_out.py` and do not require the controller or supervisor. Use them for quick visual testing of shapes, lights, or prefabs.
+- The `src/legacy/` scripts are **standalone**: they do not require the controller or supervisor. Use them for quick visual testing of shapes, lights, or prefabs.
 - `src/text_parser.py` exists as a standalone text-to-IR utility but is not the primary parsing path in the interactive loop. The interactive loop goes through `mock_ai_contoller.py` which calls `llm_parser.py`.
 - All generated scene scripts target the `Elements` framework and will not run outside of a correctly installed `Elements` environment.

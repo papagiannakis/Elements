@@ -29,7 +29,6 @@ from config import (
     ensure_runtime_dirs,
 )
 
-ensure_runtime_dirs()
 _OBJECT_MIN_CLEARANCE = 0.1  # minimum gap between object footprints
 
 COLOR_TABLE = {
@@ -1787,13 +1786,25 @@ def handle_pending_ai_request():
                 print("[controller] Action source: LLM")
                 print("[controller] LLM action:", action.get("action"))
             except Exception as llm_err:
-                print("[controller] LLM failed, using rule-based fallback:", llm_err)
+                print("\n" + "!" * 60)
+                print("!  WARNING: LLM was NOT reached — falling back to the")
+                print("!  rule-based parser. Results will be limited.")
+                print("!  Check your API key in textToScene/.env and network.")
+                print("!  Error:", str(llm_err)[:80])
+                print("!" * 60 + "\n")
                 command = parse_command(prompt)
                 action = command_to_action(command)
                 validate_action(action)
                 action_source = "fallback rule-based parser"
                 print("[controller] Action source: fallback rule-based parser")
                 print("[controller] Fallback action:", action.get("action"))
+                # Surface the LLM failure to the user in the scene panel
+                write_status(
+                    "llm_warning",
+                    "WARNING: LLM not reached — used rule-based fallback. "
+                    "Results may be limited. Check API key / network. Error: " + str(llm_err)[:120],
+                    request_id=request_id
+                )
 
         action = normalize_action(action)
 
@@ -2099,6 +2110,12 @@ def validate_action(action):
     }
 
     action_name = action.get("action")
+
+    if action_name == "rotate_object":
+        axis = action.get("axis")
+        if axis is not None and axis not in ("x", "y", "z"):
+            raise ValueError("axis must be one of 'x', 'y', 'z'; got: " + str(axis))
+        return
 
     if action_name in allowed_single:
         return
@@ -3353,6 +3370,7 @@ def apply_action_to_ir(scene_ir, action):
     raise ValueError("Unsupported action type: " + str(action_name))
 
 def main():
+    ensure_runtime_dirs()
     from config import EXTENSION_DIR as PROJECT_DIR
     print("[controller] Mock AI controller started.")
     print("[controller] PROJECT_DIR =", PROJECT_DIR)
