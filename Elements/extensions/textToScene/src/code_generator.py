@@ -1,6 +1,8 @@
 # code_generator.py
 import json
 import os
+import re
+import zipfile
 from copy import deepcopy
 from pathlib import Path
 from typing import Optional
@@ -161,6 +163,11 @@ def normalize_node(node, idx=1):
                 raise ValueError("mesh_object with shape='custom' requires 'custom_model_path'")
             normalized["custom_model_path"] = str(custom_path)
 
+        if "orbit" in node:
+            normalized["orbit"] = node["orbit"]
+        if "animation" in node:
+            normalized["animation"] = node["animation"]
+
         return normalized
     
     #add support for group nodes 
@@ -203,12 +210,17 @@ def normalize_node(node, idx=1):
         if "intensity" in input_props:
             props["intensity"] = float(input_props["intensity"])
 
-        return {
+        result = {
             "node_type": "light",
             "name": str(node.get("name", "light_{}".format(idx))),
             "light_type": light_type,
             "properties": props
         }
+
+        if "orbit" in node:
+            result["orbit"] = node["orbit"]
+
+        return result
 
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
@@ -386,7 +398,15 @@ def build_header(window, light_setup_code):
     width = window["width"]
     height = window["height"]
 
-    return '''import numpy as np
+    _elements_root = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
+    _path_fix = (
+        'import sys as _sys\n'
+        '_elements_root = r"{}"\n'
+        'if _elements_root not in _sys.path:\n'
+        '    _sys.path.insert(0, _elements_root)\n\n'
+    ).format(_elements_root)
+
+    return _path_fix + '''import numpy as np
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
@@ -411,8 +431,11 @@ TEXTURE_VERTEX_SHADER = """
 #version 410
 layout (location=0) in vec4 vPos;
 layout (location=1) in vec2 vTexCoord;
+layout (location=2) in vec3 vNormal;
 
-out vec2 fragmentTexCoord;
+out vec2 fragTexCoord;
+out vec3 fragNormal;
+out vec3 fragPos;
 
 uniform mat4 model;
 uniform mat4 view;
@@ -420,19 +443,42 @@ uniform mat4 proj;
 
 void main()
 {{
-    gl_Position = proj * view * model * vPos;
-    fragmentTexCoord = vTexCoord;
+    vec4 worldPos = model * vPos;
+    fragPos = worldPos.xyz;
+    fragNormal = mat3(transpose(inverse(model))) * vNormal;
+    fragTexCoord = vTexCoord;
+    gl_Position = proj * view * worldPos;
 }}
 """
 TEXTURE_FRAGMENT_SHADER = """
 #version 410
+in vec2 fragTexCoord;
+in vec3 fragNormal;
+in vec3 fragPos;
+
 out vec4 outputColor;
-in vec2 fragmentTexCoord;
+
 uniform sampler2D texSampler;
+uniform vec3  Lambientcolor;
+uniform float Lambientstr;
+uniform vec3  LviewPos;
+uniform vec3  Lposition;
+uniform vec3  Lcolor;
+uniform float Lintensity;
 
 void main()
 {{
-    outputColor = texture(texSampler, fragmentTexCoord);
+    vec4  texColor  = texture(texSampler, fragTexCoord);
+    vec3  norm      = normalize(fragNormal);
+    vec3  ambient   = Lambientstr * Lambientcolor * texColor.rgb;
+    vec3  lightDir  = normalize(Lposition - fragPos);
+    float diff      = max(dot(norm, lightDir), 0.0);
+    vec3  diffuse   = diff * Lcolor * Lintensity * texColor.rgb;
+    vec3  viewDir   = normalize(LviewPos - fragPos);
+    vec3  reflDir   = reflect(-lightDir, norm);
+    float spec      = pow(max(dot(viewDir, reflDir), 0.0), 32.0);
+    vec3  specular  = 0.2 * spec * Lcolor * Lintensity;
+    outputColor = vec4(ambient + diffuse + specular, texColor.a);
 }}
 """
 example_description = "Generated scene from hierarchical IR"
@@ -815,6 +861,63 @@ def _parse_obj_for_codegen(obj_path, color_rgb):
                 for k in range(1, len(verts) - 1):
                     face_indices.append([verts[0], verts[k], verts[k + 1]])
 
+
+def _parse_obj_with_uvs(obj_path):
+    """Parse OBJ with UV (vt) coordinates.
+
+    OBJ faces can have different position/UV indices (v/vt or v/vt/vn).
+    We expand to a unique-(position, uv) vertex list so that each rendered
+    vertex carries both its position and its texture coordinate.
+
+    Returns (vertices, indices, uvs) as float32/uint32 numpy arrays.
+    If the file has no vt lines the UVs default to (0, 0).
+    """
+    positions = []
+    uvs_raw = []
+
+    unique_verts = {}   # (pos_idx, uv_idx) -> new flat index
+    out_positions = []
+    out_uvs = []
+    out_tris = []
+
+    with open(str(obj_path), "r", encoding="utf-8") as f:
+        for raw_line in f:
+            line = raw_line.strip()
+            if not line or line.startswith("#"):
+                continue
+            parts = line.split()
+            if parts[0] == "v":
+                positions.append([float(parts[1]), float(parts[2]), float(parts[3])])
+            elif parts[0] == "vt":
+                uvs_raw.append([float(parts[1]), float(parts[2])])
+            elif parts[0] == "f":
+                face_verts = []
+                for tok in parts[1:]:
+                    components = tok.split("/")
+                    pos_idx = int(components[0]) - 1
+                    if len(components) > 1 and components[1]:
+                        uv_idx = int(components[1]) - 1
+                    else:
+                        uv_idx = 0
+                    key = (pos_idx, uv_idx)
+                    if key not in unique_verts:
+                        unique_verts[key] = len(out_positions)
+                        out_positions.append(positions[pos_idx])
+                        out_uvs.append(uvs_raw[uv_idx] if uvs_raw else [0.0, 0.0])
+                    face_verts.append(unique_verts[key])
+                for k in range(1, len(face_verts) - 1):
+                    out_tris.append([face_verts[0], face_verts[k], face_verts[k + 1]])
+
+    if not out_positions:
+        raise ValueError("OBJ file has no vertices: {}".format(obj_path))
+    if not out_tris:
+        raise ValueError("OBJ file has no faces: {}".format(obj_path))
+
+    verts_array   = np.array([[p[0], p[1], p[2], 1.0] for p in out_positions], dtype=np.float32)
+    uvs_array     = np.array(out_uvs, dtype=np.float32)
+    indices_array = np.array(out_tris, dtype=np.uint32)
+    return verts_array, indices_array, uvs_array
+
     if not positions:
         raise ValueError("OBJ file has no vertex positions: {}".format(obj_path))
     if not face_indices:
@@ -916,6 +1019,96 @@ def _parse_usda_text(usda_path, color_rgb):
     return _build_mesh_arrays(positions, face_indices, color_rgb)
 
 
+def _parse_usda_with_uvs(usda_path):
+    """Parse USDA with primvars:st UV coordinates.
+
+    Handles both indexed (primvars:st:indices) and non-indexed UV layouts.
+    Expands to unique-(position, uv) vertices, same as the OBJ UV parser.
+
+    Returns (vertices, indices, uvs) as float32/uint32 numpy arrays.
+    """
+    import re as _re
+
+    text = Path(str(usda_path)).read_text(encoding="utf-8")
+
+    # Positions
+    points_match = _re.search(
+        r'(?:point3f|float3|Vec3f)\[\]\s+points\s*=\s*\[(.*?)\]',
+        text, _re.DOTALL | _re.IGNORECASE
+    )
+    if not points_match:
+        raise ValueError("No 'points' found in USDA: {}".format(usda_path))
+    positions = []
+    for m in _re.finditer(
+        r'\(?\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*,\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*,\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*\)?',
+        points_match.group(1)
+    ):
+        positions.append([float(m.group(1)), float(m.group(2)), float(m.group(3))])
+
+    # Face topology
+    indices_match = _re.search(r'int\[\]\s+faceVertexIndices\s*=\s*\[(.*?)\]', text, _re.DOTALL)
+    counts_match  = _re.search(r'int\[\]\s+faceVertexCounts\s*=\s*\[(.*?)\]',  text, _re.DOTALL)
+    if not indices_match or not counts_match:
+        raise ValueError("No face data found in USDA: {}".format(usda_path))
+    pos_face_verts = [int(x) for x in _re.findall(r'-?\d+', indices_match.group(1))]
+    counts         = [int(x) for x in _re.findall(r'\d+',   counts_match.group(1))]
+
+    # UVs — try texCoord2f / float2 primvars:st
+    uv_match = _re.search(
+        r'(?:texCoord2f|float2)\[\]\s+primvars:st\s*=\s*\[(.*?)\]',
+        text, _re.DOTALL | _re.IGNORECASE
+    )
+    uvs_raw = []
+    if uv_match:
+        for m in _re.finditer(
+            r'\(?\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*,\s*(-?\d+\.?\d*(?:e[+-]?\d+)?)\s*\)?',
+            uv_match.group(1)
+        ):
+            uvs_raw.append([float(m.group(1)), float(m.group(2))])
+
+    # UV indices (per-face-vertex, same count as pos_face_verts)
+    uv_idx_match = _re.search(r'int\[\]\s+primvars:st:indices\s*=\s*\[(.*?)\]', text, _re.DOTALL)
+    if uv_idx_match and uvs_raw:
+        uv_face_indices = [int(x) for x in _re.findall(r'-?\d+', uv_idx_match.group(1))]
+    elif uvs_raw:
+        # Non-indexed: UVs are in face-vertex order directly
+        uv_face_indices = list(range(len(pos_face_verts)))
+    else:
+        uv_face_indices = []
+
+    # Expand to unique (pos_idx, uv_idx) vertices
+    unique_verts = {}
+    out_positions = []
+    out_uvs = []
+    out_tris = []
+
+    offset = 0
+    for count in counts:
+        face_pos  = pos_face_verts[offset:offset + count]
+        face_uvidx = uv_face_indices[offset:offset + count] if uv_face_indices else [0] * count
+        face_new = []
+        for j in range(count):
+            pi = face_pos[j]
+            ui = face_uvidx[j] if uvs_raw else 0
+            key = (pi, ui)
+            if key not in unique_verts:
+                unique_verts[key] = len(out_positions)
+                out_positions.append(positions[pi])
+                out_uvs.append(uvs_raw[ui] if uvs_raw else [0.0, 0.0])
+            face_new.append(unique_verts[key])
+        for k in range(1, len(face_new) - 1):
+            out_tris.append([face_new[0], face_new[k], face_new[k + 1]])
+        offset += count
+
+    if not out_tris:
+        raise ValueError("No faces found in USDA: {}".format(usda_path))
+
+    verts_array   = np.array([[p[0], p[1], p[2], 1.0] for p in out_positions], dtype=np.float32)
+    uvs_array     = np.array(out_uvs, dtype=np.float32)
+    indices_array = np.array(out_tris, dtype=np.uint32)
+    return verts_array, indices_array, uvs_array
+
+
 def _parse_usd_with_pxr(usd_path, color_rgb):
     """Parse any USD/USDZ format using the pxr library.
 
@@ -985,6 +1178,185 @@ def _parse_usd_with_pxr(usd_path, color_rgb):
     return _build_mesh_arrays(all_positions, all_faces, color_rgb)
 
 
+def _parse_usd_with_uvs_pxr(usd_path):
+    """Parse USD/USDZ with texture UVs using the pxr library.
+
+    Looks for the 'st' primvar on each Mesh prim.
+    Expands to unique-(position, uv) vertices.
+
+    Returns (vertices, indices, uvs) as float32/uint32 numpy arrays.
+    Falls back to (0,0) UVs if no 'st' primvar is found.
+    """
+    from pxr import Usd, UsdGeom, Gf  # noqa: PLC0415
+
+    stage        = Usd.Stage.Open(str(usd_path))
+    mpu          = UsdGeom.GetStageMetersPerUnit(stage) or 0.01
+    time_code    = Usd.TimeCode.Default()
+
+    unique_verts  = {}
+    out_positions = []
+    out_uvs       = []
+    out_tris      = []
+
+    for prim in stage.Traverse():
+        if prim.GetTypeName() != "Mesh":
+            continue
+
+        mesh      = UsdGeom.Mesh(prim)
+        pts       = mesh.GetPointsAttr().Get(time_code)
+        face_cnts = mesh.GetFaceVertexCountsAttr().Get(time_code)
+        face_idx  = mesh.GetFaceVertexIndicesAttr().Get(time_code)
+        if pts is None or face_cnts is None or face_idx is None:
+            continue
+
+        try:
+            xform_cache = UsdGeom.XformCache(time_code)
+            world_xform = xform_cache.GetLocalToWorldTransform(prim)
+        except Exception:
+            world_xform = Gf.Matrix4d(1.0)
+
+        # World-space positions for this prim
+        prim_positions = []
+        for p in pts:
+            wp = world_xform.Transform(Gf.Vec3d(p[0], p[1], p[2]))
+            prim_positions.append([
+                float(wp[0]) * mpu, float(wp[1]) * mpu, float(wp[2]) * mpu
+            ])
+
+        # UV primvar
+        st_pv   = UsdGeom.PrimvarsAPI(mesh).GetPrimvar("st")
+        uvs_raw = []
+        uv_idxs = []
+        if st_pv and st_pv.HasValue():
+            uvs_raw = [[float(u), float(v)] for u, v in st_pv.Get(time_code)]
+            raw_idx = st_pv.GetIndices(time_code)
+            uv_idxs = list(raw_idx) if raw_idx is not None else list(range(len(face_idx)))
+
+        pos_idx_list = list(face_idx)
+        offset = 0
+        for cnt in face_cnts:
+            face_new = []
+            for j in range(cnt):
+                pi = pos_idx_list[offset + j]
+                ui = uv_idxs[offset + j] if uv_idxs else 0
+                key = (id(prim), pi, ui)
+                if key not in unique_verts:
+                    unique_verts[key] = len(out_positions)
+                    out_positions.append(prim_positions[pi])
+                    out_uvs.append(uvs_raw[ui] if uvs_raw else [0.0, 0.0])
+                face_new.append(unique_verts[key])
+            for k in range(1, len(face_new) - 1):
+                out_tris.append([face_new[0], face_new[k], face_new[k + 1]])
+            offset += cnt
+
+    if not out_positions:
+        raise ValueError("No Mesh geometry found in USD file: {}".format(usd_path))
+    if not out_tris:
+        raise ValueError("No faces found in USD file: {}".format(usd_path))
+
+    out_positions = _normalize_positions(out_positions)
+    verts_array   = np.array([[p[0], p[1], p[2], 1.0] for p in out_positions], dtype=np.float32)
+    uvs_array     = np.array(out_uvs, dtype=np.float32)
+    indices_array = np.array(out_tris, dtype=np.uint32)
+    return verts_array, indices_array, uvs_array
+
+
+def _generate_procedural_uvs(verts_array):
+    """Cylindrical UV mapping fallback when a model has no embedded UVs.
+
+    u = angle around Y axis normalised to [0, 1]
+    v = height normalised to [0, 1]
+
+    Works well for rounded / organic shapes (teapot, vase, character).
+    For flat/boxy objects consider box-mapping, but cylindrical is a safe default.
+    """
+    import math
+    xs = verts_array[:, 0]
+    ys = verts_array[:, 1]
+    zs = verts_array[:, 2]
+
+    ymin, ymax = float(ys.min()), float(ys.max())
+    y_span = ymax - ymin if (ymax - ymin) > 1e-6 else 1.0
+
+    uvs = []
+    for x, y, z in zip(xs, ys, zs):
+        u = (math.atan2(float(z), float(x)) + math.pi) / (2 * math.pi)
+        v = (float(y) - ymin) / y_span
+        uvs.append([u, v])
+    return np.array(uvs, dtype=np.float32)
+
+
+def _uvs_are_trivial(uvs_array):
+    """Return True if every UV is (0,0) — i.e. no real UV data was found."""
+    return bool(np.allclose(uvs_array, 0.0))
+
+
+def _extract_usdz_own_texture(usdz_path):
+    """Extract the base-color (_bc / diffuse / basecolor) texture from a USDZ zip.
+
+    Writes the PNG/JPG to ~/.textToScene/textures/<stem>/ and returns its path.
+    Returns None if the file is not a USDZ or contains no recognisable color texture.
+    """
+    usdz_path = Path(usdz_path)
+    if not str(usdz_path).lower().endswith(".usdz"):
+        return None
+    try:
+        with zipfile.ZipFile(str(usdz_path)) as z:
+            candidates = [
+                n for n in z.namelist()
+                if re.search(r"(_bc|diffuse|basecolor|base_color|albedo)\.(png|jpg|jpeg)$", n, re.IGNORECASE)
+            ]
+            if not candidates:
+                print("[code_generator] No base-color texture found inside '{}'.".format(usdz_path.name))
+                return None
+            # Prefer the texture whose filename contains the first word of the USDZ stem.
+            # e.g. "chameleon_anim_mtl_variant.usdz" → prefer "chameleon_bc.jpg" over "stick_2_bc.jpg"
+            primary_word = usdz_path.stem.lower().split("_")[0]
+            preferred = [c for c in candidates if primary_word in Path(c).stem.lower()]
+            bc_name = preferred[0] if preferred else candidates[0]
+            out_dir = Path.home() / ".textToScene" / "textures" / usdz_path.stem
+            out_dir.mkdir(parents=True, exist_ok=True)
+            out_path = out_dir / Path(bc_name).name
+            with z.open(bc_name) as src, open(str(out_path), "wb") as dst:
+                dst.write(src.read())
+            print("[code_generator] Extracted texture '{}' → '{}'.".format(bc_name, out_path))
+            return str(out_path)
+    except Exception as e:
+        print("[code_generator] Could not extract texture from USDZ: {}".format(e))
+        return None
+
+
+def _parse_custom_model_with_uvs(model_path):
+    """Dispatch to the correct UV-aware parser based on file extension.
+
+    Falls back to procedural cylindrical UV mapping when the file contains
+    no UV data (all-zero after parsing).
+    """
+    suffix = str(model_path).lower()
+    if suffix.endswith(".obj"):
+        verts, indices, uvs = _parse_obj_with_uvs(model_path)
+    elif suffix.endswith(".usda"):
+        verts, indices, uvs = _parse_usda_with_uvs(model_path)
+    elif suffix.endswith(".usd") or suffix.endswith(".usdz"):
+        try:
+            verts, indices, uvs = _parse_usd_with_uvs_pxr(model_path)
+        except ImportError:
+            verts, indices, uvs = _parse_usda_with_uvs(model_path)
+    else:
+        raise ValueError(
+            "Unsupported format for textured custom model. Supported: .obj, .usd, .usda. File: {}".format(model_path)
+        )
+
+    if _uvs_are_trivial(uvs):
+        print("[code_generator] No UVs found in '{}' — using procedural cylindrical mapping.".format(model_path))
+        uvs = _generate_procedural_uvs(verts)
+
+    return verts, indices, uvs
+    raise ValueError(
+        "Unsupported format for textured custom model. Supported: .obj, .usd, .usda. File: {}".format(model_path)
+    )
+
+
 def _normalize_positions(positions, target_size=2.0):
     """Centre on XZ plane, sit on Y=0, scale longest axis to target_size."""
     xs = [p[0] for p in positions]
@@ -1037,6 +1409,294 @@ def _build_mesh_arrays(positions, face_indices, color_rgb):
     return verts_array, indices_array, normals_array, colors_array
 
 
+def _compute_smooth_normals(verts_array, indices_array):
+    """Compute smooth per-vertex normals from triangle geometry.
+
+    verts_array  : (N, 4) float32 — positions with w=1
+    indices_array: (M, 3) uint32  — triangle indices
+    Returns (N, 3) float32 normal array.
+    """
+    n = len(verts_array)
+    normals = np.zeros((n, 3), dtype=np.float64)
+    for tri in indices_array:
+        i0, i1, i2 = int(tri[0]), int(tri[1]), int(tri[2])
+        p0 = verts_array[i0, :3].astype(np.float64)
+        p1 = verts_array[i1, :3].astype(np.float64)
+        p2 = verts_array[i2, :3].astype(np.float64)
+        face_n = np.cross(p1 - p0, p2 - p0)
+        normals[i0] += face_n
+        normals[i1] += face_n
+        normals[i2] += face_n
+    lengths = np.linalg.norm(normals, axis=1, keepdims=True)
+    lengths = np.where(lengths < 1e-8, 1.0, lengths)
+    return (normals / lengths).astype(np.float32)
+
+
+def _animation_model_code(suffix, animation, position, scale):
+    """Return per-frame code for self-animations: bounce, spin, lerp."""
+    anim_type = animation.get("type", "")
+    x, y, z   = float(position[0]), float(position[1]), float(position[2])
+    sx, sy, sz = float(scale[0]),    float(scale[1]),    float(scale[2])
+
+    if anim_type == "bounce":
+        amplitude = float(animation.get("amplitude", 0.5))
+        speed     = float(animation.get("speed",     2.0))
+        return (
+            f"_t_{suffix} = time.time()\n"
+            f"model_{suffix} = util.translate({x}, {y} + {amplitude} * np.sin(_t_{suffix} * {speed}), {z})"
+            f" @ util.scale({sx}, {sy}, {sz})\n"
+        )
+
+    if anim_type == "spin":
+        speed = float(animation.get("speed", 1.0))   # rad/s
+        ax, ay, az = animation.get("axis", [0, 1, 0])
+        return (
+            f"_t_{suffix} = time.time()\n"
+            f"model_{suffix} = util.translate({x}, {y}, {z})"
+            f" @ util.rotate(_t_{suffix} * {speed}, {ax}, {ay}, {az})"
+            f" @ util.scale({sx}, {sy}, {sz})\n"
+        )
+
+    if anim_type == "lerp":
+        fx, fy, fz = float(animation.get("from", [x, y, z])[0]), float(animation.get("from", [x, y, z])[1]), float(animation.get("from", [x, y, z])[2])
+        tx, ty, tz = float(animation.get("to",   [x, y, z])[0]), float(animation.get("to",   [x, y, z])[1]), float(animation.get("to",   [x, y, z])[2])
+        duration   = float(animation.get("duration", 3.0))
+        return (
+            f"_t_{suffix} = time.time()\n"
+            f"_prog_{suffix} = (_t_{suffix} % ({duration} * 2)) / {duration}\n"
+            f"_prog_{suffix} = _prog_{suffix} if _prog_{suffix} <= 1.0 else 2.0 - _prog_{suffix}\n"
+            f"model_{suffix} = util.translate("
+            f"{fx} + _prog_{suffix} * ({tx} - {fx}), "
+            f"{fy} + _prog_{suffix} * ({ty} - {fy}), "
+            f"{fz} + _prog_{suffix} * ({tz} - {fz})"
+            f") @ util.scale({sx}, {sy}, {sz})\n"
+        )
+
+    # Fallback: static
+    return f"model_{suffix} = util.translate({x}, {y}, {z}) @ util.scale({sx}, {sy}, {sz})\n"
+
+
+def _orbit_model_code(suffix, orbit, scale):
+    """Return per-frame code that computes a dynamic model matrix for an orbiting mesh."""
+    cx, cy, cz = orbit.get("center", [0.0, 0.0, 0.0])
+    radius = float(orbit.get("radius", 3.0))
+    speed  = float(orbit.get("speed",  0.8))
+    sx, sy, sz = float(scale[0]), float(scale[1]), float(scale[2])
+    return (
+        f"_t_orb_{suffix} = time.time()\n"
+        f"_ang_orb_{suffix} = _t_orb_{suffix} * {speed}\n"
+        f"model_{suffix} = util.translate("
+        f"{cx} + np.cos(_ang_orb_{suffix}) * {radius}, "
+        f"{cy}, "
+        f"{cz} + np.sin(_ang_orb_{suffix}) * {radius}"
+        f") @ util.scale({sx}, {sy}, {sz})\n"
+    )
+
+
+def _orbit_light_uniform_code(orbit):
+    """Return per-frame code that updates activeLightPos for an orbiting light."""
+    cx, cy, cz = orbit.get("center", [0.0, 0.0, 0.0])
+    radius = float(orbit.get("radius", 3.0))
+    speed  = float(orbit.get("speed",  0.8))
+    height = float(orbit.get("height", cy + 2.5))
+    return (
+        f"_t_orb_light = time.time()\n"
+        f"activeLightPos = np.array(["
+        f"{cx} + np.cos(_t_orb_light * {speed}) * {radius}, "
+        f"{height}, "
+        f"{cz} + np.sin(_t_orb_light * {speed}) * {radius}"
+        f"], dtype=np.float32)\n"
+    )
+
+
+def _tex_lighting_uniforms(shader_var):
+    """Return generated-script code that sets Phong lighting uniforms on a texture shader."""
+    return f"""
+_t = time.time()
+_lpos_orbit = np.array([np.cos(_t * 0.8) * 5.0, 4.0, np.sin(_t * 0.8) * 5.0], dtype=np.float32)
+{shader_var}.setUniformVariable(key='Lambientcolor', value=Lambientcolor,        float3=True)
+{shader_var}.setUniformVariable(key='Lambientstr',   value=Lambientstr,          float1=True)
+{shader_var}.setUniformVariable(key='LviewPos',      value=LviewPos,             float3=True)
+{shader_var}.setUniformVariable(key='Lposition',     value=_lpos_orbit,          float3=True)
+{shader_var}.setUniformVariable(key='Lcolor',        value=activeLightColor[:3], float3=True)
+{shader_var}.setUniformVariable(key='Lintensity',    value=activeLightIntensity, float1=True)
+"""
+
+
+def _extract_asset_from_usdz(usdz_path, asset_rel_path):
+    """Extract a specific asset from a USDZ zip by its relative path.
+
+    Handles variants like './0/tex.png', '0/tex.png', '@./0/tex.png@'.
+    Returns the local extracted path, or None if not found.
+    """
+    usdz_path = Path(usdz_path)
+    out_dir = Path.home() / ".textToScene" / "textures" / usdz_path.stem
+    out_dir.mkdir(parents=True, exist_ok=True)
+    clean = asset_rel_path.strip("@").lstrip("./").lstrip("/")
+    with zipfile.ZipFile(str(usdz_path)) as z:
+        names = z.namelist()
+        match = next((n for n in names if n.lstrip("./").lstrip("/") == clean), None)
+        if not match:
+            target = Path(clean).name
+            match = next((n for n in names if Path(n).name == target), None)
+        if not match:
+            return None
+        out_path = out_dir / Path(match).name
+        with z.open(match) as src, open(str(out_path), "wb") as dst:
+            dst.write(src.read())
+        return str(out_path)
+
+
+def _find_usdz_mesh_texture(mesh_prim, usdz_path):
+    """Return the extracted base-color texture path bound to a specific USD mesh prim.
+
+    Looks up the bound material then searches for a UsdUVTexture shader under it
+    by traversing the stage and filtering by path prefix.
+    Returns None if no texture is found.
+    """
+    try:
+        from pxr import UsdShade
+    except ImportError:
+        return None
+
+    # --- try material binding ---
+    try:
+        binding_api = UsdShade.MaterialBindingAPI(mesh_prim)
+        material, _ = binding_api.ComputeBoundMaterial()
+    except Exception:
+        material = None
+
+    stage    = mesh_prim.GetStage()
+    mat_path = material.GetPrim().GetPath() if (material and material.GetPrim().IsValid()) else None
+
+    # Collect all texture file paths from UsdUVTexture shaders under this material
+    texture_paths = []
+    for prim in stage.Traverse():
+        if mat_path and not prim.GetPath().HasPrefix(mat_path):
+            continue
+        shader = UsdShade.Shader(prim)
+        if not shader:
+            continue
+        try:
+            if shader.GetIdAttr().Get() != "UsdUVTexture":
+                continue
+        except Exception:
+            continue
+        file_input = shader.GetInput("file")
+        if not file_input:
+            continue
+        try:
+            asset = file_input.Get()
+        except Exception:
+            continue
+        if asset and asset.path:
+            texture_paths.append(asset.path)
+
+    if not texture_paths:
+        return None
+
+    # Prefer the base-color / diffuse texture over roughness / normal / AO maps
+    bc_paths = [p for p in texture_paths
+                if re.search(r"(_bc|diffuse|basecolor|base_color|albedo)\.(png|jpg|jpeg)$",
+                             p, re.IGNORECASE)]
+    best = bc_paths[0] if bc_paths else texture_paths[0]
+    return _extract_asset_from_usdz(usdz_path, best)
+
+
+def _parse_usdz_all_meshes_with_textures(usdz_path):
+    """Parse a USDZ and return one (verts, indices, uvs, tex_path) per mesh prim.
+
+    Each mesh is normalised in the same coordinate space so relative positions
+    between meshes are preserved. UVs fall back to procedural cylindrical mapping
+    when no 'st' primvar is found.
+    """
+    from pxr import Usd, UsdGeom, Gf
+
+    usdz_path = Path(usdz_path)
+    stage = Usd.Stage.Open(str(usdz_path))
+    mpu = UsdGeom.GetStageMetersPerUnit(stage) or 0.01
+    time_code = Usd.TimeCode.Default()
+
+    raw_meshes = []  # (positions, faces, uvs, tex_path, label)
+
+    for prim in stage.Traverse():
+        if prim.GetTypeName() != "Mesh":
+            continue
+        mesh = UsdGeom.Mesh(prim)
+        pts = mesh.GetPointsAttr().Get(time_code)
+        face_cnts = mesh.GetFaceVertexCountsAttr().Get(time_code)
+        face_idx = mesh.GetFaceVertexIndicesAttr().Get(time_code)
+        if pts is None or face_cnts is None or face_idx is None:
+            continue
+
+        try:
+            world_xform = UsdGeom.XformCache(time_code).GetLocalToWorldTransform(prim)
+        except Exception:
+            world_xform = Gf.Matrix4d(1.0)
+
+        prim_positions = []
+        for p in pts:
+            wp = world_xform.Transform(Gf.Vec3d(p[0], p[1], p[2]))
+            prim_positions.append([float(wp[0]) * mpu, float(wp[1]) * mpu, float(wp[2]) * mpu])
+
+        st_pv = UsdGeom.PrimvarsAPI(mesh).GetPrimvar("st")
+        uvs_raw, uv_idxs = [], []
+        if st_pv and st_pv.HasValue():
+            uvs_raw = [[float(u), float(v)] for u, v in st_pv.Get(time_code)]
+            raw_idx = st_pv.GetIndices(time_code)
+            uv_idxs = list(raw_idx) if raw_idx is not None else list(range(len(face_idx)))
+
+        unique_verts = {}
+        out_positions, out_uvs, out_tris = [], [], []
+        pos_idx_list = list(face_idx)
+        offset = 0
+        for cnt in face_cnts:
+            face_new = []
+            for j in range(cnt):
+                pi = pos_idx_list[offset + j]
+                ui = uv_idxs[offset + j] if uv_idxs else 0
+                key = (pi, ui)
+                if key not in unique_verts:
+                    unique_verts[key] = len(out_positions)
+                    out_positions.append(prim_positions[pi])
+                    out_uvs.append(uvs_raw[ui] if uvs_raw else [0.0, 0.0])
+                face_new.append(unique_verts[key])
+            for k in range(1, len(face_new) - 1):
+                out_tris.append([face_new[0], face_new[k], face_new[k + 1]])
+            offset += cnt
+
+        if not out_positions or not out_tris:
+            continue
+
+        tex_path = _find_usdz_mesh_texture(prim, usdz_path)
+        raw_meshes.append((out_positions, out_tris, out_uvs, tex_path, str(prim.GetPath())))
+
+    if not raw_meshes:
+        raise ValueError("No mesh geometry found in USDZ: {}".format(usdz_path))
+
+    # Compute global normalisation so all meshes share the same scale/origin
+    all_pts = [p for positions, _, _, _, _ in raw_meshes for p in positions]
+    xs = [p[0] for p in all_pts]; ys = [p[1] for p in all_pts]; zs = [p[2] for p in all_pts]
+    cx = (min(xs) + max(xs)) / 2.0
+    cz = (min(zs) + max(zs)) / 2.0
+    cy = min(ys)
+    span = max(max(xs) - min(xs), max(ys) - min(ys), max(zs) - min(zs))
+    sc = 2.0 / span if span > 1e-6 else 1.0
+
+    results = []
+    for positions, faces, uvs, tex_path, label in raw_meshes:
+        norm = [[(p[0] - cx) * sc, (p[1] - cy) * sc, (p[2] - cz) * sc] for p in positions]
+        verts_arr = np.array([[p[0], p[1], p[2], 1.0] for p in norm], dtype=np.float32)
+        idx_arr   = np.array(faces, dtype=np.uint32)
+        uvs_arr   = np.array(uvs,   dtype=np.float32)
+        if _uvs_are_trivial(uvs_arr):
+            print("[code_generator] Submesh '{}' has no UVs — using procedural mapping.".format(label))
+            uvs_arr = _generate_procedural_uvs(verts_arr)
+        results.append((verts_arr, idx_arr, uvs_arr, tex_path))
+
+    return results
+
+
 def _parse_usd_for_codegen(usd_path, color_rgb):
     """Dispatch USD parsing: USDA text without pxr, binary USD/USDZ via pxr."""
     suffix = str(usd_path).lower()
@@ -1062,13 +1722,28 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     transform = node["transform"]
     material = node["material"]
 
-    if is_textured_material(material):
-        return emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr)
-
+    # ── custom OBJ / USD model ──────────────────────────────────────────────
     if shape == "custom":
         model_path = node.get("custom_model_path")
         if not model_path:
             raise ValueError("custom shape requires 'custom_model_path'")
+
+        if is_textured_material(material):
+            return emit_textured_custom_model_node(node, idx, parent_entity_var, parent_trs_expr)
+
+        # Multi-mesh USDZ: each mesh gets its own texture from the USD material binding
+        if str(model_path).lower().endswith(".usdz"):
+            try:
+                return emit_multi_mesh_usdz_node(node, idx, parent_entity_var, parent_trs_expr)
+            except Exception as e:
+                print("[code_generator] Multi-mesh USDZ failed ({}), falling back to single mesh.".format(e))
+
+        # Single-mesh fallback: auto-detect best _bc texture from zip
+        own_tex = _extract_usdz_own_texture(model_path)
+        if own_tex:
+            auto_node = deepcopy(node)
+            auto_node["material"]["texture"] = {"enabled": True, "path": own_tex}
+            return emit_textured_custom_model_node(auto_node, idx, parent_entity_var, parent_trs_expr)
 
         suffix_lower = str(model_path).lower()
         if suffix_lower.endswith(".usd") or suffix_lower.endswith(".usda") or suffix_lower.endswith(".usdz"):
@@ -1097,7 +1772,7 @@ def emit_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
         normals_code  = ndarray_to_python(normals,  "float32")
 
         object_code = """
-# ===== mesh_object (custom OBJ): {name} =====
+# ===== mesh_object (custom OBJ/USD): {name} =====
 vertices_{suffix} = {vertices_code}
 indices_{suffix} = {indices_code}
 colors_{suffix} = {colors_code}
@@ -1141,6 +1816,10 @@ mvp_{suffix} = projMat @ view @ model_{suffix}
            mat_color_expr=mat_color_expr)
 
         return object_code, uniform_code, ""
+
+    # ── built-in primitive shapes ───────────────────────────────────────────
+    if is_textured_material(material):
+        return emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr)
 
     position = transform["position"]
     rotation = transform["rotation"]
@@ -1200,9 +1879,18 @@ scene.world.addComponent({entity_var}, VertexArray())
         shader_var=shader_var
     )
 
+    orbit     = node.get("orbit")
+    animation = node.get("animation")
+    if orbit:
+        model_line = _orbit_model_code(suffix, orbit, transform.get("scale", [1.0, 1.0, 1.0]))
+    elif animation:
+        model_line = _animation_model_code(suffix, animation, position, transform.get("scale", [1.0, 1.0, 1.0]))
+    else:
+        model_line = "model_{suffix} = {world_trs_expr}\n".format(
+            suffix=suffix, world_trs_expr=world_trs_expr)
+
     uniform_code = """
-model_{suffix} = {world_trs_expr}
-mvp_{suffix} = projMat @ view @ model_{suffix}
+{model_line}mvp_{suffix} = projMat @ view @ model_{suffix}
 {shader_var}.setUniformVariable(key='modelViewProj', value=mvp_{suffix}, mat4=True)
 {shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
 {shader_var}.setUniformVariable(key='ambientColor', value=Lambientcolor, float3=True)
@@ -1214,6 +1902,7 @@ mvp_{suffix} = projMat @ view @ model_{suffix}
 {shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
 {shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
 """.format(
+        model_line=model_line,
         suffix=suffix,
         shader_var=shader_var,
         world_trs_expr=world_trs_expr,
@@ -1317,6 +2006,153 @@ def emit_node(node, parent_entity_var, parent_trs_expr, state):
     else:
         raise ValueError("Unsupported node_type: {}".format(node_type))
 
+def emit_multi_mesh_usdz_node(node, idx, parent_entity_var, parent_trs_expr):
+    """Emit one ECS entity per USD mesh prim, each with its own material texture."""
+    name       = node["name"]
+    transform  = node["transform"]
+    model_path = node.get("custom_model_path")
+    position   = transform["position"]
+    rotation   = transform["rotation"]
+    suffix     = str(idx)
+
+    local_trs_expr = "{} @ {}".format(make_translate(position), make_rotate(rotation))
+    world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
+
+    meshes = _parse_usdz_all_meshes_with_textures(model_path)
+    print("[code_generator] Multi-mesh USDZ '{}': {} submesh(es).".format(Path(model_path).name, len(meshes)))
+
+    group_var = "node_{}".format(suffix)
+    object_code = f"""
+# ===== multi-mesh USDZ: {name} ({len(meshes)} submeshes) =====
+{group_var} = scene.world.createEntity(Entity(name="{name}"))
+scene.world.addEntityChild({parent_entity_var}, {group_var})
+scene.world.addComponent({group_var}, BasicTransform(name="{name}_TRS", trs={local_trs_expr}))
+"""
+    uniform_code       = ""
+    texture_setup_code = ""
+
+    for m_idx, (verts, indices, uvs, tex_path) in enumerate(meshes):
+        ms          = "{}_{}".format(suffix, m_idx)
+        mesh_var    = "node_{}".format(ms)
+        normals     = _compute_smooth_normals(verts, indices)
+        verts_code  = ndarray_to_python(verts,   "float32")
+        idx_code    = ndarray_to_python(indices, "uint32")
+        uv_code     = ndarray_to_python(uvs,     "float32")
+        normals_code= ndarray_to_python(normals, "float32")
+
+        object_code += f"""
+# --- submesh {m_idx} ---
+vertices_{ms} = {verts_code}
+indices_{ms}  = {idx_code}
+uv_{ms}       = {uv_code}
+normals_{ms}  = {normals_code}
+{mesh_var} = scene.world.createEntity(Entity(name="{name}_m{m_idx}"))
+scene.world.addEntityChild({group_var}, {mesh_var})
+scene.world.addComponent({mesh_var}, BasicTransform(name="{name}_m{m_idx}_TRS", trs=util.identity()))
+mesh_{ms} = scene.world.addComponent({mesh_var}, RenderMesh(name="{name}_m{m_idx}_mesh"))
+mesh_{ms}.vertex_attributes.append(vertices_{ms})
+mesh_{ms}.vertex_attributes.append(uv_{ms})
+mesh_{ms}.vertex_attributes.append(normals_{ms})
+mesh_{ms}.vertex_index.append(indices_{ms})
+scene.world.addComponent({mesh_var}, VertexArray())
+shader_{ms} = scene.world.addComponent(
+    {mesh_var},
+    ShaderGLDecorator(Shader(vertex_source=TEXTURE_VERTEX_SHADER, fragment_source=TEXTURE_FRAGMENT_SHADER))
+)
+"""
+        uniform_code += f"""
+model_{ms} = {world_trs_expr}
+shader_{ms}.setUniformVariable(key='model', value=model_{ms}, mat4=True)
+shader_{ms}.setUniformVariable(key='view', value=view, mat4=True)
+shader_{ms}.setUniformVariable(key='proj', value=projMat, mat4=True)
+""" + _tex_lighting_uniforms(f"shader_{ms}")
+        if tex_path:
+            texture_setup_code += f"""
+texture_{ms} = Texture(r"{tex_path}")
+shader_{ms}.setUniformVariable(key='texSampler', value=texture_{ms}, texture=True)
+"""
+
+    return object_code, uniform_code, texture_setup_code
+
+
+def emit_textured_custom_model_node(node, idx, parent_entity_var, parent_trs_expr):
+    """Emit code for a custom OBJ/USD model with a texture (UV-aware)."""
+    name         = node["name"]
+    transform    = node["transform"]
+    material     = node["material"]
+    model_path   = node.get("custom_model_path")
+    if not model_path:
+        raise ValueError("Textured custom model is missing 'custom_model_path'")
+    texture_path = (material.get("texture") or {}).get("path")
+    if not texture_path:
+        raise ValueError("Textured custom model is missing texture.path")
+
+    position = transform["position"]
+    rotation = transform["rotation"]
+    suffix   = str(idx)
+
+    entity_var  = "node_{}".format(suffix)
+    trans_var   = "trans_{}".format(suffix)
+    mesh_var    = "mesh_{}".format(suffix)
+    shader_var  = "shader_{}".format(suffix)
+    texture_var = "texture_{}".format(suffix)
+
+    local_trs_expr = "{} @ {}".format(make_translate(position), make_rotate(rotation))
+    world_trs_expr = "{} @ ({})".format(parent_trs_expr, local_trs_expr)
+
+    raw_vertices, raw_indices, raw_uvs = _parse_custom_model_with_uvs(model_path)
+    raw_normals   = _compute_smooth_normals(raw_vertices, raw_indices)
+    vertices_code = ndarray_to_python(raw_vertices, "float32")
+    indices_code  = ndarray_to_python(raw_indices,  "uint32")
+    uv_code       = ndarray_to_python(raw_uvs,      "float32")
+    normals_code  = ndarray_to_python(raw_normals,  "float32")
+
+    object_code = f"""
+# ===== textured custom model: {name} =====
+vertices_{suffix} = {vertices_code}
+indices_{suffix}  = {indices_code}
+uv_{suffix}       = {uv_code}
+normals_{suffix}  = {normals_code}
+
+{entity_var} = scene.world.createEntity(Entity(name="{name}"))
+scene.world.addEntityChild({parent_entity_var}, {entity_var})
+
+{trans_var} = scene.world.addComponent(
+    {entity_var},
+    BasicTransform(name="{name}_TRS", trs={local_trs_expr})
+)
+{mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
+{mesh_var}.vertex_attributes.append(vertices_{suffix})
+{mesh_var}.vertex_attributes.append(uv_{suffix})
+{mesh_var}.vertex_attributes.append(normals_{suffix})
+{mesh_var}.vertex_index.append(indices_{suffix})
+
+scene.world.addComponent({entity_var}, VertexArray())
+{shader_var} = scene.world.addComponent(
+    {entity_var},
+    ShaderGLDecorator(
+        Shader(
+            vertex_source=TEXTURE_VERTEX_SHADER,
+            fragment_source=TEXTURE_FRAGMENT_SHADER
+        )
+    )
+)
+"""
+
+    uniform_code = f"""
+model_{suffix} = {world_trs_expr}
+{shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
+{shader_var}.setUniformVariable(key='view', value=view, mat4=True)
+{shader_var}.setUniformVariable(key='proj', value=projMat, mat4=True)
+""" + _tex_lighting_uniforms(shader_var)
+
+    texture_set_up_code = f"""
+{texture_var} = Texture(r"{texture_path}")
+{shader_var}.setUniformVariable(key='texSampler', value={texture_var}, texture=True)
+"""
+    return object_code, uniform_code, texture_set_up_code
+
+
 def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr):
     name = node["name"]
     shape = node["shape"]
@@ -1341,15 +2177,18 @@ def emit_textured_mesh_object_node(node, idx, parent_entity_var, parent_trs_expr
 
     params = {"scale": transform.get("scale", [1.0, 1.0, 1.0])}
     raw_vertices, raw_indices, raw_uvs = create_textured_mesh(shape, params)
+    raw_normals   = _compute_smooth_normals(raw_vertices, raw_indices)
     vertices_code = ndarray_to_python(raw_vertices, "float32")
-    indices_code = ndarray_to_python(raw_indices, "uint32")
-    uv_code = ndarray_to_python(raw_uvs, "float32")
+    indices_code  = ndarray_to_python(raw_indices,  "uint32")
+    uv_code       = ndarray_to_python(raw_uvs,      "float32")
+    normals_code  = ndarray_to_python(raw_normals,  "float32")
 
     object_code = f"""
 # ===== textured mesh_object: {name} =====
 vertices_{suffix} = {vertices_code}
-indices_{suffix} = {indices_code}
-uv_{suffix} = {uv_code}
+indices_{suffix}  = {indices_code}
+uv_{suffix}       = {uv_code}
+normals_{suffix}  = {normals_code}
 
 {entity_var} = scene.world.createEntity(Entity(name="{name}"))
 scene.world.addEntityChild({parent_entity_var}, {entity_var})
@@ -1361,6 +2200,7 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 {mesh_var} = scene.world.addComponent({entity_var}, RenderMesh(name="{name}_mesh"))
 {mesh_var}.vertex_attributes.append(vertices_{suffix})
 {mesh_var}.vertex_attributes.append(uv_{suffix})
+{mesh_var}.vertex_attributes.append(normals_{suffix})
 {mesh_var}.vertex_index.append(indices_{suffix})
 
 scene.world.addComponent({entity_var}, VertexArray())
@@ -1373,19 +2213,19 @@ scene.world.addComponent({entity_var}, VertexArray())
         )
     )
 )
-""" 
+"""
 
     uniform_code = f"""
 model_{suffix} = {world_trs_expr}
 {shader_var}.setUniformVariable(key='model', value=model_{suffix}, mat4=True)
 {shader_var}.setUniformVariable(key='view', value=view, mat4=True)
 {shader_var}.setUniformVariable(key='proj', value=projMat, mat4=True)
-"""
+""" + _tex_lighting_uniforms(shader_var)
+
     texture_set_up_code = f"""
 {texture_var} = Texture(r"{texture_path}")
 {shader_var}.setUniformVariable(key='texSampler', value={texture_var}, texture=True)
 """
-    
     return object_code, uniform_code, texture_set_up_code
 
 def check_ir_textures(node):
@@ -1424,6 +2264,10 @@ def generate_scene_script(scene_ir):
 
     state = {"counter": 0}
     object_code, uniform_code, post_init_code = emit_node(scene_ir, "rootEntity", "util.identity()", state)
+
+    # If the active light has an orbit, prepend per-frame activeLightPos update
+    if active_light and active_light.get("orbit"):
+        uniform_code = _orbit_light_uniform_code(active_light["orbit"]) + uniform_code
 
     footer = build_footer(title, uniform_code, post_init_code)
 

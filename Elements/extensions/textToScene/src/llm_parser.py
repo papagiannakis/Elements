@@ -167,6 +167,7 @@ Allowed top-level action values:
 - move_light
 - change_light_color
 - change_light_intensity
+- animate_object
 
 If the request needs multiple steps (e.g. "add X and move it Y", "create X and make it bigger"), use:
 {
@@ -190,6 +191,12 @@ Rules:
 - For apply_texture, texture_name must be one of: brick, wood, stone, grass, metal, sand, marble, concrete
 - model_path must be a filename (no directories) ending in .usd or .obj
 - The file must exist in the custom_models directory
+- Bundled 3D models available by name (use add_custom_model with their full keyword as model_path):
+  chameleon → chameleon_anim_mtl_variant.usdz
+  baseball / ball → ball_baseball_realistic.usdz
+  teapot → teapot.usdz
+  frank → Frank.usdz
+  When the user says "load a chameleon", "add a teapot", etc., use add_custom_model with the keyword as model_path.
 - add_prefab vs generate_composite: use add_prefab when the user says "add a/an [object]" or "add prefab [name]" with NO shape specified. Use generate_composite when the user says "make a [object] with [shape]" or "make a [object] using [shape]" — the explicit shape keyword signals procedural generation.
 
 Allowed object_type values:

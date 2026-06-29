@@ -11,6 +11,18 @@ scene_ir = {
         "title": "House Scene"
     },
     "children": [
+        # Warm point light — high and to the side, like afternoon sun
+        {
+            "node_type": "light",
+            "name": "sun",
+            "light_type": "point",
+            "properties": {
+                "position": [5.0, 8.0, 5.0],
+                "color": [1.0, 0.95, 0.8],
+                "intensity": 1.4
+            }
+        },
+        # Green grass ground
         {
             "node_type": "mesh_object",
             "name": "ground",
@@ -20,11 +32,11 @@ scene_ir = {
                 "scale": [10.0, 10.0, 10.0]
             },
             "material": {
-                "color": [0.6, 0.6, 0.6]
+                "color": [0.28, 0.55, 0.22]
             }
         },
-        build_house("house1", [0.0, 0.0, 0.0]),
-        build_house("house2", [1.5, 0.0, 2.0])
+        build_house("house1", [-1.8, 0.0, 0.0]),
+        build_house("house2", [ 1.8, 0.0, 0.0]),
     ]
 }
 

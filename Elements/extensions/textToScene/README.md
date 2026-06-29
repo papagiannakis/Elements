@@ -36,8 +36,12 @@ The core idea is a **hierarchical scene IR** (intermediate representation). A sc
 - Undo support through a persistent snapshot stack
 - Prefab library (house, tree, bench, table, lamp, street light, …)
 - Basic directional and point lighting
-- Textured cube support
-- LLM-backed parsing (OpenAI) with prompt-level caching
+- Textured 3D model support (USDZ with embedded textures — Phong shading, smooth normals)
+- Per-frame light orbit animation baked into every textured shader
+- Object animations: bounce, spin, orbit, and interpolated (lerp) movement
+- Orbiting light support: any light can be set to orbit a target object
+- Bundled 3D model library (chameleon, baseball, teapot, Frank) — load by name
+- LLM-backed parsing (Google Gemini / OpenAI) with prompt-level caching
 - Full evaluation harness with baseline and few-shot modes
 
 ---
@@ -123,37 +127,35 @@ extensions/textToScene/
 
 ## Prerequisites & installation
 
-### 1. Clone the parent repository
+### 1. Install the Elements framework
 
-This extension is **not standalone**. It imports the `Elements` package directly from the parent repo. Always work inside the full `Elements` repository:
+Clone the Elements repository and install it with pip. Running `pip install -e .` from the folder that contains `setup.py` installs the framework in editable mode and pulls in all required packages — PySDL2, PyOpenGL, and numpy — automatically:
 
 ```bash
 git clone <elements-repo-url>
-cd Elements
+cd Elements          # the folder that contains setup.py
+pip install -e .
 ```
 
-### 2. Create and activate a conda environment
+### 2. Install textToScene dependencies
 
-`textToScene` requires **Python 3.9** — this is a hard requirement for `google-genai`. Use conda to create an isolated environment with the correct version and the OpenGL/SDL2 packages the `Elements` framework needs.
-
-**Windows / macOS / Linux:**
+Navigate into the extension folder and install its dependencies:
 
 ```bash
-conda create -n elementtest python=3.9
-conda activate elementtest
-conda install -c conda-forge pysdl2 pyopengl numpy
+# Windows
+cd Elements\extensions\textToScene
+
+# macOS / Linux
+cd Elements/extensions/textToScene
 ```
 
-### 3. Install Python dependencies
-
-Navigate into the extension folder (all commands from this point on run from here):
-
 ```bash
-cd extensions/textToScene
 pip install -r requirements.txt
 ```
 
-This installs `google-genai`, `openai`, `python-dotenv`, and other pure-Python packages. The `Elements` framework itself is imported from the parent repository and does not need a separate install step — scripts add the repo root to `sys.path` automatically.
+`requirements.txt` includes `google-genai`, `openai`, `python-dotenv`, `imgui`, `numpy<2.0`, and other packages needed by the NL pipeline.
+
+> **Note — numpy version:** numpy 2.x breaks binary compatibility with some OpenGL bindings. The `requirements.txt` pins `numpy<2.0` which forces installation of 1.26.4. If you ever see `AttributeError` or `ImportError` related to numpy after an upgrade, run `pip install "numpy<2.0"` to downgrade.
 
 ---
 
@@ -196,7 +198,7 @@ DEFAULT_MODEL = "gemini-2.5-flash-lite"   # default — fast
 
 ### Runtime file locations
 
-All bridge files are written to `~/.textToScene/` (inside the user's home directory) — **not on the Desktop**. The directory is created automatically on first run.
+All bridge files are written to `~/.textToScene/` (inside the user's home directory). The directory is created automatically on first run.
 
 | Constant | Location | Description |
 |---|---|---|
@@ -228,10 +230,6 @@ python src/legacy/tester_1.py
 
 Run this once at the start of each session or when you want to reset the scene.
 
-> **Why do you see a pink cube?** The initial scene is a single untextured cube. The `Elements` default material is pink/magenta (it signals "no shader assigned yet"). Once the controller starts and you issue commands, objects appear with the colours you specify.
->
-> ![Initial scene — pink cube with ImGui panel](docs/fig_002_firstScene.png)
-
 **Terminal 2 — start the controller:**
 
 ```bash
@@ -255,6 +253,10 @@ python src/supervisor.py
 ```
 
 The supervisor launches the scene and manages process switching between official and preview modes. You will now see the `Elements` OpenGL window.
+
+> **Initial scene:** The default scene is empty (no objects). Type a command like `add a red cube` or `load a chameleon` to place something. The ImGui text box is in the top-left of the window.
+>
+> ![Initial scene — empty scene with ImGui panel](docs/fig_002_firstScene.png)
 
 Type a command in the ImGui text box and press Enter.
 
@@ -432,6 +434,52 @@ add prefab bench
 add prefab street light
 ```
 
+### Animations
+
+```
+make the cube bounce
+make the cube go up and down
+make the sphere bob
+make the cube spin
+make the cube rotate continuously
+make the cube spin on its axis
+make the cube move smoothly to the right
+make the cube move back and forth
+```
+
+### Orbit
+
+Objects or lights can orbit (circle around) another object:
+
+```
+add a sphere that rotates around the cube
+add a sphere that orbits the cube
+add a sphere that circles the cube
+add a light that rotates around the cube
+add a spotlight that revolves around the sphere
+```
+
+### Load bundled 3D models
+
+```
+load a chameleon
+add a chameleon
+load the teapot
+add a baseball
+load frank
+```
+
+Available bundled models: `chameleon`, `baseball` / `ball`, `teapot`, `frank`.
+
+### Extra lights
+
+```
+add a light
+add a spotlight
+turn on the lights
+illuminate the scene
+```
+
 ### Scene management
 
 ```
@@ -507,12 +555,14 @@ The evaluation scripts measure how accurately the system parses and executes nat
 ```bash
 # Windows
 python tests\evaluate_baseline.py   # no few-shot examples
-python tests\evaluate_fewshot.py    # few-shot examples injected into prompt
+python tests\evaluate_fewshot.py    # few-shot — Gemini only, requires GEMINI_API_KEY
 
 # macOS / Linux
 python tests/evaluate_baseline.py
 python tests/evaluate_fewshot.py
 ```
+
+`evaluate_fewshot.py` uses the Gemini model only (not OpenAI). If `GEMINI_API_KEY` is not set in `.env`, the script prints a warning and exits without running any tests.
 
 Results are written to `docs/all_results.json`.
 

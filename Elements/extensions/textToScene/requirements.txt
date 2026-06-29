@@ -1,5 +1,6 @@
-numpy
+numpy<2.0
 openai
+google-genai
 PyOpenGL
 imgui
 pytest

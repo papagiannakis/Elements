@@ -26,7 +26,7 @@ def build_house(name, position):
                     "scale": [1.2, 1.0, 1.2]
                 },
                 "material": {
-                    "color": [0.8, 0.7, 0.5]
+                    "color": [0.94, 0.87, 0.72]
                 }
             },
             {
@@ -38,7 +38,7 @@ def build_house(name, position):
                     "scale": [1.2, 0.8, 1.2]
                 },
                 "material": {
-                    "color": [0.7, 0.1, 0.1]
+                    "color": [0.65, 0.18, 0.12]
                 }
             }
         ]

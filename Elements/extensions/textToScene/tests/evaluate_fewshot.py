@@ -290,14 +290,19 @@ def run_fewshot_eval(model_id, delay=4.5):
 
 
 if __name__ == "__main__":
+    if not GEMINI_API_KEY:
+        print("[evaluate_fewshot] GEMINI_API_KEY is not set — skipping evaluation.")
+        print("Add GEMINI_API_KEY to your .env file to run this script.")
+        sys.exit(0)
+
     model = "gemini-2.5-flash-lite"   # change if needed
     delay = 4.5 if model.startswith("gemini") else 0.5
 
     results, summary = run_fewshot_eval(model, delay=delay)
 
     # save
-    out = Path.home() / "Desktop" / "textToScene_figures" / "fewshot_results.json"
-    out.write_text(json.dumps({
+    DOCS.mkdir(parents=True, exist_ok=True)
+    OUT_JSON.write_text(json.dumps({
         "model": model,
         "summary": summary,
         "results": results,
@@ -307,4 +312,4 @@ if __name__ == "__main__":
             "note": "Deterministic code generator — always 100%"
         }
     }, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"\nSaved: {out}")
+    print(f"\nSaved: {OUT_JSON}")

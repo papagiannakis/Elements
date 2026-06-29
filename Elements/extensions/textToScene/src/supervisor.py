@@ -1,8 +1,12 @@
 import json
+import os
 import subprocess
 import sys
 import time
 from pathlib import Path
+
+# Elements repo root — needed so scene subprocesses can `import Elements`
+_ELEMENTS_ROOT = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
 
 try:
     from config import (
@@ -101,9 +105,14 @@ def launch_scene(script_path):
 
     print("[supervisor] Launching:", script_path)
 
+    env = os.environ.copy()
+    existing = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = _ELEMENTS_ROOT + (os.pathsep + existing if existing else "")
+
     return subprocess.Popen(
         [sys.executable, str(script_path)],
-        cwd=str(script_path.parent)
+        cwd=str(script_path.parent),
+        env=env
     )
 
 

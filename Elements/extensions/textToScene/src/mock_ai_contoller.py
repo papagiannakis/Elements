@@ -1,3 +1,4 @@
+import sys
 import json
 import math
 import os
@@ -7,6 +8,12 @@ import traceback
 import re
 from copy import deepcopy
 from pathlib import Path
+
+# Add the Elements repo root to sys.path so `import Elements` works
+# when running the controller directly from the src/ directory.
+_repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
+if str(_repo_root) not in sys.path:
+    sys.path.insert(0, str(_repo_root))
 
 from code_generator import generate_scene_script
 from llm_parser import (
@@ -65,26 +72,20 @@ DEFAULT_NEW_SCENE_IR = {
         "height": 800,
         "title": "New Scene"
     },
-    "children": [
-        {
-            "node_type": "mesh_object",
-            "name": "cube_1",
-            "id": "cube_1",
-            "created_order": 1,
-            "shape": "cube",
-            "transform": {
-                "position": [0.0, 0.5, 0.0],
-                "scale": [1.0, 1.0, 1.0]
-            },
-            "material": {
-                "color": [0.8, 0.0, 0.8],
-                "texture": {
-                    "enabled": False,
-                    "path": None
-                }
-            }
-        }
-    ]
+    "children": []
+}
+
+# Models bundled with the extension (in models/ subfolder)
+_EXTENSION_DIR = Path(__file__).resolve().parent.parent
+MODELS_DIR = _EXTENSION_DIR / "models"
+
+# Friendly-name → filename mapping for bundled USDZ models
+_KNOWN_MODELS = {
+    "chameleon":  "chameleon_anim_mtl_variant.usdz",
+    "baseball":   "ball_baseball_realistic.usdz",
+    "ball":       "ball_baseball_realistic.usdz",
+    "teapot":     "teapot.usdz",
+    "frank":      "Frank.usdz",
 }
 
 
@@ -493,8 +494,17 @@ def initialize_bridge_state():
     print("[controller] Initializing bridge state.")
     ensure_shared_scene_ir()
     ensure_official_scene_script()
-    clear_preview_files()
     seed_builtin_prefabs()
+
+    # Preserve a running preview rather than wiping it on controller start.
+    current_state = read_json(SCENE_STATE_FILE, default={}) or {}
+    preview_active = (
+        current_state.get("mode") == "preview"
+        and PREVIEW_SCENE_FILE.exists()
+    )
+
+    if not preview_active:
+        clear_preview_files()
 
     req = read_json(AI_REQUEST_FILE, default=None)
     if isinstance(req, dict) and req.get("status") in ("pending", "preview_ready"):
@@ -507,8 +517,12 @@ def initialize_bridge_state():
         "updated_at": time.time()
     })
 
-    write_scene_state("official", SCENE_OUT_FILE)
-    print("[controller] Bridge initialization complete.")
+    # Only force-switch to official if no preview is currently showing.
+    # Calling write_scene_state bumps updated_at which restarts the scene process.
+    if not preview_active:
+        write_scene_state("official", SCENE_OUT_FILE)
+
+    print("[controller] Bridge initialization complete. preview_active={}".format(preview_active))
 
 
 def initialize_new_scene(request_id=None):
@@ -1658,6 +1672,110 @@ def detect_procedural_action(prompt):
 
     text = prompt.lower().strip()
 
+    # Bundled model name detection: "load a chameleon", "add a teapot", "show baseball", etc.
+    _load_verbs = re.compile(r'\b(load|add|import|show|bring|place|create|put)\b')
+    if _load_verbs.search(text):
+        for model_name, filename in _KNOWN_MODELS.items():
+            if re.search(r'\b' + re.escape(model_name) + r'\b', text):
+                full_path = MODELS_DIR / filename
+                if full_path.exists():
+                    print("[controller] Detected known model '{}' in prompt.".format(model_name))
+                    return {"action": "add_custom_model", "model_path": str(full_path)}
+
+    # ---- orbit: "add a light that rotates around the cube" / "add a sphere that rotates around the cube" ----
+    # ---- expanded orbit ----
+    _orbit_re = re.compile(
+        r'\b(?:rotates?|orbits?|circles?|revolves?|spins?\s+around|goes?\s+(?:in\s+circles?\s+)?around|moves?\s+(?:in\s+a\s+circle\s+)?around)\s+(?:the\s+)?(\w+)',
+        re.IGNORECASE
+    )
+    _orbit_m = _orbit_re.search(text)
+    if _orbit_m:
+        target_kw = _orbit_m.group(1).lower()
+        text_before = text[:_orbit_m.start()]
+        if re.search(r'\blight\b', text_before):
+            return {
+                "action": "add_light",
+                "light_type": "point",
+                "color": color_name_from_text(text_before) or "white",
+                "intensity": 1.5,
+                "orbit": {"target": target_kw, "radius": 3.0, "speed": 0.8, "height": 2.5},
+            }
+        _shape = shape_from_text(text_before)
+        if _shape:
+            return {
+                "action": "add_object",
+                "object_type": _shape,
+                "color": color_name_from_text(text_before) or "yellow",
+                "orbit": {"target": target_kw, "radius": 3.0, "speed": 0.8},
+            }
+
+    # ---- bounce / up-and-down ----
+    _bounce_re = re.compile(
+        r'\b(?:bounce[sd]?|go(?:es)?\s+up\s+and\s+down|bob[sd]?(?:\s+up\s+and\s+down)?|move[sd]?\s+up\s+and\s+down|jump[sd]?)\b',
+        re.IGNORECASE
+    )
+    if _bounce_re.search(text):
+        _target_kw = shape_from_text(text) or color_name_from_text(text) or "last"
+        return {
+            "action": "animate_object",
+            "target": _target_kw,
+            "animation_type": "bounce",
+            "amplitude": 0.5,
+            "speed": 2.0,
+        }
+
+    # ---- spin / self-rotation ----
+    _spin_re = re.compile(
+        r'\b(?:spin[sd]?(?:\s+on\s+(?:its|the)\s+axis)?|rotate[sd]?\s+(?:continuously|forever|on\s+(?:its|the)\s+axis)|keep\s+rotating|keep\s+spinning)\b',
+        re.IGNORECASE
+    )
+    if _spin_re.search(text):
+        _target_kw = shape_from_text(text) or color_name_from_text(text) or "last"
+        _axis = [0, 1, 0]
+        if re.search(r'\bx[- ]axis\b|\baround\s+x\b', text): _axis = [1, 0, 0]
+        elif re.search(r'\bz[- ]axis\b|\baround\s+z\b', text): _axis = [0, 0, 1]
+        return {
+            "action": "animate_object",
+            "target": _target_kw,
+            "animation_type": "spin",
+            "speed": 1.0,
+            "axis": _axis,
+        }
+
+    # ---- lerp / interpolated movement ----
+    _lerp_re = re.compile(
+        r'\b(?:smooth(?:ly)?\s+move[sd]?|move[sd]?\s+(?:smoothly|back\s+and\s+forth)|interpolate[sd]?|animate[sd]?\s+moving|go(?:es)?\s+back\s+and\s+forth|slide[sd]?)\b',
+        re.IGNORECASE
+    )
+    if _lerp_re.search(text):
+        _target_kw = shape_from_text(text) or color_name_from_text(text) or "last"
+        _dir = direction_from_text(text) or "right"
+        return {
+            "action": "animate_object",
+            "target": _target_kw,
+            "animation_type": "lerp",
+            "direction": _dir,
+            "distance": 2.0,
+            "duration": 2.0,
+        }
+
+    # ---- extra light keywords ----
+    _extra_light_re = re.compile(
+        r'\b(?:spotlight|sunlight|illuminate|turn\s+on\s+(?:the\s+)?lights?|add\s+(?:a\s+)?(?:warm|cool|bright|dim)\s+light)\b',
+        re.IGNORECASE
+    )
+    if _extra_light_re.search(text) and not _orbit_m:
+        _lcolor = "white"
+        if re.search(r'\bwarm\b', text): _lcolor = "orange"
+        elif re.search(r'\bcool\b', text): _lcolor = "cyan"
+        elif re.search(r'\bbright\b', text): _lcolor = "white"
+        return {
+            "action": "add_light",
+            "light_type": "point",
+            "color": _lcolor,
+            "intensity": 1.5,
+        }
+
     # ---- ring ----
     if re.search(r"\bring\b", text):
         object_type = shape_from_text(text) or "cube"
@@ -2107,6 +2225,7 @@ def validate_action(action):
         "move_light",
         "change_light_color",
         "change_light_intensity",
+        "animate_object",
     }
 
     action_name = action.get("action")
@@ -2225,6 +2344,18 @@ def resolve_target_node_with_group(scene_ir, target_text):
         if str(node.get("name", "")).lower() == target_text:
             print("[controller] Resolved target by name:", target_text, "->", node.get("name"))
             return node, parent_group
+
+    # Priority 2.5: name stem match — "chair" matches "chair_1", "chair_2" etc.
+    stem_pattern = re.compile(r'^' + re.escape(target_text) + r'(_\d+)?$')
+    stem_matches = [
+        (node, pg) for node, pg in all_nodes
+        if stem_pattern.match(str(node.get("name", "")).lower())
+    ]
+    if stem_matches:
+        stem_matches.sort(key=lambda item: _node_created_order(item[0]))
+        node, pg = stem_matches[0]
+        print("[controller] Resolved target by name stem:", target_text, "->", node.get("name"))
+        return node, pg
 
     # Determine preferred order from reference words in target_text
     ref_mode = reference_mode_from_text(target_text)
@@ -2921,10 +3052,11 @@ def apply_action_to_ir(scene_ir, action):
             float(desired_world_position[2])
         ]
 
+        unique_name = make_unique_name(new_ir, object_type)
         new_node = {
             "node_type": "mesh_object",
-            "name": make_unique_name(new_ir, object_type),
-            "id": make_unique_name(new_ir, object_type),
+            "name": unique_name,
+            "id": unique_name,
             "created_order": next_object_order(new_ir),
             "shape": object_type,
             "transform": {
@@ -2939,6 +3071,18 @@ def apply_action_to_ir(scene_ir, action):
                 }
             }
         }
+
+        orbit_info = action.get("orbit")
+        if orbit_info:
+            target_kw = orbit_info.get("target", "")
+            target_node, _ = resolve_target_node_with_group(new_ir, target_kw)
+            center = get_position(target_node) if target_node else [0.0, 0.0, 0.0]
+            new_node["orbit"] = {
+                "center": center,
+                "radius": float(orbit_info.get("radius", 3.0)),
+                "speed":  float(orbit_info.get("speed",  0.8)),
+            }
+            print("[controller] Orbit mesh '{}' around {} at center {}".format(unique_name, target_kw, center))
 
         ensure_scene_children(new_ir).append(new_node)
         print("[controller] Added object at position:", position)
@@ -3002,42 +3146,6 @@ def apply_action_to_ir(scene_ir, action):
             raise ValueError(_target_not_found_error("remove_texture", action, new_ir))
         target.setdefault("material", {})
         target["material"]["texture"] = {"enabled": False, "path": None}
-        return new_ir
-    if action_name == "add_custom_model":
-        model_path = action.get("model_path", "")
-        path_obj = Path(model_path)
-        if path_obj.is_absolute():
-            full_path = path_obj
-        else:
-            full_path = CUSTOM_MODELS_DIR / model_path
-        if not full_path.exists():
-            raise ValueError(
-                "Model file not found: {}\n"
-                "Place your .obj / .usd / .usda files in: {}".format(full_path, CUSTOM_MODELS_DIR)
-            )
-        if full_path.suffix.lower() not in (".usd", ".usda", ".usdz", ".obj"):
-            raise ValueError(
-                "Unsupported format '{}'. Supported: .obj, .usd, .usda, .usdz".format(full_path.suffix)
-            )
-        position = list(find_next_free_world_position(new_ir, preferred_y=CUBE_Y))
-        stem = Path(model_path).stem or "custom_model"
-        unique_name = make_unique_name(new_ir, stem)
-        new_node = {
-            "node_type": "mesh_object",
-            "name": unique_name,
-            "id": unique_name,
-            "created_order": next_object_order(new_ir),
-            "shape": "custom",
-            "custom_model_path": str(full_path),
-            "transform": {
-                "position": position,
-                "rotation": [0.0, 0.0, 0.0],
-                "scale": [1.0, 1.0, 1.0],
-            },
-            "material": {"color": [0.8, 0.8, 0.8], "texture": {"enabled": False, "path": None}},
-        }
-        ensure_scene_children(new_ir).append(new_node)
-        print("[controller] Added custom model '{}' from: {}".format(unique_name, full_path))
         return new_ir
 
     if action_name == "scale_object":
@@ -3213,6 +3321,11 @@ def apply_action_to_ir(scene_ir, action):
             full_path = path_obj
         else:
             full_path = CUSTOM_MODELS_DIR / model_path
+            if not full_path.exists():
+                # Also search bundled models/ folder
+                bundled = MODELS_DIR / model_path
+                if bundled.exists():
+                    full_path = bundled
         if not full_path.exists():
             raise ValueError(
                 "Model file not found: {}\n"
@@ -3276,6 +3389,20 @@ def apply_action_to_ir(scene_ir, action):
             "light_type": light_type,
             "properties": props,
         }
+
+        orbit_info = action.get("orbit")
+        if orbit_info:
+            target_kw = orbit_info.get("target", "")
+            target_node, _ = resolve_target_node_with_group(new_ir, target_kw)
+            center = get_position(target_node) if target_node else [0.0, 0.0, 0.0]
+            new_node["orbit"] = {
+                "center": center,
+                "radius": float(orbit_info.get("radius", 3.0)),
+                "speed":  float(orbit_info.get("speed",  0.8)),
+                "height": float(orbit_info.get("height", center[1] + 2.5)),
+            }
+            print("[controller] Orbit light '{}' around {} at center {}".format(unique_name, target_kw, center))
+
         ensure_scene_children(new_ir).append(new_node)
         return new_ir
 
@@ -3312,6 +3439,36 @@ def apply_action_to_ir(scene_ir, action):
         if target is None:
             raise ValueError("Could not resolve change_light_intensity target")
         target["properties"]["intensity"] = float(action.get("intensity", 1.0))
+        return new_ir
+
+    if action_name == "animate_object":
+        target, _ = resolve_action_target_node(new_ir, action)
+        if target is None:
+            raise ValueError(_target_not_found_error("animate_object", action, new_ir))
+        anim_type = str(action.get("animation_type", "bounce")).lower()
+        anim = {"type": anim_type}
+        if anim_type == "bounce":
+            anim["amplitude"] = float(action.get("amplitude", 0.5))
+            anim["speed"]     = float(action.get("speed",     2.0))
+        elif anim_type == "spin":
+            anim["speed"] = float(action.get("speed", 1.0))
+            anim["axis"]  = action.get("axis", [0, 1, 0])
+        elif anim_type == "lerp":
+            pos  = get_position(target)
+            direction = str(action.get("direction", "right")).lower()
+            dist = float(action.get("distance", 2.0))
+            delta_map = {
+                "right": [dist, 0, 0], "left": [-dist, 0, 0],
+                "up":    [0, dist, 0], "down": [0, -dist, 0],
+                "forward": [0, 0, -dist], "backward": [0, 0, dist],
+            }
+            delta = delta_map.get(direction, [dist, 0, 0])
+            to_pos = action.get("to_position") or [pos[0]+delta[0], pos[1]+delta[1], pos[2]+delta[2]]
+            anim["from"]     = pos
+            anim["to"]       = [float(v) for v in to_pos]
+            anim["duration"] = float(action.get("duration", 3.0))
+        target["animation"] = anim
+        print("[controller] animate_object '{}' type={}".format(target.get("name"), anim_type))
         return new_ir
 
     if action_name == "rotate_object":
