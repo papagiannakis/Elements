@@ -26,6 +26,14 @@ models = data["models"]
 ids    = list(models.keys())
 names  = [m["name"] for m in models.values()]
 
+# Categories shared across ALL models (for fair multi-model comparison)
+_all_cats_per_model = [set(models[i]["per_category"].keys()) for i in ids]
+common_categories = [c for c in models[ids[0]]["per_category"].keys()
+                     if all(c in s for s in _all_cats_per_model)]
+# New-feature categories only in rule_based (not yet evaluated for LLM models)
+new_feature_categories = [c for c in models["rule_based"]["per_category"].keys()
+                           if c not in common_categories]
+
 # ── Global style ──────────────────────────────────────────────────────────────
 plt.rcParams.update({
     "font.family":        "DejaVu Sans",
@@ -77,8 +85,8 @@ ax.set_yticks(y_pos)
 ax.set_yticklabels(names, fontsize=16)
 ax.set_xlabel("Intent Accuracy (%)", fontsize=18)
 ax.set_title(
-    "Overall Intent Accuracy per Model\n(125 evaluation prompts · 15 categories)",
-    fontsize=21, fontweight="bold", pad=14,
+    "Overall Intent Accuracy per Model\n(Rule-Based & Gemini-2.5-Flash-Lite: 146 prompts · 19 categories | Other LLMs: 125 prompts · 15 categories)",
+    fontsize=18, fontweight="bold", pad=14,
 )
 ax.set_xlim(0, 114)
 ax.axvline(100, color="#888888", linestyle="--", linewidth=1.0, alpha=0.7)
@@ -104,7 +112,7 @@ print("Saved: fig1_overall_accuracy.png")
 # ════════════════════════════════════════════════════════════════════════════════
 # FIG 2 — Per-category accuracy (split 2-panel, LLM models only)
 # ════════════════════════════════════════════════════════════════════════════════
-categories = list(models[ids[0]]["per_category"].keys())
+categories = common_categories
 short_cats = [
     c.replace("Movement - Directional",    "Movement\nDirectional")
      .replace("Movement - Positional",     "Movement\nPositional")
@@ -131,7 +139,7 @@ cat_groups = [list(range(0, SPLIT)), list(range(SPLIT, len(categories)))]
 
 fig, axes = plt.subplots(2, 1, figsize=(17, 12), sharey=True)
 fig.suptitle(
-    "Per-Category Intent Accuracy  (LLM models only, 4 backends)",
+    "Per-Category Intent Accuracy  (LLM models only, 4 backends · 15 shared categories)",
     fontsize=21, fontweight="bold", y=0.99,
 )
 
@@ -289,8 +297,63 @@ print("Saved: fig4_challenging_categories.png")
 
 
 # ════════════════════════════════════════════════════════════════════════════════
+# FIG 5 — New Features accuracy  (rule-based + any LLM model with full data)
+# ════════════════════════════════════════════════════════════════════════════════
+if new_feature_categories:
+    # Models that have been evaluated on the new categories
+    nf_model_ids   = [i for i in ids
+                      if all(c in models[i]["per_category"] for c in new_feature_categories)]
+    nf_model_names = [models[i]["name"] for i in nf_model_ids]
+    nf_model_cols  = [COLORS.get(i, "#BBBBBB") for i in nf_model_ids]
+    n_nf = len(nf_model_ids)
+
+    nf_labels = [c.replace("Custom Model Loading", "Custom\nModel Loading")
+                  .replace("Orbit - Object", "Orbit\n(Object)")
+                  .replace("Orbit - Light", "Orbit\n(Light)")
+                  for c in new_feature_categories]
+
+    fig, ax = plt.subplots(figsize=(11, 6))
+    x   = np.arange(len(new_feature_categories))
+    w   = 0.35 / max(n_nf, 1)
+
+    for j, mid in enumerate(nf_model_ids):
+        vals   = [models[mid]["per_category"][c]["intent_ok"] /
+                  models[mid]["per_category"][c]["total"] * 100
+                  for c in new_feature_categories]
+        totals = [models[mid]["per_category"][c]["total"] for c in new_feature_categories]
+        offset = (j - n_nf / 2 + 0.5) * (w + 0.04)
+        bars = ax.bar(x + offset, vals, w + 0.04,
+                      label=nf_model_names[j], color=nf_model_cols[j],
+                      edgecolor="white", linewidth=1.2)
+        for bar, v, tot in zip(bars, vals, totals):
+            ok = int(round(v * tot / 100))
+            ax.text(bar.get_x() + bar.get_width() / 2,
+                    bar.get_height() + 1.5,
+                    f"{int(v)}%\n({ok}/{tot})",
+                    ha="center", va="bottom", fontsize=11, color="#222222")
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(nf_labels, fontsize=15)
+    ax.set_ylabel("Accuracy (%)", fontsize=18)
+    ax.set_ylim(0, 135)
+    ax.axhline(100, color="#888888", linestyle="--", linewidth=1.0, alpha=0.7)
+    ax.set_title(
+        "New Features Accuracy\n(Animation · Orbit · Custom Model Loading)",
+        fontsize=20, fontweight="bold",
+    )
+    ax.legend(fontsize=13, loc="lower right", framealpha=0.92)
+    ax.set_axisbelow(True)
+    plt.tight_layout()
+    fig.savefig(OUTDIR / "fig5_new_features.png", dpi=300, bbox_inches="tight")
+    plt.close()
+    print("Saved: fig5_new_features.png")
+
+
+# ════════════════════════════════════════════════════════════════════════════════
 # CSV — full evaluation table (Excel-ready with BOM for correct encoding)
 # ════════════════════════════════════════════════════════════════════════════════
+all_csv_categories = list(models["rule_based"]["per_category"].keys())
+
 csv_path = OUTDIR / "evaluation_table.csv"
 with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
     writer = csv.writer(f)
@@ -301,6 +364,7 @@ with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
         ("Apply Success (%)",     lambda m: f"{m['apply_success_rate']*100:.1f}"),
         ("Avg Latency (ms)",      lambda m: f"{m['avg_latency_ms']:.0f}"),
         ("Cost / 100 cmds (USD)", lambda m: f"${m['cost_per_100_commands']:.4f}"),
+        ("Total Prompts",         lambda m: str(int(m["total"]))),
         ("Total Tokens In",       lambda m: str(m["total_tokens_in"])),
         ("Total Tokens Out",      lambda m: str(m["total_tokens_out"])),
     ]:
@@ -308,12 +372,15 @@ with open(csv_path, "w", newline="", encoding="utf-8-sig") as f:
 
     writer.writerow([])
     writer.writerow(["Category"] + names)
-    for cat in categories:
+    for cat in all_csv_categories:
         row = [cat]
         for mid in ids:
-            d = models[mid]["per_category"][cat]
-            acc = d["intent_ok"] / d["total"] * 100
-            row.append(f"{acc:.0f}%  ({d['intent_ok']}/{d['total']})")
+            d = models[mid]["per_category"].get(cat)
+            if d and d["total"] > 0:
+                acc = d["intent_ok"] / d["total"] * 100
+                row.append(f"{acc:.0f}%  ({d['intent_ok']}/{d['total']})")
+            else:
+                row.append("n/a")
         writer.writerow(row)
 
 print("Saved: evaluation_table.csv")
@@ -322,4 +389,5 @@ print("  fig1_overall_accuracy.png")
 print("  fig2_per_category.png")
 print("  fig3_latency_cost.png")
 print("  fig4_challenging_categories.png")
+print("  fig5_new_features.png")
 print("  evaluation_table.csv")

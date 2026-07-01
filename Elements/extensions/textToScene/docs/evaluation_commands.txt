@@ -132,6 +132,35 @@ make a fence with cubes
 make a tree with spheres
 make a house with spheres
 
+# Animation (8 commands)
+make the cube bounce
+make the orange cube go up and down
+make the cube bob
+make the cube spin
+make the orange cube rotate continuously
+make the cube rotate on its axis
+make the cube move back and forth
+make the cube move smoothly to the left
+
+# Orbit - Object (5 commands)
+add a sphere that orbits the cube
+add a sphere that rotates around the cube
+add a sphere that circles the cube
+add a sphere that revolves around the cube
+add a sphere that goes around the cube
+
+# Orbit - Light (5 commands)
+add a light that rotates around the cube
+add a light that orbits the cube
+add a spotlight that revolves around the cube
+add a light that circles the cube
+add a light that goes around the cube
+
+# Custom Model Loading (3 commands)
+load a chameleon
+add a chameleon
+load the teapot
+
 # Scene Management (5 commands)
 save the scene
 save the scene as test_scene

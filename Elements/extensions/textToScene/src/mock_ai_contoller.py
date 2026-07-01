@@ -1685,14 +1685,14 @@ def detect_procedural_action(prompt):
     # ---- orbit: "add a light that rotates around the cube" / "add a sphere that rotates around the cube" ----
     # ---- expanded orbit ----
     _orbit_re = re.compile(
-        r'\b(?:rotates?|orbits?|circles?|revolves?|spins?\s+around|goes?\s+(?:in\s+circles?\s+)?around|moves?\s+(?:in\s+a\s+circle\s+)?around)\s+(?:the\s+)?(\w+)',
+        r'\b(?:rotates?\s+around|orbits?|circles?|revolves?\s+around|spins?\s+around|goes?\s+(?:in\s+circles?\s+)?around|moves?\s+(?:in\s+a\s+circle\s+)?around)\s+(?:the\s+)?(\w+)',
         re.IGNORECASE
     )
     _orbit_m = _orbit_re.search(text)
     if _orbit_m:
         target_kw = _orbit_m.group(1).lower()
         text_before = text[:_orbit_m.start()]
-        if re.search(r'\blight\b', text_before):
+        if re.search(r'\b(?:light|spotlight|lantern|torch|sunlight|lamp)\b', text_before):
             return {
                 "action": "add_light",
                 "light_type": "point",

@@ -18,13 +18,15 @@ The core idea is a **hierarchical scene IR** (intermediate representation). A sc
 6. [How to run](#how-to-run)
 7. [Scene IR format](#scene-ir-format)
 8. [Supported shapes](#supported-shapes)
-9. [Supported lights](#supported-lights)
-10. [Prefabs](#prefabs)
-11. [Supported text commands](#supported-text-commands)
-12. [Bridge protocol (shared runtime files)](#bridge-protocol)
-13. [Testing & evaluation](#testing--evaluation)
-14. [For future developers](#for-future-developers)
-15. [Troubleshooting](#troubleshooting)
+9. [3D model & texture support](#3d-model--texture-support)
+10. [Animation system](#animation-system)
+11. [Supported lights](#supported-lights)
+12. [Prefabs](#prefabs)
+13. [Supported text commands](#supported-text-commands)
+14. [Bridge protocol (shared runtime files)](#bridge-protocol)
+15. [Testing & evaluation](#testing--evaluation)
+16. [For future developers](#for-future-developers)
+17. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -362,6 +364,98 @@ All shapes sit at the origin by default. Use `transform.position` to place them.
 
 ---
 
+## 3D model & texture support
+
+The system can load external USDZ / USD / OBJ files in addition to the built-in primitive shapes. These are rendered with a custom **Phong shading** pipeline (ambient + diffuse + specular) applied per vertex. Smooth normals are computed from face cross-products at load time.
+
+Every textured-model scene automatically includes a **dynamic orbiting point light** that circles the object at runtime. This ensures the Phong highlights are visible from all camera angles without any manual lighting setup.
+
+### Bundled model library
+
+Four USDZ models are included in `models/` and can be loaded by name from natural language:
+
+| Keyword(s) | File | Description |
+|---|---|---|
+| `chameleon` | `chameleon_anim_mtl_variant.usdz` | Animated chameleon with full colour texture |
+| `baseball` / `ball` | `ball_baseball_realistic.usdz` | Realistic baseball with leather-stitch texture |
+| `teapot` | `teapot.usdz` | Classic Utah teapot with surface texture |
+| `frank` | `Frank.usdz` | Stylised character model |
+
+Example commands:
+
+```
+load a chameleon
+add the teapot
+add a baseball
+```
+
+![Chameleon USDZ with Phong shading](docs/fig_chameleon.png)
+![Baseball USDZ with realistic texture](docs/fig_baseball.png)
+![Teapot USDZ](docs/fig_teapot.png)
+
+### Custom model IR node
+
+A `mesh_object` with `shape: "custom"` loads an arbitrary file from disk:
+
+```json
+{
+  "node_type": "mesh_object",
+  "name": "my_model",
+  "shape": "custom",
+  "custom_model_path": "/absolute/path/to/model.usdz",
+  "transform": {
+    "position": [0.0, 0.0, 0.0],
+    "scale":    [1.0, 1.0, 1.0],
+    "rotation": [0.0, 0.0, 0.0]
+  },
+  "material": {"color": [1.0, 1.0, 1.0]}
+}
+```
+
+`custom_model_path` can point to `.usdz`, `.usda`, `.usd`, or `.obj`. The path is resolved at code-generation time and embedded in the scene script. If the file is not found at runtime, the scene will log an error and skip the object.
+
+---
+
+## Animation system
+
+Objects can be given a per-frame animation by setting an `animation` field in their IR node. All animation types run inside the scene's render loop — no controller process is required once the script has been generated.
+
+### Animation IR node fields
+
+```json
+{
+  "animation": {
+    "type": "bounce",
+    "amplitude": 0.5,
+    "speed": 2.0
+  }
+}
+```
+
+| `type` | Required fields | Behaviour |
+|---|---|---|
+| `bounce` | `amplitude`, `speed` | Sinusoidal up-and-down oscillation on the Y axis |
+| `spin` | `speed`, `axis` | Continuous rotation around `axis` (default Y) |
+| `lerp` | `from`, `to`, `duration` | Ping-pong linear interpolation between two positions |
+
+### Orbit IR node fields
+
+Any `mesh_object` or `light` can orbit another object by setting an `orbit` field. The orbit center is resolved to the target object's position when the command is applied.
+
+```json
+{
+  "orbit": {
+    "center": [0.0, 0.0, 0.0],
+    "radius": 3.0,
+    "speed":  0.8
+  }
+}
+```
+
+Lights additionally accept a `height` field to lift the orbit plane above the target.
+
+---
+
 ## Supported lights
 
 | `light_type` | Required properties | Notes |
@@ -461,15 +555,20 @@ add a spotlight that revolves around the sphere
 
 ### Load bundled 3D models
 
+The full model library and technical details are in the [3D model & texture support](#3d-model--texture-support) section above.
+
 ```
 load a chameleon
-add a chameleon
-load the teapot
+add the teapot
 add a baseball
 load frank
 ```
 
-Available bundled models: `chameleon`, `baseball` / `ball`, `teapot`, `frank`.
+The system also accepts any USDZ/OBJ file path directly:
+
+```
+load /path/to/my_model.usdz
+```
 
 ### Extra lights
 
@@ -590,6 +689,27 @@ Results are written to `docs/all_results.json`.
 2. Import and expose it in any script that needs it.
 3. Add the trigger keyword in `mock_ai_contoller.py` under the `add prefab` command handler so users can summon it by text.
 4. Add a test in `tests/test_prefabs.py`.
+
+### Adding a bundled model
+
+1. Drop the `.usdz` / `.obj` file into `models/`.
+2. Open `src/mock_ai_contoller.py` and add an entry to `_KNOWN_MODELS` (around line 230):
+   ```python
+   _KNOWN_MODELS = {
+       "chameleon": "chameleon_anim_mtl_variant.usdz",
+       "mymodel":   "my_new_model.usdz",   # ← add here
+       ...
+   }
+   ```
+3. The keyword you use as the dict key becomes the natural-language trigger word (e.g. "load a mymodel").
+4. No other changes are needed — the `detect_procedural_action` function picks it up automatically.
+
+### Adding a new animation type
+
+1. Add a new `elif anim_type == "..."` branch inside `_animation_model_code` in `src/code_generator.py`.
+2. Add the same type string to the `animate_object` handler in `apply_action_to_ir` (`src/mock_ai_contoller.py`).
+3. Add detection regex in `detect_procedural_action` (around the `_bounce_re` / `_spin_re` block).
+4. Add unit tests in `tests/test_animations_orbit.py`.
 
 ### Adding a new action type
 

@@ -15,7 +15,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from mock_ai_contoller import (
     parse_command, command_to_action, apply_action_to_ir,
-    normalize_action, validate_action
+    normalize_action, validate_action, detect_procedural_action
 )
 
 DOCS     = Path(__file__).parent.parent / "docs"
@@ -41,6 +41,10 @@ _SECTION_ACTION_MAP = {
     "prefabs - add":          "add_prefab",
     "prefabs - transform":    None,
     "composite objects":      "generate_composite",
+    "animation":              "animate_object",
+    "orbit - object":         "add_object",
+    "orbit - light":          "add_light",
+    "custom model loading":   "add_custom_model",
     "scene management":       None,
     "undo/redo":              None,
     "action sequences":       "action_sequence",
@@ -79,8 +83,11 @@ def action_matches(result, case):
 def run_rule_based(command, scene_ir):
     start = time.time()
     try:
-        command_dict = parse_command(command)
-        action = command_to_action(command_dict)
+        # Try procedural/animation/orbit detection first (no LLM required)
+        action = detect_procedural_action(command)
+        if action is None:
+            command_dict = parse_command(command)
+            action = command_to_action(command_dict)
         action = normalize_action(action)
         validate_action(action)
     except Exception as e:
