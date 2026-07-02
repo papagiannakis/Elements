@@ -14,14 +14,13 @@ _env_path = Path(__file__).parent.parent / ".env"
 load_dotenv(dotenv_path=_env_path)
 
 # ── Directory layout ──────────────────────────────────────────────────────────
-SRC_DIR       = Path(__file__).resolve().parent
+import os as _os
+SRC_DIR       = Path(_os.path.abspath(_os.path.dirname(__file__)))
 EXTENSION_DIR = SRC_DIR.parent          # extensions/textToScene/
 DESKTOP_DIR   = Path.home() / "Desktop"
 
-# Runtime state lives in ~/.textToScene/ — inside the user's home directory,
-# NOT on the Desktop. This directory is always writable on all platforms.
-RUNTIME_DIR     = Path.home() / ".textToScene"
-SHARED_DIR      = RUNTIME_DIR / "scene_bridge"
+RUNTIME_DIR     = SRC_DIR
+SHARED_DIR      = SRC_DIR / "scene_bridge"
 HISTORY_DIR     = SHARED_DIR  / "history"
 SAVED_SCENES_DIR= SHARED_DIR  / "saved_scenes"
 PREFABS_DIR     = SHARED_DIR  / "prefabs"
@@ -42,7 +41,7 @@ SCENE_STATE_FILE  = SHARED_DIR  / "scene_state.json"
 HISTORY_STACK_FILE= HISTORY_DIR / "undo_stack.json"
 ACTION_CACHE_FILE = CACHE_DIR   / "action_cache.json"
 
-SCENE_OUT_FILE      = RUNTIME_DIR / "scene_out.py"
+SCENE_OUT_FILE      = SRC_DIR / "scene_out.py"
 OFFICIAL_SCENE_FILE = SCENE_OUT_FILE
 PREVIEW_SCENE_FILE  = SHARED_DIR  / "preview_scene.py"
 

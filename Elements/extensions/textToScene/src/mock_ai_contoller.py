@@ -462,7 +462,7 @@ def fresh_new_scene_ir():
 def ensure_shared_scene_ir():
     data = read_json(SCENE_IR_FILE, default=None)
 
-    if not isinstance(data, dict):
+    if not isinstance(data, dict) or data.get("node_type") != "scene":
         data = load_project_baseline_ir()
         write_json(SCENE_IR_FILE, data)
         print("[controller] Initialized shared scene_ir.json:", SCENE_IR_FILE)

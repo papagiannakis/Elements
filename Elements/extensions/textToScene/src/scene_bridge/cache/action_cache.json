@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "updated_at": 1783020180.5488389,
+  "entries": {
+    "add yellow cone": {
+      "prompt": "add a yellow cone",
+      "normalized_prompt": "add yellow cone",
+      "action": {
+        "action": "add_object",
+        "object_type": "cone",
+        "color": "yellow",
+        "_tokens_in": 2745,
+        "_tokens_out": 31
+      },
+      "updated_at": 1783020180.5488389
+    }
+  }
+}

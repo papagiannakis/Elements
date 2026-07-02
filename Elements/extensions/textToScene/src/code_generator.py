@@ -11,6 +11,10 @@ import numpy as np
 
 from geometry_factory import build_render_mesh, create_textured_cube, create_textured_mesh
 
+_SRC_DIR       = Path(os.path.abspath(os.path.dirname(__file__)))
+_EXTENSION_DIR = _SRC_DIR.parent
+_OUTPUT_DIR    = _SRC_DIR
+
 
 DEFAULT_WINDOW = {
     "width": 1200,
@@ -543,7 +547,7 @@ import json
 import time
 from pathlib import Path
 
-SHARED_DIR = Path.home() / ".textToScene" / "scene_bridge"
+SHARED_DIR = Path(__SHARED_DIR_LITERAL__)
 SHARED_DIR.mkdir(parents=True, exist_ok=True)
 
 AI_REQUEST_FILE = SHARED_DIR / "ai_request.json"
@@ -830,6 +834,7 @@ scene.shutdown()
         .replace("__WINDOW_TITLE_LITERAL__", json.dumps(title))
         .replace("__POST_INIT_BLOCK__", texture_set_up_block)
         .replace("__UNIFORMS__", indented_uniforms)
+        .replace("__SHARED_DIR_LITERAL__", repr(str(_SRC_DIR / "scene_bridge")))
     )
 
 # -----------------------------
@@ -1294,7 +1299,7 @@ def _uvs_are_trivial(uvs_array):
 def _extract_usdz_own_texture(usdz_path):
     """Extract the base-color (_bc / diffuse / basecolor) texture from a USDZ zip.
 
-    Writes the PNG/JPG to ~/.textToScene/textures/<stem>/ and returns its path.
+    Writes the PNG/JPG to output/textures/<stem>/ inside the extension directory and returns its path.
     Returns None if the file is not a USDZ or contains no recognisable color texture.
     """
     usdz_path = Path(usdz_path)
@@ -1314,7 +1319,7 @@ def _extract_usdz_own_texture(usdz_path):
             primary_word = usdz_path.stem.lower().split("_")[0]
             preferred = [c for c in candidates if primary_word in Path(c).stem.lower()]
             bc_name = preferred[0] if preferred else candidates[0]
-            out_dir = Path.home() / ".textToScene" / "textures" / usdz_path.stem
+            out_dir = _OUTPUT_DIR / "textures" / usdz_path.stem
             out_dir.mkdir(parents=True, exist_ok=True)
             out_path = out_dir / Path(bc_name).name
             with z.open(bc_name) as src, open(str(out_path), "wb") as dst:
@@ -1413,9 +1418,10 @@ def _compute_smooth_normals(verts_array, indices_array):
     """Compute smooth per-vertex normals from triangle geometry.
 
     verts_array  : (N, 4) float32 — positions with w=1
-    indices_array: (M, 3) uint32  — triangle indices
+    indices_array: flat (M*3,) or (M, 3) uint32 — triangle indices
     Returns (N, 3) float32 normal array.
     """
+    indices_array = np.asarray(indices_array).reshape(-1, 3)
     n = len(verts_array)
     normals = np.zeros((n, 3), dtype=np.float64)
     for tri in indices_array:
@@ -1530,7 +1536,7 @@ def _extract_asset_from_usdz(usdz_path, asset_rel_path):
     Returns the local extracted path, or None if not found.
     """
     usdz_path = Path(usdz_path)
-    out_dir = Path.home() / ".textToScene" / "textures" / usdz_path.stem
+    out_dir = _OUTPUT_DIR / "textures" / usdz_path.stem
     out_dir.mkdir(parents=True, exist_ok=True)
     clean = asset_rel_path.strip("@").lstrip("./").lstrip("/")
     with zipfile.ZipFile(str(usdz_path)) as z:
@@ -2274,33 +2280,15 @@ def generate_scene_script(scene_ir):
     final_script = header + "\n" + object_code + "\n" + footer
     return final_script
 
-'''
-def save_script(script, output_path: Optional[str] = None):
-    base_dir = Path(__file__).resolve().parent
 
+def save_script(script, output_path: Optional[str] = None):
     if output_path is None:
-        output_file = base_dir / "scene_out.py"
+        output_file = Path(__file__).resolve().parent / "scene_out.py"
     else:
         output_file = Path(output_path).resolve()
 
-    with open(str(output_file), "w", encoding="utf-8") as f:
-        f.write(script)
-
-    print("Saved script to:", output_file)
-    ''' #ISSUE WITH PATHS RESTRICTIONS AND SAVING 
-def save_script(script, output_path: Optional[str] = None):
-    if output_path is None:
-        try:
-            from config import SCENE_OUT_FILE
-            output_file = SCENE_OUT_FILE
-        except ImportError:
-            output_file = Path.home() / ".textToScene" / "scene_out.py"
-    else:
-        output_file = Path(output_path).resolve()
-
-    os.makedirs(str(output_file.parent), exist_ok=True)
-    with open(str(output_file), "w", encoding="utf-8") as f:
-        f.write(script)
+    with open(str(output_file), "wb") as f:
+        f.write(script.encode("utf-8"))
 
     print("Saved script to:", output_file)
 

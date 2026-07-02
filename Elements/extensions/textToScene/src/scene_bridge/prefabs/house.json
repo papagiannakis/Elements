@@ -1,0 +1,66 @@
+{
+  "node_type": "group",
+  "name": "house",
+  "transform": {
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "children": [
+    {
+      "node_type": "mesh_object",
+      "name": "house_body",
+      "shape": "rectangular_prism",
+      "transform": {
+        "position": [
+          0.0,
+          0.5,
+          0.0
+        ],
+        "scale": [
+          1.2,
+          1.0,
+          1.2
+        ]
+      },
+      "material": {
+        "color": [
+          0.94,
+          0.87,
+          0.72
+        ]
+      }
+    },
+    {
+      "node_type": "mesh_object",
+      "name": "house_roof",
+      "shape": "pyramid",
+      "transform": {
+        "position": [
+          0.0,
+          1.0,
+          0.0
+        ],
+        "scale": [
+          1.2,
+          0.8,
+          1.2
+        ]
+      },
+      "material": {
+        "color": [
+          0.65,
+          0.18,
+          0.12
+        ]
+      }
+    }
+  ]
+}

@@ -120,6 +120,7 @@ extensions/textToScene/
     ├── test_move_up_down.py       vertical movement tests
     ├── test_scale_object.py       scale action tests
     ├── test_rotate_object.py      rotation action tests
+    ├── test_animations_orbit.py   animation types, orbit detection, hybrid pipeline tests
     ├── evaluation_runner.py       automated evaluation harness
     ├── evaluate_baseline.py       baseline (no few-shot) evaluation
     └── evaluate_fewshot.py        few-shot LLM evaluation

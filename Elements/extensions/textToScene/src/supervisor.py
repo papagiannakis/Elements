@@ -53,12 +53,11 @@ def write_json(path, data):
 
 
 def ensure_initial_state():
-    if not SCENE_STATE_FILE.exists():
-        write_json(SCENE_STATE_FILE, {
-            "mode": "official",
-            "active_script": str(OFFICIAL_SCENE_FILE),
-            "updated_at": time.time()
-        })
+    write_json(SCENE_STATE_FILE, {
+        "mode": "official",
+        "active_script": str(OFFICIAL_SCENE_FILE),
+        "updated_at": time.time()
+    })
 
 
 def normalize_script_path(scene_state):
