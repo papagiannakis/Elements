@@ -496,15 +496,7 @@ def initialize_bridge_state():
     ensure_official_scene_script()
     seed_builtin_prefabs()
 
-    # Preserve a running preview rather than wiping it on controller start.
-    current_state = read_json(SCENE_STATE_FILE, default={}) or {}
-    preview_active = (
-        current_state.get("mode") == "preview"
-        and PREVIEW_SCENE_FILE.exists()
-    )
-
-    if not preview_active:
-        clear_preview_files()
+    clear_preview_files()
 
     req = read_json(AI_REQUEST_FILE, default=None)
     if isinstance(req, dict) and req.get("status") in ("pending", "preview_ready"):
@@ -517,10 +509,7 @@ def initialize_bridge_state():
         "updated_at": time.time()
     })
 
-    # Only force-switch to official if no preview is currently showing.
-    # Calling write_scene_state bumps updated_at which restarts the scene process.
-    if not preview_active:
-        write_scene_state("official", SCENE_OUT_FILE)
+    write_scene_state("official", SCENE_OUT_FILE)
 
     print("[controller] Bridge initialization complete. preview_active={}".format(preview_active))
 
