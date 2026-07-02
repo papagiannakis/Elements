@@ -1,6 +1,20 @@
 {
-  "request_id": 4,
-  "status": "applied",
-  "updated_at": 1783020438.6744227,
-  "message": "Applied."
+  "request_id": 5,
+  "status": "preview_ready",
+  "prompt": "add a cylinder that orbits around the yellow cube",
+  "created_at": 1783021394.1615276,
+  "message": "Ξ¤ΞΏ preview Ξ΄Ξ·ΞΌΞΉΞΏΟ…ΟΞ³Ξ®ΞΈΞ·ΞΊΞµ.",
+  "preview_file": "preview_scene.py",
+  "preview_ir_file": "preview_scene_ir.json",
+  "parsed_action": {
+    "action": "add_object",
+    "object_type": "cylinder",
+    "color": "yellow",
+    "orbit": {
+      "target": "around",
+      "radius": 3.0,
+      "speed": 0.8
+    }
+  },
+  "action_source": "procedural_detector"
 }

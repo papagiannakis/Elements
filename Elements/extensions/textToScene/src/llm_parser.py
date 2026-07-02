@@ -41,7 +41,7 @@ def get_client():
 def _call_openai(model_name, prompt_text):
     """Call OpenAI Responses API. Returns (text, tokens_in, tokens_out)."""
     client = get_client()
-    response = client.responses.create(model=model_name, input=prompt_text)
+    response = client.responses.create(model=model_name, input=prompt_text, timeout=30)
     text = getattr(response, "output_text", None)
     if not text:
         raise ValueError("OpenAI returned empty response")
@@ -69,8 +69,8 @@ def _call_gemini(model_name, prompt_text):
 
     client = google_genai.Client(api_key=GEMINI_API_KEY)
 
-    max_retries = 3
-    wait = 30  # seconds – free tier allows ~15 req/min
+    max_retries = 2
+    wait = 8  # seconds
     for attempt in range(max_retries):
         try:
             response = client.models.generate_content(
@@ -87,7 +87,7 @@ def _call_gemini(model_name, prompt_text):
                 if attempt < max_retries - 1:
                     print(f"\n  [Gemini] Rate limit hit — waiting {wait}s before retry {attempt + 2}/{max_retries}...")
                     time.sleep(wait)
-                    wait *= 2  # exponential backoff
+                    wait *= 2
                 else:
                     raise RuntimeError(
                         f"Gemini quota exhausted after {max_retries} retries.\n"

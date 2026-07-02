@@ -1459,7 +1459,7 @@ def _animation_model_code(suffix, animation, position, scale):
         return (
             f"_t_{suffix} = time.time()\n"
             f"model_{suffix} = util.translate({x}, {y}, {z})"
-            f" @ util.rotate(_t_{suffix} * {speed}, {ax}, {ay}, {az})"
+            f" @ util.rotate(({ax}, {ay}, {az}), _t_{suffix} * {speed})"
             f" @ util.scale({sx}, {sy}, {sz})\n"
         )
 
