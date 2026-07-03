@@ -1,6 +1,6 @@
 {
-  "request_id": 9,
-  "status": "rejected",
-  "updated_at": 1783021713.1454086,
-  "message": "Rejected."
+  "request_id": 12,
+  "status": "applied",
+  "updated_at": 1783059397.6314178,
+  "message": "Applied."
 }

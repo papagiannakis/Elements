@@ -1,4 +1,4 @@
-import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from code_generator import generate_scene_script, save_script
 from prefabs import build_house, build_tree, build_street_light
 
@@ -12,7 +12,7 @@ scene_ir = {
     },
     "children": [
 
-        # ── Lighting ─────────────────────────────────────────────────────────
+        # β”€β”€ Lighting β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€
         {
             "node_type": "light",
             "name": "sun",
@@ -33,7 +33,7 @@ scene_ir = {
                 "intensity": 0.6
             }
         },
-        # Two point lights above the lamps — warm glow
+        # Two point lights above the lamps β€” warm glow
         {
             "node_type": "light",
             "name": "lamp_glow_left",
@@ -55,7 +55,7 @@ scene_ir = {
             }
         },
 
-        # ── Ground ────────────────────────────────────────────────────────────
+        # β”€β”€ Ground β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€
         {
             "node_type": "mesh_object",
             "name": "ground",
@@ -67,15 +67,15 @@ scene_ir = {
             "material": {"color": [0.48, 0.66, 0.36]}
         },
 
-        # ── Houses ────────────────────────────────────────────────────────────
+        # β”€β”€ Houses β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€
         build_house("house_left",  [-2.8, 0.0, -2.0]),
         build_house("house_right", [ 2.8, 0.0, -2.0]),
 
-        # ── Trees ─────────────────────────────────────────────────────────────
+        # β”€β”€ Trees β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€
         build_tree("tree_left",  [-4.2, 0.0, -0.6]),
         build_tree("tree_right", [ 4.2, 0.0, -0.6]),
 
-        # ── Street lamps ──────────────────────────────────────────────────────
+        # β”€β”€ Street lamps β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€β”€
         build_street_light("lamp_left",  [-1.5, 0.0, 0.6]),
         build_street_light("lamp_right", [ 1.5, 0.0, 0.6]),
     ]
@@ -84,5 +84,6 @@ scene_ir = {
 script = generate_scene_script(scene_ir)
 compile(script, "tester12_neighbourhood.py", "exec")
 print("Syntax OK")
-save_script(script)
+save_script(script, scene_ir=scene_ir)
 print("Saved successfully")
+

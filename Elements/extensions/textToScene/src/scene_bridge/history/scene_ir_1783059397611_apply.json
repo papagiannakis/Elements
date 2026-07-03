@@ -292,45 +292,6 @@
       ],
       "id": "gift1",
       "created_order": 8
-    },
-    {
-      "node_type": "mesh_object",
-      "name": "cube_1",
-      "id": "cube_1",
-      "created_order": 12,
-      "shape": "cube",
-      "transform": {
-        "position": [
-          9.0,
-          0.5,
-          0.0
-        ],
-        "scale": [
-          1.0,
-          1.0,
-          1.0
-        ]
-      },
-      "material": {
-        "color": [
-          1.0,
-          1.0,
-          0.0
-        ],
-        "texture": {
-          "enabled": false,
-          "path": null
-        }
-      },
-      "orbit": {
-        "center": [
-          0.0,
-          0.0,
-          0.0
-        ],
-        "radius": 3.0,
-        "speed": 0.8
-      }
     }
   ]
 }

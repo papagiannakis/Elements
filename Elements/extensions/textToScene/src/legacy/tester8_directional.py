@@ -1,4 +1,4 @@
-import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
+﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from code_generator import generate_scene_script, save_script
 from prefabs import build_house, build_tree, build_gift_box
 
@@ -44,5 +44,5 @@ script = generate_scene_script(scene_ir)
 compile(script, "scene_out.py", "exec")
 print("Syntax OK")
 
-save_script(script)
+save_script(script, scene_ir=scene_ir)
 print("Saved successfully")

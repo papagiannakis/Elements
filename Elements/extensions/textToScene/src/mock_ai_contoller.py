@@ -511,7 +511,7 @@ def initialize_bridge_state():
 
     write_scene_state("official", SCENE_OUT_FILE)
 
-    print("[controller] Bridge initialization complete. preview_active={}".format(preview_active))
+    print("[controller] Bridge initialization complete.")
 
 
 def initialize_new_scene(request_id=None):

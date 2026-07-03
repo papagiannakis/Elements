@@ -2281,9 +2281,9 @@ def generate_scene_script(scene_ir):
     return final_script
 
 
-def save_script(script, output_path: Optional[str] = None):
+def save_script(script, output_path: Optional[str] = None, scene_ir: Optional[dict] = None):
     if output_path is None:
-        output_file = Path(__file__).resolve().parent / "scene_out.py"
+        output_file = Path(os.path.abspath(os.path.dirname(__file__))) / "scene_out.py"
     else:
         output_file = Path(output_path).resolve()
 
@@ -2291,4 +2291,11 @@ def save_script(script, output_path: Optional[str] = None):
         f.write(script.encode("utf-8"))
 
     print("Saved script to:", output_file)
+
+    if scene_ir is not None:
+        ir_file = Path(os.path.abspath(os.path.dirname(__file__))) / "scene_bridge" / "scene_ir.json"
+        import json as _json
+        with open(str(ir_file), "wb") as f:
+            f.write(_json.dumps(scene_ir, indent=2, ensure_ascii=False).encode("utf-8"))
+        print("Saved scene IR to:", ir_file)
 
