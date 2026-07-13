@@ -1,10 +1,8 @@
 # Bridge Protocol
 
-The textToScene system includes three independent processes — the Elements scene, the controller, and the supervisor — through a set of JSON files in a shared directory on the desktop.
+The textToScene system includes three independent processes — the Elements scene, the controller, and the supervisor — through a set of JSON files in a shared directory under the extension source tree.
 
-```
-~/Desktop/scene_bridge/
-```
+Path: `extensions/textToScene/src/scene_bridge/`
 
 No network sockets or shared memory are used. Each file has a defined owner that writes it and one or more readers that use it. The polling interval is set to 0.5 seconds.
 
