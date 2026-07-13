@@ -2,6 +2,8 @@
 from pathlib import Path
 from code_generator import generate_scene_script, save_script
 
+TEXTURES_DIR = Path(__file__).resolve().parents[2] / "assets" / "textures"
+
 scene_ir = {
     "node_type": "scene",
     "name": "root",
@@ -23,7 +25,7 @@ scene_ir = {
             "material": {
                 "texture": {
                     "enabled": True,
-                    "path": str(Path.home() / "Desktop" / "brick.jpg")
+                    "path": str(TEXTURES_DIR / "brick.jpg")
                 }
             }
         }
