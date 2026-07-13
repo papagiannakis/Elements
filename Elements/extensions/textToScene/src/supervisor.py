@@ -150,6 +150,7 @@ def main():
 
     current_proc = None
     current_key  = None
+    last_attempted_key = None
     crash_count  = 0
     last_launch_time = 0.0
 
@@ -176,12 +177,14 @@ def main():
                     break
 
             if current_proc is None or current_key != desired_key:
+                if desired_key != last_attempted_key:
+                    crash_count = 0  # a genuinely new scene request resets the counter
+
                 stop_scene(current_proc)
                 current_proc = launch_scene(desired_script)
                 current_key  = desired_key
+                last_attempted_key = desired_key
                 last_launch_time = time.time()
-                if current_key == desired_key:
-                    crash_count = 0  # successful launch of a new scene resets counter
 
             time.sleep(POLL_INTERVAL)
 
