@@ -1,5 +1,5 @@
 import sys
-import pytest
+from unittest.mock import patch
 
 # Mock the OpenGL module globally for this file
 class OpenGLPlaceholder:
@@ -32,24 +32,23 @@ def test_shader_constructor():
     # The OpenGL program ID should not be set before init() is called
     assert shader.glid is None
 
-def test_shader_init_triggers_gl_calls(mocker):
+def test_shader_init_triggers_gl_calls():
     """
     Tests that calling the init() method triggers the expected OpenGL
     functions for shader compilation and linking.
     """
     # Setup the mock for the gl module inside the ShadowShader file
-    mock_gl = mocker.patch('Elements.extensions.Shadows.ShadowShader.gl')
-    
-    mock_gl.glCreateProgram.return_value = 1
-    mock_gl.glCreateShader.return_value = 10
-    mock_gl.glGetShaderiv.return_value = 1
-    mock_gl.glGetProgramiv.return_value = 1
-    
-    # Instantiate a basic shader
-    shader = ShadowShader(name="TestInit")
-    
-    # Call the init method
-    shader.init()
+    with patch('Elements.extensions.Shadows.ShadowShader.gl') as mock_gl:
+        mock_gl.glCreateProgram.return_value = 1
+        mock_gl.glCreateShader.return_value = 10
+        mock_gl.glGetShaderiv.return_value = 1
+        mock_gl.glGetProgramiv.return_value = 1
+
+        # Instantiate a basic shader
+        shader = ShadowShader(name="TestInit")
+
+        # Call the init method
+        shader.init()
 
     # Assert that the core OpenGL functions were called
     mock_gl.glCreateProgram.assert_called_once()
@@ -63,7 +62,7 @@ def test_shader_init_triggers_gl_calls(mocker):
     # The glid should now be set
     assert shader.glid == 1
 
-def test_default_shaders_are_assigned(mocker):
+def test_default_shaders_are_assigned():
     """
     Tests that if no shader source is provided, the component defaults
     to the Phong Directional shaders.
@@ -74,11 +73,11 @@ def test_default_shaders_are_assigned(mocker):
     assert shader._fragment_source is None
 
     # Patch gl and call init
-    mock_gl = mocker.patch('Elements.extensions.Shadows.ShadowShader.gl')
-    mock_gl.glGetShaderiv.return_value = 1
-    mock_gl.glGetProgramiv.return_value = 1
-    
-    shader.init()
+    with patch('Elements.extensions.Shadows.ShadowShader.gl') as mock_gl:
+        mock_gl.glGetShaderiv.return_value = 1
+        mock_gl.glGetProgramiv.return_value = 1
+
+        shader.init()
 
     # After init, the default sources should be assigned
     assert shader._vertex_source == ShadowShader.VERT_DIR_PHONG

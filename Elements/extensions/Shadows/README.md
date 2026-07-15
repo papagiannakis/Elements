@@ -84,8 +84,7 @@ python -m pytest -v Elements/extensions/Shadows/tests/test_shader_component.py
 The `test_shader_component.py` file includes the following checks:
 
 - **Constructor Test:** Verifies that the `ShadowShader` component is initialized correctly with the provided shader source strings.  
-- **OpenGL Initialization:** Mocks the PyOpenGL (`gl`) module using `pytest-mock` to confirm that the `init()` method correctly calls the underlying OpenGL functions for shader compilation, attachment, and linking.  
+- **OpenGL Initialization:** Mocks the PyOpenGL (`gl`) module to confirm that the `init()` method correctly calls the underlying OpenGL functions for shader compilation, attachment, and linking.  
 - **Default Shader Loading:** Ensures that if no custom shader code is provided, the component correctly falls back to its default Phong lighting shaders upon initialization.  
 
 These tests utilize mocking to run without a live OpenGL context or heavy 3D engine initialization, allowing for fast, automated validation in different environments.
-
