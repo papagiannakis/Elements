@@ -1,0 +1,13 @@
+numpy<2.0
+openai
+google-genai
+PyOpenGL
+imgui
+pytest
+python-dotenv
+matplotlib
+usd-core
+
+# Local project dependency:
+# This extension imports the in-repo `Elements` framework/package.
+# Install/use it from the parent repository workspace.

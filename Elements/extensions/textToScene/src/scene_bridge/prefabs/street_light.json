@@ -1,0 +1,90 @@
+{
+  "node_type": "group",
+  "name": "street_light",
+  "transform": {
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "children": [
+    {
+      "node_type": "mesh_object",
+      "name": "street_light_pole",
+      "shape": "cylinder",
+      "transform": {
+        "position": [
+          0.0,
+          1.25,
+          0.0
+        ],
+        "scale": [
+          0.1,
+          2.5,
+          0.1
+        ]
+      },
+      "material": {
+        "color": [
+          0.3,
+          0.3,
+          0.3
+        ]
+      }
+    },
+    {
+      "node_type": "mesh_object",
+      "name": "street_light_arm",
+      "shape": "rectangular_prism",
+      "transform": {
+        "position": [
+          0.3,
+          2.4,
+          0.0
+        ],
+        "scale": [
+          0.6,
+          0.1,
+          0.1
+        ]
+      },
+      "material": {
+        "color": [
+          0.3,
+          0.3,
+          0.3
+        ]
+      }
+    },
+    {
+      "node_type": "mesh_object",
+      "name": "street_light_lamp",
+      "shape": "cube",
+      "transform": {
+        "position": [
+          0.6,
+          2.3,
+          0.0
+        ],
+        "scale": [
+          0.2,
+          0.15,
+          0.2
+        ]
+      },
+      "material": {
+        "color": [
+          1.0,
+          0.9,
+          0.0
+        ]
+      }
+    }
+  ]
+}
