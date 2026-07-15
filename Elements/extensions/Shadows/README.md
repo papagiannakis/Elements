@@ -14,9 +14,9 @@ The implementation uses a standard two-pass rendering technique:
 
 ## 3. Usage Instructions
 
-This extension includes two example scenes that demonstrate the shadow mapping capabilities. The first example, example_1_PointLightDemo.py has a room with cubes to demonstrate the omnidirectional point lights. To see and switch between
-point and directional lights, refer to the second example example_2_Sphere3x3x3Demo.p in which the scene is not confined in 
-a small space. 
+This extension includes two example scenes that demonstrate the shadow mapping capabilities. The first example, `example_1_PointLightDemo.py`, has a room with cubes to demonstrate omnidirectional point lights. To see and switch between
+point and directional lights, refer to the second example, `example_2_Sphere3x3x3Demo.py`, in which the scene is not confined to
+a small space.
 
 
 ### How to Run the Examples
@@ -24,6 +24,13 @@ a small space.
 To run the examples, execute the Python scripts from the root directory of the project:
 
 **3x3x3 Sphere Demo (Directional & Point):**
+
+macOS/Linux:
+```bash
+python Elements/extensions/Shadows/example_2_Sphere3x3x3Demo.py
+```
+
+Windows:
 ```bash
 python Elements\extensions\Shadows\example_2_Sphere3x3x3Demo.py
 ```
@@ -33,6 +40,13 @@ python Elements\extensions\Shadows\example_2_Sphere3x3x3Demo.py
 
 
 **Point Light Demo:**
+
+macOS/Linux:
+```bash
+python Elements/extensions/Shadows/example_1_PointLightDemo.py
+```
+
+Windows:
 ```bash
 python Elements\extensions\Shadows\example_1_PointLightDemo.py
 ```
@@ -61,7 +75,7 @@ The examples include a real-time ImGUI control panel that allows for interactive
 
 ## 5. Tests
 
-This extension includes a  unit test to ensure the core shader component functionality is working as expected. The test is located in the `tests/` directory.
+This extension includes unit tests to ensure the core shader component functionality is working as expected. The tests are located in the `tests/` directory.
 
 ### Running the Tests
 
