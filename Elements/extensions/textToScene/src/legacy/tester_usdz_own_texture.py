@@ -1,10 +1,10 @@
 ﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from code_generator import generate_scene_script, save_script
 
-_MODELS   = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\extensions\textToScene\models"
-BASEBALL  = _MODELS + r"\ball_baseball_realistic.usdz"
-TEAPOT    = _MODELS + r"\teapot.usdz"
-CHAMELEON = _MODELS + r"\chameleon_anim_mtl_variant.usdz"
+_MODELS   = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models"))
+BASEBALL  = os.path.join(_MODELS, "ball_baseball_realistic.usdz")
+TEAPOT    = os.path.join(_MODELS, "teapot.usdz")
+CHAMELEON = os.path.join(_MODELS, "chameleon_anim_mtl_variant.usdz")
 
 scene_ir = {
     "node_type": "scene",
