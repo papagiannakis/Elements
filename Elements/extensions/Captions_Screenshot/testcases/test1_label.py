@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 # Import billboard label system
-from Elements.extensions.Subtitles_plus_Pretty.billboard_label_component import create_billboard_label, BillboardLabelSystem
+from Elements.extensions.Captions_Screenshot.billboard_label_component import create_billboard_label, BillboardLabelSystem
 
 print("=" * 60)
 print("TEST: Billboard Label System")

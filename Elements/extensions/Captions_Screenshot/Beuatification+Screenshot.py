@@ -15,8 +15,8 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 import sdl2 # gia to P tou screenshot apo keyboard
-from beautification import generateElegantFloor, generateSkybox, generateGrid
-from screenshot import save_screenshot
+from Elements.extensions.Captions_Screenshot.beautification import generateElegantFloor, generateSkybox, generateGrid
+from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
 from OpenGL.GL import GL_LINES, GL_TRIANGLES
 
 from Elements.utils.Shortcuts import displayGUI_text

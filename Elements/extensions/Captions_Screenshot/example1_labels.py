@@ -12,7 +12,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 
-from billboard_label_component import create_billboard_label, BillboardLabelSystem
+from Elements.extensions.Captions_Screenshot.billboard_label_component import create_billboard_label, BillboardLabelSystem
 #functions apo preperation gia live askisi 
 def make_cube(size=1.0):
     s = size * 0.5
