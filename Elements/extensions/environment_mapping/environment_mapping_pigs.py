@@ -21,8 +21,8 @@ from Elements.extensions.environment_mapping import EnvironmentMapping
 # basic configuration
 WIN_WIDTH, WIN_HEIGHT = 1200, 800
 ENV_MAP_DIR = Path(__file__).parent
-SKYBOX_DIR = ENV_MAP_DIR / "pigImage"
-MODEL_PATH = ENV_MAP_DIR / "models" / "pighighpoly1.obj"
+SKYBOX_DIR = ENV_MAP_DIR / "pigs"/ "pigImage"
+MODEL_PATH = ENV_MAP_DIR / "pigs"/ "models" / "pighighpoly1.obj"
 #MODEL_PATH = MODEL_DIR / "cow.obj"
 
 SKYBOX_IMAGES = {
