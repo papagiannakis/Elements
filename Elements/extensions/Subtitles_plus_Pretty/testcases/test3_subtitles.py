@@ -2,7 +2,7 @@
 import time
 import numpy as np
 
-from subtitle_system import SubtitleManager, SubtitleRenderer
+from Elements.extensions.Subtitles_plus_Pretty.subtitle_system import SubtitleManager, SubtitleRenderer
 
 print("=" * 60)
 print("Subtitle System Tests")
