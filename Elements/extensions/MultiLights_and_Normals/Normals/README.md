@@ -1,0 +1,32 @@
+Normal Mapping σε Textured Cube, Flat vs Smooth Normals
+by ΒΙΣΚΑΔΟΥΡΑΚΗΣ ΕΜΜΑΝΟΥΗΛ (csd5368@csd.uoc.gr), ΣΑΒΒΙΔΗΣ ΑΛΕΞΑΝΔΡΟΣ (csd5002@csd.uoc.gr)
+
+Το module Normals περιέχει:
+
+NormalsMap_flat.py: flat normals ανά face (hard edges)
+NormalsMap_smooth.py: smooth normals (averaging σε shared positions)
+
+Τα παραδείγματα αυτά δείχνουν τον ίδιο textured κύβο (albedo + normal map), αλλά με διαφορετικό τρόπο υπολογισμού normals: flat vs smooth. 
+Και στα δύο παραδείγματα ο φωτισμός είναι Phong με πολλαπλά φώτα και υπάρχει ImGUI panel για έλεγχο normal mapping/albedo/debug normals.
+
+Και τα δύο παραδείγματα έχουν:
+
+Κύβο με 24 vertices (4 ανά face) ώστε να έχει σωστά UVs ανά face.
+
+Normal Maps calculations όπου υπολογίζονται τα tangents/bitangents από τρίγωνα + UVs, με handedness (tangent.w) και ορθοκανονικό TBN στον vertex shader.
+
+Textures για albedo και normal map.
+
+Shaders (ίδιοι και για τα δύο):
+
+PHONG_NORMALS_v2.vert 
+
+PHONG_NORMALS_v2.frag
+
+
+
+sources:
+https://learnopengl.com/Advanced-Lighting/Normal-Mapping
+https://ogldev.org/www/tutorial26/tutorial26.html
+https://www.opengl-tutorial.org/intermediate-tutorials/tutorial-13-normal-mapping/#handedness
+https://www.youtube.com/watch?v=4FaWLgsctqY

@@ -1,0 +1,66 @@
+{
+  "node_type": "group",
+  "name": "tree",
+  "transform": {
+    "position": [
+      0.0,
+      0.0,
+      0.0
+    ],
+    "scale": [
+      1.0,
+      1.0,
+      1.0
+    ]
+  },
+  "children": [
+    {
+      "node_type": "mesh_object",
+      "name": "tree_trunk",
+      "shape": "cylinder",
+      "transform": {
+        "position": [
+          0.0,
+          0.22,
+          0.0
+        ],
+        "scale": [
+          0.18,
+          0.45,
+          0.18
+        ]
+      },
+      "material": {
+        "color": [
+          0.45,
+          0.28,
+          0.12
+        ]
+      }
+    },
+    {
+      "node_type": "mesh_object",
+      "name": "tree_crown",
+      "shape": "sphere",
+      "transform": {
+        "position": [
+          0.0,
+          0.62,
+          0.0
+        ],
+        "scale": [
+          0.75,
+          0.75,
+          0.75
+        ]
+      },
+      "material": {
+        "color": [
+          0.1,
+          0.6,
+          0.2
+        ]
+      }
+    }
+  ]
+}
