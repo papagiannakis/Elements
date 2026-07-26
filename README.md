@@ -106,6 +106,40 @@ Elements/
 └── README.md                      # Project overview and instructions
 ```
   
+## Testing in VS Code
+
+For the current `src/` project layout, the most reliable way to configure test discovery in Visual Studio Code is:
+
+1. Open `Python: Configure Tests`
+2. Select `unittest`
+3. Select the workspace folder `Elements`
+4. Use the pattern `test*.py`
+
+If you prefer storing the working configuration in [`.vscode/settings.json`](/Users/manos/github/Elements/.vscode/settings.json), the following setup matches the current repository layout:
+
+```json
+{
+  "python.testing.pytestEnabled": false,
+  "python.testing.unittestEnabled": true,
+  "python.testing.cwd": "${workspaceFolder}/src",
+  "python.testing.unittestArgs": [
+    "-v",
+    "-s",
+    ".",
+    "-p",
+    "test*.py"
+  ]
+}
+```
+
+The equivalent command-line discovery command from the repository root is:
+
+```bash
+python -m unittest discover -s src -t src -p "test*.py"
+```
+
+This makes `unittest` discover tests from the `src/Elements/...` tree correctly. If tests are discovered in the terminal but not in the VS Code Testing tab, first confirm that VS Code is using the same Python interpreter/environment as your terminal.
+
 ## Contribute to Elements</h2>
 If you want to contribute to Elements, kindly check its [WIKI](https://github.com/papagiannakis/Elements/wiki) 
 for a list of potential projects and a contribution guide. A list of contributors can be found [here](https://github.com/papagiannakis/Elements/wiki/Contributors).
