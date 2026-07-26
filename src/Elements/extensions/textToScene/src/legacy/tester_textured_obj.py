@@ -1,5 +1,5 @@
 ﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from code_generator import generate_scene_script, save_script
+from Elements.extensions.textToScene.src.code_generator import generate_scene_script, save_script
 
 CUBE_OBJ     = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\files\models\cube\cube.obj"
 CUBE_TEX     = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\files\models\cube\CubeTexture.png"

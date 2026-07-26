@@ -10,7 +10,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.definitions import TEXTURE_DIR
-import cameraman_logic as cam
+import Elements.extensions.camera_man.cameraman_logic as cam
 
 
 # Scenegraph

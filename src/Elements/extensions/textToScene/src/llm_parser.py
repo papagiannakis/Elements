@@ -8,7 +8,7 @@ from pathlib import Path
 from openai import OpenAI
 
 try:
-    from config import ACTION_CACHE_FILE, OPENAI_API_KEY, GEMINI_API_KEY, CACHE_DIR, DEFAULT_MODEL
+    from Elements.extensions.textToScene.src.config import ACTION_CACHE_FILE, OPENAI_API_KEY, GEMINI_API_KEY, CACHE_DIR, DEFAULT_MODEL
 except ImportError:
     from .config import ACTION_CACHE_FILE, OPENAI_API_KEY, GEMINI_API_KEY, CACHE_DIR, DEFAULT_MODEL
 

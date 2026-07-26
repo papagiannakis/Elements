@@ -5,7 +5,7 @@ import numpy as np
 import os
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from refraction_component import create_refractive_entity
+from Elements.extensions.Refraction.refraction_component import create_refractive_entity
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import RenderMesh

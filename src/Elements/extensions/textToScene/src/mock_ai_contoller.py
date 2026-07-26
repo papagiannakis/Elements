@@ -15,16 +15,16 @@ _repo_root = Path(__file__).resolve().parent.parent.parent.parent.parent
 if str(_repo_root) not in sys.path:
     sys.path.insert(0, str(_repo_root))
 
-from code_generator import generate_scene_script
-from llm_parser import (
+from Elements.extensions.textToScene.src.code_generator import generate_scene_script
+from Elements.extensions.textToScene.src.llm_parser import (
     lookup_cached_action,
     parse_composite_spec_with_llm,
     parse_prompt_to_action_with_llm,
     store_cached_action,
 )
-from prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed, build_table, build_lamp
+from Elements.extensions.textToScene.src.prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed, build_table, build_lamp
 
-from config import (
+from Elements.extensions.textToScene.src.config import (
     TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR,
     SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
     PROJECT_SCENE_IR_FILE,
@@ -3517,7 +3517,7 @@ def apply_action_to_ir(scene_ir, action):
 
 def main():
     ensure_runtime_dirs()
-    from config import EXTENSION_DIR as PROJECT_DIR
+    from Elements.extensions.textToScene.src.config import EXTENSION_DIR as PROJECT_DIR
     print("[controller] Mock AI controller started.")
     print("[controller] PROJECT_DIR =", PROJECT_DIR)
     print("[controller] official scene_ir path used:", SCENE_IR_FILE)

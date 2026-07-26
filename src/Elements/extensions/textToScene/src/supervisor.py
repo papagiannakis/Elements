@@ -9,7 +9,7 @@ from pathlib import Path
 _ELEMENTS_ROOT = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
 
 try:
-    from config import (
+    from Elements.extensions.textToScene.src.config import (
         OFFICIAL_SCENE_FILE,
         POLL_INTERVAL,
         PREVIEW_SCENE_FILE,

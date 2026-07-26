@@ -12,7 +12,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.definitions import TEXTURE_DIR
-from refraction_component import create_refractive_entity   # Import refraction component factory function
+from Elements.extensions.Refraction.refraction_component import create_refractive_entity   # Import refraction component factory function
 from Elements.utils.Shortcuts import displayGUI_text
 
 example_description = \

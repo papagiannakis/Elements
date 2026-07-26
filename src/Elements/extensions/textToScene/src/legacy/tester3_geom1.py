@@ -1,5 +1,5 @@
 ﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
-from code_generator import generate_scene_script, save_script
+from Elements.extensions.textToScene.src.code_generator import generate_scene_script, save_script
 # This is a test script to generate a scene with all the supported shapes,
 # and save the generated code to a file. You can run this to verify that
 # the geometry generation and code generation are working correctly.

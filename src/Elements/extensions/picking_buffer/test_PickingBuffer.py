@@ -2,7 +2,7 @@ import numpy as np
 import sdl2
 import OpenGL.GL as gl
 
-from PickingBuffer import PickingSystem
+from Elements.extensions.picking_buffer.PickingBuffer import PickingSystem
 
 
 # -------------------------
