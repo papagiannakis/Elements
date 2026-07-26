@@ -30,7 +30,7 @@ setup(
         'pip',
         'setuptools>=61',
         'wheel',
-        'numpy',
+        'numpy<2',
         'scipy',
         'PyOpenGL',
         'pillow',
