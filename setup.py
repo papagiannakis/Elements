@@ -33,39 +33,38 @@ setup(
         'numpy<2',
         'scipy',
         'PyOpenGL',
-        'pillow',
         'PyOpenGL_accelerate',
+        'pillow',
+        'imgui',
         'pysdl2',
         'pysdl2-dll',
         'ipykernel',
         'jupyter',
         'scikit-spatial',
-        'bezier',
-        'clifford',
         'trimesh',
-        'pyganja',
-        'open3d',
-        'pyassimp==4.1.3'
+        'usd-core',
     ],
     # Optional features that often lack wheels on some platforms
     # (e.g., macOS arm64)
     extras_require={
-        # GUI/ImGui support
-        'gui': [
-            'imgui',
-            'pysdl2',
-            'pysdl2-dll',
+        # Geometric Algebra support
+        'ga': [
+            'clifford',
+            'pyganja',
         ],
-        # Pixar USD support
-        'usd': [
-            'usd-core',
+        # Optional features 
+        'extras': [
+            'bezier',
+            'open3d',
+            'pyassimp==4.1.3',        
         ],
         # Install everything optional
         'all': [
-            'imgui',
-            'pysdl2',
-            'pysdl2-dll',
-            'usd-core',
+            'clifford',
+            'pyganja',
+            'bezier',
+            'open3d',
+            'pyassimp==4.1.3',
         ]
     },
     
