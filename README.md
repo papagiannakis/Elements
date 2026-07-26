@@ -92,7 +92,6 @@ Elements/
 │   ├── 1.Introductory/            # Basic examples for beginners
 │   ├── 2.Intermediate/            # Intermediate concepts (textures, cameras)
 │   ├── 3.Advanced/                # Advanced topics (USD, complex scenes)
-│   └── 4.Experimental/            # Experimental features (AI, Generative)
 ├── pyEEL/                         # Python Elements Educational Library (Learning Hub)
 │   └── notebooks/                 # Jupyter notebooks
 │       ├── CG/                    # Computer Graphics fundamentals
