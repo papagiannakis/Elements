@@ -41,12 +41,15 @@ Begin by following the installation instructions, found [HERE](https://elementsp
 The main steps summarize as follows:
 * Install Anaconda, VSCode, Git and a optionally a version control app
 * Clone (or download) this repo (or your forked repo)
-* Create a python 3.8 environment, by running 
-  ```conda create -n elements python=3.8```,
+* Create a python 3.9 (recommended) environment, by running 
+  ```conda create -n elements python=3.9```,
   and activate it via
   ```conda activate elements```
 * Install the Elements in editable mode by running
  ```pip install -e .```
+  This is sufficient to run all examples in the repository.
+* To install all optional extras as well, run
+ ```pip install -e ".[all]"```
 * Start exploring the examples in the ```Elements/examples``` folder.
 
 
