@@ -159,6 +159,8 @@ class SDL2Window(RenderWindow):
         self._wireframeMode = False
         self._colorEditor = 0.0, 0.0, 0.0
         self._myCamera = np.identity(4)
+        self._cameraEye = np.zeros(3, dtype=np.float32)
+        self._cameraTarget = np.zeros(3, dtype=np.float32)
                           
     @property
     def gWindow(self):
@@ -404,11 +406,12 @@ class RenderDecorator(RenderWindow):
     def createViewMatrix(self, eye, lookAt, upVector):
         self._eye = tuple(eye)
         self._target = tuple(lookAt)
-        #self._up = tuple(upVector)
-        #directionVector = util.normalise(lookAt - eye) 
-        #rightVector = util.normalise(np.cross(directionVector, upVector))
-        #upVector = util.normalise(np.cross(rightVector, directionVector))
-        self._updateCamera.value = util.lookat(eye, lookAt, upVector)
+        self._up = tuple(upVector)
+        view_matrix = util.lookat(eye, lookAt, upVector)
+        self.wrapeeWindow._cameraEye = np.array(eye, dtype=np.float32)
+        self.wrapeeWindow._cameraTarget = np.array(lookAt, dtype=np.float32)
+        self.wrapeeWindow._myCamera = view_matrix
+        self._updateCamera.value = view_matrix
     
     def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):  
         if self.cam != None:
