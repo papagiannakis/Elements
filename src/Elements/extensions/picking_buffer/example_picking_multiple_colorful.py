@@ -171,6 +171,23 @@ def orbit_eye_from_state(orbit_target, orbit_radius, orbit_yaw, orbit_pitch):
     ], dtype=np.float32)
 
 
+def set_window_camera(window, camera_eye, camera_target, up_vector):
+    view_matrix = util.lookat(camera_eye, camera_target, up_vector)
+    window._myCamera = view_matrix
+    window._cameraEye = np.array(camera_eye, dtype=np.float32)
+    window._cameraTarget = np.array(camera_target, dtype=np.float32)
+    return view_matrix
+
+
+def sync_camera(scene_context, window, camera_eye, camera_target, up_vector):
+    view_matrix = set_window_camera(window, camera_eye, camera_target, up_vector)
+    if scene_context is not window:
+        scene_context._eye = tuple(np.array(camera_eye, dtype=np.float32))
+        scene_context._target = tuple(np.array(camera_target, dtype=np.float32))
+        scene_context._up = tuple(np.array(up_vector, dtype=np.float32))
+    return view_matrix
+
+
 terrainTrans, terrainShader = create_terrain()
 
 cube_specs = [
@@ -294,18 +311,21 @@ eManager._actuators["OnUpdateWireframe"] = renderGLEventActuator
 eManager._subscribers["OnUpdateCamera"] = gWindow
 eManager._actuators["OnUpdateCamera"] = renderGLEventActuator
 
-gWindow._myCamera = view
+view = sync_camera(scene.gContext, gWindow, eye, target, up)
 
 pickingSystem.set_camera_matrices(projMat, view)
 pickingSystem.init()
 
-camera_eye = np.array(eye, dtype=np.float32)
+camera_eye = np.array(gWindow._cameraEye, dtype=np.float32)
 selected_cube_name = None
 selected_cube_trans = None
-orbit_target = np.array(target, dtype=np.float32)
+orbit_target = np.array(gWindow._cameraTarget, dtype=np.float32)
+desired_orbit_target = np.array(orbit_target, dtype=np.float32)
 orbit_radius, orbit_yaw, orbit_pitch = orbit_state_from_eye(camera_eye, orbit_target)
 orbit_speed = 0.025
 orbit_pitch_limit = 1.25
+orbit_zoom_speed = 0.35
+orbit_target_lerp = 0.12
 
 scene.world.print()
 
@@ -318,7 +338,13 @@ while running:
 
     key_states = sdl2.SDL_GetKeyboardState(None)
     if selected_cube_trans is not None:
-        orbit_target = get_orbit_target(selected_cube_trans)
+        camera_eye = np.array(gWindow._cameraEye, dtype=np.float32)
+        desired_orbit_target = get_orbit_target(selected_cube_trans)
+        target_delta = desired_orbit_target - orbit_target
+        if np.linalg.norm(target_delta) > 1e-4:
+            orbit_target = orbit_target + orbit_target_lerp * target_delta
+            view = sync_camera(scene.gContext, gWindow, camera_eye, orbit_target, up)
+        orbit_radius, orbit_yaw, orbit_pitch = orbit_state_from_eye(camera_eye, orbit_target)
         orbit_changed = False
         if key_states[sdl2.SDL_SCANCODE_A]:
             orbit_yaw -= orbit_speed
@@ -332,14 +358,20 @@ while running:
         if key_states[sdl2.SDL_SCANCODE_S]:
             orbit_pitch -= orbit_speed
             orbit_changed = True
+        if key_states[sdl2.SDL_SCANCODE_EQUALS] or key_states[sdl2.SDL_SCANCODE_KP_PLUS]:
+            orbit_radius = max(0.5, orbit_radius - orbit_zoom_speed)
+            orbit_changed = True
+        if key_states[sdl2.SDL_SCANCODE_MINUS] or key_states[sdl2.SDL_SCANCODE_KP_MINUS]:
+            orbit_radius += orbit_zoom_speed
+            orbit_changed = True
 
         if orbit_changed:
             orbit_pitch = np.clip(orbit_pitch, -orbit_pitch_limit, orbit_pitch_limit)
             camera_eye = orbit_eye_from_state(orbit_target, orbit_radius, orbit_yaw, orbit_pitch)
-            view = util.lookat(camera_eye, orbit_target, up)
-            gWindow._myCamera = view
+            view = sync_camera(scene.gContext, gWindow, camera_eye, orbit_target, up)
 
     view = gWindow._myCamera
+    camera_eye = np.array(gWindow._cameraEye, dtype=np.float32)
     LviewPos = camera_eye
     window_height = scene.renderWindow._windowHeight
 
@@ -359,7 +391,8 @@ while running:
             if entity.name in cube_lookup:
                 selected_cube_name = entity.name
                 selected_cube_trans = cube_lookup[selected_cube_name]
-                orbit_target = get_orbit_target(selected_cube_trans)
+                camera_eye = np.array(gWindow._cameraEye, dtype=np.float32)
+                desired_orbit_target = get_orbit_target(selected_cube_trans)
                 orbit_radius, orbit_yaw, orbit_pitch = orbit_state_from_eye(camera_eye, orbit_target)
                 print(f"Orbit target: {selected_cube_name}")
 
