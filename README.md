@@ -49,7 +49,7 @@ The main steps summarize as follows:
  ```pip install -e .```
   This is sufficient to run all examples in the repository.
 * To install all optional extras as well, run
- ```pip install -e ".[all]"```
+ ```pip install -e ."[all]"```
 * Start exploring the examples in the ```Elements/examples``` folder.
 
 
