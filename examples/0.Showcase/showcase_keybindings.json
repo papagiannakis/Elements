@@ -1,0 +1,42 @@
+{
+  "File.screenshot": {
+    "key": "P",
+    "mods": ""
+  },
+  "View.shadows": {
+    "key": "1",
+    "mods": ""
+  },
+  "View.shadow_settings": {
+    "key": "2",
+    "mods": ""
+  },
+  "View.lights": {
+    "key": "3",
+    "mods": ""
+  },
+  "View.projection": {
+    "key": "4",
+    "mods": ""
+  },
+  "View.objects": {
+    "key": "5",
+    "mods": ""
+  },
+  "View.skybox": {
+    "key": "6",
+    "mods": ""
+  },
+  "View.refraction": {
+    "key": "7",
+    "mods": ""
+  },
+  "View.reflection": {
+    "key": "8",
+    "mods": ""
+  },
+  "Help.shortcuts": {
+    "key": "/",
+    "mods": "Cmd"
+  }
+}

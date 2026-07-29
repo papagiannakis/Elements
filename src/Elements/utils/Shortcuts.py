@@ -51,7 +51,7 @@ def displayShortcutsGUI():
 
         imgui.text("List of shortcuts:")
         
-        imgui.bullet_text("Toggle Wireframe                 Alt+F")
+        imgui.bullet_text("Toggle Wireframe                 F")
         imgui.bullet_text("Vertical Scroll:                 Vertical camera translate")
         imgui.bullet_text("Horizontal Scroll:               Vertical camera translate")
         
