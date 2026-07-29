@@ -218,7 +218,7 @@ texturePath = TEXTURE_DIR / "uoc_logo.png"
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
-want_to_rotate = False
+want_to_rotate = True # set to False to stop cube from rotating and manipulate it via the Scenegraph
 
 while running:
     running = scene.render()
