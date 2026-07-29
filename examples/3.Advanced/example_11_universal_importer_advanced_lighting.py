@@ -36,12 +36,8 @@ Lintensity = 40.0
 
 scene = Scene()    
 
-
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
-entityCam1 = scene.world.createEntity(Entity(name="Entity1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="Entity1_TRS", trs=util.translate(0,0,-8)))
 
 eye = util.vec(2.5, 2.5, -2.5)
 target = util.vec(0.0, 0.0, 0.0)
@@ -52,16 +48,11 @@ projMat = util.perspective(50.0, 1.0, 1.0, 10.0)
 m = np.linalg.inv(projMat @ view)
 
 
-entityCam2 = scene.world.createEntity(Entity(name="Entity_Camera"))
-scene.world.addEntityChild(entityCam1, entityCam2)
-trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="Camera_TRS", trs=util.identity()))
-orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
-
-
 light_node = scene.world.createEntity(Entity(name="LightPos"))
 scene.world.addEntityChild(rootEntity, light_node)
-light_transform = scene.world.addComponent(light_node, BasicTransform(name="Light_TRS", trs=util.scale(1.0, 1.0, 1.0) ))
-# light_mesh = scene.world.addComponent(light_node, RenderMesh(name="Light_Mesh"))
+light_transform = scene.world.addComponent(light_node, BasicTransform(name="Light_TRS",
+    trs=util.translate(Lposition[0], Lposition[1], Lposition[2]) @ util.scale(0.05, 0.05, 0.05)))
+light_mesh = scene.world.addComponent(light_node, RenderMesh(name="Light_Mesh"))
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -78,24 +69,33 @@ model_entity = GameObject.Spawn(scene, obj_to_import, "Lamp", rootEntity, util.t
 
 
 # Light Visualization
-# a simple tetrahedron
-tetrahedron_vertices = np.array([
-    [  1.0,  1.0,  1.0, 1.0 ], 
-    [ -1.0, -1.0,  1.0, 1.0 ], 
-    [ -1.0,  1.0, -1.0, 1.0 ], 
-    [  1.0, -1.0, -1.0, 1.0 ]
-],dtype=np.float32) 
-tetrahedron_colors = np.array([
-    [  1.0,  0.0,  0.0, 1.0 ],
-    [  0.0,  1.0,  0.0, 1.0 ],  
-    [  0.0,  0.0,  1.0, 1.0 ], 
-    [  1.0,  1.0,  1.0, 1.0 ]
-])
-tetrahedron_indices = np.array([0, 2, 1, 0, 1, 3, 2, 3, 1, 3, 2, 0])
+# a small cube marking the light's position, TRS-linked to the light itself
+light_cube_vertices = np.array([
+    [-0.5, -0.5,  0.5, 1.0],
+    [-0.5,  0.5,  0.5, 1.0],
+    [ 0.5,  0.5,  0.5, 1.0],
+    [ 0.5, -0.5,  0.5, 1.0],
+    [-0.5, -0.5, -0.5, 1.0],
+    [-0.5,  0.5, -0.5, 1.0],
+    [ 0.5,  0.5, -0.5, 1.0],
+    [ 0.5, -0.5, -0.5, 1.0]
+], dtype=np.float32)
+light_cube_colors = np.array([[1.0, 1.0, 0.0, 1.0]] * 8, dtype=np.float32)
+light_cube_indices = np.array(
+    (
+        1,0,3, 1,3,2,
+        2,3,7, 2,7,6,
+        3,0,4, 3,4,7,
+        6,5,1, 6,1,2,
+        4,5,6, 4,6,7,
+        5,4,0, 5,0,1
+    ),
+    dtype=np.uint32
+)
 
-# light_mesh.vertex_attributes.append(tetrahedron_vertices)
-# light_mesh.vertex_attributes.append(tetrahedron_colors)
-# light_mesh.vertex_index.append(tetrahedron_indices)
+light_mesh.vertex_attributes.append(light_cube_vertices)
+light_mesh.vertex_attributes.append(light_cube_colors)
+light_mesh.vertex_index.append(light_cube_indices)
 light_vArray = scene.world.addComponent(light_node, VertexArray())
 light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 
@@ -195,13 +195,11 @@ while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
-    scene.world.traverse_visit(camUpdate, scene.world.root)
     scene.world.traverse_visit(transUpdate, scene.world.root)
 
     view =  gWindow._myCamera # updates view via the imgui
     # mvp_cube = projMat @ view @ model_cube
-    light_shader_decorator.setUniformVariable(key="modelViewProj", value= projMat @ view @ (util.translate(Lposition[0], Lposition[1], Lposition[2]) @ util.scale(0.05, 0.05, 0.05)), mat4=True)
+    light_shader_decorator.setUniformVariable(key="modelViewProj", value= projMat @ view @ light_transform.trs, mat4=True)
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
     axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
@@ -218,6 +216,8 @@ while running:
         mesh_entity.shader_decorator_component.setUniformVariable(key='normalMatrix', value=normalMatrix, mat4=True)
 
         # --- Set fragment shader data ---
+        # Light position, driven by the light cube's own TRS so moving it via the ECSS GUI moves the light
+        mesh_entity.shader_decorator_component.setUniformVariable(key='lightPos', value=light_transform.trs[:3, 3], float3=True)
         # Camera position
         mesh_entity.shader_decorator_component.setUniformVariable(key='camPos', value=eye, float3=True)
 
