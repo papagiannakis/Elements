@@ -123,7 +123,7 @@ You may move the camera using the mouse: \n\
 * Move holding Right Click: Change camera angle \n\
 * Move holding Right Click and Shift: Move camera target\n\
 * Scroll holding Ctrl: Zoom In/Out\n\
-or the ECSS Graph (not the Elements ImGUI window) by  \n\
+or the Scenegraph (not the Elements ImGUI window) by  \n\
 * Changing Translation, Rotation or Scale of  \n\
 the trans component of either EntityCam2 (or EntityCam1)\n\n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\

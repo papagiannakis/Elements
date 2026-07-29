@@ -26,7 +26,7 @@ from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This example demonstrates the ability to apply image textures to geometry. \n\
 The scene is being lit using the Blinn-Phong algorithm. \n\n\
-To stop cube from rotating and  manipulate it via the ECSS graph \n\
+To stop cube from rotating and  manipulate it via the Scenegraph GUI \n\
 simply set the want_to_rotate variable (in the code) to False. \n\n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\

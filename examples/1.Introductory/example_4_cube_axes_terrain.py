@@ -19,9 +19,9 @@ example_description = \
 "This is a scene with a cube, a terrain and axes. \n\
 The cube and axes are rendered with a simple shader. \n\
 that allow camera movement too, via the Elements GUI. \n\n\
-An ECSS Graph shows the Entities and Components of the \n\
+A Scenegraph shows the Entities and Components of the \n\
 scene, in read only way, i.e., you cannot manipulate  \n\
-any information via the ECSS Graph GUI. \n\n\
+any information via the Scenegraph GUI. \n\n\
 You can move the camera through the Elements GUI \n\
 or the mouse. Hit ESC OR Close the window to quit." 
 

@@ -432,7 +432,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
 
         if twoColumn:
             # 2 Column Version
-            imgui.begin("ECSS graph")
+            imgui.begin("Scenegraph")
             imgui.columns(2,"Properties")
             if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
                 self.drawNode(self.wrapeeWindow.scene.world.root)
@@ -441,7 +441,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
         else:
-            imgui.begin("ECSS graph")
+            imgui.begin("Scenegraph")
             imgui.columns(1,"Properties")
             # below is a recursive call to build-up the whole scenegraph as ImGUI tree
             # if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
@@ -582,7 +582,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         self.sc["x"] = 0; self.sc["y"] = 0; self.sc["z"] = 0
 
     def hierarchyVisualizer(self, sceneRoot):
-        imgui.begin("ECSS Hierarchy")
+        imgui.begin("Scenegraph")
         imgui.columns(1,"Hierarchy")
         self.drawNodes(sceneRoot, True)  # True for onHierarchyFlag
         imgui.end()

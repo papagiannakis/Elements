@@ -23,7 +23,7 @@ example_description = \
 "This is a scene with a cube, terrain, axes and billboard Labels\n\
 The cube and axes are rendered with a simple shader.\n\
 Billboard labels always face the camera and follow their objects.\n\n\
-An ECSS Graph shows the Entities and Components of the scene.\n\
+A Scenegraph shows the Entities and Components of the scene.\n\
 You can move the camera through the Elements GUI or the mouse.\n\
 Hit ESC OR Close the window to quit." 
 
