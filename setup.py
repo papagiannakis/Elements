@@ -27,22 +27,22 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     install_requires=[
-        'pip',
-        'setuptools>=61',
-        'wheel',
-        'numpy<2',
-        'scipy',
-        'PyOpenGL',
-        'PyOpenGL_accelerate',
-        'pillow',
         'imgui',
-        'pysdl2',
-        'pysdl2-dll',
         'ipykernel',
         'jupyter',
+        'numpy<2',
+        'pillow',
+        'pip',
+        'PyOpenGL_accelerate',
+        'PyOpenGL',
+        'pysdl2-dll',
+        'pysdl2',
         'scikit-spatial',
+        'scipy',
+        'setuptools>=61',
         'trimesh',
         'usd-core',
+        'wheel',
     ],
     # Optional features that often lack wheels on some platforms
     # (e.g., macOS arm64)
@@ -60,11 +60,11 @@ setup(
         ],
         # Install everything optional
         'all': [
-            'clifford',
-            'pyganja',
             'bezier',
+            'clifford',
             'open3d',
             'pyassimp==4.1.3',
+            'pyganja',
         ]
     },
     
