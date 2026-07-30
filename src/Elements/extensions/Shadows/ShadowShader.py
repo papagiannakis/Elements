@@ -545,27 +545,50 @@ class ShadowShader(Component):
         }
     """
 
-    def __init__(self, name=None, type=None, id=None, 
-                 vertex_source=None, fragment_source=None, geometry_source=None):
+    def __init__(self, name=None, type=None, id=None,
+                 vertex_source=None, fragment_source=None, geometry_source=None,
+                 vertex_import_file=None, fragment_import_file=None):
         super().__init__(name, type, id)
-        
+
         self._parent = self
         self._glid = None
 
         self._texture = None
-        
+
         # Dictionaries to hold uniform values
         self._mat4fDict = {}
         self._mat3fDict = {}
         self._float1fDict = {}
         self._float3fDict = {}
         self._float4fDict = {}
-        self._aaaDict = {} 
+        self._aaaDict = {}
         self._textureDict = {}
         self._texture3DDict ={}
-        
-        self._vertex_source = vertex_source
-        self._fragment_source = fragment_source
+
+        # Prioritize import from file, and then from shader source string (same convention as
+        # Elements.pyGLV.GL.Shader.Shader)
+        if vertex_import_file is not None:
+            try:
+                f = open(vertex_import_file, 'r')
+            except OSError:
+                print("Could not open/read vertex shader file:", vertex_import_file)
+                sys.exit()
+            with f:
+                self._vertex_source = f.read()
+        else:
+            self._vertex_source = vertex_source
+
+        if fragment_import_file is not None:
+            try:
+                f = open(fragment_import_file, 'r')
+            except OSError:
+                print("Could not open/read fragment shader file:", fragment_import_file)
+                sys.exit()
+            with f:
+                self._fragment_source = f.read()
+        else:
+            self._fragment_source = fragment_source
+
         self._geometry_source = geometry_source
 
     @property
