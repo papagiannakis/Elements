@@ -78,7 +78,6 @@ Elements/
 │       │   ├── rigid_body_animation/ # Skinned mesh animation (preliminary)
 │       │   └── usd/               # USD format support (loading/saving)
 │       ├── files/                 # Static assets and resources
-│       │   ├── atlas_files/       # Resources for AI examples
 │       │   ├── models/            # 3D models (static and rigged)
 │       │   ├── scenes/            # Pre-built USD scenes
 │       │   ├── scv/               # Scientific Visualization data
