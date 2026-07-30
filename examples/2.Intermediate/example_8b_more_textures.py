@@ -189,10 +189,11 @@ while running:
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
-    mvp_terrain_axes = projMat @ view @ terrain.getChild(0).l2world 
+    mvp_terrain = projMat @ view @ terrain.getChild(0).l2world 
+    mvp_axes = projMat @ view @ axes.getChild(0).l2world 
 
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
+    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
     shaderDec4.setUniformVariable(key='model', value=trans4.l2world, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)

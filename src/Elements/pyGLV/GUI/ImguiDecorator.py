@@ -3,6 +3,7 @@ import imgui
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, SDL2Window
 from Elements.pyECSS.Component import BasicTransform
+from Elements.pyECSS.Entity import Entity
 from imgui.integrations.sdl2 import SDL2Renderer
 import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
@@ -441,7 +442,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
 
         if twoColumn:
             # 2 Column Version
-            imgui.begin("ECSS graph")
+            imgui.begin("Scenegraph")
             imgui.columns(2,"Properties")
             if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
                 self.drawNode(self.wrapeeWindow.scene.world.root)
@@ -450,7 +451,7 @@ class ImGUIecssDecorator(ImGUIDecorator):
             imgui.text("Properties")
             imgui.separator()
         else:
-            imgui.begin("ECSS graph")
+            imgui.begin("Scenegraph")
             imgui.columns(1,"Properties")
             # below is a recursive call to build-up the whole scenegraph as ImGUI tree
             # if imgui.tree_node(sceneRoot, imgui.TREE_NODE_OPEN_ON_ARROW):
@@ -591,7 +592,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
         self.sc["x"] = 0; self.sc["y"] = 0; self.sc["z"] = 0
 
     def hierarchyVisualizer(self, sceneRoot):
-        imgui.begin("ECSS Hierarchy")
+        imgui.begin("Scenegraph")
         imgui.columns(1,"Hierarchy")
         self.drawNodes(sceneRoot, True)  # True for onHierarchyFlag
         imgui.end()
@@ -637,7 +638,7 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                 except StopIteration:
                     done_traversing = True
                 else: 
-                    if (onHierarchyFlag == True and (comp.type == "Entity" or comp.type == "GameObjectEntity")) or (not onHierarchyFlag and comp.type != "Entity" and comp.type != "GameObjectEntity"): 
+                    if (onHierarchyFlag == True and isinstance(comp, Entity)) or (not onHierarchyFlag and not isinstance(comp, Entity)):
                         clicked = False
                         flags = SELECTED_FLAGS if self.selected_node == comp else DEFAULT_FLAGS
                         if imgui.tree_node(comp.name + "##" + str(comp.id), flags):                        
@@ -674,13 +675,13 @@ class ImGUIecssDecorator2(ImGUIDecorator):
                             clicked = self.drawNodes(comp, onHierarchyFlag) # recursive call of this method to traverse hierarchy
                             
                             
-                            if comp.type != "Entity" and comp.type != "GameObjectEntity": 
+                            if not isinstance(comp, Entity):
                                 _, selected = imgui.selectable(comp.__str__(), True)
                                 if hasattr(comp, "drawSelfGui"):
                                     comp.drawSelfGui(imgui)
                             imgui.tree_pop()
 
-                        if (comp.type == "Entity" or comp.type == "GameObjectEntity" ) and not clicked and imgui.is_item_clicked():
+                        if isinstance(comp, Entity) and not clicked and imgui.is_item_clicked():
                             self.selected_node = comp
                             ret = True
         return ret

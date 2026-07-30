@@ -37,7 +37,7 @@ ASSETS_DIR = UV_MAPPING_DIR / "Assets"
 example_description = \
 "This is the first examples that demonstrates the usage of the Camera System \n\
 instead of the use of the lookAt function to create the view matrix. \n\
-You may move the camera using the mouse or the ECSS Graph. \n\n\
+You may move the camera using the mouse or the Scenegraph. \n\n\
 NOTE: To change any TRS via the ECSS GUI, only this TRS must be toggled on!\n\n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
 various information about them. Hit ESC OR Close the window to quit." 
