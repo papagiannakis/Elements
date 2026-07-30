@@ -387,13 +387,14 @@ class RefractionShowcase:
     """
 
     #: (obj path, uniform scale), picked from each model's raw bounding box so they all end up a
-    #: comparable size once placed in the scene.
+    #: comparable size once placed in the scene -- 2x the size that comparison originally landed
+    #: on, so the showcase object reads clearly against the rest of the scene.
     DEFAULT_MODELS = {
         "Bunny": (BUNNY_PATH, 1.0),
-        "Teapot": (MODEL_DIR / "teapot.obj", 0.1),
-        "Cow": (MODEL_DIR / "cow.obj", 0.1),
-        "Teddy": (MODEL_DIR / "teddy.obj", 0.02),
-        "Sphere": (MODEL_DIR / "sphere.obj", 0.4),
+        "Teapot": (MODEL_DIR / "teapot.obj", 0.4),
+        "Cow": (MODEL_DIR / "cow.obj", 0.25),
+        "Teddy": (MODEL_DIR / "teddy.obj", 0.07),
+        "Sphere": (MODEL_DIR / "sphere.obj", 0.8),
     }
 
     def __init__(self, scene, root_entity, position=(0.0, 0.0, 0.0), models=None):
@@ -404,11 +405,17 @@ class RefractionShowcase:
         self.ref_index = 1.52  # glass
         self.ratio = 1.0 / self.ref_index
 
-        self.entities = {}  # name -> (entity, trans, shader, scale)
+        self.entities = {}  # name -> (entity, trans, shader, scale, min_y)
         for name, (path, scale) in self.models.items():
             vertices, indices = _load_obj_raw(path)
             _entity, trans, shader = create_refractive_entity(scene, root_entity, f"Refraction_{name}", vertices, indices)
-            self.entities[name] = (_entity, trans, shader, scale)
+            # Every model's own local origin sits somewhere different relative to its base --
+            # min_y (in local/object space, before scaling) is how far below the origin each
+            # model's lowest point is, so _apply_visibility() can lift each one by just enough to
+            # keep its base at self.position's y instead of sinking into the terrain, the same fix
+            # ObjGallery already applies for its own models.
+            min_y = float(vertices[:, 1].min())
+            self.entities[name] = (_entity, trans, shader, scale, min_y)
         self._apply_visibility()
 
     @property
@@ -416,12 +423,12 @@ class RefractionShowcase:
         """{entity_name: BasicTransform} for every model variant (hidden ones included -- they're
         parked off-screen, see _HIDDEN_OFFSET, so only the visible one is ever actually clickable)
         -- merge into the same lookup as SceneBuilder's builder.objects."""
-        return {entity.name: trans for entity, trans, _shader, _scale in self.entities.values()}
+        return {entity.name: trans for entity, trans, _shader, _scale, _min_y in self.entities.values()}
 
     def load_textures(self, cubemap):
         """Bind the shared environment cubemap (a Texture3D, e.g. skybox.cubemap) to every model
         variant. Call after scene.init()."""
-        for _entity, _trans, shader, _scale in self.entities.values():
+        for _entity, _trans, shader, _scale, _min_y in self.entities.values():
             shader.component.texture3DDict["cubemap"] = cubemap
 
     def set_model(self, name):
@@ -431,9 +438,10 @@ class RefractionShowcase:
         self._apply_visibility()
 
     def _apply_visibility(self):
-        for name, (_entity, trans, _shader, scale) in self.entities.items():
+        for name, (_entity, trans, _shader, scale, min_y) in self.entities.items():
             if name == self.current_name:
-                trans.trs = util.translate(*self.position) @ util.scale(scale, scale, scale)
+                x, y, z = self.position
+                trans.trs = util.translate(x, y - scale * min_y, z) @ util.scale(scale, scale, scale)
             else:
                 trans.trs = util.translate(*_HIDDEN_OFFSET)
 
@@ -443,7 +451,7 @@ class RefractionShowcase:
         shader's own "model" uniform must track its own (possibly off-screen) transform, or a
         previously-visible model would keep rendering at its old position once hidden.
         """
-        for _entity, trans, shader, _scale in self.entities.values():
+        for _entity, trans, shader, _scale, _min_y in self.entities.values():
             model = trans.l2world
             shader.setUniformVariable(key="projection", value=projection, mat4=True)
             shader.setUniformVariable(key="view", value=view, mat4=True)
@@ -494,13 +502,14 @@ class ReflectionShowcase:
     }
 
     #: (obj path, uniform scale), picked from each model's raw bounding box so they all end up a
-    #: comparable size once placed in the scene.
+    #: comparable size once placed in the scene -- 2x the size that comparison originally landed
+    #: on, so the showcase object reads clearly against the rest of the scene.
     DEFAULT_MODELS = {
-        "Pig": (PIG_PATH, 0.9),
-        "Teapot": (MODEL_DIR / "teapot.obj", 0.1),
-        "Cow": (MODEL_DIR / "cow.obj", 0.1),
-        "Teddy": (MODEL_DIR / "teddy.obj", 0.02),
-        "Sphere": (MODEL_DIR / "sphere.obj", 0.4),
+        "Pig": (PIG_PATH, 1.5),
+        "Teapot": (MODEL_DIR / "teapot.obj", 0.4),
+        "Cow": (MODEL_DIR / "cow.obj", 0.25),
+        "Teddy": (MODEL_DIR / "teddy.obj", 0.07),
+        "Sphere": (MODEL_DIR / "sphere.obj", 0.8),
     }
 
     def __init__(self, scene, root_entity, position=(0.0, 0.0, 0.0), models=None):
@@ -513,7 +522,7 @@ class ReflectionShowcase:
         self.tint_color = list(preset_color)
         self.tint_strength = preset_strength
 
-        self.entities = {}  # name -> (entity, trans, scale) -- shaders come later, see build_shaders()
+        self.entities = {}  # name -> (entity, trans, scale, min_y) -- shaders come later, see build_shaders()
         for name, (path, scale) in self.models.items():
             vertices, indices, colors = load_obj_mesh(path)
             v, i, c, n = norm.generateSmoothNormalsMesh(vertices, indices, colors)
@@ -524,7 +533,13 @@ class ReflectionShowcase:
             mesh.vertex_attributes.extend([v, c, n])
             mesh.vertex_index.append(i)
             scene.world.addComponent(entity, VertexArray())
-            self.entities[name] = (entity, trans, scale)
+            # Every model's own local origin sits somewhere different relative to its base --
+            # min_y (in local/object space, before scaling) is how far below the origin each
+            # model's lowest point is, so _apply_visibility() can lift each one by just enough to
+            # keep its base at self.position's y instead of sinking into the terrain, the same fix
+            # ObjGallery already applies for its own models.
+            min_y = float(vertices[:, 1].min())
+            self.entities[name] = (entity, trans, scale, min_y)
 
         self.shaders = {}  # filled in by build_shaders()
         self._apply_visibility()
@@ -534,7 +549,7 @@ class ReflectionShowcase:
         """{entity_name: BasicTransform} for every model variant (hidden ones included -- they're
         parked off-screen, see _HIDDEN_OFFSET, so only the visible one is ever actually clickable)
         -- merge into the same lookup as SceneBuilder's builder.objects."""
-        return {entity.name: trans for entity, trans, _scale in self.entities.values()}
+        return {entity.name: trans for entity, trans, _scale, _min_y in self.entities.values()}
 
     def build_shaders(self, cubemap):
         """
@@ -542,7 +557,7 @@ class ReflectionShowcase:
         after scene.init(), then run scene.world.traverse_visit(initUpdate, scene.world.root)
         again afterwards so InitGLShaderSystem compiles these newly-added shaders too.
         """
-        for name, (entity, _trans, _scale) in self.entities.items():
+        for name, (entity, _trans, _scale, _min_y) in self.entities.items():
             self.shaders[name] = EnvironmentMapping.apply(
                 entity, self.scene, cubemap=cubemap, tint_color=self.tint_color, tint_strength=self.tint_strength
             )
@@ -566,9 +581,10 @@ class ReflectionShowcase:
         self._apply_tint()
 
     def _apply_visibility(self):
-        for name, (_entity, trans, scale) in self.entities.items():
+        for name, (_entity, trans, scale, min_y) in self.entities.items():
             if name == self.current_name:
-                trans.trs = util.translate(*self.position) @ util.scale(scale, scale, scale)
+                x, y, z = self.position
+                trans.trs = util.translate(x, y - scale * min_y, z) @ util.scale(scale, scale, scale)
             else:
                 trans.trs = util.translate(*_HIDDEN_OFFSET)
 
@@ -582,7 +598,7 @@ class ReflectionShowcase:
     def update(self, projection, view, camera_eye):
         """Call once per frame, after build_shaders(). Updates every model variant, for the same
         reason as RefractionShowcase.update()."""
-        for name, (_entity, trans, _scale) in self.entities.items():
+        for name, (_entity, trans, _scale, _min_y) in self.entities.items():
             shader = self.shaders.get(name)
             if shader is None:
                 continue
