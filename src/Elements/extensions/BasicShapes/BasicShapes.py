@@ -11,6 +11,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
+from Elements.definitions import SHADER_DIR
 
 
 # Creates a basic object with a transform, mesh, shader, and vertex array
@@ -23,7 +24,7 @@ class ObjectCreator():
         # Create basic components of a primitive object
         self.entity.trans          = BasicTransform(name="trans", trs=util.identity());
         self.entity.mesh           = RenderMesh(name="mesh");
-        self.entity.shaderDec      = ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
+        self.entity.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
         self.entity.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();
@@ -294,7 +295,7 @@ class PointLight(Light):
         colors = np.array(colors)
 
         self.mesh           = RenderMesh(name="mesh");
-        self.shaderDec  = ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+        self.shaderDec  = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
         self.vArray         = VertexArray();
 
         scene.world.addComponent(self, self.mesh);

@@ -13,6 +13,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 
 from Elements.extensions.Captions_Screenshot.billboard_label_component import create_billboard_label, BillboardLabelSystem
+from Elements.definitions import SHADER_DIR
 #functions apo preperation gia live askisi 
 def make_cube(size=1.0):
     s = size * 0.5
@@ -82,8 +83,8 @@ mCube1.vertex_attributes.append(solid_color(8, (0.9, 0.2, 0.2, 1.0)))
 mCube1.vertex_index.append(idx1)
 scene.world.addComponent(cube1, VertexArray())
 shCube1 = scene.world.addComponent(cube1, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP,
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert",
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 
 # Object 2:Green Cube
@@ -100,8 +101,8 @@ mCube2.vertex_attributes.append(solid_color(8, (0.2, 0.9, 0.2, 1.0)))
 mCube2.vertex_index.append(idx2)
 scene.world.addComponent(cube2, VertexArray())
 shCube2 = scene.world.addComponent(cube2, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP,
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert",
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 
 # Object 3:Blue Sphere
@@ -118,8 +119,8 @@ mSphere.vertex_attributes.append(solid_color(len(pos3), (0.2, 0.2, 0.9, 1.0)))  
 mSphere.vertex_index.append(idx3)
 scene.world.addComponent(sphere, VertexArray())
 shSphere = scene.world.addComponent(sphere, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP,
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert",
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 
 scene.init(

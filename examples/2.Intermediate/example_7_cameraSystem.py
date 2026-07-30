@@ -35,6 +35,7 @@ from Elements.utils.normals import Convert
 from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 example_description = \
 "This is the first examples that demonstrates the usage of the Camera System \n\
 instead of the use of the lookAt function to create the view matrix. \n\
@@ -53,8 +54,8 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
-        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG));
+        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"));
         self.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();
@@ -191,7 +192,7 @@ def main(imguiFlag = False):
     terrain_mesh.vertex_index.append(indexTerrain)
 
     terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
-        Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
     
     scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
     # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)

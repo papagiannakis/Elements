@@ -15,7 +15,7 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 
 from Elements.utils.terrain import generateTerrain
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 
 from OpenGL.GL import GL_LINES
 
@@ -60,21 +60,21 @@ scene.world.addEntityChild(rootEntity, node4)
 trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0,0.5,0)@util.scale(0.7))) #util.identity()
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = myshader, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = myshader, fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 
 terrain = scene.world.createEntity(Entity(name="terrain"))
 scene.world.addEntityChild(rootEntity, terrain)
 terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
 terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.identity()))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES)) # note the primitive change
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
 

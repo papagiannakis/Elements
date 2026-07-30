@@ -40,7 +40,7 @@ from Elements.pyGLV.GUI.MenuBar import MenuBar, Keybinding
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
@@ -159,7 +159,7 @@ def create_terrain():
     scene.world.addComponent(terrainEntity, VertexArray())
     terrainShader = scene.world.addComponent(
         terrainEntity,
-        ShadowShader(name="Terrain_Shader", vertex_source=ShadowShader.VERT_POINT_PHONG, fragment_source=ShadowShader.FRAG_POINT_PHONG),
+        ShadowShader(name="Terrain_Shader", vertex_import_file=SHADER_DIR / "PointPhong.vert", fragment_import_file=SHADER_DIR / "PointPhong.frag"),
     )
     terrainShader.setUniformVariable(key="useTexture", value=0, boolean=True)
     shadow_shaders.append(terrainShader)
@@ -191,7 +191,7 @@ def create_solid_cube(entity_name, position, scale, color):
     scene.world.addComponent(cubeNode, VertexArray())
     cubeShader = scene.world.addComponent(
         cubeNode,
-        ShadowShader(name=f"{entity_name}_Shader", vertex_source=ShadowShader.VERT_POINT_PHONG, fragment_source=ShadowShader.FRAG_POINT_PHONG),
+        ShadowShader(name=f"{entity_name}_Shader", vertex_import_file=SHADER_DIR / "PointPhong.vert", fragment_import_file=SHADER_DIR / "PointPhong.frag"),
     )
     cubeShader.setUniformVariable(key="useTexture", value=0, boolean=True)
     shadow_shaders.append(cubeShader)
@@ -224,7 +224,7 @@ def create_solid_shape(entity_name, shape_type, position, scale=1.0, color=(0.8,
     scene.world.addComponent(entity, VertexArray())
     shader = scene.world.addComponent(
         entity,
-        ShadowShader(name=f"{entity_name}_Shader", vertex_source=ShadowShader.VERT_POINT_PHONG, fragment_source=ShadowShader.FRAG_POINT_PHONG),
+        ShadowShader(name=f"{entity_name}_Shader", vertex_import_file=SHADER_DIR / "PointPhong.vert", fragment_import_file=SHADER_DIR / "PointPhong.frag"),
     )
     shader.setUniformVariable(key="useTexture", value=0, boolean=True)
     shadow_shaders.append(shader)
@@ -275,7 +275,7 @@ def create_textured_cube_shape(entity_name, position, scale):
     scene.world.addComponent(entity, VertexArray())
     shader = scene.world.addComponent(
         entity,
-        ShadowShader(name=f"{entity_name}_Shader", vertex_source=ShadowShader.VERT_POINT_PHONG, fragment_source=ShadowShader.FRAG_POINT_PHONG),
+        ShadowShader(name=f"{entity_name}_Shader", vertex_import_file=SHADER_DIR / "PointPhong.vert", fragment_import_file=SHADER_DIR / "PointPhong.frag"),
     )
     shader.setUniformVariable(key="useTexture", value=1, boolean=True)
     shadow_shaders.append(shader)

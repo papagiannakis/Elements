@@ -17,7 +17,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from Elements.pyGLV.GL.Textures import Texture
 
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 import Elements.extensions.Normals_USDimporter_BSP.normals as norm
 
 
@@ -143,7 +143,7 @@ mesh4.vertex_index.append(d["I"])
 
 vArray4 = scene.world.addComponent(node4, VertexArray())
 
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source = Shader.FRAG_PHONG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 # MAIN RENDERING LOOP
 
 running = True

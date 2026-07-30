@@ -58,6 +58,7 @@ from Elements.utils.normals import Convert
 from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 example_description = \
 "This is an example of the rotation system. The cube is \n\
 rotating based on the information of a \n\
@@ -73,8 +74,8 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
-        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG));
+        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"));
         self.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();

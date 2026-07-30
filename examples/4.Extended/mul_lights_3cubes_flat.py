@@ -27,6 +27,7 @@ from Elements.utils.terrain import generateTerrain
 
 # from Elements.definitions import TEXTURE_DIR
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SHADERS_DIR = os.path.join(BASE_DIR, "Shaders")
@@ -407,7 +408,7 @@ terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(
-    terrain, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 # --- Axes ---
@@ -445,7 +446,7 @@ axes_mesh.vertex_attributes.append(vertexAxes)
 axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
 scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES))
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 # --- Systems ---
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))

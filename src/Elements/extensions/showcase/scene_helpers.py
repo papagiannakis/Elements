@@ -40,14 +40,15 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.extensions.Shadows.ShadowShader import ShadowShader
 from Elements.extensions.Shapes import geometry_factory
+from Elements.definitions import SHADER_DIR
 
 
 #: Fragment shader for every object SceneBuilder creates: Blinn-Phong lit by up to MAX_LIGHTS
 #: point/directional/spot lights (same math as Elements.extensions.MultiLights_and_Normals's
 #: PHONG_MULTI_LIGHTS.frag), plus real-time shadows sampled from a point-light cube map for
 #: lights[0] only (same shadow math as ShadowShader.FRAG_POINT_PHONG). The vertex shader is
-#: unchanged from ShadowShader.VERT_POINT_PHONG -- only the lighting model in the fragment shader
-#: is different.
+#: unchanged from ShadowShader.VERT_POINT_PHONG (SHADER_DIR / "PointPhong.vert") -- only the
+#: lighting model in the fragment shader is different.
 MULTI_LIGHT_FRAG = """
     #version 410
     #define MAX_LIGHTS 4
@@ -334,7 +335,7 @@ class SceneBuilder:
         self.scene.world.addComponent(entity, VertexArray())
         shader = self.scene.world.addComponent(
             entity,
-            ShadowShader(name=f"{name}_Shader", vertex_source=ShadowShader.VERT_POINT_PHONG, fragment_source=MULTI_LIGHT_FRAG),
+            ShadowShader(name=f"{name}_Shader", vertex_import_file=SHADER_DIR / "PointPhong.vert", fragment_source=MULTI_LIGHT_FRAG),
         )
         shader.setUniformVariable(key="useTexture", value=1 if textured else 0, boolean=True)
 

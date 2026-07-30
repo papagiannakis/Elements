@@ -16,7 +16,7 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 from Elements.utils.objimporter.entities import ModelEntity
 from Elements.utils.terrain import generateTerrain
-from Elements.definitions import MODEL_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
@@ -85,7 +85,7 @@ insertCollider_entity = GameObject.Spawn(scene, obj_to_import, "InsertCollider",
 modelsList.append(insertCollider_entity)
 
 light_vArray = scene.world.addComponent(light_node, VertexArray())
-light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
 # Generate terrain
@@ -99,7 +99,7 @@ terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 #index arrays for above vertex Arrays
 index = np.array((0,1,2), np.uint32) #simple triangle

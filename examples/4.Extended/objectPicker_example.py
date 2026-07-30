@@ -7,7 +7,7 @@ from Elements.pyECSS.System import  TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.extensions.ObjectPicker.Gizmos import Gizmos
-from Elements.definitions import TEXTURE_DIR, MODEL_DIR
+from Elements.definitions import TEXTURE_DIR, MODEL_DIR, SHADER_DIR
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
@@ -151,8 +151,8 @@ teapot_mesh.vertex_attributes.append(normals)
 teapot_mesh.vertex_index.append(indices)
 
 vArray_teapot = scene.world.addComponent(teapot, VertexArray())
-ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
-#ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
+#ShaderTeapot = scene.world.addComponent(teapot, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 scene.world.addComponent(teapot, AABoundingBox(name="AABoundingBox",
                                         vertices = teapot_mesh.vertex_attributes[0]))
 
@@ -162,13 +162,13 @@ ground_mesh.vertex_attributes.append(vertexground)
 ground_mesh.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 ground_mesh.vertex_index.append(indexground)
 ground_vArray = scene.world.addComponent(ground, VertexArray())
-ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 
 mesh_TableTop.vertex_attributes.append(verticesTableTop)
 mesh_TableTop.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableTop.vertex_index.append(indicesTableTop)
 vArray_TableTop = scene.world.addComponent(TableTop, VertexArray())
-shaderDec_TableTop = scene.world.addComponent(TableTop, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec_TableTop = scene.world.addComponent(TableTop, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 bb_TableTop = scene.world.addComponent(TableTop, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh_TableTop.vertex_attributes[0]))
 
@@ -179,7 +179,7 @@ mesh_TableLeg1.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg1.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg1.vertex_index.append(indicesTableLeg)
 vArray_TableLeg1 = scene.world.addComponent(TableLeg1, VertexArray())
-shaderDec_TableLeg1 = scene.world.addComponent(TableLeg1, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec_TableLeg1 = scene.world.addComponent(TableLeg1, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 scene.world.addComponent(TableLeg1, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh_TableLeg1.vertex_attributes[0]))
 
@@ -188,7 +188,7 @@ mesh_TableLeg2.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg2.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg2.vertex_index.append(indicesTableLeg)
 vArray_TableLeg2 = scene.world.addComponent(TableLeg2, VertexArray())
-shaderDec_TableLeg2 = scene.world.addComponent(TableLeg2, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec_TableLeg2 = scene.world.addComponent(TableLeg2, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 scene.world.addComponent(TableLeg2, AABoundingBox(name="AABoundingBox", vertices = mesh_TableLeg2.vertex_attributes[0]))
 
 
@@ -196,7 +196,7 @@ mesh_TableLeg3.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg3.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg3.vertex_index.append(indicesTableLeg)
 vArray_TableLeg3 = scene.world.addComponent(TableLeg3, VertexArray())
-shaderDec_TableLeg3 = scene.world.addComponent(TableLeg3, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec_TableLeg3 = scene.world.addComponent(TableLeg3, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 scene.world.addComponent(TableLeg3, AABoundingBox(name="AABoundingBox", vertices = mesh_TableLeg3.vertex_attributes[0]))
 
 
@@ -204,7 +204,7 @@ mesh_TableLeg4.vertex_attributes.append(verticesTableLeg)
 mesh_TableLeg4.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
 mesh_TableLeg4.vertex_index.append(indicesTableLeg)
 vArray_TableLeg4 = scene.world.addComponent(TableLeg4, VertexArray())
-shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+shaderDec_TableLeg4 = scene.world.addComponent(TableLeg4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 scene.world.addComponent(TableLeg4, AABoundingBox(name="AABoundingBox", vertices = mesh_TableLeg4.vertex_attributes[0]))
 
 

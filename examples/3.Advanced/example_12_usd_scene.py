@@ -15,7 +15,7 @@ from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
 from Elements.utils.terrain import generateTerrain
-from Elements.definitions import SCENES_DIR
+from Elements.definitions import SCENES_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
@@ -93,7 +93,7 @@ tetrahedron_indices = np.array([0, 2, 1, 0, 1, 3, 2, 3, 1, 3, 2, 0])
 
 # light_vArray = scene.world.addComponent(light_node, VertexArray())
 # light_shader_decorator = scene.world.addComponent(light_node, ShaderGLDecorator(
-#     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+#     Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 # Generate terrain
 vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4, N=20)
@@ -107,7 +107,7 @@ terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
-    Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 ## ADD AXES ##
 # Colored Axes
@@ -143,7 +143,7 @@ axes_mesh.vertex_index.append(indexAxes)
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES))  # note the primitive change
 
 axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
-    Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 # MAIN RENDERING LOOP
 running = True

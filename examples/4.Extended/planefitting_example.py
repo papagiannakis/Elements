@@ -14,6 +14,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 
 from Elements.extensions.plane_fitting.planefitting_base import PlaneFitting
+from Elements.definitions import SHADER_DIR
 
 scene = Scene()
 
@@ -84,7 +85,7 @@ terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
-    Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 all_shaders.append(terrain_shader)
 
 ## ADD AXES ##
@@ -98,7 +99,7 @@ axes_mesh.vertex_index.append(indexAxes)
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES))
 
 axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
-    Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 all_shaders.append(axes_shader)
 
 # entity for plane fitting

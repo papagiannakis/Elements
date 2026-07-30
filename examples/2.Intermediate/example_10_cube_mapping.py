@@ -14,7 +14,7 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
@@ -104,12 +104,12 @@ vertexCube, indexCube, _ = norm.generateUniqueVertices(vertexCube,indexCube)
 meshSkybox.vertex_attributes.append(vertexSkybox)
 meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
-shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
+shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "StaticSkybox.vert", fragment_import_file=SHADER_DIR / "StaticSkybox.frag")))
 
 mesh4.vertex_attributes.append(vertexCube)
 mesh4.vertex_index.append(indexCube)
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.TEXTURE_3D_VERT, fragment_source=Shader.TEXTURE_3D_FRAG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Texture3D.vert", fragment_import_file=SHADER_DIR / "Texture3D.frag")))
 
 
 # MAIN RENDERING LOOP

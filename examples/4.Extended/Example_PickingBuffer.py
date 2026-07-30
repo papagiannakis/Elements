@@ -12,6 +12,7 @@ import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.picking_buffer import PickingBuffer as pb
+from Elements.definitions import SHADER_DIR
 
 assignment_goals = \
 "Simple scene containing cube and terrain to test PickingSystem \n" \
@@ -114,7 +115,7 @@ cubeMesh.vertex_attributes.append(cubeNormals)
 cubeMesh.vertex_index.append(cubeIndices)
 
 vArrayCube = scene.world.addComponent(cubeNode, VertexArray())
-cubeShader = scene.world.addComponent(cubeNode, ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+cubeShader = scene.world.addComponent(cubeNode, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
 # Create TERRAIN entity
 #vertTerrain, indexTerrain, colorTerrain = generateTerrain(size=3, mode="triangles")
@@ -150,7 +151,7 @@ terrainMesh.vertex_attributes.append(normalsTerrain)
 terrainMesh.vertex_index.append(indexTerrain)
 
 vArrayTerrain = scene.world.addComponent(terrainEntity, VertexArray())
-terrainShader = scene.world.addComponent(terrainEntity, ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+terrainShader = scene.world.addComponent(terrainEntity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
 ########## - MAIN RENDERING LOOP INIT - ##########
 

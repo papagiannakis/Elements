@@ -23,6 +23,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.extensions.Shapes import geometry_factory
+from Elements.definitions import SHADER_DIR
 
 
 def spawn_shape(scene, parent, name, shape_type, params, position, scale=1.0):
@@ -39,7 +40,7 @@ def spawn_shape(scene, parent, name, shape_type, params, position, scale=1.0):
     mesh.vertex_attributes.extend([vertices, colors, normals])
     mesh.vertex_index.append(indices)
     shaderDec = scene.world.addComponent(
-        entity, ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
+        entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"))
     )
     scene.world.addComponent(entity, VertexArray())
     return entity, trans, shaderDec
@@ -58,7 +59,7 @@ def spawn_light_marker(scene, parent, position):
     mesh.vertex_attributes.extend([vertices, colors, normals])
     mesh.vertex_index.append(indices)
     shaderDec = scene.world.addComponent(
-        entity, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+        entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
     )
     scene.world.addComponent(entity, VertexArray())
     return entity, trans, shaderDec

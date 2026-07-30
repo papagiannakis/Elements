@@ -9,7 +9,7 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 import Elements.extensions.camera_man.cameraman_logic as cam
 
 
@@ -79,8 +79,8 @@ sphere_shader = scene.world.addComponent(
     sphere,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.SIMPLE_TEXTURE_VERT,
-            fragment_source=Shader.SIMPLE_TEXTURE_FRAG
+            vertex_import_file=SHADER_DIR / "SimpleTexture.vert",
+            fragment_import_file=SHADER_DIR / "SimpleTexture.frag"
         )
     )
 )

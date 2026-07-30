@@ -19,6 +19,7 @@ import OpenGL.GL as gl
 
 import Elements.extensions.Voronoi2D.voronoi as voronoi
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 example_description = \
 "This scene demonstrates the Voronoi diagram of 2D points \n"
 "(represented as coplanar points). Distinct colors are used\n"
@@ -55,7 +56,7 @@ mesh4.vertex_attributes.append(mesh_vertices)
 mesh4.vertex_attributes.append(mesh_color)
 mesh4.vertex_index.append(mesh_indices)
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 ## ADD POINTS ##
 points = scene.world.createEntity(Entity(name="points"))
@@ -66,7 +67,7 @@ points_mesh.vertex_attributes.append(point_list)
 points_mesh.vertex_attributes.append(point_colors)
 points_mesh.vertex_index.append(point_indices)
 points_vArray = scene.world.addComponent(points, VertexArray(primitive=GL_POINTS)) # note the primitive change
-points_shader = scene.world.addComponent(points, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+points_shader = scene.world.addComponent(points, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
 # MAIN RENDERING LOOP

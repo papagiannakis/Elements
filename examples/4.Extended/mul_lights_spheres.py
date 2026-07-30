@@ -24,6 +24,7 @@ import OpenGL.GL as gl
 import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -385,7 +386,7 @@ terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(
-    terrain, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 vertexAxes = np.array(
@@ -421,7 +422,7 @@ axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
 scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES))
 axes_shader = scene.world.addComponent(
-    axes, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 # Systems

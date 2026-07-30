@@ -42,6 +42,7 @@ from OpenGL.GL import GL_LINES
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction3D, Surface3D_VERT, Surface3D_FRAG
+from Elements.definitions import SHADER_DIR
 
 
 import time
@@ -67,7 +68,7 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
+        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Surface3D_VERT, fragment_source=Surface3D_FRAG));
         self.vArray         = VertexArray();
         # self.surface        = MarchingCubes(self.vArray);

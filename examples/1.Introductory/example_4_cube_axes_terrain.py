@@ -15,6 +15,7 @@ from Elements.utils.terrain import generateTerrain
 from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 example_description = \
 "This is a scene with a cube, a terrain and axes. \n\
 The cube and axes are rendered with a simple shader. \n\
@@ -132,7 +133,7 @@ mesh4.vertex_attributes.append(vertexCube)
 mesh4.vertex_attributes.append(colorCube)
 mesh4.vertex_index.append(indexCube)
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
 
@@ -148,7 +149,7 @@ terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 ## ADD AXES ##
@@ -163,7 +164,7 @@ axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES)) # 
 
 # shaderDec_axes = scene.world.addComponent(axes, Shader())
 ## OR
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 

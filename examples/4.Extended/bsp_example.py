@@ -18,6 +18,7 @@ from OpenGL.GL import GL_LINES
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.Normals_USDimporter_BSP.BSPTree import BSPTree
+from Elements.definitions import SHADER_DIR
 
 
 example_description = \
@@ -130,7 +131,7 @@ mesh4.vertex_index.append(indexTri)
 vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(
     node4,
-    ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 mesh5.vertex_attributes.clear()
@@ -141,7 +142,7 @@ mesh5.vertex_index.append(indexTri)
 vArray5 = scene.world.addComponent(node5, VertexArray())
 shaderDec5 = scene.world.addComponent(
     node5,
-    ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 mesh6.vertex_attributes.clear()
@@ -152,7 +153,7 @@ mesh6.vertex_index.append(indexTri)
 vArray6 = scene.world.addComponent(node6, VertexArray())
 shaderDec6 = scene.world.addComponent(
     node6,
-    ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 mesh7.vertex_attributes.clear()
@@ -163,7 +164,7 @@ mesh7.vertex_index.append(indexTri)
 vArray7 = scene.world.addComponent(node7, VertexArray())
 shaderDec7 = scene.world.addComponent(
     node7,
-    ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 mesh8.vertex_attributes.clear()
@@ -174,7 +175,7 @@ mesh8.vertex_index.append(indexTri)
 vArray8 = scene.world.addComponent(node8, VertexArray())
 shaderDec8 = scene.world.addComponent(
     node8,
-    ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 
@@ -191,7 +192,7 @@ terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(
-    terrain, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 # ADD AXES
@@ -204,7 +205,7 @@ axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES))
 axes_shader = scene.world.addComponent(
-    axes, ShaderGLDecorator(Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))
+    axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))
 )
 
 

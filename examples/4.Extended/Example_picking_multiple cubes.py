@@ -12,6 +12,7 @@ import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.picking_buffer import PickingBuffer as pb
+from Elements.definitions import SHADER_DIR
 
 
 assignment_goals = (
@@ -109,7 +110,7 @@ def create_terrain():
     scene.world.addComponent(terrainEntity, VertexArray())
     terrainShader = scene.world.addComponent(
         terrainEntity,
-        ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)),
+        ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")),
     )
     return terrainTrans, terrainShader
 
@@ -135,7 +136,7 @@ def create_cube(entity_name, color, trs):
     scene.world.addComponent(cubeNode, VertexArray())
     cubeShader = scene.world.addComponent(
         cubeNode,
-        ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)),
+        ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")),
     )
     return cubeTrans, cubeShader
 

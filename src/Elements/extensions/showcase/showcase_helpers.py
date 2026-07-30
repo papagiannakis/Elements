@@ -53,7 +53,7 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture3D
-from Elements.definitions import MODEL_DIR, TEXTURE_DIR
+from Elements.definitions import MODEL_DIR, TEXTURE_DIR, SHADER_DIR
 from Elements.extensions.Refraction.refraction_component import create_refractive_entity
 from Elements.extensions.environment_mapping.environment_mapping import EnvironmentMapping
 
@@ -161,7 +161,7 @@ class ObjGallery:
     """
     A single OBJ-model entity you can swap between a few named models, and toggle between smooth
     and flat shading -- as in Normals_USDimporter_BSP/cow_example.py. Lit by a plain single-light
-    Phong shader (Shader.FRAG_PHONG): not shadow-mapped, and only lit by one light (lights[0] of
+    Phong shader (SHADER_DIR / "Phong.frag"): not shadow-mapped, and only lit by one light (lights[0] of
     whatever LightManager you pass to update_lighting()), unlike SceneBuilder's objects.
     """
 
@@ -194,7 +194,7 @@ class ObjGallery:
         self.mesh = scene.world.addComponent(self.entity, RenderMesh(name="ObjGallery_Mesh"))
         scene.world.addComponent(self.entity, VertexArray())
         self.shader = scene.world.addComponent(
-            self.entity, ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
+            self.entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"))
         )
         self._apply_mesh()
 
@@ -286,7 +286,7 @@ class ObjGallery:
 # 2. Skybox
 # ================================================================================================
 
-#: Shader.STATIC_SKYBOX_VERT/FRAG (example_10_cube_mapping.py's skybox shader) always draws --
+#: SHADER_DIR / "StaticSkybox.vert"/".frag" (example_10_cube_mapping.py's skybox shader) always draws --
 #: it has no "model" uniform at all (deliberately: a skybox always surrounds the camera,
 #: ignoring any transform), so there's no transform-based trick to hide it with. This is the
 #: same fragment shader plus one line so it can actually be turned off.
@@ -335,7 +335,7 @@ class Skybox:
         mesh.vertex_index.append(indices)
         scene.world.addComponent(self.entity, VertexArray())
         self.shader = scene.world.addComponent(
-            self.entity, ShaderGLDecorator(Shader(vertex_source=Shader.STATIC_SKYBOX_VERT, fragment_source=_SKYBOX_FRAG_TOGGLEABLE))
+            self.entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "StaticSkybox.vert", fragment_source=_SKYBOX_FRAG_TOGGLEABLE))
         )
 
     def load_textures(self):

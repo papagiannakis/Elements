@@ -15,7 +15,7 @@ from Elements.pyGLV.GL.Textures import get_texture_faces, Texture, Texture3D
 from Elements.utils.normals import generateSmoothNormalsMesh, generateUniqueVertices
 from Elements.utils.objimporter.wavefront import Wavefront
 from Elements.utils.Shortcuts import displayGUI_text
-from Elements.definitions import MODEL_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR
 from Elements.extensions.environment_mapping import EnvironmentMapping
 
 # basic configuration
@@ -56,7 +56,7 @@ ground_mesh = scene.world.addComponent(ground, RenderMesh(name="ground_mesh"))
 ground_mesh.vertex_attributes.extend([g_verts, g_uvs])
 ground_mesh.vertex_index.append(g_inds)
 scene.world.addComponent(ground, VertexArray())
-ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_source=Shader.SIMPLE_TEXTURE_VERT_MVP, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+ground_shader = scene.world.addComponent(ground, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "SimpleTextureMVP.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 
 # skybox entity
 skybox = scene.world.createEntity(Entity(name="Skybox"))
@@ -80,7 +80,7 @@ skybox_mesh.vertex_attributes.append(sb_verts)
 skybox_mesh.vertex_index.append(sb_inds)
 scene.world.addComponent(skybox, VertexArray())
 skybox_shader = scene.world.addComponent(skybox, ShaderGLDecorator(
-    Shader(vertex_source=Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
+    Shader(vertex_import_file=SHADER_DIR / "StaticSkybox.vert", fragment_import_file=SHADER_DIR / "StaticSkybox.frag")))
 
 # load model once for the three pigs
 print(f"Loading model geometry: {MODEL_PATH}")

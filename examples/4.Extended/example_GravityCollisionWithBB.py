@@ -27,7 +27,7 @@ from Elements.extensions.GravityBB.GravityCollisonSystem import GravityCollision
 from Elements.extensions.GravityBB.floor import generate_floor_with_bb
 
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 from Elements.utils.Shortcuts import displayGUI_text
 
 
@@ -40,7 +40,7 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
         self.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();

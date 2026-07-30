@@ -20,6 +20,7 @@ from Elements.extensions.Captions_Screenshot.billboard_label_component import cr
 
 # Εισαγωγή του subtitle system για υπότιτλους
 from Elements.extensions.Captions_Screenshot.subtitle_system import SubtitleManager, SubtitleRenderer
+from Elements.definitions import SHADER_DIR
 
 example_description = \
 "Simple scene with a cube and a billboard label! \n\
@@ -101,8 +102,8 @@ mesh4.vertex_attributes.append(colorCube)
 mesh4.vertex_index.append(indexCube)
 vArray4 = scene.world.addComponent(node4, VertexArray())
 shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP, 
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert", 
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 
 running = True

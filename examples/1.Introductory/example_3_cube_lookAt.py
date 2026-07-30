@@ -9,6 +9,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 example_description = \
 "This is a scene with some simple geometry, i.e., a colored cube. \n\
 The cube is rendered via the simplest vertex and fragment shader. \n\
@@ -91,7 +92,7 @@ projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -10, 10.0)
 mvpMat =  projMat @ view @ model
 
 
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
