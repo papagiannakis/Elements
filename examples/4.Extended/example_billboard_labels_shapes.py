@@ -1,5 +1,5 @@
-# complete_billboard_example.py Full example with billboard labels
-#### ΔΟΞΑΣΕΙ ΛΕΙΤΟΥΡΓΕΙ <3 <3 <3 <3  #####
+# example_billboard_labels_shapes.py: billboard labels on multiple shapes (two cubes, a sphere)
+
 import os, time
 import numpy as np
 import OpenGL.GL as gl

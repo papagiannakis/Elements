@@ -1,6 +1,6 @@
 import numpy as np
-import OpenGL.GL as gl  # Χρειάζεται για το blending των labels
-import time  # Χρειάζεται για τους υπότιτλους
+import OpenGL.GL as gl  
+import time  
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
@@ -22,8 +22,8 @@ from Elements.extensions.Captions_Screenshot.billboard_label_component import cr
 from Elements.extensions.Captions_Screenshot.subtitle_system import SubtitleManager, SubtitleRenderer
 
 example_description = \
-"Απλή σκηνή με έναν κύβο και billboard label! \n\
-Το label πάντα κοιτάζει την κάμερα.\n\n\
+"Simple scene with a cube and a billboard label! \n\
+The label always faces the camera.\n\n\
 " 
 
 winWidth = 1024
