@@ -35,6 +35,8 @@ import OpenGL.GL as gl
 from Elements.utils.Shortcuts import displayGUI_text
 import imgui
 
+from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
+
 
 class TestScene(unittest.TestCase):
     """Main body of Scene Unit Test class
@@ -242,6 +244,7 @@ class TestScene(unittest.TestCase):
         
         message = "This should be a Scene with simple colored axes. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -289,6 +292,7 @@ class TestScene(unittest.TestCase):
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
         
         message = "This should be a Scene with a simple colored triangle. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -346,6 +350,7 @@ class TestScene(unittest.TestCase):
         
         message = "This should be a Scene with a simple colored cube. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -426,6 +431,7 @@ class TestScene(unittest.TestCase):
 
         message="This should be a Scene with a simple colored triangle and colored axes. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -516,6 +522,7 @@ class TestScene(unittest.TestCase):
         
         message = "This should be a Scene with a simple colored axes and a terrain. \nCamera movement is NOT possible. Hit ESC or close the window to exit."
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -637,6 +644,7 @@ class TestScene(unittest.TestCase):
         mvpMat = projMat @ view @ model
 
         message = "This should be a Scene with a simple colored axes and a terrain. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -731,6 +739,7 @@ class TestScene(unittest.TestCase):
         running = True
         
         message = "This should be a Scene with a simple colored axes and a cube. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)
@@ -860,6 +869,7 @@ class TestScene(unittest.TestCase):
         model_cube = util.scale(0.3) @ util.translate(0.0,0.5,0.0)
 
         message = "This should be a Scene with a simple colored axes and a terrain. \nCamera movement is possible via mouse or the GUI. Hit ESC or close the window to exit."
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)

@@ -15,6 +15,7 @@ import numpy as np
 
 from Elements.pyGLV.GUI.Viewer import SDL2Window
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIDecorator, ImGUIecssDecorator
+from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 class TestSDL2Window(unittest.TestCase):
     
@@ -33,8 +34,8 @@ class TestSDL2Window(unittest.TestCase):
         print("TestSDL2Window:test_initSDL2Decorator START".center(100, '-'))
         
         self.gWindow.init()
-        
-        
+
+        auto_quit_after()
         running = True
         # MAIN RENDERING LOOP
         while running:
@@ -56,7 +57,8 @@ class TestSDL2Window(unittest.TestCase):
         print("TestSDL2Window:test_initImGUIDecorator START".center(100, '-'))
         
         self.gGUI.init() #calls ImGUIDecorator::init()-->SDL2Window::init()
-        
+
+        auto_quit_after()
         running = True
         # MAIN RENDERING LOOP
         while running:
