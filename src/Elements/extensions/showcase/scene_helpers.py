@@ -39,7 +39,7 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.extensions.Shadows.ShadowShader import ShadowShader
-from Elements.extensions.textToScene.src import geometry_factory
+from Elements.extensions.Shapes import geometry_factory
 
 
 #: Fragment shader for every object SceneBuilder creates: Blinn-Phong lit by up to MAX_LIGHTS
@@ -234,7 +234,7 @@ class SceneBuilder:
     def add_shape(self, name, shape_type, position, scale=1.0, color=(0.8, 0.8, 0.8), **shape_params):
         """
         The general-purpose version of add_sphere()/add_cylinder()/add_cone()/add_torus(): builds
-        anything Elements.extensions.textToScene.src.geometry_factory knows how to make --
+        anything Elements.extensions.Shapes.geometry_factory knows how to make --
         shape_type is one of "sphere", "cylinder", "cone", "torus", "pyramid",
         "triangular_pyramid", "plane", "rectangular_prism" (a box; "cube" also works but
         add_cube() above is the simpler way to get one). Extra keyword arguments (radius=,

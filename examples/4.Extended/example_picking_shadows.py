@@ -5,7 +5,7 @@ light + real-time shadows (Elements.extensions.Shadows.ShadowShader, as in
 Elements.extensions.Shadows.example_1_PointLightDemo), plus:
 
   1. Spheres, cylinders and a cone, built from
-     Elements.extensions.textToScene.src.geometry_factory (create_solid_shape() below wraps its
+     Elements.extensions.Shapes.geometry_factory (create_solid_shape() below wraps its
      raw params-dict interface into a typical scale=/color=/**kwargs call).
   2. A textured cube (create_textured_cube_shape()), UV-mapped per face as in
      examples/2.Intermediate/example_8b_more_textures.py.
@@ -45,7 +45,7 @@ import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
 from Elements.extensions.Shadows.ShadowShader import ShadowShader, ShadowMappingSystem
-from Elements.extensions.textToScene.src import geometry_factory
+from Elements.extensions.Shapes import geometry_factory
 import sdl2
 
 from Elements.extensions.picking_buffer import PickingBuffer as pb
@@ -201,7 +201,7 @@ def create_solid_cube(entity_name, position, scale, color):
 def create_solid_shape(entity_name, shape_type, position, scale=1.0, color=(0.8, 0.8, 0.8), **shape_params):
     """
     Spawn a single flat/smooth-shaded, point-lit-and-shadowed shape built by
-    Elements.extensions.textToScene.src.geometry_factory (shape_type e.g. "sphere", "cylinder",
+    Elements.extensions.Shapes.geometry_factory (shape_type e.g. "sphere", "cylinder",
     "cone", "pyramid", ...), with a typical scale=/color=/**shape_params keyword interface instead
     of geometry_factory's own raw params dict.
     """
