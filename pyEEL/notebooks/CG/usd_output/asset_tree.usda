@@ -1,0 +1,23 @@
+#usda 1.0
+(
+    upAxis = "Y"
+)
+
+def Xform "Tree"
+{
+    def Cylinder "Trunk"
+    {
+        double height = 2
+        color3f[] primvars:displayColor = [(0.4, 0.2, 0.1)]
+        double radius = 0.2
+    }
+
+    def Sphere "Foliage"
+    {
+        color3f[] primvars:displayColor = [(0, 0.8, 0)]
+        double radius = 1
+        double3 xformOp:translate = (0, 1.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+}
+

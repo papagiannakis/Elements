@@ -4,7 +4,7 @@ from os import path
 this_directory = path.abspath(path.dirname(__file__))
 
 # imports from __version__
-with open(path.join(this_directory, 'Elements', '_version.py'), encoding='utf-8') as f:
+with open(path.join(this_directory, 'src', 'Elements', '_version.py'), encoding='utf-8') as f:
     exec(f.read())
 
 with open(path.join(this_directory, 'README.md'), encoding='utf-8') as f:
@@ -24,31 +24,49 @@ setup(
     maintainer_email='m.kamarianakis@gmail.com',
     url='https://github.com/papagiannakis/Elements',
     keywords = ['ECS','Scenegraph','Python design patterns','Computer Graphics'],
-    package_dir={'Elements':'Elements'},
-    packages=find_packages(exclude=["tests","tests.*", "tests/*", "pyEEL/*" ]),
+    package_dir={'': 'src'},
+    packages=find_packages(where='src'),
     install_requires=[
-        'pip',
-        'setuptools>=61',
-        'wheel',
-        'numpy',
-        'scipy',
         'imgui',
-        'PyOpenGL',
-        'pillow',
-        'PyOpenGL_accelerate',
-        'pysdl2',
-        'pysdl2-dll',
         'ipykernel',
-        'usd-core',
         'jupyter',
+        'numpy<2',
+        'pillow',
+        'pip',
+        'PyOpenGL_accelerate',
+        'PyOpenGL',
+        'pysdl2-dll',
+        'pysdl2',
         'scikit-spatial',
-        'bezier',
-        'clifford',
+        'scipy',
+        'setuptools>=61',
         'trimesh',
-        'pyganja',
-        'open3d',
-        'pyassimp==4.1.3'
+        'usd-core',
+        'wheel',
     ],
+    # Optional features that often lack wheels on some platforms
+    # (e.g., macOS arm64)
+    extras_require={
+        # Geometric Algebra support
+        'ga': [
+            'clifford',
+            'pyganja',
+        ],
+        # Optional features 
+        'extras': [
+            'bezier',
+            'open3d',
+            'pyassimp==4.1.3',        
+        ],
+        # Install everything optional
+        'all': [
+            'bezier',
+            'clifford',
+            'open3d',
+            'pyassimp==4.1.3',
+            'pyganja',
+        ]
+    },
     
 
     classifiers=[
@@ -63,11 +81,11 @@ setup(
         "Programming Language :: Python :: 3.9",
     ],
     project_urls={
-        "Homepage" : "https://papagiannakis.github.io/Elements",
-        "Source" : "https://github.com/papagiannakis/Elements",
-        "Documentation" : "https://ElementsProject.readthedocs.io",
+        "Homepage": "https://papagiannakis.github.io/Elements",
+        "Source": "https://github.com/papagiannakis/Elements",
+        "Documentation": "https://ElementsProject.readthedocs.io",
     },
 
-    python_requires=">=3.8,<3.10",
+    python_requires=">=3.8,<3.11",
 
 )

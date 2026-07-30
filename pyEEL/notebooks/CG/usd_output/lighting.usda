@@ -1,0 +1,161 @@
+#usda 1.0
+(
+    endTimeCode = 60
+    startTimeCode = 0
+    upAxis = "Y"
+)
+
+def Xform "Scene"
+{
+    def Material "Material"
+    {
+        token outputs:surface.connect = </Scene/Material/Shader.outputs:surface>
+
+        def Shader "Shader"
+        {
+            uniform token info:id = "UsdPreviewSurface"
+            color3f inputs:diffuseColor = (0.8, 0.8, 0.8)
+            float inputs:metallic = 0.1
+            float inputs:roughness = 0.4
+            token outputs:surface
+        }
+    }
+
+    def Sphere "CenterSphere" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </Scene/Material>
+        double radius = 1
+    }
+
+    def Cube "Ground" (
+        prepend apiSchemas = ["MaterialBindingAPI"]
+    )
+    {
+        rel material:binding = </Scene/Material>
+        double size = 1
+        float3 xformOp:scale = (10, 0.1, 10)
+        double3 xformOp:translate = (0, -1.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:scale", "xformOp:translate"]
+    }
+
+    def Xform "Lights"
+    {
+        def DomeLight "DomeLight"
+        {
+            color3f inputs:color = (0.9, 0.95, 1)
+            float inputs:intensity = 500
+        }
+
+        def DistantLight "SunLight"
+        {
+            float inputs:angle = 0.53
+            color3f inputs:color = (1, 0.95, 0.8)
+            float inputs:intensity = 50000
+            float3 xformOp:rotateXYZ = (-45, 45, 0)
+            uniform token[] xformOpOrder = ["xformOp:rotateXYZ"]
+        }
+
+        def RectLight "RectLight"
+        {
+            color3f inputs:color = (1, 1, 1)
+            float inputs:height = 2
+            float inputs:intensity = 2000
+            float inputs:width = 2
+            float xformOp:rotateY = -90
+            double3 xformOp:translate = (3, 2, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+        }
+
+        def SphereLight "PointLight"
+        {
+            color3f inputs:color = (1, 0.3, 0.3)
+            float inputs:intensity = 5000
+            float inputs:radius = 0.1
+            double3 xformOp:translate = (-2, 1, 2)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def SphereLight "BlueLight"
+        {
+            color3f inputs:color = (0.2, 0.3, 1)
+            float inputs:intensity = 3000
+            float inputs:radius = 0.1
+            double3 xformOp:translate = (2, 1, -2)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+
+        def SphereLight "AnimatedLight"
+        {
+            color3f inputs:color = (1, 1, 0)
+            float inputs:intensity.timeSamples = {
+                0: 2000,
+                1: 2776.457,
+                2: 3500,
+                3: 4121.3203,
+                4: 4598.076,
+                5: 4897.7773,
+                6: 5000,
+                7: 4897.7773,
+                8: 4598.076,
+                9: 4121.3203,
+                10: 3500,
+                11: 2776.457,
+                12: 2000,
+                13: 2776.457,
+                14: 3500,
+                15: 4121.3203,
+                16: 4598.076,
+                17: 4897.7773,
+                18: 5000,
+                19: 4897.7773,
+                20: 4598.076,
+                21: 4121.3203,
+                22: 3500,
+                23: 2776.457,
+                24: 2000,
+                25: 2776.457,
+                26: 3500,
+                27: 4121.3203,
+                28: 4598.076,
+                29: 4897.7773,
+                30: 5000,
+                31: 4897.7773,
+                32: 4598.076,
+                33: 4121.3203,
+                34: 3500,
+                35: 2776.457,
+                36: 2000,
+                37: 2776.457,
+                38: 3500,
+                39: 4121.3203,
+                40: 4598.076,
+                41: 4897.7773,
+                42: 5000,
+                43: 4897.7773,
+                44: 4598.076,
+                45: 4121.3203,
+                46: 3500,
+                47: 2776.457,
+                48: 2000,
+                49: 2776.457,
+                50: 3500,
+                51: 4121.3203,
+                52: 4598.076,
+                53: 4897.7773,
+                54: 5000,
+                55: 4897.7773,
+                56: 4598.076,
+                57: 4121.3203,
+                58: 3500,
+                59: 2776.457,
+                60: 2000,
+            }
+            float inputs:radius = 0.1
+            double3 xformOp:translate = (0, 3, 0)
+            uniform token[] xformOpOrder = ["xformOp:translate"]
+        }
+    }
+}
+

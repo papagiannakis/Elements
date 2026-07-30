@@ -1,0 +1,51 @@
+#usda 1.0
+(
+    upAxis = "Y"
+)
+
+def Xform "Scene"
+{
+    def "Tree1" (
+        prepend references = @./asset_tree.usda@
+    )
+    {
+        double3 xformOp:translate = (-3, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def "Tree2" (
+        prepend references = @./asset_tree.usda@
+    )
+    {
+        float3 xformOp:scale = (0.8, 0.8, 0.8)
+        double3 xformOp:translate = (3, 0, 0)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:scale"]
+    }
+
+    def "Tree3" (
+        prepend references = @./asset_tree.usda@
+    )
+    {
+        float xformOp:rotateY = 45
+        double3 xformOp:translate = (0, 0, -4)
+        uniform token[] xformOpOrder = ["xformOp:translate", "xformOp:rotateY"]
+    }
+
+    def "House" (
+        prepend references = @./asset_house.usda@
+    )
+    {
+        double3 xformOp:translate = (0, 0, 2)
+        uniform token[] xformOpOrder = ["xformOp:translate"]
+    }
+
+    def Cube "Ground"
+    {
+        color3f[] primvars:displayColor = [(0.3, 0.6, 0.3)]
+        double size = 1
+        float3 xformOp:scale = (20, 0.1, 20)
+        double3 xformOp:translate = (0, -0.5, 0)
+        uniform token[] xformOpOrder = ["xformOp:scale", "xformOp:translate"]
+    }
+}
+
