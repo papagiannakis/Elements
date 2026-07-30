@@ -88,7 +88,7 @@ lightManager = LightManager(position=(4.0, 8.0, 5.0), color=(1.0, 1.0, 1.0))
 # ==============================================================================================
 builder = SceneBuilder(scene, rootEntity)
 
-builder.add_terrain()  # the ground plane; everything below sits on top of it (y ~= 0)
+builder.add_terrain(size=(14.0, 7.0))  # the ground plane; everything below sits on top of it (y ~= 0)
 
 # add_cube(name, position, scale=1.0, color=(r, g, b))
 # `scale` is the cube's side length; a cube sits on top of y=0, so position's y is usually 0.
@@ -101,17 +101,17 @@ builder.add_torus("RedTorus", position=(-4.0, 0.3, 1.5), scale=1.7, color=(0.9, 
 
 # add_sphere(name, position, scale=1.0, color=(r, g, b)) -- a sphere is centered on `position`,
 # so give it y = half its scale to make it sit on the ground instead of half-buried in it.
-builder.add_sphere("GreenSphere", position=(-0.5, 0.35, 1.5), scale=0.7, color=(0.3, 0.75, 0.4))
+builder.add_sphere("GreenSphere", position=(4.0, 0.35, 1.5), scale=0.7, color=(0.3, 0.75, 0.4))
 
 # add_cylinder(name, position, scale=1.0, color=(r,g,b), radius=0.5, height=1.0)
 builder.add_cylinder("PurpleCylinder", position=(2.0, 0.5, 1.5), color=(0.55, 0.35, 0.85), radius=0.4, height=1.0)
 
 # add_cone(name, position, scale=1.0, color=(r,g,b), radius=0.5, height=1.0)
-builder.add_cone("YellowCone", position=(4.0, 0.6, 1.5), color=(0.85, 0.8, 0.2), radius=0.55, height=1.2)
+builder.add_cone("YellowCone", position=(0.0, 0.6, 1.5), color=(0.85, 0.8, 0.2), radius=0.55, height=1.2)
 
 # A cube textured with a real image instead of a flat color -- see step 4 below for
 # builder.apply_texture(), which needs a GL window to already exist.
-builder.add_textured_cube("DiceCube", position=(4.0, 0.5, -1.5))
+builder.add_textured_cube("DiceCube", position=(1.5, 0.5, -1.5))
 
 # <-- add your own object here, e.g.:
 # builder.add_sphere("MySphere", position=(0.0, 1.0, 0.0), scale=2.0, color=(0.2, 0.9, 0.6))
@@ -124,12 +124,14 @@ builder.add_textured_cube("DiceCube", position=(4.0, 0.5, -1.5))
 # its local y=0 regardless of scale (no offset needed), so this is just enough clearance to avoid
 # z-fighting with the terrain for the default model -- Cow/Teddy sit into the ground more when
 # picked from the dropdown instead, since all three share this one position/transform.
-# RefractionShowcase (z=-1.5) is in the back row with ObjGallery/DiceCube; BlueCube/RedTorus
-# (z=1.5) are in the front row with everything else SceneBuilder added above.
-objGallery = ObjGallery(scene, rootEntity, position=(0.0, 0.03, -1.5), scale_multiplier=3.0)
+# RefractionShowcase/ReflectionShowcase's y works the same way: it's the clearance above the
+# terrain, not a per-model height -- each model variant is auto-lifted by its own bounding box so
+# it never sinks into (or floats above) the ground, however it's scaled, no matter which one is
+# picked from their dropdowns.
+objGallery = ObjGallery(scene, rootEntity, position=(-1.5, 0.03, -1.5), scale_multiplier=3.0)
 skybox = Skybox(scene, rootEntity, enabled=True)
-refractionShowcase = RefractionShowcase(scene, rootEntity, position=(-3.0, 0.45, -1.5))
-reflectionShowcase = ReflectionShowcase(scene, rootEntity, position=(2.5, 0.5, 3.2))
+refractionShowcase = RefractionShowcase(scene, rootEntity, position=(4.5, 0.03, -1.5))
+reflectionShowcase = ReflectionShowcase(scene, rootEntity, position=(-4.5, 0.03, -1.5))
 
 
 # ==============================================================================================
