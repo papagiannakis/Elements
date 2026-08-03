@@ -456,17 +456,23 @@ class RenderDecorator(RenderWindow):
 
     def cameraHandling(self, x: float, y: float, height: int, width: int) -> None:
         """Translate a mouse-wheel or right-drag delta into a translate/rotate camera update."""
-        keystatus = sdl2.SDL_GetKeyboardState(None)
         self.resetAll()
 
-        if keystatus[sdl2.SDL_SCANCODE_LSHIFT]:
+        if type(self._wrapeeWindow).__name__ == "GLFWWindow":
+            shift, ctrl = self._wrapeeWindow.get_modifier_state()
+        else:
+            keystatus = sdl2.SDL_GetKeyboardState(None)
+            shift = bool(keystatus[sdl2.SDL_SCANCODE_LSHIFT])
+            ctrl = bool(keystatus[sdl2.SDL_SCANCODE_LCTRL])
+
+        if shift:
             if abs(x) > abs(y):
                 self.translation["x"] = x/width*60 #np.sign(event.wheel.x)
                 self.updateCamera(True, False, False, False, False)
             else:
                 self.translation["y"] =  y/height*60 #np.sign(event.wheel.y)
                 self.updateCamera(False, True, False, False, False)
-        elif keystatus[sdl2.SDL_SCANCODE_LCTRL]:
+        elif ctrl:
             self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y)
             self.updateCamera(False, False, True, False, False)
         else:
@@ -511,6 +517,9 @@ class RenderDecorator(RenderWindow):
         """
         process SDL2 basic events and input
         """
+        if type(self._wrapeeWindow).__name__ == "GLFWWindow":
+            return self._event_input_process_glfw()
+
         running = True
         events = sdl2.ext.get_events()
         width = self.wrapeeWindow._windowWidth
@@ -557,6 +566,26 @@ class RenderDecorator(RenderWindow):
         self._imguiRenderer.process_inputs()
         return running
 
+    def _event_input_process_glfw(self) -> bool:
+        """
+        process GLFW basic events and input -- GlfwRenderer (unlike SDL2Renderer) has no
+        process_event(), since GLFW feeds ImGui through callbacks attached at its own
+        construction time instead of a polled event queue, so there's no per-event loop here.
+        """
+        window = self._wrapeeWindow
+        running = window.event_input_process(True)
+        width, height = window._windowWidth, window._windowHeight
+
+        drag = window.poll_right_drag_delta()
+        if drag is not None:
+            self.cameraHandling(drag[0], drag[1], height, width)
+
+        if window.consume_wireframe_toggle_key():
+            self.toggle_Wireframe()
+
+        self._imguiRenderer.process_inputs()
+        return running
+
     def display_post(self) -> None:
         """
         Post diplay method after all other display calls have been issued
@@ -569,6 +598,15 @@ class RenderDecorator(RenderWindow):
         this should be ctypiically alled AFTER all other GL contexts have been created, e.g. ImGUI context
         """
         self._wrapeeWindow.init_post()
+        if type(self._wrapeeWindow).__name__ == "GLFWWindow":
+            self._wrapeeWindow.register_scroll_callback(self._on_glfw_scroll)
+
+    def _on_glfw_scroll(self, xoffset: float, yoffset: float) -> None:
+        """Scroll-wheel zoom for the GLFW backend, reusing the same cameraHandling() path SDL2's
+        SDL_MOUSEWHEEL event drives."""
+        width = self.wrapeeWindow._windowWidth
+        height = self.wrapeeWindow._windowHeight
+        self.cameraHandling(xoffset, yoffset, height, width)
 
     def accept(self, system: System, event: Event | None = None) -> None:
         pass
@@ -616,6 +654,23 @@ class RenderGLStateSystem(System):
 
         if event.name == "OnUpdateCamera":
             sdlWindow._myCamera = event.value
+
+    def apply2GLFWWindow(self, glfwWindow, event: Event | None = None) -> None:
+        """method for  behavioral or logic computation
+        when visits Components.
+
+        In this case update GL State from a GLFWWindow (Elements.pyGLV.GUI.GLFWWindow)
+
+        :param glfwWindow: [description]
+        :type glfwWindow: [type]
+        :param event: [description], defaults to None
+        :type event: [type], optional
+        """
+        if event.name == "OnUpdateWireframe":
+            glfwWindow._wireframeMode = event.value
+
+        if event.name == "OnUpdateCamera":
+            glfwWindow._myCamera = event.value
 
 
 if __name__ == "__main__":

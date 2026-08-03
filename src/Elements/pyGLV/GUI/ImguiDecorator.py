@@ -66,9 +66,16 @@ class ImGUIDecorator(RenderDecorator):
         
         # GPTODO here is the issue: SDL2Decorator takes an SDLWindow as wrappee wheras
         # ImGUIDEcorator takes and SDL2Decorator and decorates it!
-        if isinstance(self.wrapeeWindow, SDL2Window):   
+        if isinstance(self.wrapeeWindow, SDL2Window):
             self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
-            
+        elif type(self.wrapeeWindow).__name__ == "GLFWWindow":
+            # Lazy import: keeps `glfw` an opt-in dependency -- this module is imported by nearly
+            # every example, so importing imgui.integrations.glfw (and thus glfw itself) at
+            # module level here would break every ImGui example in any environment without glfw
+            # installed, not just the ones that actually use it.
+            from imgui.integrations.glfw import GlfwRenderer
+            self._imguiRenderer = GlfwRenderer(self.wrapeeWindow._gWindow, attach_callbacks=True)
+
         #
         # Setting up events that this class is publishing (if the EventManager is present in the decorated wrappee)
         #

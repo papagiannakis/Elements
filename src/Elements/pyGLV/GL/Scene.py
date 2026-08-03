@@ -48,14 +48,18 @@ class Scene():
         return self._world
     
     
-    def init(self, sdl2 = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None, 
-            customImGUIdecorator = None, openGLversion = 4):
+    def init(self, sdl2 = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None,
+            customImGUIdecorator = None, openGLversion = 4, windowClass = None):
         """call the init() of all systems attached to this Scene based on the Visitor pattern
         """
-        #init Viewer GUI subsystem with just SDL2 window or also an ImGUI decorators
+        #init Viewer GUI subsystem with just a RenderWindow or also an ImGUI decorator. `sdl2`
+        #only gates whether a window is created at all (kept for backward compatibility); which
+        #RenderWindow subclass is used is controlled by `windowClass` (e.g.
+        #Elements.pyGLV.GUI.GLFWWindow.GLFWWindow), defaulting to SDL2Window as before.
         if sdl2 == True:
-            #create a basic SDL2 RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
-            self._renderWindow = SDL2Window(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
+            WindowCls = windowClass if windowClass is not None else SDL2Window
+            #create a basic RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
+            self._renderWindow = WindowCls(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
             self._gContext = self._renderWindow
         
         if imgui == True and customImGUIdecorator == None:
