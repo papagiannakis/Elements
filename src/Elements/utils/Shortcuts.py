@@ -1,13 +1,4 @@
-import imgui,sdl2
-
-leftAlt_Key = sdl2.SDLK_LALT
-rightAlt_Key = sdl2.SDLK_RALT
-leftShift_Key = sdl2.SDLK_LSHIFT
-rightShift_Key = sdl2.SDLK_RSHIFT
-ctrl_Key = sdl2.SDLK_LCTRL
-
-#change this to one of the above for the shortcuts
-shortcut_hotKey = leftAlt_Key
+import imgui
 
 showGUI_text = True
 collapseGUI_text = True
