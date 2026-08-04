@@ -45,27 +45,4 @@ def displayShortcutsGUI():
         imgui.bullet_text("Toggle Wireframe                 F")
         imgui.bullet_text("Vertical Scroll:                 Vertical camera translate")
         imgui.bullet_text("Horizontal Scroll:               Vertical camera translate")
-        
-        imgui.text("When node is selected:")
-        #with imgui.indent():
-        imgui.bullet_text("Positive translation on x-axis   W")
-        imgui.bullet_text("Negative translation on x-axis   Alt+W")
-        imgui.bullet_text("Positive translation on y-axis   E")
-        imgui.bullet_text("Negative translation on y-axis   Alt+E")
-        imgui.bullet_text("Positive translation on z-axis   R")
-        imgui.bullet_text("Negative translation on z-axis   Alt+R")
-
-        imgui.bullet_text("Positive rotation on x-axis      T")
-        imgui.bullet_text("Negative rotation on x-axis      Alt+T")
-        imgui.bullet_text("Positive rotation on y-axis      Y")
-        imgui.bullet_text("Negative rotation on y-axis      Alt+Y")
-        imgui.bullet_text("Positive rotation on z-axis      U")
-        imgui.bullet_text("Negative rotation on z-axis      Alt+U")
-
-        imgui.bullet_text("Scale up on x-axis               I")
-        imgui.bullet_text("Scale down on x-axis             Alt+I")
-        imgui.bullet_text("Scale up on y-axis               O")
-        imgui.bullet_text("Scale down on y-axis             Alt+O")
-        imgui.bullet_text("Scale up on z-axis               P")
-        imgui.bullet_text("Scale down on z-axis             Alt+P")
         imgui.end()

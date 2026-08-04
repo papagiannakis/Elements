@@ -10,7 +10,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window
+from Elements.pyGLV.GUI.Windows import SDL2Window
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
 
 class Scene():
@@ -55,7 +55,7 @@ class Scene():
         #init Viewer GUI subsystem with just a RenderWindow or also an ImGUI decorator. `sdl2`
         #only gates whether a window is created at all (kept for backward compatibility); which
         #RenderWindow subclass is used is controlled by `windowClass` (e.g.
-        #Elements.pyGLV.GUI.GLFWWindow.GLFWWindow), defaulting to SDL2Window as before.
+        #Elements.pyGLV.GUI.Windows.GLFWWindow), defaulting to SDL2Window as before.
         if sdl2 == True:
             WindowCls = windowClass if windowClass is not None else SDL2Window
             #create a basic RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
