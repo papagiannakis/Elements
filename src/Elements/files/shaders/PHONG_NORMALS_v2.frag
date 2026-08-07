@@ -40,6 +40,9 @@ uniform float d;
 // Material
 uniform vec3 materialColor;
 uniform float shininess;
+//: How tight the specular highlight is. Falls back to 32.0, the value this shader used to
+//: hard-code, so callers that do not set it render exactly as before.
+uniform float specularExponent;
 uniform sampler2D normalMap;
 uniform sampler2D albedoMap;
 uniform float useAlbedoMap;
@@ -118,7 +121,8 @@ void main()
         if (diff > 0.0)
         {
             vec3 reflectDir = reflect(-lightDir, norm);  
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+            float specExp = specularExponent > 0.0 ? specularExponent : 32.0;
+            float spec = pow(max(dot(viewDir, reflectDir), 0.0), specExp);
             specular = shininess * spec * lights[i].color;
         }
 
