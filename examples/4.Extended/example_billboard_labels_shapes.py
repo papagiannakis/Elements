@@ -9,12 +9,21 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
+from Elements.definitions import SHADER_DIR
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
+from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.Captions_Screenshot.billboard_label_component import create_billboard_label, BillboardLabelSystem
-from Elements.definitions import SHADER_DIR
-#functions apo preperation gia live askisi 
+
+example_description = \
+"This example shows billboard labels attached to three shapes: a red cube, \n\
+a green cube and a blue sphere. Each label is a semi-transparent quad that \n\
+always faces the camera (billboarding), rendered just above its parent shape. \n\
+The camera automatically orbits around the scene while bobbing up and down. \n\
+Hit ESC OR Close the window to quit."
+
+
 def make_cube(size=1.0):
     s = size * 0.5
     positions = np.array([
@@ -124,11 +133,11 @@ shSphere = scene.world.addComponent(sphere, ShaderGLDecorator(Shader(
 )))
 
 scene.init(
-    imgui=False, 
-    windowWidth=1200, 
+    imgui=True,
+    windowWidth=1200,
     windowHeight=800,
     windowTitle="Billboard Labels - Complete Example",
-    openGLversion=4, 
+    openGLversion=4,
     customImGUIdecorator=ImGUIecssDecorator2
 )
 
@@ -188,6 +197,7 @@ camera_angle = 0.0
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     frame_count += 1
     t = time.monotonic() - t0
     camera_angle = t * 0.3

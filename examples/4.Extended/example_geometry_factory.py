@@ -1,6 +1,6 @@
 """
 A minimal ECS scene -- camera, one point light, a few stacked primitives -- built the same way as
-Normals_USDimporter_BSP/cow_example.py's neighbors but sourcing its shapes from
+Normals_USDimporter_BSP/example_cow.py's neighbors but sourcing its shapes from
 Elements.extensions.Shapes.geometry_factory instead of the older
 Elements.extensions.BasicShapes.BasicShapes module: geometry_factory is the actively maintained
 one (it's what showcase/scene_helpers.py and textToScene's code generator both build on), and
@@ -24,6 +24,16 @@ from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.extensions.Shapes import geometry_factory
 from Elements.definitions import SHADER_DIR
+
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This example demonstrates Elements.extensions.Shapes.geometry_factory, the \n\
+actively maintained replacement for the older BasicShapes module. Unlike \n\
+BasicShapes, it returns plain (vertices, indices, colors, normals) arrays, so \n\
+this script wires each shape's own Entity/Transform/Shader/VertexArray by hand. \n\
+A torus, cylinder, cube and sphere are stacked and Phong-lit by a point light, \n\
+in the same layout as example_basic_shapes.py. \n\
+You may move the camera using the mouse or the GUI. Hit ESC OR Close the window to quit."
 
 
 def spawn_shape(scene, parent, name, shape_type, params, position, scale=1.0):
@@ -66,7 +76,7 @@ def spawn_light_marker(scene, parent, position):
 
 
 def main():
-    # Material -- shared by every shape below, as in BasicShapes_example.py
+    # Material -- shared by every shape below, as in example_basic_shapes.py
     shininess = 0.4
     mat_color = util.vec(0.6, 0.6, 0.6)
     ambient_color = (1.0, 1.0, 1.0)
@@ -93,7 +103,7 @@ def main():
     scene.world.addEntityChild(rootEntity, home)
     scene.world.addComponent(home, BasicTransform(name="Home_trans", trs=util.identity()))
 
-    # Same stacked layout as BasicShapes_example.py's torus/cylinder/cube/sphere.
+    # Same stacked layout as example_basic_shapes.py's torus/cylinder/cube/sphere.
     grey = [0.6, 0.6, 0.6]
     shapes = [
         spawn_shape(scene, home, "Torus", "torus", {"color": grey}, position=(0, 0, 0), scale=0.5),
@@ -145,6 +155,7 @@ def main():
             shaderDec.setUniformVariable(key="matColor", value=mat_color, float3=True)
 
         running = scene.render()
+        displayGUI_text(example_description)
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         scene.render_post()
 

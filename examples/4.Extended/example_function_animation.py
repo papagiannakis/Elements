@@ -43,6 +43,13 @@ from Elements.utils.Shortcuts import displayGUI_text
 from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction3D, Surface3D_VERT, Surface3D_FRAG
 from Elements.definitions import SHADER_DIR
 
+example_description = \
+"This example showcases the RealFunction3D class for real time \n\
+function animations. Every ~16 ms the function expression is \n\
+updated with a time parameter and the function surface will be updated \n\
+in real time. This shows a way to use parameters to control functions by \n\
+passing the values of the parameters in the string of the expression."
+
 
 import time
 
@@ -215,6 +222,7 @@ def main(imguiFlag = False):
 
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
+        displayGUI_text(example_description)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         # ImGUI post-display calls and SDLWindow swap 

@@ -47,6 +47,13 @@ from Elements.definitions import SHADER_DIR
 
 import time
 
+example_description = \
+"This example showcases the MarchingCubes class, which generates implicit \n\
+surfaces from a mathematical expression given in terms of x, y and z. You may \n\
+type a new expression in the GUI input field to dynamically regenerate the \n\
+surface, and tune its bounding box, resolution, scale and colors. \n\
+Hit ESC OR Close the window to quit."
+
 expression = "x**2 + y**2 + x*y*z - 1"
 ''' Other interesting expressions:
 x**2 + y**2 - z**2 * (1 - z)
@@ -266,6 +273,7 @@ def main(imguiFlag = False):
 
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
+        displayGUI_text(example_description)
         displayGUI(surf, surf.surface)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)

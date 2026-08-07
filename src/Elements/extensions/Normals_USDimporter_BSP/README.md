@@ -10,8 +10,8 @@ Tests are written for pytest
 Implemented correct flat/smooth normal handling by detecting shared vs unique vertex indexing and converting the vertex/index buffers accordingly. Helper utilities determine whether vertices are shared or unique by analyzing index usage. This fixes smooth-shading artifacts caused by incorrect vertex-sharing assumptions and ensures the appropriate flat or smooth shading path is selected.
 
 Usage:
-    python cow_example.py
-    python sphere_example.py
+    python example_cow.py
+    python example_sphere.py
 
 Runtime options (ImGui):
     - Shading: Smooth / Flat
@@ -25,7 +25,7 @@ For each UsdGeom.Mesh, the method extracts geometry data including vertex positi
 The method uploads vertex attributes and indices to the GPU and performs coordinate system conversion from Blender’s Z-up convention to the engine’s Y-up convention.
 
 Usage:
-    python usd_import_example.py
+    python example_usd_import.py
 
 Runtime options (ImGui):
     - Load USD (colors)
@@ -43,7 +43,7 @@ Triangles are classified as fully on one side of the split plane or intersecting
 During search, the BSP tree is traversed by testing each triangle against the split planes. The traversal path and tree structure are printed to the terminal.
 
 Usage:
-    python bsp_example.py
+    python example_bsp.py
 
     What to try:
     - Move the camera to view triangle placement.

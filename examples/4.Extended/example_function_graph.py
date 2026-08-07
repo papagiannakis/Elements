@@ -47,6 +47,13 @@ from Elements.definitions import SHADER_DIR
 
 import time
 
+example_description = \
+"This example showcases the RealFunction3D class, which plots the surface of a \n\
+real-valued function f(x, y) in 3D. You may type a new expression in terms of \n\
+x and y in the GUI input field to dynamically regenerate the surface, calling \n\
+the `update_surface` method, and tune its bounding box, resolution, scale and \n\
+colors. Hit ESC OR Close the window to quit."
+
 expression = "sin(x + cos(y * 3) * 0.2) + sqrt(y**2 + 1) - 1"
 changed = False
 minv = np.array([-5, -5, -5])
@@ -249,6 +256,7 @@ def main(imguiFlag = False):
 
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
+        displayGUI_text(example_description)
         displayGUI(surf, surf.surface)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)

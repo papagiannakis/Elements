@@ -15,7 +15,7 @@ from Elements.extensions.picking_buffer import PickingBuffer as pb
 from Elements.definitions import SHADER_DIR
 
 
-assignment_goals = (
+example_description = (
     "Picking demo with 10 cubes of alternating sizes and unique colors.\n"
     "Click a cube to print its entity name and picking id.\n"
 )
@@ -194,7 +194,7 @@ while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    displayGUI_text(assignment_goals)
+    displayGUI_text(example_description)
 
     view = gWindow._myCamera
     window_height = scene.renderWindow._windowHeight

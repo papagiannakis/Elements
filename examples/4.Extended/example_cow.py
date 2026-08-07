@@ -25,11 +25,13 @@ from Elements.definitions import MODEL_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
-"This example demonstrates a window where the projection matrix\n\
-is properly reset after a window resize. \n\
+"This example demonstrates proper flat/smooth normal handling on the Newell cow \n\
+model, by detecting shared vs. unique vertex indices and rebuilding the vertex/index \n\
+buffers accordingly. Use the GUI to switch between Smooth/Flat shading and to \n\
+visualize normals as vertex colors. \n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
+various information about them. Hit ESC OR Close the window to quit."
 
 #Light
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos

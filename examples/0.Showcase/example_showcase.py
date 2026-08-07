@@ -6,7 +6,7 @@ readable -- open that file only if you're curious how a given feature works unde
 
   View > Objects...    (5) -- an OBJ model (Teapot/Cow/Teddy) you can swap and toggle
                               smooth/flat shading on, as in
-                              Normals_USDimporter_BSP/cow_example.py.
+                              Normals_USDimporter_BSP/example_cow.py.
   View > Skybox...     (6) -- a cube-mapped sky around the scene, on by default, with a
                               swappable texture set, as in
                               examples/2.Intermediate/example_10_cube_mapping.py.
@@ -15,7 +15,7 @@ readable -- open that file only if you're curious how a given feature works unde
                               Refraction/refraction_example_bunny.py.
   View > Reflection... (8) -- a "mirror" object (Pig by default) that reflects the skybox,
                               tintable (Gold/Chrome/Blue presets or any custom color/strength),
-                              as in environment_mapping/environment_mapping_pigs.py.
+                              as in environment_mapping/example_environment_mapping_pigs.py.
 
 WHAT YOU CAN CLICK: any SceneBuilder object (cubes/spheres/etc., see section 2 below), the
 ObjGallery model, or the currently-visible Refraction/Reflection model -- clicking one prints its
@@ -318,7 +318,7 @@ while running and AppState.running:
         AppState.show_objects, objects_changed = objGallery.draw_panel()
         if objects_changed:
             # swapping model/shading needs the new mesh re-uploaded to the GPU, same as
-            # Normals_USDimporter_BSP/cow_example.py does in its own main loop
+            # Normals_USDimporter_BSP/example_cow.py does in its own main loop
             scene.world.traverse_visit(initUpdate, scene.world.root)
 
     if AppState.show_skybox:
@@ -336,7 +336,7 @@ while running and AppState.running:
     # keep the projection's aspect in sync with the *actual* window size -- otherwise, after a
     # resize, it's stale (whatever it was at startup or last set from the panel below), and
     # anything meant to fill the whole screen edge-to-edge (the skybox) visibly falls short of
-    # the new window's edges instead of stretching to match, as in cow_example.py's main loop.
+    # the new window's edges instead of stretching to match, as in example_cow.py's main loop.
     projSettings.aspect = scene.renderWindow._windowWidth / scene.renderWindow._windowHeight
 
     # the projection can change every frame from the panel above; recompute it each frame

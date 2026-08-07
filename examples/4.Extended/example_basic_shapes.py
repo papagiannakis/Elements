@@ -20,6 +20,15 @@ from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 
 from Elements.extensions.BasicShapes import BasicShapes
 
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This example demonstrates the Elements.extensions.BasicShapes module: a torus, \n\
+cylinder, cube and sphere are spawned as ready-made ECS entities (Entity, \n\
+BasicTransform, RenderMesh, Shader, VertexArray all wired up for you) and \n\
+stacked vertically under a single Home entity, lit by an ambient light and a \n\
+point light using Blinn-Phong shading. \n\
+You may move the camera using the mouse or the GUI. Hit ESC OR Close the window to quit."
+
 
 def main(imguiFlag = False):
     ##########################################################
@@ -163,6 +172,7 @@ def main(imguiFlag = False):
         
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
+        displayGUI_text(example_description)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
         # ImGUI post-display calls and SDLWindow swap 

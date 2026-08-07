@@ -18,7 +18,7 @@ The extension includes two example scripts one with the basics and one more adva
 
 #### 1. Cow Model - Basic Example
 
-python Elements/extensions/environment_mapping/environment_mapping_cow.py
+python examples/4.Extended/example_environment_mapping_cow.py
 
 This example demonstrates environment mapping on a cow model with:
 - A skybox environment from the images directory
@@ -28,7 +28,7 @@ This example demonstrates environment mapping on a cow model with:
 
 #### 2. Three Pigs Example
 
-python Elements/extensions/environment_mapping/environment_mapping_pigs.py
+python examples/4.Extended/example_environment_mapping_pigs.py
 
 This example demonstrates environment mapping on three pig models with different material properties:
 - **Pig_Gold**: Gold-tinted reflective surface
@@ -61,7 +61,7 @@ shader = EnvironmentMapping.apply(entity, scene, cubemap=cubemap,  tint_color=(1
 # Update shader uniforms each frame
 
 ## Limitations
-1. **Pigs Skybox Issue**: The skybox in environment_mapping_pigs.py does not work properly. The skybox may not render correctly.
+1. **Pigs Skybox Issue**: The skybox in example_environment_mapping_pigs.py does not work properly. The skybox may not render correctly.
 
 
 ## Optional Enhancements

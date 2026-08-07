@@ -16,7 +16,7 @@ from Elements.extensions.picking_buffer import PickingBuffer as pb
 from Elements.definitions import SHADER_DIR
 
 
-assignment_goals = (
+example_description = (
     "Picking demo with 10 cubes using colorful per-vertex shading.\n"
     "Click a cube to print its entity name and picking id.\n"
     "After picking a cube, use W/A/S/D to orbit the camera around it.\n"
@@ -335,7 +335,7 @@ while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    displayGUI_text(assignment_goals)
+    displayGUI_text(example_description)
 
     key_states = sdl2.SDL_GetKeyboardState(None)
     if selected_cube_trans is not None:

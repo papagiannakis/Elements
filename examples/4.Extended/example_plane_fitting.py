@@ -8,6 +8,7 @@ from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.utils.terrain import generateTerrain
+from Elements.utils.Shortcuts import displayGUI_text
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
@@ -15,6 +16,13 @@ from OpenGL.GL import GL_LINES
 
 from Elements.extensions.plane_fitting.planefitting_base import PlaneFitting
 from Elements.definitions import SHADER_DIR
+
+example_description = \
+"This example demonstrates fitting a plane to a set of 3D points. \n\
+Use the 'Fit Plane' GUI panel to edit the X, Y, Z coordinates of the \n\
+control nodes, or add/remove nodes, then press 'Fit Plane' to compute \n\
+the best-fit plane and render it live in the scene. \n\
+Hit ESC OR Close the window to quit."
 
 scene = Scene()
 
@@ -145,6 +153,7 @@ model_terrain_axes = terrain.getChild(0).trs
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view = gWindow._myCamera  # updates view via the imgui
 

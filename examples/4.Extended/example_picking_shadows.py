@@ -51,7 +51,7 @@ import sdl2
 from Elements.extensions.picking_buffer import PickingBuffer as pb
 
 
-assignment_goals = (
+example_description = (
     "Picking demo with cubes, spheres, cylinders, a cone and a textured cube, lit by one point\n"
     "light with real-time shadows.\n"
     "Click any object to print its entity name and picking id, then orbit it with W/A/S/D.\n"
@@ -499,7 +499,7 @@ while running and AppState.running:
     running = scene.render()
     menu_bar.draw()
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    displayGUI_text(assignment_goals)
+    displayGUI_text(example_description)
 
     if AppState.show_shadow_settings:
         _, AppState.show_shadow_settings = imgui.begin("Shadow Settings", True)

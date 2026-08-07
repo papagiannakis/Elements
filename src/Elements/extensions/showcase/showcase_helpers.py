@@ -10,7 +10,7 @@ calls (glGenTextures, ...) in their own constructors, which needs a GL context t
 So: build entities/meshes any time, but only bind actual images/cubemaps *after* scene.init().
 
   - ObjGallery: swap a single entity between a few OBJ models (default Teapot/Cow/Teddy) and
-    between smooth/flat shading, as in Normals_USDimporter_BSP/cow_example.py.
+    between smooth/flat shading, as in Normals_USDimporter_BSP/example_cow.py.
 
   - Skybox: a big cube around the scene textured with a 6-image cube map, as in
     examples/2.Intermediate/example_10_cube_mapping.py -- off by default, texture set swappable.
@@ -20,7 +20,7 @@ So: build entities/meshes any time, but only bind actual images/cubemaps *after*
     swappable at runtime.
 
   - ReflectionShowcase: a "mirror" object (reflects the skybox, optionally tinted), as in
-    environment_mapping/environment_mapping_pigs.py -- which model, and its tint color/strength
+    environment_mapping/example_environment_mapping_pigs.py -- which model, and its tint color/strength
     (with Gold/Chrome/Blue presets), are both swappable at runtime.
 
 Note on Refraction/ReflectionShowcase: both only reflect/refract the *skybox* cubemap, never
@@ -46,7 +46,7 @@ import Elements.pyECSS.math_utilities as util
 # moment a model happens to have even one coincidental duplicate vertex position anywhere (teapot
 # and cow both do). Normals_USDimporter_BSP's version checks the *index array* for shared
 # indices instead, which is what actually determines whether triangles share vertices, so it
-# doesn't have that failure mode -- it's what Normals_USDimporter_BSP/cow_example.py itself uses.
+# doesn't have that failure mode -- it's what Normals_USDimporter_BSP/example_cow.py itself uses.
 import Elements.extensions.Normals_USDimporter_BSP.normals as norm
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
@@ -57,14 +57,14 @@ from Elements.definitions import MODEL_DIR, TEXTURE_DIR, SHADER_DIR
 from Elements.extensions.Refraction.refraction_component import create_refractive_entity
 from Elements.extensions.environment_mapping.environment_mapping import EnvironmentMapping
 
-#: Refraction/refraction_example_bunny.py's bunny.obj and environment_mapping_pigs.py's pig model
+#: Refraction/refraction_example_bunny.py's bunny.obj and example_environment_mapping_pigs.py's pig model
 #: both live next to their own example script, not under Elements.definitions.MODEL_DIR.
 _EXTENSIONS_DIR = Path(__file__).resolve().parent.parent
 BUNNY_PATH = _EXTENSIONS_DIR / "Refraction" / "bunny.obj"
 PIG_PATH = _EXTENSIONS_DIR / "environment_mapping" / "pigs" / "models" / "pighighpoly1.obj"
 
 #: Anywhere far outside the view frustum/far-clip-plane: the standard "hide this entity" trick
-#: already used elsewhere in Elements (e.g. MultiLights_and_Normals's mul_lights_3cubes_flat.py).
+#: already used elsewhere in Elements (e.g. MultiLights_and_Normals's example_multi_lights_3cubes_flat.py).
 #: Deliberately a translation, not a scale-to-zero -- a zero-scale model matrix is singular, and
 #: refraction/reflection's shaders need to invert it (for the normal matrix), which would crash.
 _HIDDEN_OFFSET = (100000.0, 100000.0, 100000.0)
@@ -84,7 +84,7 @@ def _load_obj_raw(path):
     n-gons) are fan-triangulated -- (v0,v1,v2), (v0,v2,v3), ... -- the same convention
     Elements.utils.objimporter.wavefront.Wavefront uses for quads; reading only a face's first 3
     vertices, as an earlier version of this function did, silently drops half the surface of any
-    quad-only mesh (e.g. environment_mapping_pigs.py's pighighpoly1.obj, which is 100% quads).
+    quad-only mesh (e.g. example_environment_mapping_pigs.py's pighighpoly1.obj, which is 100% quads).
     Based on the parser in Refraction/refraction_example_bunny.py, generalized here so every
     model in this file (teapot/cow/teddy/sphere/bunny/pig) goes through the same, more tolerant
     reader instead of Elements.utils.obj_to_mesh's stricter "v1//vn1" assumption.
@@ -166,7 +166,7 @@ class ObjGallery:
     """
 
     #: (obj path, uniform scale) -- 0.1 for teapot/cow matches the scale already used elsewhere in
-    #: Elements (objectPicker_example.py, Normals_USDimporter_BSP/cow_example.py); teddy/sphere
+    #: Elements (example_object_picker.py, Normals_USDimporter_BSP/example_cow.py); teddy/sphere
     #: are untested elsewhere, adjust here if they look mis-sized.
     DEFAULT_MODELS = {
         "Teapot": (MODEL_DIR / "teapot.obj", 0.1),
@@ -219,7 +219,7 @@ class ObjGallery:
                 # keep its base at self.position's y instead of the terrain cutting through it.
                 "min_y": float(vertices[:, 1].min()),
                 # cn_* is normal*0.5+0.5 -- normal components run -1..1, colors need to be 0..1, so
-                # this is the standard "normal as color" debug-view remap, as in cow_example.py.
+                # this is the standard "normal as color" debug-view remap, as in example_cow.py.
                 "smooth": (v_smooth, i_smooth, c_smooth, n_smooth, n_smooth * 0.5 + 0.5),
                 "flat": (v_flat, i_flat, c_flat, n_flat, n_flat * 0.5 + 0.5),
             }
@@ -258,7 +258,7 @@ class ObjGallery:
         Draws the "Object Viewer" ImGui window. Returns (opened, changed): `changed` is True the
         frame you switch object/shading, which means the caller must re-run
         scene.world.traverse_visit(initUpdate, scene.world.root) right afterwards to re-upload
-        the new mesh to the GPU -- exactly what cow_example.py does in its own main loop.
+        the new mesh to the GPU -- exactly what example_cow.py does in its own main loop.
         """
         expanded, opened = imgui.begin("Object Viewer", True)
         names = list(self.models.keys())
@@ -486,7 +486,7 @@ class RefractionShowcase:
 class ReflectionShowcase:
     """
     A reflective ("mirror") object -- reflects the skybox, optionally tinted -- as in
-    environment_mapping/environment_mapping_pigs.py. Every model in `models` is built once up
+    environment_mapping/example_environment_mapping_pigs.py. Every model in `models` is built once up
     front; only the picked one is ever visible, the rest are parked far away.
 
     Unlike the other three classes, this one's shader can only be created *after* scene.init():
