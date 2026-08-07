@@ -10,7 +10,7 @@ out vec4 outputColor;
 uniform vec3 ambientColor;
 uniform float ambientStr;
 
-// Lighting 
+// Lighting
 uniform vec3 viewPos;
 uniform vec3 lightPos;
 uniform vec3 lightColor;
@@ -18,12 +18,11 @@ uniform float lightIntensity;
 
 // Material
 uniform float shininess;
-//: How *tight* the specular highlight is (shininess, above, is how *strong* it is). Bigger means
-//: a smaller, sharper highlight. Left unset it falls back to 32.0, the value this shader used to
-//: hard-code, so code written before this was a uniform keeps rendering exactly as it did.
-uniform float specularExponent;
 
 uniform sampler2D ImageTexture;
+//: How tight the specular highlight is. Falls back to 32.0, the value this shader used to
+//: hard-code, so callers that do not set it render exactly as before.
+uniform float specularExponent;
 
 void main()
 {
@@ -43,13 +42,8 @@ void main()
 
     vec4 tex = texture(ImageTexture,fragmentTexCoord);
 
-    // No highlight on a face turned away from the light.
-    float facingLight = step(0.0, dot(norm, lightDir));
-    vec3 specularProduct = facingLight * shininess * specularStr * lightColor;
+    vec3 specularProduct = shininess * specularStr * tex.xyz;
 
-    // The texture colours the ambient/diffuse terms only; the specular keeps the light's colour,
-    // so a textured surface still gets a white highlight. Same composition as Phong.frag.
-    vec3 result = (ambientProduct + diffuseProduct * lightIntensity) * tex.xyz
-                + specularProduct * lightIntensity;
+    vec3 result = (ambientProduct + (diffuseProduct + specularProduct) * lightIntensity) * tex.xyz;
     outputColor = vec4(result, 1);
 }

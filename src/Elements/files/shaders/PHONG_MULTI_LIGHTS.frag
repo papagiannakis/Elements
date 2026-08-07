@@ -1,7 +1,7 @@
 #version 410
 #define MAX_LIGHTS 50 // max number of lights 
 
-// Custom fragment shader for TEXTURED objects
+// Custom fragment shader
 // input: an array of lights
 // each light has position, color, intensity
 // calculates ambient, diffuse, specular for each light
@@ -17,11 +17,11 @@ struct Light {
 };
 
 
-out vec4 color;
+out vec4 out_color;
 
 in vec4 pos;
+in vec4 frag_color;
 in vec3 normal;
-in vec2 fragmentTexCoord;
 
 // Camera 
 uniform vec3 viewPos;
@@ -39,17 +39,22 @@ uniform float k;
 uniform float d;
 
 // Material
+uniform vec3 materialColor;
+uniform float is_solid_color;
 uniform float shininess;
-uniform sampler2D ImageTexture;
+//: How tight the specular highlight is. Falls back to 32.0, the value this shader used to
+//: hard-code, so callers that do not set it render exactly as before.
+uniform float specularExponent;
 
 
 void main()
 {
-    
     vec3 norm = normalize(normal);
-    vec3 tex = texture(ImageTexture, fragmentTexCoord).xyz;
     vec3 viewDir = normalize(viewPos - pos.xyz);
     vec3 result = vec3(0.0, 0.0, 0.0);
+    // Specular is accumulated separately so the surface colour is never applied to it --
+    // a dielectric reflects the light's colour, not its own. See Phong.frag.
+    vec3 specResult = vec3(0.0, 0.0, 0.0);
 
     int n = int(numLights);
     if (n > MAX_LIGHTS) n = MAX_LIGHTS;
@@ -82,25 +87,43 @@ void main()
             attenuation = 1.0 / (1.0 + k * distance + d * distance * distance);
         }
 
+
         // Diffuse
         float diffuseStr = max(dot(norm, lightDir), 0.0);
         vec3 diffuseProd = diffuseStr * lights[i].color;
+
 
         // Specular
         vec3 specularProd = vec3(0.0);
         if (diffuseStr > 0.0)
         {
             vec3 reflectDir = reflect(-lightDir, norm);  
-            float specularStr = pow(max(dot(viewDir, reflectDir), 0.0), 32.0);
+            float specExp = specularExponent > 0.0 ? specularExponent : 32.0;
+            float specularStr = pow(max(dot(viewDir, reflectDir), 0.0), specExp);
             //specularProd = shininess * specularStr; 
-            specularProd = shininess * specularStr * lights[i].color;
+            specularProd = shininess * specularStr * lights[i].color; 
+
         }
-
-        result += (diffuseProd + specularProd) * lights[i].intensity * attenuation;
+        
+        result    += diffuseProd  * lights[i].intensity * attenuation;
+        specResult += specularProd * lights[i].intensity * attenuation;
     }
-
+    
     vec3 ambientProd = ambientStrength * ambientColor;
-    vec3 finalColor = (ambientProd + result) * tex;
-    color = vec4(finalColor, 1.0);
+    vec3 amb_res = (ambientProd + result);
+
+    float t = clamp(is_solid_color, 0.0, 1.0);
+
+    // vertex-mode: materialColor * frag_color.rgb (material usually 1,1,1)
+    vec3 vertexBase = materialColor * frag_color.rgb;
+
+    // solid-mode: materialColor (ignores per-vertex color)
+    // for t=0 it uses vertexBase, t=1 it uses materialColor
+    vec3 base = mix(vertexBase, materialColor, t);
+
+    vec3 finalColor = amb_res * base + specResult;
+    // also cases for albedo
+    float alpha = mix(frag_color.a, 1.0, t);
+    out_color = vec4(finalColor, alpha);
 
 }
