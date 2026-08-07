@@ -98,7 +98,7 @@ if click_coords:
 
 ## 3. Included files
 1. __init__.py (dont know, saw it in other extension folders and added it)
-2. Example_PickingBuffer.py : Sample scene with a cude and a floor(terrain) with the PickingSystem applied
+2. example_picking_buffer.py : Sample scene with a cude and a floor(terrain) with the PickingSystem applied
 3. PickingBuffer.py : Includes the PickingSystem(System) class (__source code__)
 4. test_PickingBuffer.py : AI generated unit tests for each function of the implementation
 
