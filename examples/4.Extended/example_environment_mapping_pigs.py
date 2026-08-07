@@ -18,6 +18,13 @@ from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import MODEL_DIR
 from Elements.extensions.environment_mapping import EnvironmentMapping
 
+example_description = \
+"Three Reflection Pigs floating around Battersea Power Station. \n\
+Three copies of the same pig model (Gold, Chrome and Blue) are rendered with \n\
+the EnvironmentMapping shader, each using a different tint color/strength, \n\
+and float up and down while rotating above a reflective cubemap skybox. \n\
+You may move the camera using the mouse or the GUI."
+
 # basic configuration
 WIN_WIDTH, WIN_HEIGHT = 1200, 800
 ENV_MAP_DIR = Path(__file__).parent
@@ -163,7 +170,7 @@ projMat = util.perspective(50.0, WIN_WIDTH/WIN_HEIGHT, 0.01, 200.0)
 running = True
 while running:
     running = scene.render()
-    displayGUI_text("Three Reflection Pigs floating around Battersea Power Station.")
+    displayGUI_text(example_description)
     
     scene.world.traverse_visit(transUpdate, scene.world.root)
     curr_time = time.time()

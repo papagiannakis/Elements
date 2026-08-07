@@ -18,6 +18,16 @@ import Elements.utils.normals as norm
 from PIL import Image
 import os
 
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This example demonstrates tangent-space normal mapping on a single UV-mapped cube. \n\
+Per-face normals are left FLAT (not averaged across shared vertices), so the cube \n\
+keeps its faceted look while a generated normal map adds fine surface detail via a \n\
+custom PHONG_NORMALS_v2 shader (tangents/bitangents computed from the UVs). \n\
+Point/Directional/Spot lights can be added, removed and animated live through the \n\
+ImGUI panel, which also toggles the normal/albedo maps and a normals debug view. \n\
+Hit ESC OR Close the window to quit."
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SHADERS_DIR = os.path.join(BASE_DIR, "Shaders")
 TEXTURES_DIR = os.path.join(BASE_DIR, "Textures")
@@ -521,6 +531,7 @@ start_time = time.time()
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit_pre_camera(camUpdate, mainCam)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     scene.world.traverse_visit(camUpdate, scene.world.root)

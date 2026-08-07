@@ -42,7 +42,7 @@ from Elements.extensions.picking_buffer import PickingBuffer as pb
 from Elements.extensions.showcase.scene_helpers import SceneBuilder, OrbitCamera, LightManager, ProjectionSettings
 
 
-assignment_goals = (
+example_description = (
     "Tutorial picking demo: click any object to print its name/id and orbit around it with\n"
     "W/A/S/D (+/- to zoom). See the menu bar for Screenshot/Wireframe/Shadows/Shortcuts actions,\n"
     "View > Lights... (3) for point/directional/spot lights, and View > Projection... (4) to\n"
@@ -233,7 +233,7 @@ while running and AppState.running:
     running = scene.render()  # clears the frame, processes SDL input
     menu_bar.draw()
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    displayGUI_text(assignment_goals)
+    displayGUI_text(example_description)
 
     if AppState.show_shadow_settings:
         _, AppState.show_shadow_settings = imgui.begin("Shadow Settings", True)

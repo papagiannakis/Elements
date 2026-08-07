@@ -19,6 +19,15 @@ from Elements.pyGLV.GL.Textures import Texture
 
 from Elements.definitions import TEXTURE_DIR
 import Elements.extensions.Normals_USDimporter_BSP.normals as norm
+from Elements.utils.Shortcuts import displayGUI_text
+
+example_description = \
+"This is a scene with a procedurally generated sphere, textured to represent \n\
+the Earth. This example demonstrates per-vertex normal computation, with \n\
+both smooth and flat shading, and an option to visualize normals as vertex \n\
+colors, toggled live via the 'Sphere Options' GUI panel. \n\
+You may move the camera using the mouse or the GUI. \n\
+Hit ESC OR Close the window to quit."
 
 
 #SPHERE taken from basic shapes
@@ -187,6 +196,7 @@ while running:
     # lightPos = pointLight.trans.l2world[:3, 3].tolist()
     # pointLight.shaderDec.setUniformVariable(key='modelViewProj', value=pointLight.trans.l2cam, mat4=True)
     running = scene.render()
+    displayGUI_text(example_description)
     imgui.begin("Sphere Options")
 
     changed1, shading_idx = imgui.combo("Shading", shading_idx, shading_items)
