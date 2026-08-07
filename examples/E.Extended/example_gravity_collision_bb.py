@@ -269,8 +269,6 @@ def main(imguiFlag = False):
             Cubes.getChild(i).shaderDec.setUniformVariable(key='lightIntensity', value=3, float1=True)
             
             Cubes.getChild(i).shaderDec.setUniformVariable(key='shininess', value=0, float1=True)
-            Cubes.getChild(i).shaderDec.setUniformVariable(key='matColor', value=[0.4, 0.4, 0.4], float3=True)
-            
         floor_shader.setUniformVariable(key='model', value=floor_trans.l2cam, mat4=True)
         floor_shader.setUniformVariable(key='View', value=util.identity(), mat4=True)
         floor_shader.setUniformVariable(key='Proj', value=util.identity(), mat4=True)

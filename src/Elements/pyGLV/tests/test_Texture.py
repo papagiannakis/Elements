@@ -28,7 +28,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.utils.Shortcuts import displayGUI_text
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR
 from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 from OpenGL.GL import GL_LINES
@@ -115,7 +115,7 @@ class TestScene(unittest.TestCase):
         self.mesh4.vertex_attributes.append(Texture.CUBE_TEX_COORDINATES)
         self.mesh4.vertex_index.append(self.indices)
         self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
 
 
         running = True

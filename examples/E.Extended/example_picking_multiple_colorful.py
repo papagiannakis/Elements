@@ -407,8 +407,6 @@ while running:
         cubeShader.setUniformVariable(key="lightColor", value=Lcolor, float3=True)
         cubeShader.setUniformVariable(key="lightIntensity", value=Lintensity, float1=True)
         cubeShader.setUniformVariable(key="shininess", value=Mshininess, float1=True)
-        cubeShader.setUniformVariable(key="matColor", value=Mcolor, float3=True)
-
     terrainShader.setUniformVariable(key="modelViewProj", value=projMat @ view @ terrainTrans.l2world, mat4=True)
     terrainShader.setUniformVariable(key="model", value=terrainTrans.l2world, mat4=True)
     terrainShader.setUniformVariable(key="ambientColor", value=Lambientcolor, float3=True)
@@ -418,8 +416,6 @@ while running:
     terrainShader.setUniformVariable(key="lightColor", value=Lcolor, float3=True)
     terrainShader.setUniformVariable(key="lightIntensity", value=Lintensity, float1=True)
     terrainShader.setUniformVariable(key="shininess", value=Mshininess, float1=True)
-    terrainShader.setUniformVariable(key="matColor", value=Mcolor, float3=True)
-
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
 

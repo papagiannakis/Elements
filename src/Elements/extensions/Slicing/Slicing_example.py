@@ -22,7 +22,7 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 
 #Task code
 from Elements.extensions.Slicing import Slicing
-from Elements.definitions import MODEL_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
 "This is a scene with two cow models. The cow model is either properly imported\n"
@@ -143,7 +143,7 @@ mesh4.vertex_attributes.append(colors)
 mesh4.vertex_attributes.append(normals)
 mesh4.vertex_index.append(indices)
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
 ###
 contours_vertices = Slicing.create_contours(slice_vertices,indices,.025)
@@ -159,7 +159,7 @@ contours_mesh.vertex_attributes.append(contours_vertices)
 contours_mesh.vertex_attributes.append(contours_color)
 contours_mesh.vertex_index.append(contours_indices)
 contours_vArray = scene.world.addComponent(contours, VertexArray(primitive=GL_LINES)) # note the primitive change
-contours_shader = scene.world.addComponent(contours, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+contours_shader = scene.world.addComponent(contours, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
 # Generate terrain
@@ -174,7 +174,7 @@ terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 ## ADD AXES ##
@@ -189,7 +189,7 @@ axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES))
 
 # shaderDec_axes = scene.world.addComponent(axes, Shader())
 # OR
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
@@ -256,9 +256,6 @@ while running:
     shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-
-
     scene.render_post()
     
 scene.shutdown()

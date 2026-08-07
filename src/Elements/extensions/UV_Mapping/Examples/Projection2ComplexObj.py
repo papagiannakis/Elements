@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 
-from Elements.definitions import MODEL_DIR, TEXTURE_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR, TEXTURE_DIR
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
@@ -91,7 +91,7 @@ terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
@@ -259,9 +259,6 @@ while running:
     shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-
-
     shaderDec_teapot.setUniformVariable(key='model', value=teapot_trans.trs, mat4=True)
     shaderDec_teapot.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec_teapot.setUniformVariable(key='Proj', value=projMat, mat4=True)
@@ -272,10 +269,6 @@ while running:
     shaderDec_teapot.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
     shaderDec_teapot.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec_teapot.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec_teapot.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-
-
-
     scene.world.traverse_visit(renderUpdate, scene.world.root) 
     scene.render_post()
     

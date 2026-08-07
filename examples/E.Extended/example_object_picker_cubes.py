@@ -82,9 +82,6 @@ for i in range(125):
     cube.shaderDec.setUniformVariable(key='lightColor', value=Lcolor, float3=True);
     cube.shaderDec.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True);
     cube.shaderDec.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    cube.shaderDec.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-
-
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)

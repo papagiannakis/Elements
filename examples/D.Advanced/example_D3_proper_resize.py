@@ -40,6 +40,9 @@ Lcolor = util.vec(1.0,1.0,1.0)
 Lintensity = 0.8
 #Material
 Mshininess = 0.4 
+#: How tight the specular highlight is (Mshininess above is how strong it is).
+#: 8 = broad sheen, 32 = plastic, 256+ = mirror glint. See example_B10_specular_grid.py.
+MspecularExponent = 32.0
 Mcolor = util.vec(0.8, 0.0, 0.8)
 
 
@@ -238,9 +241,7 @@ while running:
     shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-
-
+    shaderDec4.setUniformVariable(key='specularExponent',value=MspecularExponent,float1=True)
     scene.render_post()
     
 scene.shutdown()

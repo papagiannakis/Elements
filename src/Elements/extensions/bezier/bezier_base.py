@@ -12,6 +12,7 @@ from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES, GL_POINTS, glPointSize
+from Elements.definitions import SHADER_DIR
 
 
 input_bezier_control_nodes = [[0.0, 0.0, 0.0],[0.5, 0.2, 0.8],[-0.4, 1, -0.7]]
@@ -92,7 +93,7 @@ class BezierCurve:
                                                       VertexArray(primitive=GL_LINES))  # note the primitive change
 
         bezier_shader = self.scene.world.addComponent(self.bezier_entity, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+            Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.all_shaders.append(bezier_shader)
 
         ## VISUALIZE BEZIER CONTROL NODES ##
@@ -114,7 +115,7 @@ class BezierCurve:
         control_nodes_vArray = self.scene.world.addComponent(control_nodes, VertexArray(primitive=GL_POINTS))
 
         control_nodes_shader = self.scene.world.addComponent(control_nodes, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+            Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.all_shaders.append(control_nodes_shader)
 
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)

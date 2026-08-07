@@ -10,23 +10,12 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.pyECSS.math_utilities as util
 import sdl2
 from typing import Optional, Tuple
+from Elements.definitions import SHADER_DIR
 
 
-PICKING_VERT = """#version 410
-layout(location = 0) in vec4 vPosition;
-uniform mat4 modelViewProj;
-void main() {
-    gl_Position = modelViewProj * vPosition;
-}
-"""
+PICKING_VERT = (SHADER_DIR / "PickingBuffer.vert").read_text()
 
-PICKING_FRAG = """#version 410
-uniform vec3 objectIDColor;
-out vec4 FragColor;
-void main() {
-    FragColor = vec4(objectIDColor, 1.0);
-}
-"""
+PICKING_FRAG = (SHADER_DIR / "PickingBuffer.frag").read_text()
 
 
 class PickingSystem(System):

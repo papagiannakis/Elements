@@ -37,6 +37,7 @@ from Elements.utils.Shortcuts import displayGUI_text
 import imgui
 
 from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
+from Elements.definitions import SHADER_DIR
 
 
 class TestScene(unittest.TestCase):
@@ -220,7 +221,7 @@ class TestScene(unittest.TestCase):
         
         # self.shaderDec_axes = self.scene.world.addComponent(self.axes, Shader())
         ## OR
-        self.shaderDec_axes = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec_axes = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.shaderDec_axes.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
         self.axes_mesh.vertex_attributes.append(self.vertexAxes) 
@@ -334,7 +335,7 @@ class TestScene(unittest.TestCase):
         self.mesh4.vertex_index.append(self.indexCube)
         self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
         # decorated components and systems with sample, default pass-through shader with uniform MVP
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
         
@@ -389,7 +390,7 @@ class TestScene(unittest.TestCase):
         self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
 
         # self.shaderDec4 = self.scene.world.addComponent(self.node4, Shader())
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         # self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
@@ -404,7 +405,7 @@ class TestScene(unittest.TestCase):
             self.axes_mesh.vertex_attributes.append(self.colorAxes)
             self.axes_mesh.vertex_index.append(self.indexAxes)
             self.axes_vArray = self.scene.world.addComponent(self.axes, VertexArray(primitive=GL_LINES)) # note the primitive change
-            self.axes_shader = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+            self.axes_shader = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         
 
         running = True
@@ -480,7 +481,7 @@ class TestScene(unittest.TestCase):
         
         mvpMat = projMat @ view @ model
 
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
         from Elements.utils.terrain import generateTerrain
@@ -512,7 +513,7 @@ class TestScene(unittest.TestCase):
 
         # self.shaderDec_axes = self.scene.world.addComponent(self.axes, Shader())
         # OR
-        self.shaderDec4 = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
@@ -559,7 +560,7 @@ class TestScene(unittest.TestCase):
         
         # mvpMat =  projMat @ view @ model
 
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         # self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
         from Elements.utils.terrain import generateTerrain
@@ -590,7 +591,7 @@ class TestScene(unittest.TestCase):
 
         # self.shaderDec_axes = self.scene.world.addComponent(self.axes, Shader())
         # OR
-        self.shaderDec42 = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec42 = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         # self.shaderDec42.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
@@ -680,7 +681,7 @@ class TestScene(unittest.TestCase):
         self.mesh4.vertex_attributes.append(self.colorCube)
         self.mesh4.vertex_index.append(self.indexCube)
         self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
         
@@ -693,7 +694,7 @@ class TestScene(unittest.TestCase):
         self.axes_mesh.vertex_attributes.append(self.colorAxes)
         self.axes_mesh.vertex_index.append(self.indexAxes)
         self.axes_vArray = self.scene.world.addComponent(self.axes, VertexArray(primitive=GL_LINES)) # note the primitive change
-        self.axes_shader = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.axes_shader = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         
         # INITIATE SCENE#
@@ -774,7 +775,7 @@ class TestScene(unittest.TestCase):
         self.mesh4.vertex_attributes.append(self.colorCube)
         self.mesh4.vertex_index.append(self.indexCube)
         self.vArray4 = self.scene.world.addComponent(self.node4, VertexArray())
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         
         
 
@@ -790,7 +791,7 @@ class TestScene(unittest.TestCase):
         self.terrain_mesh.vertex_attributes.append(self.colorTerrain)
         self.terrain_mesh.vertex_index.append(self.indexTerrain)
         self.terrain_vArray = self.scene.world.addComponent(self.terrain, VertexArray(primitive=GL_LINES))
-        self.terrain_shader = self.scene.world.addComponent(self.terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.terrain_shader = self.scene.world.addComponent(self.terrain, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         # self.terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
         
         ## ADD AXES ##
@@ -805,7 +806,7 @@ class TestScene(unittest.TestCase):
 
         # self.shaderDec_axes = self.scene.world.addComponent(self.axes, Shader())
         # OR
-        self.axes_shader = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.axes_shader = self.scene.world.addComponent(self.axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         # self.axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 

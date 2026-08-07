@@ -23,7 +23,7 @@ from Elements.extensions.GravityBB.floor import generate_floor_with_bb
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.pyGLV.GL.Textures import Texture
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR
 from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 
@@ -40,7 +40,7 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
         self.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();
@@ -262,8 +262,6 @@ various information about them. Hit ESC OR Close the window to quit."
                 Cubes.getChild(i).shaderDec.setUniformVariable(key='lightIntensity', value=3, float1=True)
                 
                 Cubes.getChild(i).shaderDec.setUniformVariable(key='shininess', value=0, float1=True)
-                Cubes.getChild(i).shaderDec.setUniformVariable(key='matColor', value=[0.4, 0.4, 0.4], float3=True)
-                
             floor_shader.setUniformVariable(key='model', value=floor_trans.l2cam, mat4=True)
             floor_shader.setUniformVariable(key='View', value=util.identity(), mat4=True)
             floor_shader.setUniformVariable(key='Proj', value=util.identity(), mat4=True)

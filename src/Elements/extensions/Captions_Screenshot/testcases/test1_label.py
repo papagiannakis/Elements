@@ -14,6 +14,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 # Import billboard label system
 from Elements.extensions.Captions_Screenshot.billboard_label_component import create_billboard_label, BillboardLabelSystem
+from Elements.definitions import SHADER_DIR
 
 print("=" * 60)
 print("TEST: Billboard Label System")
@@ -94,8 +95,8 @@ mesh1.vertex_attributes.append(solid_color(8, (0.9, 0.2, 0.2, 1.0)))
 mesh1.vertex_index.append(idx1)
 scene.world.addComponent(cube1, VertexArray())
 shader1 = scene.world.addComponent(cube1, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP,
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert",
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 print("    Red cube at (-1, 0.5, 0)")
 
@@ -114,8 +115,8 @@ mesh2.vertex_attributes.append(solid_color(8, (0.2, 0.9, 0.2, 1.0)))
 mesh2.vertex_index.append(idx2)
 scene.world.addComponent(cube2, VertexArray())
 shader2 = scene.world.addComponent(cube2, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP,
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert",
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 print("   Green cube at (1, 0.5, 0)")
 
@@ -134,8 +135,8 @@ mesh3.vertex_attributes.append(solid_color(8, (0.2, 0.2, 0.9, 1.0)))
 mesh3.vertex_index.append(idx3)
 scene.world.addComponent(cube3, VertexArray())
 shader3 = scene.world.addComponent(cube3, ShaderGLDecorator(Shader(
-    vertex_source=Shader.COLOR_VERT_MVP,
-    fragment_source=Shader.COLOR_FRAG
+    vertex_import_file=SHADER_DIR / "ColorMVP.vert",
+    fragment_import_file=SHADER_DIR / "Color.frag"
 )))
 print("    Blue cube at (0, 1.5, -1)")
 

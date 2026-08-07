@@ -18,66 +18,14 @@ from Elements.pyGLV.GL.Textures import Texture
 import Elements.utils.normals as norm
 
 from Elements.utils.terrain import generateTerrain
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 
 import OpenGL.GL as gl
 
-TEXTURE_VERTEX_SHADER = """
-#version 410
-layout (location=0) in vec4 vPos;
-layout (location=1) in vec2 vTexCoord;
-layout (location=2) in vec3 vNormal;
-
-out vec2 fragTexCoord;
-out vec3 fragNormal;
-out vec3 fragPos;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
-
-void main()
-{
-    vec4 worldPos = model * vPos;
-    fragPos = worldPos.xyz;
-    fragNormal = mat3(transpose(inverse(model))) * vNormal;
-    fragTexCoord = vTexCoord;
-    gl_Position = proj * view * worldPos;
-}
-"""
-TEXTURE_FRAGMENT_SHADER = """
-#version 410
-in vec2 fragTexCoord;
-in vec3 fragNormal;
-in vec3 fragPos;
-
-out vec4 outputColor;
-
-uniform sampler2D texSampler;
-uniform vec3  Lambientcolor;
-uniform float Lambientstr;
-uniform vec3  LviewPos;
-uniform vec3  Lposition;
-uniform vec3  Lcolor;
-uniform float Lintensity;
-
-void main()
-{
-    vec4  texColor  = texture(texSampler, fragTexCoord);
-    vec3  norm      = normalize(fragNormal);
-    vec3  ambient   = Lambientstr * Lambientcolor * texColor.rgb;
-    vec3  lightDir  = normalize(Lposition - fragPos);
-    float diff      = max(dot(norm, lightDir), 0.0);
-    vec3  diffuse   = diff * Lcolor * Lintensity * texColor.rgb;
-    vec3  viewDir   = normalize(LviewPos - fragPos);
-    vec3  reflDir   = reflect(-lightDir, norm);
-    float spec      = pow(max(dot(viewDir, reflDir), 0.0), 32.0);
-    vec3  specular  = 0.2 * spec * Lcolor * Lintensity;
-    outputColor = vec4(ambient + diffuse + specular, texColor.a);
-}
-"""
+TEXTURE_VERTEX_SHADER = (SHADER_DIR / "TextToSceneTexture.vert").read_text()
+TEXTURE_FRAGMENT_SHADER = (SHADER_DIR / "TextToSceneTexture.frag").read_text()
 example_description = "Generated scene from hierarchical IR"
 
 # Ambient / view defaults
@@ -157,8 +105,8 @@ shader_1 = scene.world.addComponent(
     node_1,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -202,8 +150,8 @@ shader_3 = scene.world.addComponent(
     node_3,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -237,8 +185,8 @@ shader_4 = scene.world.addComponent(
     node_4,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -282,8 +230,8 @@ shader_6 = scene.world.addComponent(
     node_6,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -317,8 +265,8 @@ shader_7 = scene.world.addComponent(
     node_7,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -362,8 +310,8 @@ shader_9 = scene.world.addComponent(
     node_9,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -397,8 +345,8 @@ shader_10 = scene.world.addComponent(
     node_10,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -432,8 +380,8 @@ shader_11 = scene.world.addComponent(
     node_11,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -467,8 +415,8 @@ shader_12 = scene.world.addComponent(
     node_12,
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -775,9 +723,6 @@ while running:
     shader_1.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_1.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_1.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_1.setUniformVariable(key='matColor', value=util.vec(0.55, 0.55, 0.55), float3=True)
-
-
     model_3 = util.identity() @ (util.translate(-3.0, 0.0, 0.0) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 0.5, 0.0) @ util.identity())
     mvp_3 = projMat @ view @ model_3
     shader_3.setUniformVariable(key='modelViewProj', value=mvp_3, mat4=True)
@@ -789,9 +734,6 @@ while running:
     shader_3.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_3.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_3.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_3.setUniformVariable(key='matColor', value=util.vec(0.94, 0.87, 0.72), float3=True)
-
-
     model_4 = util.identity() @ (util.translate(-3.0, 0.0, 0.0) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 1.0, 0.0) @ util.identity())
     mvp_4 = projMat @ view @ model_4
     shader_4.setUniformVariable(key='modelViewProj', value=mvp_4, mat4=True)
@@ -803,9 +745,6 @@ while running:
     shader_4.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_4.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_4.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_4.setUniformVariable(key='matColor', value=util.vec(0.65, 0.18, 0.12), float3=True)
-
-
     model_6 = util.identity() @ (util.translate(2.5, 0.0, -1.5) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 0.22, 0.0) @ util.identity())
     mvp_6 = projMat @ view @ model_6
     shader_6.setUniformVariable(key='modelViewProj', value=mvp_6, mat4=True)
@@ -817,9 +756,6 @@ while running:
     shader_6.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_6.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_6.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_6.setUniformVariable(key='matColor', value=util.vec(0.45, 0.28, 0.12), float3=True)
-
-
     model_7 = util.identity() @ (util.translate(2.5, 0.0, -1.5) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 0.62, 0.0) @ util.identity())
     mvp_7 = projMat @ view @ model_7
     shader_7.setUniformVariable(key='modelViewProj', value=mvp_7, mat4=True)
@@ -831,9 +767,6 @@ while running:
     shader_7.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_7.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_7.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_7.setUniformVariable(key='matColor', value=util.vec(0.1, 0.6, 0.2), float3=True)
-
-
     model_9 = util.identity() @ (util.translate(1.0, 0.0, 2.0) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 0.3, 0.0) @ util.identity())
     mvp_9 = projMat @ view @ model_9
     shader_9.setUniformVariable(key='modelViewProj', value=mvp_9, mat4=True)
@@ -845,9 +778,6 @@ while running:
     shader_9.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_9.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_9.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_9.setUniformVariable(key='matColor', value=util.vec(0.85, 0.1, 0.2), float3=True)
-
-
     model_10 = util.identity() @ (util.translate(1.0, 0.0, 2.0) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 0.31, 0.0) @ util.identity())
     mvp_10 = projMat @ view @ model_10
     shader_10.setUniformVariable(key='modelViewProj', value=mvp_10, mat4=True)
@@ -859,9 +789,6 @@ while running:
     shader_10.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_10.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_10.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_10.setUniformVariable(key='matColor', value=util.vec(1.0, 0.85, 0.1), float3=True)
-
-
     model_11 = util.identity() @ (util.translate(1.0, 0.0, 2.0) @ util.identity() @ util.scale(1.0)) @ (util.translate(0.0, 0.31, 0.0) @ util.identity())
     mvp_11 = projMat @ view @ model_11
     shader_11.setUniformVariable(key='modelViewProj', value=mvp_11, mat4=True)
@@ -873,9 +800,6 @@ while running:
     shader_11.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_11.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_11.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_11.setUniformVariable(key='matColor', value=util.vec(1.0, 0.85, 0.1), float3=True)
-
-
     _t_orb_12 = time.time()
     _ang_orb_12 = _t_orb_12 * 0.8
     model_12 = util.translate(0.0 + np.cos(_ang_orb_12) * 3.0, 0.0, 0.0 + np.sin(_ang_orb_12) * 3.0) @ util.scale(1.0, 1.0, 1.0)
@@ -889,7 +813,6 @@ while running:
     shader_12.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
     shader_12.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
     shader_12.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shader_12.setUniformVariable(key='matColor', value=util.vec(1.0, 1.0, 0.0), float3=True)
     poll_backend_state()
     draw_editor_panel()
     scene.render_post()

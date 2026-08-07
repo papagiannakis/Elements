@@ -152,8 +152,6 @@ def main():
             shaderDec.setUniformVariable(key="lightColor", value=light_color, float3=True)
             shaderDec.setUniformVariable(key="lightIntensity", value=light_intensity, float1=True)
             shaderDec.setUniformVariable(key="shininess", value=shininess, float1=True)
-            shaderDec.setUniformVariable(key="matColor", value=mat_color, float3=True)
-
         running = scene.render()
         displayGUI_text(example_description)
         scene.world.traverse_visit(renderUpdate, scene.world.root)

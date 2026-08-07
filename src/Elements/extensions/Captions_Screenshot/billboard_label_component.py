@@ -14,44 +14,13 @@ from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyECSS.Component import RenderMesh
+from Elements.definitions import SHADER_DIR
 
 
 #shaders
-BILLBOARD_VERT = """
-#version 410 core
-layout (location = 0) in vec2 aLocal;
-layout (location = 1) in vec2 aUV;
+BILLBOARD_VERT = (SHADER_DIR / "Billboard.vert").read_text()
 
-uniform mat4 View;
-uniform mat4 Proj;
-uniform vec3 center;
-uniform vec3 camRight;
-uniform vec3 camUp;
-uniform vec3 size;
-
-out vec2 vUV;
-
-void main() {
-    vec3 worldPos = center+ camRight *(aLocal.x *size.x)
-                  + camUp    *(aLocal.y *size.y);
-    gl_Position= Proj* View *vec4(worldPos, 1.0);
-    vUV=aUV;
-}
-"""
-
-BILLBOARD_FRAG = """
-#version 410 core
-in vec2 vUV;
-out vec4 FragColor;
-
-uniform sampler2D uTex;
-
-void main() {
-    vec4 texel =texture(uTex, vUV);
-    if (texel.a < 0.1) discard;
-    FragColor= texel;
-}
-"""
+BILLBOARD_FRAG = (SHADER_DIR / "Billboard.frag").read_text()
 # BILLBOARD LABEL COMPONENT
 class BillboardLabel(Component):
     """

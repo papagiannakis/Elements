@@ -166,10 +166,6 @@ def main(imguiFlag = False):
 
             
             home.getChild(i).shaderDec.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-            home.getChild(i).shaderDec.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-            
-                
-        
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
         displayGUI_text(example_description)

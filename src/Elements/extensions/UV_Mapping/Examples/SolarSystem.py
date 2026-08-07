@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
@@ -124,7 +124,7 @@ vertexSkybox, indexSkybox, _ = norm.generateUniqueVertices(vertexSkybox,indexSky
 meshSkybox.vertex_attributes.append(vertexSkybox)
 meshSkybox.vertex_index.append(indexSkybox)
 vArraySkybox = scene.world.addComponent(skybox, VertexArray())
-shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source = Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
+shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "StaticSkybox.vert", fragment_import_file=SHADER_DIR / "StaticSkybox.frag")))
 
 
 sphere = []

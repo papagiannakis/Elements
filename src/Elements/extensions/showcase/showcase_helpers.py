@@ -245,8 +245,6 @@ class ObjGallery:
         self.shader.setUniformVariable(key="lightColor", value=primary.color, float3=True)
         self.shader.setUniformVariable(key="lightIntensity", value=primary.intensity, float1=True)
         self.shader.setUniformVariable(key="shininess", value=shininess, float1=True)
-        self.shader.setUniformVariable(key="matColor", value=self.color, float3=True)
-
     def update_transform(self, projection, view):
         """Call once per frame."""
         mvp = projection @ view @ self.trans.l2world
@@ -292,17 +290,7 @@ class ObjGallery:
 #: same fragment shader plus one line so it can actually be turned off.
 #: plain Shader/ShaderGLDecorator (unlike ShadowShader) has no boolean uniform helper, only
 #: float/mat -- so "enabled" is a float (1.0/0.0) here, not a GLSL bool.
-_SKYBOX_FRAG_TOGGLEABLE = """
-    #version 410
-    out vec4 FragColor;
-    in vec3 TexCoords;
-    uniform samplerCube cubemap;
-    uniform float enabled;
-    void main() {
-        if (enabled < 0.5) discard;
-        FragColor = texture(cubemap, TexCoords);
-    }
-"""
+_SKYBOX_FRAG_TOGGLEABLE = (SHADER_DIR / "StaticSkyboxToggleable.frag").read_text()
 
 
 class Skybox:

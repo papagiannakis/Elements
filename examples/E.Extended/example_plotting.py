@@ -185,8 +185,6 @@ while running:
         shader.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
         shader.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
         shader.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-        shader.setUniformVariable(key='matColor', value=Mcolor, float3=True)
-
     scene.render_post()
 
 scene.shutdown()
