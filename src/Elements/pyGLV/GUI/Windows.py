@@ -14,6 +14,7 @@ should not be able to break every example, only the ones that actually opt into
 
 from __future__ import annotations
 from typing import Any, Callable
+import ctypes
 
 import numpy as np
 import sdl2
@@ -83,6 +84,9 @@ class SDL2Window(RenderWindow):
         self._cameraEye = np.zeros(3, dtype=np.float32)
         self._cameraTarget = np.zeros(3, dtype=np.float32)
         self._cameraUp = np.zeros(3, dtype=np.float32)
+
+        #polling state for the duck-typed helpers below, mirroring GLFWWindow's
+        self._fKeyWasPressed = False
 
     @property
     def gWindow(self):
@@ -218,6 +222,39 @@ class SDL2Window(RenderWindow):
 
     def accept(self, system: System, event: Event | None = None) -> None:
         system.apply2SDLWindow(self, event)
+
+    # ---- duck-typed helpers, called only from Viewer.py's RenderDecorator -------------------
+    # same names/semantics as GLFWWindow's below, so RenderDecorator needs no backend branch for
+    # modifier-key/camera-drag/wireframe-toggle detection
+
+    def get_modifier_state(self) -> tuple[bool, bool]:
+        """(shift_held, ctrl_held)."""
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        shift = bool(keystatus[sdl2.SDL_SCANCODE_LSHIFT])
+        ctrl = bool(keystatus[sdl2.SDL_SCANCODE_LCTRL])
+        return shift, ctrl
+
+    def poll_right_drag_delta(self) -> tuple[float, float] | None:
+        """None unless the right mouse button is held, in which case the cursor-position delta
+        since the last call. Always polls (even when not dragging), same as GLFWWindow's version
+        -- else the first frame of a new drag would include motion accumulated while not
+        dragging. SDL_GetRelativeMouseState() (not the SDL_MOUSEMOTION event) reports the delta
+        since its own last call, which is exactly this polling model."""
+        xrel, yrel = ctypes.c_int(0), ctypes.c_int(0)
+        buttons = sdl2.SDL_GetRelativeMouseState(ctypes.byref(xrel), ctypes.byref(yrel))
+        if buttons & sdl2.SDL_BUTTON_RMASK:
+            return (-xrel.value, yrel.value)
+        return None
+
+    def consume_wireframe_toggle_key(self) -> bool:
+        """True exactly once per F keypress (rising edge), polled the same way GLFWWindow's
+        version is (rather than SDL2's own SDL_KEYDOWN event), so RenderDecorator can treat both
+        backends identically."""
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        pressed = bool(keystatus[sdl2.SDL_SCANCODE_F])
+        edge = pressed and not self._fKeyWasPressed
+        self._fKeyWasPressed = pressed
+        return edge
 
 
 class GLFWWindow(RenderWindow):

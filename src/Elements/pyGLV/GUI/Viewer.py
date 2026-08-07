@@ -229,12 +229,7 @@ class RenderDecorator(RenderWindow):
         """Translate a mouse-wheel or right-drag delta into a translate/rotate camera update."""
         self.resetAll()
 
-        if self._wrapeeWindow.BACKEND_NAME == "GLFW":
-            shift, ctrl = self._wrapeeWindow.get_modifier_state()
-        else:
-            keystatus = sdl2.SDL_GetKeyboardState(None)
-            shift = bool(keystatus[sdl2.SDL_SCANCODE_LSHIFT])
-            ctrl = bool(keystatus[sdl2.SDL_SCANCODE_LCTRL])
+        shift, ctrl = self._wrapeeWindow.get_modifier_state()
 
         if shift:
             if abs(x) > abs(y):
@@ -272,7 +267,12 @@ class RenderDecorator(RenderWindow):
 
     def event_input_process(self) -> bool:
         """
-        process SDL2 basic events and input
+        process backend input. SDL2 needs its own per-event loop here: QUIT/resize/ESC only ever
+        arrive as events, and classic-pyimgui's SDL2Renderer is fed per-event (process_event()),
+        unlike GLFW's callback-based integration -- see _event_input_process_glfw(). Camera-drag
+        and wireframe-toggle detection, though, are backend-agnostic polling calls either way
+        (poll_right_drag_delta()/consume_wireframe_toggle_key(), implemented by both SDL2Window
+        and GLFWWindow) -- see _poll_camera_and_wireframe().
         """
         if self._wrapeeWindow.BACKEND_NAME == "GLFW":
             return self._event_input_process_glfw()
@@ -286,16 +286,8 @@ class RenderDecorator(RenderWindow):
             if event.type == sdl2.SDL_MOUSEWHEEL:
                 self.cameraHandling(event.wheel.x, event.wheel.y, height, width)
 
-            elif event.type == sdl2.SDL_MOUSEMOTION:
-                if event.motion.state & sdl2.SDL_BUTTON_RMASK:
-                    self.cameraHandling(-event.motion.xrel, event.motion.yrel, height, width)
-
             elif event.type == sdl2.SDL_KEYDOWN:
-                ################## toggle the wireframe using the F key #############################
-                if event.key.keysym.sym == sdl2.SDLK_f:
-                    self.toggle_Wireframe()
-
-                elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
+                if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
 
             elif event.type == sdl2.SDL_QUIT:
@@ -311,6 +303,9 @@ class RenderDecorator(RenderWindow):
 
             #imgui event
             self._imguiRenderer.process_event(event)
+
+        self._poll_camera_and_wireframe(width, height)
+
         #imgui input
         self._imguiRenderer.process_inputs()
         return running
@@ -323,17 +318,21 @@ class RenderDecorator(RenderWindow):
         """
         window = self._wrapeeWindow
         running = window.event_input_process(True)
-        width, height = window._windowWidth, window._windowHeight
 
-        drag = window.poll_right_drag_delta()
-        if drag is not None:
-            self.cameraHandling(drag[0], drag[1], height, width)
-
-        if window.consume_wireframe_toggle_key():
-            self.toggle_Wireframe()
+        self._poll_camera_and_wireframe(window._windowWidth, window._windowHeight)
 
         self._imguiRenderer.process_inputs()
         return running
+
+    def _poll_camera_and_wireframe(self, width: int, height: int) -> None:
+        """Backend-agnostic: both SDL2Window and GLFWWindow implement poll_right_drag_delta()/
+        consume_wireframe_toggle_key() by polling, so this needs no backend branch."""
+        drag = self._wrapeeWindow.poll_right_drag_delta()
+        if drag is not None:
+            self.cameraHandling(drag[0], drag[1], height, width)
+
+        if self._wrapeeWindow.consume_wireframe_toggle_key():
+            self.toggle_Wireframe()
 
     def display_post(self) -> None:
         """
