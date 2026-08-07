@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import imgui
 import time
@@ -25,13 +24,8 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.utils.terrain import generateTerrain
 
-# from Elements.definitions import TEXTURE_DIR
 from Elements.utils.Shortcuts import displayGUI_text
-from Elements.definitions import SHADER_DIR
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SHADERS_DIR = os.path.join(BASE_DIR, "Shaders")
-TEXTURES_DIR = os.path.join(BASE_DIR, "Textures")
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR
 
 
 example_description = \
@@ -377,14 +371,14 @@ scene.world.addComponent(node_tex, VertexArray())
 
 # --- Shaders ---
 # Shaders   
-with open(os.path.join(SHADERS_DIR, "TEXTURE_PHONG_MULTI_LIGHTS.vert"), "r") as f:
+with open(SHADER_DIR / "TEXTURE_PHONG_MULTI_LIGHTS.vert", "r") as f:
     tex_phong_vert_src = f.read()
-with open(os.path.join(SHADERS_DIR, "TEXTURE_PHONG_MULTI_LIGHTS.frag"), "r") as f:
+with open(SHADER_DIR / "TEXTURE_PHONG_MULTI_LIGHTS.frag", "r") as f:
     tex_phong_frag_src = f.read()
 
-with open(os.path.join(SHADERS_DIR, "PHONG_MULTI_LIGHTS.vert"), "r") as f:
+with open(SHADER_DIR / "PHONG_MULTI_LIGHTS.vert", "r") as f:
     phong_vert_src = f.read()
-with open(os.path.join(SHADERS_DIR, "PHONG_MULTI_LIGHTS.frag"), "r") as f:
+with open(SHADER_DIR / "PHONG_MULTI_LIGHTS.frag", "r") as f:
     phong_frag_src = f.read()
 
 shader_tex = scene.world.addComponent(
@@ -483,7 +477,7 @@ projMat = util.perspective(50.0, winWidth / winHeight, 0.01, 100.0)
 gWindow._myCamera = view0
 
 # Texture
-texturePath = os.path.join(TEXTURES_DIR, "uoc_logo.png")
+texturePath = TEXTURE_DIR / "uoc_logo.png"
 texture = Texture(texturePath)
 shader_tex.setUniformVariable(key="ImageTexture", value=texture, texture=True)
 

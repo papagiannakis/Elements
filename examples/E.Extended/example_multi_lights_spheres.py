@@ -1,4 +1,3 @@
-import os
 import time
 import math
 import numpy as np
@@ -25,10 +24,6 @@ import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import SHADER_DIR
-
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SHADERS_DIR = os.path.join(BASE_DIR, "Shaders")
 
 example_description = \
 "This example demonstrates Phong lighting with MULTIPLE lights on TWO spheres.\n" \
@@ -328,9 +323,9 @@ winHeight = 800
 scene = Scene()
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
 
-with open(os.path.join(SHADERS_DIR, "PHONG_MULTI_LIGHTS.vert"), "r") as f:
+with open(SHADER_DIR / "PHONG_MULTI_LIGHTS.vert", "r") as f:
     phong_vert_src = f.read()
-with open(os.path.join(SHADERS_DIR, "PHONG_MULTI_LIGHTS.frag"), "r") as f:
+with open(SHADER_DIR / "PHONG_MULTI_LIGHTS.frag", "r") as f:
     phong_frag_src = f.read()
 
 # Sphere geometry

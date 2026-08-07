@@ -25,7 +25,7 @@ from Elements.extensions.textToScene.src.llm_parser import (
 from Elements.extensions.textToScene.src.prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed, build_table, build_lamp
 
 from Elements.extensions.textToScene.src.config import (
-    TEXTURE_CATALOGUE, TEXTURES_DIR, CUSTOM_MODELS_DIR,
+    TEXTURE_CATALOGUE, TEXTURE_DIR, CUSTOM_MODELS_DIR,
     SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
     PROJECT_SCENE_IR_FILE,
     SCENE_IR_FILE, PREVIEW_IR_FILE, AI_REQUEST_FILE,
@@ -3124,7 +3124,7 @@ def apply_action_to_ir(scene_ir, action):
                     texture_name, list(TEXTURE_CATALOGUE.keys())
                 )
             )
-        full_path = TEXTURES_DIR / TEXTURE_CATALOGUE[texture_name]
+        full_path = TEXTURE_DIR / TEXTURE_CATALOGUE[texture_name]
         target.setdefault("material", {})
         target["material"]["texture"] = {"enabled": True, "path": str(full_path)}
         return new_ir

@@ -27,8 +27,8 @@ PREFABS_DIR     = SHARED_DIR  / "prefabs"
 CACHE_DIR       = SHARED_DIR  / "cache"
 CUSTOM_MODELS_DIR = SHARED_DIR / "custom_models"
 
-# Textures live in the repo so they are always available after cloning
-TEXTURES_DIR    = EXTENSION_DIR / "assets" / "textures"
+# Textures live with every other bundled texture, under Elements/files/textures
+from Elements.definitions import TEXTURE_DIR
 
 # ── File paths ────────────────────────────────────────────────────────────────
 PROJECT_SCENE_IR_FILE = SRC_DIR / "scene_ir.json"

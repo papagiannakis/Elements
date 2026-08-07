@@ -15,7 +15,6 @@ from pathlib import Path
 from Elements.definitions import SHADER_DIR
 
 # Locate and load the standard vertex shader
-SHADER_DIR = Path(__file__).parent.parent.parent / "files" / "shaders"
 STANDARD_VERT_PATH = SHADER_DIR / "Standard.vert"
 
 # Read the Standard.vert shader file

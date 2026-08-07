@@ -19,6 +19,7 @@ from PIL import Image
 import os
 
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR
 example_description = \
 "This example demonstrates tangent-space normal mapping on a single UV-mapped cube. \n\
 Per-face normals are left FLAT (not averaged across shared vertices), so the cube \n\
@@ -27,10 +28,6 @@ custom PHONG_NORMALS_v2 shader (tangents/bitangents computed from the UVs). \n\
 Point/Directional/Spot lights can be added, removed and animated live through the \n\
 ImGUI panel, which also toggles the normal/albedo maps and a normals debug view. \n\
 Hit ESC OR Close the window to quit."
-
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-SHADERS_DIR = os.path.join(BASE_DIR, "Shaders")
-TEXTURES_DIR = os.path.join(BASE_DIR, "Textures")
 
 
 # --- Utility Functions ---
@@ -458,25 +455,25 @@ meshCube.vertex_index.append(indices)
 vArrayCube = scene.world.addComponent(nodeCube, VertexArray())
 
 # Shaders
-with open(os.path.join(SHADERS_DIR, "PHONG_NORMALS_v2.vert"), "r", encoding="utf-8") as f:
+with open(SHADER_DIR / "PHONG_NORMALS_v2.vert", "r", encoding="utf-8") as f:
     vertex_shader_source = f.read()
 
-with open(os.path.join(SHADERS_DIR, "PHONG_NORMALS_v2.frag"), "r", encoding="utf-8") as f:
+with open(SHADER_DIR / "PHONG_NORMALS_v2.frag", "r", encoding="utf-8") as f:
     fragment_shader_source = f.read()
     
 shaderDecCube = scene.world.addComponent(nodeCube, ShaderGLDecorator(Shader(vertex_source = vertex_shader_source, fragment_source = fragment_shader_source)))
 
 
 # Textures/Normals
-normal_map_path = os.path.join(TEXTURES_DIR, "tiles.png")
+normal_map_path = TEXTURE_DIR / "tiles.png"
 normal_map_texture = None
-albedo_map_path = os.path.join(TEXTURES_DIR, "albedo.png")
+albedo_map_path = TEXTURE_DIR / "albedo.png"
 albedo_texture = None
 
 # --- Create a Simple Normal Map ---
 # This creates a simple embossed-style normal map
 if not os.path.exists(normal_map_path):
-    os.makedirs(TEXTURES_DIR, exist_ok=True)
+    os.makedirs(TEXTURE_DIR, exist_ok=True)
     # Create a simple normal map (blue-dominant for relatively flat surfaces with slight detail)
     normal_map = Image.new('RGB', (256, 256), color=(128, 128, 255))
     # Add some texture detail

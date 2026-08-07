@@ -15,8 +15,9 @@ from Elements.pyGLV.GL.Textures import get_texture_faces, Texture, Texture3D
 from Elements.utils.normals import generateSmoothNormalsMesh, generateUniqueVertices
 from Elements.utils.objimporter.wavefront import Wavefront
 from Elements.utils.Shortcuts import displayGUI_text
-from Elements.definitions import MODEL_DIR, SHADER_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR, SKYBOX_DIR
 from Elements.extensions.environment_mapping import EnvironmentMapping
+import Elements.extensions.environment_mapping.environment_mapping as environment_mapping
 
 example_description = \
 "Three Reflection Pigs floating around Battersea Power Station. \n\
@@ -27,18 +28,17 @@ You may move the camera using the mouse or the GUI."
 
 # basic configuration
 WIN_WIDTH, WIN_HEIGHT = 1200, 800
-ENV_MAP_DIR = Path(__file__).parent
-SKYBOX_DIR = ENV_MAP_DIR / "pigs"/ "pigImage"
-MODEL_PATH = ENV_MAP_DIR / "pigs"/ "models" / "pighighpoly1.obj"
+SKYBOX_FACES_DIR = SKYBOX_DIR / "Sea"
+MODEL_PATH = MODEL_DIR / "pighighpoly1.obj"
 #MODEL_PATH = MODEL_DIR / "cow.obj"
 
 SKYBOX_IMAGES = {
-    'front': SKYBOX_DIR / "front.png",
-    'back':  SKYBOX_DIR / "back.png",
-    'top':   SKYBOX_DIR / "top.png",
-    'bottom': SKYBOX_DIR / "bottom.png",
-    'left':  SKYBOX_DIR / "left.png",
-    'right': SKYBOX_DIR / "right.png",
+    'front': SKYBOX_FACES_DIR / "front.jpg",
+    'back':  SKYBOX_FACES_DIR / "back.jpg",
+    'top':   SKYBOX_FACES_DIR / "top.jpg",
+    'bottom': SKYBOX_FACES_DIR / "bottom.jpg",
+    'left':  SKYBOX_FACES_DIR / "left.jpg",
+    'right': SKYBOX_FACES_DIR / "right.jpg",
 }
 
 
@@ -189,8 +189,10 @@ while running:
         # Animation 
         phase = i * 1.5
         
-        rotation_angle = (curr_time * 20.0) % 360.0
-        float_offset = np.sin(curr_time * 2.0 + phase) * 0.3
+        # rotation_angle = (curr_time * 20.0) % 360.0
+        # float_offset = np.sin(curr_time * 2.0 + phase) * 0.3
+        rotation_angle = 0
+        float_offset = 0.3
         base_height = 0.5 
         base_x = (i - 1) * 3.0 # Positions: -3, 0, 3
         
