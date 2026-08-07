@@ -2,7 +2,7 @@ import os
 import random
 import numpy as np
 
-from Elements.definitions import SHADER_DIR, TEXTURE_DIR
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR, SKYBOX_DIR
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
@@ -25,12 +25,9 @@ from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.extensions.UV_Mapping.ObjectGenerator import UVObjectGenerator
-from build.lib.Elements.pyGLV.GL.Textures import Texture, get_texture_faces
+from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
 from pathlib import Path
 
-CURRENT_DIR = Path(__file__).resolve()
-UV_MAPPING_DIR = CURRENT_DIR.parent.parent  
-ASSETS_DIR = UV_MAPPING_DIR / "Assets"
 
 
 #from Elements.extensions.UV_Mapping.TextureMapping import TextureGUI
@@ -185,8 +182,8 @@ gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly 
 
 
 
-# skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Cloudy"
-skybox_texture_locations = ASSETS_DIR / "Skybox" 
+# Any folder under SKYBOX_DIR works -- Cloudy, Day_Sunless, Sea, Stars.
+skybox_texture_locations = SKYBOX_DIR / "Stars"
 front_img = skybox_texture_locations / "front.png"
 right_img = skybox_texture_locations / "right.png"
 left_img = skybox_texture_locations / "left.png"
@@ -201,10 +198,10 @@ shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 
 
 #LOAD THE TEXTURE AFTER THE OPENGL CONTEXT IS CREATED!!!!
-texturePath1 = ASSETS_DIR / "Sollar_System" / "2k_sun.jpg"
-texturePath2 = ASSETS_DIR / "Sollar_System" / "2k_mars.jpg"
-texturePath3 = ASSETS_DIR / "Sollar_System" / "earth.jpg"
-texturePath4 = ASSETS_DIR / "Sollar_System" / "2k_moon.jpg"
+texturePath1 = TEXTURE_DIR / "2k_sun.jpg"
+texturePath2 = TEXTURE_DIR / "2k_mars.jpg"
+texturePath3 = TEXTURE_DIR / "earth.jpg"
+texturePath4 = TEXTURE_DIR / "2k_moon.jpg"
 
 texture1 = Texture(texturePath1)
 texture2 = Texture(texturePath2)

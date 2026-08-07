@@ -26,12 +26,9 @@ from Elements.utils.Shortcuts import displayGUI_text
 from Elements.extensions.UV_Mapping.ObjectGenerator import UVObjectGenerator
 from Elements.extensions.UV_Mapping.Gui import UVGui
 from Elements.extensions.UV_Mapping import ObjectGenerator
-from build.lib.Elements.pyGLV.GL.Textures import Texture, get_texture_faces
+from Elements.pyGLV.GL.Textures import Texture, get_texture_faces
 from pathlib import Path
 import Elements.extensions.UV_Mapping as UV
-CURRENT_DIR = Path(__file__).resolve()
-UV_MAPPING_DIR = CURRENT_DIR.parent.parent  
-ASSETS_DIR = UV_MAPPING_DIR / "Assets"
 
 
 
@@ -219,7 +216,7 @@ model_terrain_axes = util.translate(0.0,-1.8,0.0)
 terrain_trans.trs = model_terrain_axes
 
 
-texture = Texture(str(ASSETS_DIR / "fur.jpg"))
+texture = Texture(str(TEXTURE_DIR / "fur.jpg"))
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 try:
     shaderDec_teapot.setUniformVariable(key='ImageTexture', value=texture, texture=True)
