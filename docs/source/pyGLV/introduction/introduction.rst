@@ -20,7 +20,7 @@ Here are some interesting features about this library:
 
 1. This library contains various examples of 3D scenes with the ECSS architecture. We advise you to run the examples and see how we can create the 3D apps from its fundamentals.
 
-2. There is build-in 3D mesh importer. Check the **example_6_import_objects.py**
+2. There is build-in 3D mesh importer. Check the **example_B7_import_objects.py**
 
 3. This library introduces the **Scene** class. A helper class that holds the reference to the 3D world and the render functionalities.
 

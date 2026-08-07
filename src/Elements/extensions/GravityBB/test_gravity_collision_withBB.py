@@ -28,7 +28,7 @@ from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 
 # GameObjectEntity/CubeSpawn used to live in this same package as example_gravity_collision_bb.py,
-# but that file has since moved to examples/4.Extended/ -- examples/ isn't part of the installed
+# but that file has since moved to examples/E.Extended/ -- examples/ isn't part of the installed
 # package, so it can't be imported from here. Inlined here (identical to the example's own copy)
 # rather than importing across that boundary.
 class GameObjectEntity(Entity):

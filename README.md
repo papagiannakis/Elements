@@ -91,9 +91,11 @@ Elements/
 │       │   └── tests/             # Unit tests for pyGLV
 │       └── utils/                 # General utility functions
 ├── examples/                      # Standalone example scripts
-│   ├── 1.Introductory/            # Basic examples for beginners
-│   ├── 2.Intermediate/            # Intermediate concepts (textures, cameras)
-│   ├── 3.Advanced/                # Advanced topics (USD, complex scenes)
+│   ├── A.Showcase/                # A single combined demo tying several techniques together
+│   ├── B.Introductory/            # Basic examples for beginners
+│   ├── C.Intermediate/            # Intermediate concepts (textures, cameras)
+│   ├── D.Advanced/                # Advanced topics (USD, complex scenes)
+│   └── E.Extended/                # Ungraded, self-contained demos and extension showcases
 ├── pyEEL/                         # Python Elements Educational Library (Learning Hub)
 │   └── notebooks/                 # Jupyter notebooks
 │       ├── CG/                    # Computer Graphics fundamentals

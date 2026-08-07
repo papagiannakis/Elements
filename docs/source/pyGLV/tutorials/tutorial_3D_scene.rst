@@ -1,7 +1,7 @@
 How to create a simple 3D scene
 =================================
 
-In this tutorial we will go throught the example **example_7_camera_system.py** where we will build a scene with two cubes and a camera.
+In this tutorial we will go throught the example **example_C1_camera_system.py** where we will build a scene with two cubes and a camera.
 
 The final result looks like this:
 

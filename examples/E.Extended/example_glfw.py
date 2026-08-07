@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import imgui
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
@@ -8,6 +9,7 @@ from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
+from Elements.pyGLV.GUI.Windows import GLFWWindow
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -24,13 +26,15 @@ from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
-"This example demonstrates the ability to apply image textures to geometry. \n\
+"This is the same example as example_C4_textures_with_lights.py, but running on GLFW instead of \n\
+SDL2 for its window/OpenGL context/input handling -- a duplicate to test the GLFW backend. \n\n\
+This example demonstrates the ability to apply image textures to geometry. \n\
 The scene is being lit using the Blinn-Phong algorithm. \n\n\
 To stop cube from rotating and  manipulate it via the Scenegraph GUI \n\
 simply set the want_to_rotate variable (in the code) to False. \n\n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
+various information about them. Hit ESC OR Close the window to quit."
 
 #Light
 Lposition = util.vec(5.0, 2.0, 2.0) #uniform lightpos
@@ -40,12 +44,12 @@ LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
 Lcolor = util.vec(1.0,1.0,1.0)
 Lintensity = 0.8
 #Material
-Mshininess = 0.4 
+Mshininess = 0.4
 Mcolor = util.vec(0.8, 0.0, 0.8)
 
 winWidth = 1200
 winHeight = 800
-scene = Scene()    
+scene = Scene()
 
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
@@ -55,8 +59,8 @@ eye = util.vec(1, 0.54, 1.0)
 target = util.vec(0.02, 0.14, 0.217)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
-# projMat = util.perspective(90.0, 1.33, 0.1, 100)  projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
+# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)
+# projMat = util.perspective(90.0, 1.33, 0.1, 100)  projMat = util.perspective(50.0, 1.0, 1.0, 10.0)
 
 
 
@@ -71,7 +75,7 @@ vertexData = np.array([
     [0.0, 0.0, 0.0, 1.0],
     [0.5, 1.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0]
-],dtype=np.float32) 
+],dtype=np.float32)
 colorVertexData = np.array([
     [1.0, 0.0, 0.0, 0.0],
     [0.0, 1.0, 0.0, 1.0],
@@ -86,7 +90,7 @@ vertexAxes = np.array([
     [0.0, 1.5, 0.0, 1.0],
     [0.0, 0.0, 0.0, 1.0],
     [0.0, 0.0, 1.5, 1.0]
-],dtype=np.float32) 
+],dtype=np.float32)
 colorAxes = np.array([
     [1.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
@@ -101,12 +105,12 @@ vertexCube = np.array([
     [-0.5, -0.5, 0.5, 1.0],
     [-0.5, 0.5, 0.5, 1.0],
     [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0], 
-    [-0.5, -0.5, -0.5, 1.0], 
-    [-0.5, 0.5, -0.5, 1.0], 
-    [0.5, 0.5, -0.5, 1.0], 
+    [0.5, -0.5, 0.5, 1.0],
+    [-0.5, -0.5, -0.5, 1.0],
+    [-0.5, 0.5, -0.5, 1.0],
+    [0.5, 0.5, -0.5, 1.0],
     [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32) 
+],dtype=np.float32)
 colorCube = np.array([
     [0.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
@@ -121,7 +125,7 @@ colorCube = np.array([
 #index arrays for above vertex Arrays
 index = np.array((0,1,2), np.uint32) #simple triangle
 indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B lines
-indexCube = np.array((1,0,3, 1,3,2, 
+indexCube = np.array((1,0,3, 1,3,2,
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
                   6,5,1, 6,1,2,
@@ -152,7 +156,7 @@ terrain = scene.world.createEntity(Entity(name="terrain"))
 scene.world.addEntityChild(rootEntity, terrain)
 terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
 terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
-terrain_mesh.vertex_attributes.append(vertexTerrain) 
+terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
@@ -164,7 +168,7 @@ axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.001, 0.0))) #util.identity()
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-axes_mesh.vertex_attributes.append(vertexAxes) 
+axes_mesh.vertex_attributes.append(vertexAxes)
 axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
 axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES)) # note the primitive change
@@ -178,7 +182,7 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_imp
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Let There Be Light", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator2)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Let There Be Light (GLFW)", openGLversion = 4, customImGUIdecorator = ImGUIecssDecorator2, windowClass = GLFWWindow)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
@@ -195,16 +199,16 @@ renderGLEventActuator = RenderGLStateSystem()
 
 eManager._subscribers['OnUpdateWireframe'] = gWindow
 eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
+eManager._subscribers['OnUpdateCamera'] = gWindow
 eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
-# projMat = util.perspective(90.0, 1.33, 0.1, 100)  
-projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
+# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)
+# projMat = util.perspective(90.0, 1.33, 0.1, 100)
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
@@ -223,12 +227,20 @@ want_to_rotate = True # set to False to stop cube from rotating and manipulate i
 while running:
     running = scene.render()
     displayGUI_text(example_description)
+
+    # Verifies which windowing backend is actually live: gWindow is whatever `windowClass=` in
+    # scene.init() resolved to (GLFWWindow here, SDL2Window in the original example) -- reading
+    # its own class name straight off the live object, not assuming it from this file's imports.
+    imgui.begin("Renderer Backend", True)
+    imgui.text(f"Window backend: {gWindow.getClassName()}")
+    imgui.end()
+
     scene.world.traverse_visit(transUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
     # mvp_cube = projMat @ view @ model_cube
 
     model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)
-    
+
     if want_to_rotate:
         rotate_y += rotation_speed
     else:
@@ -254,5 +266,5 @@ while running:
 
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
-    
+
 scene.shutdown()

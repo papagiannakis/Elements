@@ -13,7 +13,7 @@ So: build entities/meshes any time, but only bind actual images/cubemaps *after*
     between smooth/flat shading, as in Normals_USDimporter_BSP/example_cow.py.
 
   - Skybox: a big cube around the scene textured with a 6-image cube map, as in
-    examples/2.Intermediate/example_10_cube_mapping.py -- off by default, texture set swappable.
+    examples/C.Intermediate/example_C5_cube_mapping.py -- off by default, texture set swappable.
 
   - RefractionShowcase: a "glass" object (Snell's-law refraction of the skybox), as in
     Refraction/refraction_example_bunny.py -- refractive index and which model to use are both
@@ -286,7 +286,7 @@ class ObjGallery:
 # 2. Skybox
 # ================================================================================================
 
-#: SHADER_DIR / "StaticSkybox.vert"/".frag" (example_10_cube_mapping.py's skybox shader) always draws --
+#: SHADER_DIR / "StaticSkybox.vert"/".frag" (example_C5_cube_mapping.py's skybox shader) always draws --
 #: it has no "model" uniform at all (deliberately: a skybox always surrounds the camera,
 #: ignoring any transform), so there's no transform-based trick to hide it with. This is the
 #: same fragment shader plus one line so it can actually be turned off.
@@ -308,7 +308,7 @@ _SKYBOX_FRAG_TOGGLEABLE = """
 class Skybox:
     """
     A big cube around the whole scene, textured with a 6-image cube map (as in
-    examples/2.Intermediate/example_10_cube_mapping.py). Off by default (pass enabled=True to
+    examples/C.Intermediate/example_C5_cube_mapping.py). Off by default (pass enabled=True to
     start with it on); its texture set (a folder under TEXTURE_DIR/Skyboxes) is swappable at
     runtime and cached once loaded.
     """

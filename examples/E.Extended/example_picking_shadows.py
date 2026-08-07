@@ -8,7 +8,7 @@ Elements.extensions.Shadows.example_1_PointLightDemo), plus:
      Elements.extensions.Shapes.geometry_factory (create_solid_shape() below wraps its
      raw params-dict interface into a typical scale=/color=/**kwargs call).
   2. A textured cube (create_textured_cube_shape()), UV-mapped per face as in
-     examples/2.Intermediate/example_8b_more_textures.py.
+     examples/C.Intermediate/example_C3_more_textures.py.
   3. A "Shadow Settings" ImGui window -- Enable Shadows / Soft Shadows (PCF) / PCF Softness /
      Shadow Bias / Show Unfolded Map / View from Light -- ported from the "Shadow Settings"
      header of Elements.extensions.Shadows.example_1_PointLightDemo's control panel. It is
@@ -76,7 +76,7 @@ view = util.lookat(eye, target, up)
 
 projMat = util.perspective(50.0, width / height, 0.01, 100.0)
 
-# Single point light (as in examples/2.Intermediate/example_9_textures_with_lights.py), now also
+# Single point light (as in examples/C.Intermediate/example_C4_textures_with_lights.py), now also
 # driving real-time shadows via ShadowShader/ShadowMappingSystem.
 Lposition = util.vec(4.0, 8.0, 5.0)
 Lcolor = util.vec(1.0, 1.0, 1.0)
@@ -250,7 +250,7 @@ def create_solid_cone(entity_name, position, scale=1.0, color=(0.8, 0.8, 0.8), r
 def create_textured_cube_shape(entity_name, position, scale):
     """
     Spawn a single ShadowShader-lit cube with real per-face UV coordinates, as in
-    examples/2.Intermediate/example_8b_more_textures.py. This does NOT bind an actual image yet:
+    examples/C.Intermediate/example_C3_more_textures.py. This does NOT bind an actual image yet:
     Texture() itself issues GL calls (glGenTextures/glTexImage2D) immediately in its constructor,
     so it needs a live GL context -- unlike Shader/VertexArray's lazy .init(), which we can defer
     until after scene.init(). Call set_cube_texture() below once a context exists.

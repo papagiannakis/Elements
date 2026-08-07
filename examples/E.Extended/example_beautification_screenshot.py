@@ -1,4 +1,4 @@
-# Auto einai idio to "example_4_cube_axes_terrain.py" 
+# Auto einai idio to "example_B5_cube_axes_terrain.py" 
 # me to beautification kai tin dinatotita screenshot
 
 

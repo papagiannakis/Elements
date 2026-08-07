@@ -9,7 +9,7 @@ readable -- open that file only if you're curious how a given feature works unde
                               Normals_USDimporter_BSP/example_cow.py.
   View > Skybox...     (6) -- a cube-mapped sky around the scene, on by default, with a
                               swappable texture set, as in
-                              examples/2.Intermediate/example_10_cube_mapping.py.
+                              examples/C.Intermediate/example_C5_cube_mapping.py.
   View > Refraction... (7) -- a "glass" object (Bunny by default) that refracts the skybox
                               behind it, with a live refractive-index slider, as in
                               Refraction/refraction_example_bunny.py.

@@ -32,7 +32,8 @@ various information about them. Hit ESC OR Close the window to quit."
 Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
 Lambientstr = 0.3 #uniform ambientStr
-LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
+# the uniform viewPos is NOT a constant: the specular term depends on where the viewer is,
+# so it is read back from the camera every frame in the render loop (see gWindow._cameraEye)
 Lcolor = util.vec(1.0,1.0,1.0)
 Lintensity = 0.8
 #Material
@@ -222,20 +223,18 @@ view = util.lookat(eye, target, up)
 projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-
-model_terrain_axes = util.translate(0.0,0.0,0.0)
-model_cube = util.scale(1.0) @ util.translate(0.0,0.5,0.0)
+gWindow._cameraEye = eye # seed the world-space eye, so viewPos is correct before the first camera move
 
 
 
 while running:
     running = scene.render()
     displayGUI_text(example_description)
-    scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
     scene.world.traverse_visit(camUpdate, scene.world.root)
     view =  gWindow._myCamera # updates view via the imgui
-    # mvp_cube = projMat @ view @ model_cube
+    viewPos = gWindow._cameraEye # world-space camera position, follows the view matrix above
+
     mvp_cube = projMat @ view @ trans4.trs
     mvp_terrain = projMat @ view @ terrain_trans.trs
     mvp_axes = projMat @ view @ axes_trans.trs
@@ -244,17 +243,20 @@ while running:
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
 
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=model_cube,mat4=True)
+    # must be the very same model matrix modelViewProj is built from, otherwise the shader
+    # lights a world-space position/normal that does not match the geometry being drawn
+    shaderDec4.setUniformVariable(key='model',value=trans4.trs,mat4=True)
     shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
     shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
-    shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
+    shaderDec4.setUniformVariable(key='viewPos',value=viewPos,float3=True)
     shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
     shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
     shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
-
+    # render after the uniforms are set, so this frame draws with this frame's camera
+    scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
     
 scene.shutdown()

@@ -132,7 +132,7 @@ Run the examples
 
 Now let's run some Elements examples
 
-Navigate to the **pyGLV/examples** folder and click the **example_9_textures_with_lighting.py** example.
+Navigate to the **pyGLV/examples** folder and click the **example_C4_textures_with_lights.py** example.
 
 Then press the F5 button to run the example
 
