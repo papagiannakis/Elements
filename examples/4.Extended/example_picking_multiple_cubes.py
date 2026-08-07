@@ -10,15 +10,13 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
-import sdl2
 
 from Elements.extensions.picking_buffer import PickingBuffer as pb
 
 
-assignment_goals = (
-    "Picking demo with 10 cubes using colorful per-vertex shading.\n"
+example_description = (
+    "Picking demo with 10 cubes of alternating sizes and unique colors.\n"
     "Click a cube to print its entity name and picking id.\n"
-    "After picking a cube, use W/A/S/D to orbit the camera around it.\n"
 )
 
 width = 1280
@@ -26,6 +24,7 @@ height = 720
 
 scene = Scene()
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
+
 
 entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
 scene.world.addEntityChild(rootEntity, entityCam1)
@@ -115,14 +114,14 @@ def create_terrain():
     return terrainTrans, terrainShader
 
 
-def create_cube(entity_name, vertex_colors, trs):
+def create_cube(entity_name, color, trs):
     cubeNode = scene.world.createEntity(Entity(name=entity_name))
     scene.world.addEntityChild(rootEntity, cubeNode)
     cubeTrans = scene.world.addComponent(cubeNode, BasicTransform(name=f"{entity_name}_TRS", trs=trs))
     cubeMesh = scene.world.addComponent(cubeNode, RenderMesh(name=f"{entity_name}_Mesh"))
 
     vertexCubeArr, indexCubeArr = create_cube_geometry()
-    colorCubeArr = np.array(vertex_colors, dtype=np.float32)
+    colorCubeArr = np.tile(np.array([*color, 1.0], dtype=np.float32), (8, 1))
     cubeVertices, cubeIndices, cubeColors, cubeNormals = norm.generateSmoothNormalsMesh(
         vertexCubeArr, indexCubeArr, colorCubeArr
     )
@@ -141,145 +140,33 @@ def create_cube(entity_name, vertex_colors, trs):
     return cubeTrans, cubeShader
 
 
-def make_palette(*rgb_values):
-    return [[r, g, b, 1.0] for r, g, b in rgb_values]
-
-
-def get_orbit_target(cube_trans):
-    world = cube_trans.l2world
-    target_pos = np.array(world[:3, 3], dtype=np.float32)
-    half_height = 0.5 * np.linalg.norm(world[:3, 1])
-    target_pos[1] += half_height
-    return target_pos
-
-
-def orbit_state_from_eye(camera_eye, orbit_target):
-    offset = np.array(camera_eye, dtype=np.float32) - orbit_target
-    radius = max(0.1, np.linalg.norm(offset))
-    yaw = np.arctan2(offset[2], offset[0])
-    horizontal = np.linalg.norm(offset[[0, 2]])
-    pitch = np.arctan2(offset[1], horizontal)
-    return radius, yaw, pitch
-
-
-def orbit_eye_from_state(orbit_target, orbit_radius, orbit_yaw, orbit_pitch):
-    cos_pitch = np.cos(orbit_pitch)
-    return orbit_target + np.array([
-        orbit_radius * cos_pitch * np.cos(orbit_yaw),
-        orbit_radius * np.sin(orbit_pitch),
-        orbit_radius * cos_pitch * np.sin(orbit_yaw),
-    ], dtype=np.float32)
-
-
 terrainTrans, terrainShader = create_terrain()
 
 cube_specs = [
-    (
-        "Cube_01",
-        (-4.0, 0.0, -1.6),
-        0.45,
-        make_palette(
-            (0.98, 0.25, 0.22), (0.99, 0.60, 0.25), (0.98, 0.84, 0.28), (0.90, 0.20, 0.18),
-            (0.75, 0.16, 0.42), (0.47, 0.16, 0.66), (0.22, 0.46, 0.91), (0.14, 0.71, 0.83),
-        ),
-    ),
-    (
-        "Cube_02",
-        (-2.2, 0.0, -1.4),
-        0.95,
-        make_palette(
-            (0.22, 0.72, 0.90), (0.28, 0.88, 0.63), (0.87, 0.96, 0.33), (0.98, 0.69, 0.19),
-            (0.97, 0.40, 0.23), (0.79, 0.25, 0.52), (0.51, 0.28, 0.82), (0.24, 0.40, 0.89),
-        ),
-    ),
-    (
-        "Cube_03",
-        (-0.4, 0.0, -1.2),
-        0.40,
-        make_palette(
-            (0.96, 0.82, 0.18), (0.99, 0.92, 0.58), (0.84, 0.96, 0.33), (0.55, 0.86, 0.28),
-            (0.23, 0.73, 0.34), (0.15, 0.65, 0.67), (0.12, 0.50, 0.86), (0.42, 0.37, 0.85),
-        ),
-    ),
-    (
-        "Cube_04",
-        (1.4, 0.0, -1.5),
-        0.90,
-        make_palette(
-            (0.29, 0.77, 0.31), (0.67, 0.92, 0.34), (0.98, 0.91, 0.25), (0.98, 0.64, 0.16),
-            (0.93, 0.33, 0.21), (0.72, 0.23, 0.47), (0.46, 0.28, 0.82), (0.18, 0.51, 0.93),
-        ),
-    ),
-    (
-        "Cube_05",
-        (3.2, 0.0, -1.3),
-        0.42,
-        make_palette(
-            (0.14, 0.68, 0.72), (0.22, 0.82, 0.88), (0.53, 0.94, 0.97), (0.91, 0.97, 0.99),
-            (0.87, 0.83, 0.99), (0.70, 0.56, 0.94), (0.48, 0.33, 0.85), (0.22, 0.21, 0.56),
-        ),
-    ),
-    (
-        "Cube_06",
-        (-4.0, 0.0, 1.4),
-        0.88,
-        make_palette(
-            (0.19, 0.49, 0.97), (0.32, 0.66, 0.99), (0.35, 0.85, 0.92), (0.27, 0.83, 0.61),
-            (0.66, 0.92, 0.36), (0.97, 0.88, 0.22), (0.98, 0.55, 0.16), (0.95, 0.26, 0.19),
-        ),
-    ),
-    (
-        "Cube_07",
-        (-2.2, 0.0, 1.2),
-        0.38,
-        make_palette(
-            (0.46, 0.34, 0.83), (0.61, 0.47, 0.90), (0.79, 0.36, 0.84), (0.93, 0.34, 0.69),
-            (0.96, 0.47, 0.47), (0.99, 0.67, 0.24), (0.94, 0.86, 0.30), (0.63, 0.88, 0.35),
-        ),
-    ),
-    (
-        "Cube_08",
-        (-0.4, 0.0, 1.5),
-        0.92,
-        make_palette(
-            (0.78, 0.29, 0.69), (0.91, 0.46, 0.83), (0.99, 0.72, 0.90), (0.98, 0.93, 0.96),
-            (0.88, 0.97, 0.82), (0.56, 0.91, 0.63), (0.27, 0.77, 0.73), (0.17, 0.54, 0.86),
-        ),
-    ),
-    (
-        "Cube_09",
-        (1.4, 0.0, 1.3),
-        0.43,
-        make_palette(
-            (0.85, 0.43, 0.53), (0.96, 0.58, 0.45), (0.99, 0.80, 0.31), (0.94, 0.94, 0.43),
-            (0.67, 0.91, 0.38), (0.26, 0.78, 0.47), (0.16, 0.64, 0.75), (0.26, 0.42, 0.82),
-        ),
-    ),
-    (
-        "Cube_10",
-        (3.2, 0.0, 1.6),
-        0.98,
-        make_palette(
-            (0.25, 0.25, 0.25), (0.45, 0.45, 0.45), (0.66, 0.66, 0.66), (0.87, 0.87, 0.87),
-            (0.93, 0.61, 0.24), (0.72, 0.33, 0.18), (0.29, 0.51, 0.86), (0.21, 0.73, 0.54),
-        ),
-    ),
+    ("Cube_01", (-4.0, 0.0, -1.6), 0.45, (0.92, 0.25, 0.21)),
+    ("Cube_02", (-2.2, 0.0, -1.4), 0.95, (0.96, 0.55, 0.16)),
+    ("Cube_03", (-0.4, 0.0, -1.2), 0.40, (0.97, 0.84, 0.18)),
+    ("Cube_04", (1.4, 0.0, -1.5), 0.90, (0.36, 0.77, 0.29)),
+    ("Cube_05", (3.2, 0.0, -1.3), 0.42, (0.13, 0.69, 0.71)),
+    ("Cube_06", (-4.0, 0.0, 1.4), 0.88, (0.18, 0.49, 0.96)),
+    ("Cube_07", (-2.2, 0.0, 1.2), 0.38, (0.45, 0.33, 0.83)),
+    ("Cube_08", (-0.4, 0.0, 1.5), 0.92, (0.78, 0.29, 0.69)),
+    ("Cube_09", (1.4, 0.0, 1.3), 0.43, (0.85, 0.43, 0.53)),
+    ("Cube_10", (3.2, 0.0, 1.6), 0.98, (0.35, 0.35, 0.35)),
 ]
 
 cube_objects = []
-for name, position, scale, vertex_colors in cube_specs:
+for name, position, scale, color in cube_specs:
     cubeTrs = util.translate(*position) @ util.scale(scale, scale, scale)
-    cubeTrans, cubeShader = create_cube(name, vertex_colors, cubeTrs)
+    cubeTrans, cubeShader = create_cube(name, color, cubeTrs)
     cube_objects.append((name, cubeTrans, cubeShader))
-
-cube_lookup = {name: cubeTrans for name, cubeTrans, _ in cube_objects}
 
 
 scene.init(
     imgui=True,
     windowWidth=width,
     windowHeight=height,
-    windowTitle="Picking Buffer Multiple Colorful Cubes",
+    windowTitle="Picking Buffer Multiple Cubes",
     openGLversion=4,
 )
 
@@ -299,14 +186,6 @@ gWindow._myCamera = view
 pickingSystem.set_camera_matrices(projMat, view)
 pickingSystem.init()
 
-camera_eye = np.array(eye, dtype=np.float32)
-selected_cube_name = None
-selected_cube_trans = None
-orbit_target = np.array(target, dtype=np.float32)
-orbit_radius, orbit_yaw, orbit_pitch = orbit_state_from_eye(camera_eye, orbit_target)
-orbit_speed = 0.025
-orbit_pitch_limit = 1.25
-
 scene.world.print()
 
 running = True
@@ -314,33 +193,9 @@ while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate, scene.world.root)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    displayGUI_text(assignment_goals)
-
-    key_states = sdl2.SDL_GetKeyboardState(None)
-    if selected_cube_trans is not None:
-        orbit_target = get_orbit_target(selected_cube_trans)
-        orbit_changed = False
-        if key_states[sdl2.SDL_SCANCODE_A]:
-            orbit_yaw -= orbit_speed
-            orbit_changed = True
-        if key_states[sdl2.SDL_SCANCODE_D]:
-            orbit_yaw += orbit_speed
-            orbit_changed = True
-        if key_states[sdl2.SDL_SCANCODE_W]:
-            orbit_pitch += orbit_speed
-            orbit_changed = True
-        if key_states[sdl2.SDL_SCANCODE_S]:
-            orbit_pitch -= orbit_speed
-            orbit_changed = True
-
-        if orbit_changed:
-            orbit_pitch = np.clip(orbit_pitch, -orbit_pitch_limit, orbit_pitch_limit)
-            camera_eye = orbit_eye_from_state(orbit_target, orbit_radius, orbit_yaw, orbit_pitch)
-            view = util.lookat(camera_eye, orbit_target, up)
-            gWindow._myCamera = view
+    displayGUI_text(example_description)
 
     view = gWindow._myCamera
-    LviewPos = camera_eye
     window_height = scene.renderWindow._windowHeight
 
     click_coords = pickingSystem.check_for_click()
@@ -356,12 +211,6 @@ while running:
             print(f"Picked id: {picked_id} -> no entity")
         else:
             print(f"Picked id: {picked_id} -> {entity.name}")
-            if entity.name in cube_lookup:
-                selected_cube_name = entity.name
-                selected_cube_trans = cube_lookup[selected_cube_name]
-                orbit_target = get_orbit_target(selected_cube_trans)
-                orbit_radius, orbit_yaw, orbit_pitch = orbit_state_from_eye(camera_eye, orbit_target)
-                print(f"Orbit target: {selected_cube_name}")
 
     for _, cubeTrans, cubeShader in cube_objects:
         cubeShader.setUniformVariable(key="modelViewProj", value=projMat @ view @ cubeTrans.l2world, mat4=True)

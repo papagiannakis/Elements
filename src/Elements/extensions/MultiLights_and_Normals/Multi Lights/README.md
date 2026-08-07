@@ -1,68 +1,68 @@
 Multiple Lights 
-by ΒΙΣΚΑΔΟΥΡΑΚΗΣ ΕΜΜΑΝΟΥΗΛ (csd5368@csd.uoc.gr), ΣΑΒΒΙΔΗΣ ΑΛΕΞΑΝΔΡΟΣ (csd5002@csd.uoc.gr)
+by VISKADOURAKIS EMMANOUIL (csd5368@csd.uoc.gr), SAVVIDIS ALEXANDROS (csd5002@csd.uoc.gr)
 
-Το module Multi Lights περιέχει:
+The Multi Lights module contains:
 
-mul_lights_3cubes_flat.py
-mul_lights_3cubes_smooth
-mul_lights_spheres.py
+example_multi_lights_3cubes_flat.py
+example_multi_lights_3cubes_smooth.py
+example_multi_lights_spheres.py
 
-Τα παραδείγματα αυτά δείχνουν Phong φωτισμό με πολλαπλά φώτα, και τη διαφορά flat vs smooth normal shading σε διαφορετικά αντικείμενα.
-Χρησιμοποιούν πολλαπλά φώτα (Point/Directional/Spot) και μπορούν να ελεγχθούν δυναμικά από ImGUI (π.χ. add/remove lights, αλλαγή light intensity/color/position, animation). 
+These examples show Phong lighting with multiple lights, and the difference between flat vs smooth normal shading on different objects.
+They use multiple lights (Point/Directional/Spot) that can be controlled dynamically from ImGUI (e.g. add/remove lights, change light intensity/color/position, animation). 
 
 
-Οι shaders χωρίζονται σε:
+The shaders are split into:
 
-solid/per-vertex color shaders: (PHONG_MULTI_LIGHTS) και 
+solid/per-vertex color shaders: (PHONG_MULTI_LIGHTS), and 
 
 texture shaders: (TEXTURE_PHONG_MULTI_LIGHTS)
 
 
 
-α) mul_lights_3cubes_flat.py: 3 κύβοι με flat normal shading, πολλαπλά lights, ImGUI control.
+a) example_multi_lights_3cubes_flat.py: 3 cubes with flat normal shading, multiple lights, ImGUI control.
 
-3 κύβοι με ίδια γεωμετρία, αλλά διαφορετικό base color:
+3 cubes with the same geometry, but different base color:
 
-Κύβος 1: Per-vertex colors (χρώμα ανά κορυφή)
+Cube 1: Per-vertex colors (color per vertex)
 
-Κύβος 2: Solid material color (ένα σταθερό material χρώμα)
+Cube 2: Solid material color (a single fixed material color)
 
-Κύβος 3: Textured (albedo/texture)
+Cube 3: Textured (albedo/texture)
 
-Τα normals είναι flat, κάθε face έχει “σκληρό” φωτισμό χωρίς ομαλή μετάβαση μεταξύ faces.
+The normals are flat, so each face has "hard" lighting with no smooth transition between faces.
 
 Shaders:
-Για per-vertex και solid cube: PHONG_MULTI_LIGHTS.vert/.frag
+For the per-vertex and solid cube: PHONG_MULTI_LIGHTS.vert/.frag
 
-Υποστηρίζει είτε vertex-color είτε solid-color (με uniform is_solid_color και ένα materialColor). 
+Supports either vertex-color or solid-color (via the uniform is_solid_color and a materialColor). 
 
-Για textured cube: TEXTURE_PHONG_MULTI_LIGHTS.vert/.frag
-
-
-
-β) mul_lights_3cubes_smooth.py: 3 κύβοι με smooth normal shading, πολλαπλά lights, ImGUI control.
-
-Ίδια σκηνή με το α): 3 κύβοι (vertex-color, solid color, textured)
-
-Η διαφορά είναι ότι οι normals είναι smooth (averaged per shared vertex position), άρα το specular/diffuse “τρέχει” ομαλά πάνω στο object.
-
-Σε κύβο, η χρήση smooth normals σημαίνει “πιο σφαιρική” συμπεριφορά φωτισμού (ΜΗ ΡΕΑΛΙΣΤΙΚΗ για cubes) οπότε και οι ακμές του χάνονται και το σχήμα καμπυλώνει.
-
-Shaders: Τα ίδια με το α)
+For the textured cube: TEXTURE_PHONG_MULTI_LIGHTS.vert/.frag
 
 
 
+b) example_multi_lights_3cubes_smooth.py: 3 cubes with smooth normal shading, multiple lights, ImGUI control.
 
-γ) mul_lights_spheres.py: 2 σφαίρες solid color, μία flat και μία smooth, πολλαπλά lights, ImGUI control.
+Same scene as a): 3 cubes (vertex-color, solid color, textured)
 
-2 σφαίρες με solid material color όπου η μία εμφανίζεται με flat shading και η άλλη με smooth shading.
+The difference is that the normals are smooth (averaged per shared vertex position), so the specular/diffuse lighting runs smoothly across the object.
 
-Επειδή η σφαίρα θέλει smooth normals για να φαίνεται σωστά, εδώ η διαφορά γίνεται πιο εμφανής:
+On a cube, using smooth normals gives a "more spherical" lighting behavior (NOT REALISTIC for cubes), so the edges are lost and the shape appears to curve.
+
+Shaders: The same as a)
+
+
+
+
+c) example_multi_lights_spheres.py: 2 solid-color spheres, one flat and one smooth, multiple lights, ImGUI control.
+
+2 spheres with solid material color, where one is rendered with flat shading and the other with smooth shading.
+
+Since a sphere needs smooth normals to look correct, here the difference becomes more apparent:
 
 flat: faceted/low-poly look
 
-smooth: σωστό continuous highlight
+smooth: correct continuous highlight
 
 Shaders:
 
-Χρησιμοποιεί τους PHONG_MULTI_LIGHTS.vert/.frag  για material-based χρώμα (με is_solid_color = 1 και ένα materialColor).
+Uses PHONG_MULTI_LIGHTS.vert/.frag for material-based color (with is_solid_color = 1 and a materialColor).

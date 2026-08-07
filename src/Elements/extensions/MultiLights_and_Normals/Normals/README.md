@@ -1,23 +1,23 @@
-Normal Mapping σε Textured Cube, Flat vs Smooth Normals
-by ΒΙΣΚΑΔΟΥΡΑΚΗΣ ΕΜΜΑΝΟΥΗΛ (csd5368@csd.uoc.gr), ΣΑΒΒΙΔΗΣ ΑΛΕΞΑΝΔΡΟΣ (csd5002@csd.uoc.gr)
+Normal Mapping on a Textured Cube, Flat vs Smooth Normals
+by VISKADOURAKIS EMMANOUIL (csd5368@csd.uoc.gr), SAVVIDIS ALEXANDROS (csd5002@csd.uoc.gr)
 
-Το module Normals περιέχει:
+The Normals module contains:
 
-NormalsMap_flat.py: flat normals ανά face (hard edges)
-NormalsMap_smooth.py: smooth normals (averaging σε shared positions)
+example_normals_map_flat.py: flat normals per face (hard edges)
+example_normals_map_smooth.py: smooth normals (averaged over shared positions)
 
-Τα παραδείγματα αυτά δείχνουν τον ίδιο textured κύβο (albedo + normal map), αλλά με διαφορετικό τρόπο υπολογισμού normals: flat vs smooth. 
-Και στα δύο παραδείγματα ο φωτισμός είναι Phong με πολλαπλά φώτα και υπάρχει ImGUI panel για έλεγχο normal mapping/albedo/debug normals.
+These examples show the same textured cube (albedo + normal map), but with a different way of computing normals: flat vs smooth.
+In both examples the lighting is Phong with multiple lights, and there is an ImGUI panel to control normal mapping/albedo/debug normals.
 
-Και τα δύο παραδείγματα έχουν:
+Both examples have:
 
-Κύβο με 24 vertices (4 ανά face) ώστε να έχει σωστά UVs ανά face.
+A cube with 24 vertices (4 per face) so that each face has correct UVs.
 
-Normal Maps calculations όπου υπολογίζονται τα tangents/bitangents από τρίγωνα + UVs, με handedness (tangent.w) και ορθοκανονικό TBN στον vertex shader.
+Normal map calculations where tangents/bitangents are computed from triangles + UVs, with handedness (tangent.w) and an orthonormal TBN in the vertex shader.
 
-Textures για albedo και normal map.
+Textures for albedo and normal map.
 
-Shaders (ίδιοι και για τα δύο):
+Shaders (the same for both):
 
 PHONG_NORMALS_v2.vert 
 

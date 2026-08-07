@@ -1,15 +1,14 @@
 
-
 '''
-author : Kostis Lympakis (kostis1101.github.io)
+author: Kostis Lymperakis (kostis1101.github.io)
 
-This example showcases the MarchingCubes class.
-This class generated implicit surfaces from a mathematical
-expression. The expression is given in terms of x y z in
-form of a string (all variables must be lowercase). There
-are a number of build in functions one can use in the expression
-(see README for more information).
+This example showcases the RealFunction3D class.
+One can dynamically change the function by inputing an expression
+in terms of x and y in the corrisponding GUI input field.
+Once changed, the `update_surface` method with be called and the
+surface will be updated according to the new function.
 '''
+
 
 
 from __future__         import annotations
@@ -44,25 +43,22 @@ from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.ImplicitSurface.marching_cubes import MarchingCubes, RealFunction3D, Surface3D_VERT, Surface3D_FRAG
 
+
 import time
 
-expression = "x**2 + y**2 + x*y*z - 1"
-''' Other interesting expressions:
-x**2 + y**2 - z**2 * (1 - z)
-x**2 + y**2 + z**2 + (x**2 + y**2) * (x**2 + z**2) * (y**2 + z**2) - 30
-x**2 / 4 + y**2 / 4 - 0.025 - (x**2 + y**2 + z**2)**2 / 16
-x**2 * z**2 + z**4 - y**2 - z**3
-x**2 + y**2 + y**4 + z**3 - x**3 - z**4
-x**2 + z**2 - (log(abs(y + 3.2)))**2 - 0.02
-'''
+example_description = \
+"This example showcases the RealFunction3D class, which plots the surface of a \n\
+real-valued function f(x, y) in 3D. You may type a new expression in terms of \n\
+x and y in the GUI input field to dynamically regenerate the surface, calling \n\
+the `update_surface` method, and tune its bounding box, resolution, scale and \n\
+colors. Hit ESC OR Close the window to quit."
 
+expression = "sin(x + cos(y * 3) * 0.2) + sqrt(y**2 + 1) - 1"
 changed = False
-
 minv = np.array([-5, -5, -5])
-maxv = -minv
+maxv = np.array([5, 5, 5])
 res = [100, 100, 100]
-
-scale = 1
+scale = .7
 last_must_save = False
 
 inside_color = np.array([1, 0.67, 0.63])
@@ -81,8 +77,8 @@ class GameObjectEntity(Entity):
         # self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Surface3D_VERT, fragment_source=Surface3D_FRAG));
         self.vArray         = VertexArray();
-        self.surface        = MarchingCubes(self.vArray);
-        # self.surface        = RealFunction3D(self.vArray);
+        # self.surface        = MarchingCubes(self.vArray);
+        self.surface        = RealFunction3D(self.vArray);
         # Add components to entity
         scene = Scene();
         scene.world.createEntity(self);
@@ -136,7 +132,7 @@ def displayGUI(obj, m: MarchingCubes):
 
     imgui.set_item_default_focus()
     # imgui.text("How many commands have you typed: " + str(n))
-    if m_changed or min_changed or max_changed or res_changed:
+    if m_changed or min_changed or max_changed or res_changed: # update surface
         m.update_surface(expression, minv, maxv, res)
     if scale_chaned:
         obj.trans.trs = util.scale(scale, scale, scale)
@@ -206,9 +202,8 @@ def main(imguiFlag = False):
     gl.glDepthFunc(gl.GL_LESS);
     scene.world.traverse_visit(initUpdate, rootEntity)
 
-    # wineglass
+    # generate funtion surface
     surf.surface.update_surface(expression, minv, maxv, res)
-
 
     ############################################
     # Instantiate all Event-related key objects
@@ -244,11 +239,6 @@ def main(imguiFlag = False):
     
     while running:
 
-
-        # if time.time() - start > 1 / 60:
-        #     surf.surface.update_surface(f"0.5 * sin(cos(x) + {t}) - 0.5 * cos(sin(y) - {t})", [-5, -5, -5], [5, 5, 5], [70, 70, 70])
-            # surf.surface.update_surface(f"x**2 + 2 * y**2 + 1.3 * z**2 - {(sin(t) + 1.1) * 2}", [-5, -5, -5], [5, 5, 5], [100, 100, 100], normals=True)
-
         scene.world.traverse_visit(transUpdate, scene.world.root) 
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
@@ -265,6 +255,7 @@ def main(imguiFlag = False):
 
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
+        displayGUI_text(example_description)
         displayGUI(surf, surf.surface)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)

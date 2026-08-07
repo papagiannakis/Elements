@@ -1,5 +1,5 @@
-# complete_billboard_example.py Full example with billboard labels
-#### ΔΟΞΑΣΕΙ ΛΕΙΤΟΥΡΓΕΙ <3 <3 <3 <3  #####
+# example_billboard_labels_shapes.py: billboard labels on multiple shapes (two cubes, a sphere)
+
 import os, time
 import numpy as np
 import OpenGL.GL as gl
@@ -11,9 +11,16 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
+from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.Captions_Screenshot.billboard_label_component import create_billboard_label, BillboardLabelSystem
-#functions apo preperation gia live askisi 
+example_description = \
+"This example shows billboard labels attached to three shapes: a red cube, \n\
+a green cube and a blue sphere. Each label is a semi-transparent quad that \n\
+always faces the camera (billboarding), rendered just above its parent shape. \n\
+The camera automatically orbits around the scene while bobbing up and down. \n\
+Hit ESC OR Close the window to quit."
+#functions apo preperation gia live askisi
 def make_cube(size=1.0):
     s = size * 0.5
     positions = np.array([
@@ -187,6 +194,7 @@ camera_angle = 0.0
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     frame_count += 1
     t = time.monotonic() - t0
     camera_angle = t * 0.3

@@ -29,6 +29,7 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import TEXTURE_DIR
+from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 from OpenGL.GL import GL_LINES
 
@@ -151,6 +152,7 @@ class TestScene(unittest.TestCase):
 
         message = "This is a Scene containing a cube with a texture. \nCamera movement is possible via the mouse or the GUI. \nHit ESC or close the window to exit."
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
             displayGUI_text(message)

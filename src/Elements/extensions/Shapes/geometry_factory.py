@@ -2,7 +2,7 @@
 import sys
 from pathlib import Path
 
-_repo_root = str(Path(__file__).resolve().parent.parent.parent.parent.parent)
+_repo_root = str(Path(__file__).resolve().parent.parent.parent.parent)
 if _repo_root not in sys.path:
     sys.path.insert(0, _repo_root)
 
@@ -453,6 +453,53 @@ def create_sphere(params):
 
     return vertices, indices, colors
 
+
+# ---------------------
+# Torus
+# ---------------------
+def create_torus(params):
+    major_segments = params.get("major_segments", 30)
+    minor_segments = params.get("minor_segments", 20)
+    scale = params.get("scale", [1.0, 1.0, 1.0])
+    color = params.get("color", [0.8, 0.0, 0.8])
+
+    major_radius = params.get("radius", 0.5) * scale[0]
+    minor_radius = params.get("tube_radius", params.get("radius", 0.5) * 0.35) * scale[0]
+
+    vertices = []
+    for i in range(major_segments):
+        theta = 2 * np.pi * i / major_segments
+        cos_theta, sin_theta = np.cos(theta), np.sin(theta)
+        for j in range(minor_segments):
+            phi = 2 * np.pi * j / minor_segments
+            cos_phi, sin_phi = np.cos(phi), np.sin(phi)
+
+            x = (major_radius + minor_radius * cos_phi) * cos_theta
+            y = minor_radius * sin_phi
+            z = (major_radius + minor_radius * cos_phi) * sin_theta
+            vertices.append([x, y, z, 1.0])
+
+    def ring_index(i, j):
+        return (i % major_segments) * minor_segments + (j % minor_segments)
+
+    indices = []
+    for i in range(major_segments):
+        for j in range(minor_segments):
+            a = ring_index(i, j)
+            b = ring_index(i, j + 1)
+            c = ring_index(i + 1, j)
+            d = ring_index(i + 1, j + 1)
+
+            indices += [a, b, c]
+            indices += [c, b, d]
+
+    vertices = np.array(vertices, dtype=np.float32)
+    indices = np.array(indices, dtype=np.uint32)
+    colors = make_color_array(color, len(vertices))
+
+    return vertices, indices, colors
+
+
 def create_geometry(shape_type, params):
     if shape_type == "cube":
         return create_cube(params)
@@ -470,6 +517,8 @@ def create_geometry(shape_type, params):
         return create_cone(params)
     elif shape_type == "sphere":
         return create_sphere(params)
+    elif shape_type == "torus":
+        return create_torus(params)
     elif shape_type == "textured_cube":
         return create_textured_cube()
     else:

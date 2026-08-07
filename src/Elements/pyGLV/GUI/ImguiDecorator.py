@@ -1,4 +1,4 @@
-
+import numpy as np
 import imgui
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator, SDL2Window
@@ -355,7 +355,10 @@ class ImGUIDecorator(RenderDecorator):
         # simple slider for eye - IMPORTANT PART HERE
         self._changed, self._eye = imgui.drag_float3( "Eye", *self._eye, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
         if self._changed:
+            self.wrapeeWindow._cameraEye = np.array(self._eye, dtype=np.float32)
+            self.wrapeeWindow._cameraTarget = np.array(self._target, dtype=np.float32)
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            self.wrapeeWindow._myCamera = self._updateCamera.value
             print ("NEW CAMERA VALUE", self._updateCamera.value)
             if self._wrapeeWindow.eventManager is not None:
                     self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
@@ -365,7 +368,10 @@ class ImGUIDecorator(RenderDecorator):
         # simple slider for target
         self._changed, self._target = imgui.drag_float3( "Target", *self._target, change_speed = 0.01, min_value=-10, max_value=10,format="%.3f")
         if self._changed:
+            self.wrapeeWindow._cameraEye = np.array(self._eye, dtype=np.float32)
+            self.wrapeeWindow._cameraTarget = np.array(self._target, dtype=np.float32)
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            self.wrapeeWindow._myCamera = self._updateCamera.value
             print ("NEW CAMERA VALUE", self._updateCamera.value)
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
@@ -374,7 +380,10 @@ class ImGUIDecorator(RenderDecorator):
         # simple slider for up
         self._changed, self._up = imgui.drag_float3( "Up", *self._up, change_speed = 0.01 ,min_value=-5, max_value=5,format="%.3f")
         if self._changed:
+            self.wrapeeWindow._cameraEye = np.array(self._eye, dtype=np.float32)
+            self.wrapeeWindow._cameraTarget = np.array(self._target, dtype=np.float32)
             self._updateCamera.value = util.lookat(util.vec(self._eye), util.vec(self._target), util.vec(self._up))
+            self.wrapeeWindow._myCamera = self._updateCamera.value
             print ("NEW CAMERA VALUE", self._updateCamera.value)
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)

@@ -9,7 +9,7 @@ from typing import Optional
 
 import numpy as np
 
-from Elements.extensions.textToScene.src.geometry_factory import build_render_mesh, create_textured_cube, create_textured_mesh
+from Elements.extensions.Shapes.geometry_factory import build_render_mesh, create_textured_cube, create_textured_mesh
 
 _SRC_DIR       = Path(os.path.abspath(os.path.dirname(__file__)))
 _EXTENSION_DIR = _SRC_DIR.parent

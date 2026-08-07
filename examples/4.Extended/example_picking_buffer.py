@@ -13,7 +13,7 @@ from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.extensions.picking_buffer import PickingBuffer as pb
 
-assignment_goals = \
+example_description = \
 "Simple scene containing cube and terrain to test PickingSystem \n" \
 "Clicked entity information is printed in console \n" \
 
@@ -205,7 +205,7 @@ while running:
     running = scene.render()
     scene.world.traverse_visit(transUpdate,  scene.world.root)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    displayGUI_text(assignment_goals)
+    displayGUI_text(example_description)
     view = gWindow._myCamera
     height = scene.renderWindow._windowHeight
     width = scene.renderWindow._windowWidth

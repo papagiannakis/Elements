@@ -8,12 +8,20 @@ from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.utils.terrain import generateTerrain
+from Elements.utils.Shortcuts import displayGUI_text
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
 
-from Elements.extensions.plane_fitting.planefitting_base import PlaneFitting
+from Elements.extensions.bezier.bezier_base import BezierCurve
+
+example_description = \
+"This example demonstrates the Elements.extensions.bezier module: an \n\
+interactive Bezier curve rendered over a terrain and colored axes. \n\
+The BezierCurve object drives its own ImGUI panel where you can add or remove \n\
+control nodes and edit their X/Y/Z coordinates to reshape the curve live. \n\
+You may move the camera using the mouse or the GUI. Hit ESC OR Close the window to quit."
 
 scene = Scene()
 
@@ -101,18 +109,18 @@ axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
     Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
 all_shaders.append(axes_shader)
 
-# entity for plane fitting
-planefitting_entity = scene.world.createEntity(Entity(name="planefitting"))
-scene.world.addEntityChild(rootEntity, planefitting_entity)
+# entity for bezier curve rendering
+bezier_entity = scene.world.createEntity(Entity(name="bezier"))
+scene.world.addEntityChild(rootEntity, bezier_entity)
 
-# initialize plane fitting object
-plane_fitting = PlaneFitting(planefitting_entity, scene, rootEntity, all_shaders, initUpdate)
+# initialize bezier curve object
+bezier_curve = BezierCurve(bezier_entity, scene, rootEntity, all_shaders, initUpdate)
 
 
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth=1024, windowHeight=768, windowTitle="Elements: Planefitting",
+scene.init(imgui=True, windowWidth=1024, windowHeight=768, windowTitle="Elements: Bezier Curve Rendering",
            openGLversion=4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
@@ -144,13 +152,14 @@ model_terrain_axes = terrain.getChild(0).trs
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     view = gWindow._myCamera  # updates view via the imgui
 
     mvp_terrain_axes = projMat @ view @ model_terrain_axes
 
-    # trigger actual plane fitting and gui
-    plane_fitting.render_gui_and_plane()
+    # trigger actual bezier curve rendering and gui
+    bezier_curve.render_gui_and_curve()
 
     # set uniform variables for all shaders
     for shader in all_shaders:

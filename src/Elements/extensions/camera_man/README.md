@@ -9,7 +9,7 @@ This project implements a dynamic, interactive camera system within a 3D environ
 
 ## Project Structure
 
-### 1. `cameraman_example.py` 
+### 1. `example_cameraman.py` 
 This is the main entry point of the application. It is responsible for setting up the 3D world and the rendering pipeline.
 
 * **Scene Graph Initialization:** Sets up the `pyECSS` Scene and creates the entity hierarchy (`Root` -> `Sphere`).

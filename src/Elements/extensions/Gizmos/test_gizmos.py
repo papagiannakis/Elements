@@ -17,6 +17,7 @@ from Elements.pyGLV.GUI.ImguiDecorator import ImGUIDecorator
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.extensions.Gizmos.Gizmos import Gizmos
+from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 from OpenGL.GL import GL_LINES
 
@@ -233,9 +234,10 @@ move the cursor to see the result
 
         self.scene.world.traverse_visit(self.initUpdate,self.scene.world.root)
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
-            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
+            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             displayGUI_text(self.emptymsg)
             gizmos.update_ray_start()
@@ -308,9 +310,10 @@ move the cursor to see the result
         shaderDec4_pink.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
         shaderDec4_pink.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
-            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
+            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             displayGUI_text(self.singlemsg)
             view =  gWindow._myCamera
@@ -416,9 +419,10 @@ move the cursor to see the result
         shaderDec4_yellow.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
         shaderDec4_yellow.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
-            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root) 
+            self.scene.world.traverse_visit(self.transUpdate, self.scene.world.root)
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)
             displayGUI_text(self.multiplemsg)
             view =  gWindow._myCamera

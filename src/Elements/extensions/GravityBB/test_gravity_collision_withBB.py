@@ -6,24 +6,112 @@ import Elements.pyECSS.math_utilities as util
 import random as rand
 from Elements.pyECSS.System import  TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyECSS.Event import Event
 
 from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
+from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
+from Elements.utils.normals import Convert
 
 from Elements.extensions.GravityBB.AABoundingBox import AABoundingBox
 from Elements.extensions.GravityBB.GravityCollisonSystem import GravityCollisionSystem
-from Elements.extensions.GravityBB.example_GravityCollisionWithBB import GameObjectEntity
-from Elements.extensions.GravityBB.example_GravityCollisionWithBB import CubeSpawn
 from Elements.extensions.GravityBB.floor import generate_floor_with_bb
 from Elements.utils.Shortcuts import displayGUI_text
 
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.definitions import TEXTURE_DIR
+from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
+
+
+# GameObjectEntity/CubeSpawn used to live in this same package as example_gravity_collision_bb.py,
+# but that file has since moved to examples/4.Extended/ -- examples/ isn't part of the installed
+# package, so it can't be imported from here. Inlined here (identical to the example's own copy)
+# rather than importing across that boundary.
+class GameObjectEntity(Entity):
+    def __init__(self, name=None, type=None, id=None) -> None:
+        super().__init__(name, type, id);
+
+        # Gameobject basic properties
+        self._color          = [1, 0.5, 0.2, 1.0]; # this will be used as a uniform var
+        # Create basic components of a primitive object
+        self.trans          = BasicTransform(name="trans", trs=util.identity());
+        self.mesh           = RenderMesh(name="mesh");
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG));
+        self.vArray         = VertexArray();
+        # Add components to entity
+        scene = Scene();
+        scene.world.createEntity(self);
+        scene.world.addComponent(self, self.trans);
+        scene.world.addComponent(self, self.mesh);
+        scene.world.addComponent(self, self.shaderDec);
+        scene.world.addComponent(self, self.vArray);
+
+    @property
+    def color(self):
+        return self._color;
+    @color.setter
+    def color(self, colorArray):
+        self._color = colorArray;
+
+    def drawSelfGui(self, imgui):
+        changed, value = imgui.color_edit3("Color", self.color[0], self.color[1], self.color[2]);
+        self.color = [value[0], value[1], value[2], 1.0];
+
+    def SetVertexAttributes(self, vertex, color, index, normals = None):
+        self.mesh.vertex_attributes.append(vertex);
+        self.mesh.vertex_attributes.append(color);
+        if normals is not None:
+            self.mesh.vertex_attributes.append(normals);
+        self.mesh.vertex_index.append(index);
+
+
+def CubeSpawn(cubename = "Cube"):
+    cube = GameObjectEntity(cubename);
+    vertices = [
+        [-0.5, -0.5, 0.5, 1.0],
+        [-0.5, 0.5, 0.5, 1.0],
+        [0.5, 0.5, 0.5, 1.0],
+        [0.5, -0.5, 0.5, 1.0],
+        [-0.5, -0.5, -0.5, 1.0],
+        [-0.5, 0.5, -0.5, 1.0],
+        [0.5, 0.5, -0.5, 1.0],
+        [0.5, -0.5, -0.5, 1.0]
+    ];
+
+    color = [rand.uniform(0,1), rand.uniform(0,1), rand.uniform(0,1), 1.0]
+    colors = [
+        color,
+        color,
+        color,
+        color,
+        color,
+        color,
+        color,
+        color
+    ]
+
+    #index arrays for above vertex Arrays
+    indices = np.array(
+        (
+            1,0,3, 1,3,2,
+            2,3,7, 2,7,6,
+            3,0,4, 3,4,7,
+            6,5,1, 6,1,2,
+            4,5,6, 4,6,7,
+            5,4,0, 5,0,1
+        ),
+        dtype=np.uint32
+    ) #rhombus out of two triangles
+
+    vertices, colors, indices, normals = Convert(vertices, colors, indices, produceNormals=True);
+    cube.SetVertexAttributes(vertices, colors, indices, normals);
+
+    return cube;
+
 
 class TestMainFunction(unittest.TestCase):
     def test_gravity_collision_on_floor_with_cubes(self):
@@ -147,7 +235,8 @@ various information about them. Hit ESC OR Close the window to quit."
 
         # Add RenderWindow to the EventManager publishers
         eManager._publishers[updateBackground.name] = gGUI
-        
+
+        auto_quit_after()
         while running:
             running = scene.render()
             scene.world.traverse_visit(renderUpdate, scene.world.root)

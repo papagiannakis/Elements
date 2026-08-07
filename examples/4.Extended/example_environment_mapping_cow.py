@@ -17,6 +17,12 @@ from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import MODEL_DIR
 from Elements.extensions.environment_mapping import EnvironmentMapping
 
+example_description = \
+"Elements Environment Mapping: Cow Model floating inside a field. \n\
+A cubemap skybox surrounds a ground plane and the Newell cow model, which is \n\
+rendered with a reflective/tinted EnvironmentMapping shader that samples the \n\
+surrounding cubemap based on the view direction and surface normals. \n\
+You may move the camera using the mouse or the GUI."
 
 WIN_WIDTH, WIN_HEIGHT = 1200, 800
 ENV_MAP_DIR = Path(__file__).parent
@@ -137,7 +143,7 @@ projMat = util.perspective(50.0, WIN_WIDTH/WIN_HEIGHT, 0.01, 100.0)
 running = True
 while running:
     running = scene.render()
-    displayGUI_text("Elements Environment Mapping: Cow Model floating inside a field.")
+    displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     view = scene.renderWindow._myCamera
     camera_pos = util.inverse(view)[:3, 3]

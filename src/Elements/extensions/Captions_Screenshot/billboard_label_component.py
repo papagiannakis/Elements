@@ -1,5 +1,5 @@
 # billboard_label_component.py - Reusable Billboard Label Component System
-# final final final 
+
 import os
 import tempfile
 import numpy as np

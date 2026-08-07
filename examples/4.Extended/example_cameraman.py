@@ -11,6 +11,14 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.definitions import TEXTURE_DIR
 import Elements.extensions.camera_man.cameraman_logic as cam
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This example demonstrates a virtual cameraman flying around a textured \n\
+sphere (Earth texture) while always looking at it. The camera can follow \n\
+either a Bezier curve, defined by draggable control points, or a closed \n\
+circular orbit. Use the 'Options' GUI window to pick a path, edit its \n\
+control points/orbit settings, adjust the animation speed, and Start or \n\
+Reset the camera motion."
 
 
 # Scenegraph
@@ -120,6 +128,7 @@ running = True
 while running:
 
     running = scene.render()
+    displayGUI_text(example_description)
     cam.run_camera(sphere_transform, sphere_shader)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()

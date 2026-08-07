@@ -1,9 +1,9 @@
 """
 Viewer classes, part of the Elements.pyGLV
-    
+
 Elements.pyGLV (Computer Graphics for Deep Learning and Scientific Visualization)
 @Copyright 2021-2022 Dr. George Papagiannakis
-    
+
 The classes below are all related to the GUI and Display part of the package
 
 Basic design principles are based on the Decorator Design pattern:
@@ -13,85 +13,75 @@ Basic design principles are based on the Decorator Design pattern:
 
 from __future__ import annotations
 from abc import ABC, abstractmethod
-from typing import List, Dict, Any
-from collections.abc import Iterable, Iterator
-from sys import platform
+from collections.abc import Iterable
+from typing import Any
 
+import numpy as np
 import sdl2
 import sdl2.ext
-from sdl2.keycode import SDLK_ESCAPE,SDLK_w
-from sdl2.video import SDL_WINDOWPOS_CENTERED, SDL_WINDOW_ALLOW_HIGHDPI
 import OpenGL.GL as gl
-from OpenGL.GL import shaders
 import imgui
 from imgui.integrations.sdl2 import SDL2Renderer
 
-import Elements.pyECSS.System    
 import Elements.pyECSS.math_utilities as util
-import Elements.pyECSS.Event
-from Elements.pyECSS.System import System  
-from Elements.pyECSS.Component import BasicTransform
-import numpy as np
-from scipy.spatial.transform import Rotation
-# from Elements.pyGLV.GL.Scene import Scene
-# from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyECSS.Event import Event
+from Elements.pyECSS.System import System
 
-import Elements.utils.Shortcuts as Shortcuts
 
 class RenderWindow(ABC):
     """
     The Abstract base class of the Viewer GUI/Display sub-system of pyglGA
     based on the Decorator Pattern, this class is "wrapped" by decorators
-    in order to provide extra cpapabilities e.g. SDL2 window, context and ImGUI widgets        
-    """          
-        
+    in order to provide extra cpapabilities e.g. SDL2 window, context and ImGUI widgets
+    """
+
     def __init__(self):
         self._eventManager = None
         self._scene = None
-    
+
     #define properties for EventManager, Scene objects
-    @property #name
+    @property
     def eventManager(self):
         """  Get RenderWindow's eventManager  """
         return self._eventManager
     @eventManager.setter
-    def eventManager(self, value):
+    def eventManager(self, value) -> None:
         self._eventManager = value
-        
-    @property #name
+
+    @property
     def scene(self):
         """  Get RenderWindow's Scene reference  """
         return self._scene
     @scene.setter
-    def scene(self, value):
+    def scene(self, value) -> None:
         self._scene = value
-        
+
     @abstractmethod
-    def init(self):
+    def init(self) -> None:
         raise NotImplementedError
-        
-    abstractmethod
-    def init_post(self):
-        raise NotImplementedError
-        
+
     @abstractmethod
-    def display(self):
+    def init_post(self) -> None:
         raise NotImplementedError
-        
+
     @abstractmethod
-    def display_post(self):
+    def display(self) -> None:
         raise NotImplementedError
-        
+
     @abstractmethod
-    def shutdown(self):
+    def display_post(self) -> None:
         raise NotImplementedError
-        
+
     @abstractmethod
-    def event_input_process(self, running = True):
+    def shutdown(self) -> None:
         raise NotImplementedError
-        
+
     @abstractmethod
-    def accept(self, system: Elements.pyECSS.System, event = None):
+    def event_input_process(self, running: bool = True) -> bool:
+        raise NotImplementedError
+
+    @abstractmethod
+    def accept(self, system: System, event: Event | None = None) -> None:
         """
         Accepts a class object to operate on the RenderWindow, based on the Visitor pattern.
 
@@ -99,20 +89,28 @@ class RenderWindow(ABC):
         :type system: [System]
         """
         raise NotImplementedError
-        
+
     @classmethod
-    def getClassName(cls):
+    def getClassName(cls) -> str:
         return cls.__name__
 
 
 class SDL2Window(RenderWindow):
-    """ The concrete subclass of RenderWindow for the SDL2 GUI API 
+    """ The concrete subclass of RenderWindow for the SDL2 GUI API
 
     :param RenderWindow: [description]
     :type RenderWindow: [type]
     """
-    
-    def __init__(self, windowWidth = None, windowHeight = None, windowTitle = None, scene = None, eventManager = None, openGLversion = 4):
+
+    def __init__(
+        self,
+        windowWidth: int | None = None,
+        windowHeight: int | None = None,
+        windowTitle: str | None = None,
+        scene: Any = None,
+        eventManager: Any = None,
+        openGLversion: int = 4,
+    ):
         """Constructor SDL2Window for basic SDL2 parameters
 
         :param windowWidth: [description], defaults to None
@@ -123,43 +121,34 @@ class SDL2Window(RenderWindow):
         :type windowTitle: [type], optional
         """
         super().__init__()
-                
+
         self._gWindow = None
         self._gContext = None
         self._gVersionLabel = "None"
 
         self.openGLversion = openGLversion
-        
-        if windowWidth is None:
-            self._windowWidth = 1024
-        else:
-            self._windowWidth = windowWidth
-        
-        if windowHeight is None:
-            self._windowHeight = 768
-        else:
-            self._windowHeight = windowHeight
 
-        if windowTitle is None:
-            self._windowTitle = "SDL2Window"
-        else:
-            self._windowTitle = windowTitle
-                
+        self._windowWidth = 1024 if windowWidth is None else windowWidth
+        self._windowHeight = 768 if windowHeight is None else windowHeight
+        self._windowTitle = "SDL2Window" if windowTitle is None else windowTitle
+
         if eventManager is not None and scene is None:
             # in case we are testing without a Scene and just an EventManager
             self.eventManager = eventManager
-                
+
         if scene is not None:
             # set the reference of parent RenderWindow to Scene
             # get the reference to EventManager from Scene.ECSSManager
             self._scene = scene
             self.eventManager = scene.world.eventManager
-            
+
         #OpenGL state variables
         self._wireframeMode = False
         self._colorEditor = 0.0, 0.0, 0.0
         self._myCamera = np.identity(4)
-                          
+        self._cameraEye = np.zeros(3, dtype=np.float32)
+        self._cameraTarget = np.zeros(3, dtype=np.float32)
+
     @property
     def gWindow(self):
         return self._gWindow
@@ -168,18 +157,18 @@ class SDL2Window(RenderWindow):
     def gContext(self):
         return self._gContext
 
-    def init(self):
+    def init(self) -> None:
         """
         Initialise an SDL2 RenderWindow, not directly but via the SDL2Decorator
         """
         print(f'{self.getClassName()}: init()')
-        
+
         #SDL_Init for the window initialization
         sdl_not_initialised = sdl2.SDL_Init(sdl2.SDL_INIT_VIDEO | sdl2.SDL_INIT_TIMER)
-        if sdl_not_initialised !=0:
+        if sdl_not_initialised != 0:
             print("SDL2 could not be initialised! SDL Error: ", sdl2.SDL_GetError())
             exit(1)
-        
+
         #setting OpenGL attributes for the GL state
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_FLAGS,
                                  sdl2.SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG
@@ -188,51 +177,43 @@ class SDL2Window(RenderWindow):
                                  sdl2.SDL_GL_CONTEXT_PROFILE_CORE
                                  )
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_DOUBLEBUFFER, 1)
-                
+
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_ACCELERATED_VISUAL, 1)
 
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_DEPTH_SIZE, 24)
-        sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_STENCIL_SIZE, 8)      
+        sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_STENCIL_SIZE, 8)
         sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_MULTISAMPLEBUFFERS, 1)
+        # SDL_GL_MULTISAMPLESAMPLES is intentionally left unset: it does not work
+        # reliably on VMs and some Linux systems.
 
         if self.openGLversion == 3:
             print("=" * 24)
             print("Using OpenGL version 3.2")
             print("="*24)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MAJOR_VERSION, 3)
-            sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MINOR_VERSION, 2)    
-        else: 
+            sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MINOR_VERSION, 2)
+        else:
             print("="*24)
             print("Using OpenGL version 4.1")
             print("="*24)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MAJOR_VERSION, 4)
             sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_CONTEXT_MINOR_VERSION, 1)
 
-                     
-        # SDL_GL_MULTISAMPLESAMPLES does not work on VMs and some Linux systems, 
-        # therefore we depracate it for now
-    
-        # if platform == "linux" or platform == "linux2":
-        #     pass
-        # else:
-        #     sdl2.SDL_GL_SetAttribute(sdl2.SDL_GL_MULTISAMPLESAMPLES, 16)        
-
         sdl2.SDL_SetHint(sdl2.SDL_HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK, b"1")
         sdl2.SDL_SetHint(sdl2.SDL_HINT_VIDEO_HIGHDPI_DISABLED, b"1")
-        
+
         #creating the SDL2 window
-        self._gWindow = sdl2.SDL_CreateWindow(self._windowTitle.encode(), 
+        self._gWindow = sdl2.SDL_CreateWindow(self._windowTitle.encode(),
                                               sdl2.SDL_WINDOWPOS_CENTERED,
                                               sdl2.SDL_WINDOWPOS_CENTERED,
                                               self._windowWidth,
                                               self._windowHeight,
-                                            #   sdl2.SDL_WINDOW_ALLOW_HIGHDPI)
                                               sdl2.SDL_WINDOW_OPENGL | sdl2.SDL_WINDOW_RESIZABLE | sdl2.SDL_WINDOW_SHOWN )
-        
+
         if self._gWindow is None:
             print("Window could not be created! SDL Error: ", sdl2.SDL_GetError())
             exit(1)
-            
+
         #create the OpenGL context for rendering into the SDL2Window that was constructed just before
         self._gContext = sdl2.SDL_GL_CreateContext(self._gWindow)
         if self._gContext is None:
@@ -241,63 +222,46 @@ class SDL2Window(RenderWindow):
         sdl2.SDL_GL_MakeCurrent(self._gWindow, self._gContext)
         if sdl2.SDL_GL_SetSwapInterval(1) < 0:
             print("Warning: Unable to set VSync! SDL Error: ", sdl2.SDL_GetError())
-            # exit(1)
         #obtain the GL versioning system info
         self._gVersionLabel = f'OpenGL {gl.glGetString(gl.GL_VERSION).decode()} GLSL {gl.glGetString(gl.GL_SHADING_LANGUAGE_VERSION).decode()} Renderer {gl.glGetString(gl.GL_RENDERER).decode()}'
         print(self._gVersionLabel)
 
-    def init_post(self):
+    def init_post(self) -> None:
         """
         Post init method for SDL2
         this should be ctypiically alled AFTER all other GL contexts have been created
         """
         pass
 
-    def display(self):
+    def display(self) -> None:
         """
         Main display window method to be called standalone or from within a concrete Decorator
         """
-        # GPTODO make background clear color as parameter at class level
-
         gl.glClearColor(*self._colorEditor, 1.0)
         gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
         gl.glDisable(gl.GL_CULL_FACE)
         gl.glEnable(gl.GL_DEPTH_TEST)
         gl.glDepthFunc(gl.GL_LESS)
-        # gl.glDepthFunc(gl.GL_LEQUAL);
 
-        # gl.glDepthMask(gl.GL_FALSE);
+        gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE if self._wireframeMode else gl.GL_FILL)
 
-        # gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-
-        # setup some extra GL state flags
-        if self._wireframeMode:
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_LINE)
-            #print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
-        else:
-            gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
-            # print(f"SDL2Window:display() set wireframemode: {self._wireframeMode}")
-
-        # print(f'{self.getClassName()}: display()')
-
-    def display_post(self):
+    def display_post(self) -> None:
         """
         To be called at the end of each drawn frame to swap double buffers
         """
         sdl2.SDL_GL_SwapWindow(self._gWindow)
-        # print(f'{self.getClassName()}: display_post()')
 
-    def shutdown(self):
+    def shutdown(self) -> None:
         """
         Shutdown and cleanup SDL2 operations
         """
         print(f'{self.getClassName()}: shutdown()')
-        if (self._gContext and self._gWindow is not None):
+        if self._gContext is not None and self._gWindow is not None:
             sdl2.SDL_GL_DeleteContext(self._gContext)
             sdl2.SDL_DestroyWindow(self._gWindow)
-            sdl2.SDL_Quit()      
+            sdl2.SDL_Quit()
 
-    def event_input_process(self, running=True):
+    def event_input_process(self, running: bool = True) -> bool:
         """
         process SDL2 basic events and input
         """
@@ -306,19 +270,18 @@ class SDL2Window(RenderWindow):
             if event.type == sdl2.SDL_KEYDOWN:
                 if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
-            if event.type == sdl2.SDL_QUIT:
+            elif event.type == sdl2.SDL_QUIT:
                 running = False
-            if  event.type == sdl2.SDL_WINDOWEVENT:
-                window = self.gWindow
+            elif event.type == sdl2.SDL_WINDOWEVENT:
                 if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
-                    print("Window Resized to ", event.window.data1, " X " , event.window.data2)
+                    print("Window Resized to ", event.window.data1, " X ", event.window.data2)
                     # new width and height: event.window.data1 and event.window.data2
-                    window._windowWidth = event.window.data1
-                    window._windowHeight = event.window.data2
+                    self._windowWidth = event.window.data1
+                    self._windowHeight = event.window.data2
                     gl.glViewport(0, 0, event.window.data1, event.window.data2)
         return running
-    
-    def accept(self, system: Elements.pyECSS.System, event = None):
+
+    def accept(self, system: System, event: Event | None = None) -> None:
         system.apply2SDLWindow(self, event)
 
 
@@ -327,112 +290,112 @@ class RenderDecorator(RenderWindow):
     Main Decorator class that wraps a RenderWindow so that all other Decorator classes can dynamically be
     adding layered functionality on top of the wrapee (RenderWindow) e.g. ImGUI widgets etc.
 
-    :param RenderWindow: [description]
-    :type RenderWindow: [type]
+    :param RenderWindow: the RenderWindow (or another RenderDecorator) being wrapped
+    :type RenderWindow: RenderWindow
     """
+
+    #: modifier key that flips a TRS keyboard shortcut / the wireframe shortcut into its negative variant
+    _MODIFIER_KEY = sdl2.KMOD_ALT
+
+    #: keydown -> (attribute dict name, axis) bindings for TRS shortcuts applied to a selected scenegraph node
+    _TRS_KEY_BINDINGS: dict[int, tuple[str, str]] = {
+        sdl2.SDLK_w: ("translation", "x"),
+        sdl2.SDLK_e: ("translation", "y"),
+        sdl2.SDLK_r: ("translation", "z"),
+        sdl2.SDLK_t: ("rotation", "x"),
+        sdl2.SDLK_y: ("rotation", "y"),
+        sdl2.SDLK_u: ("rotation", "z"),
+        sdl2.SDLK_i: ("scale", "x"),
+        sdl2.SDLK_o: ("scale", "y"),
+        sdl2.SDLK_p: ("scale", "z"),
+    }
+
     def __init__(self, wrapee: RenderWindow):
         super().__init__()
-        
+
         self._wrapeeWindow = wrapee
-    
+
         self._eye = (2.5, 2.5, 2.5)
-        self._target = (0.0, 0.0, 0.0) 
+        self._target = (0.0, 0.0, 0.0)
         self._up = (0.0, 1.0, 0.0)
 
-        # TRS Variables 
-        self.translation = {};
-        self.translation["x"] = 0; self.translation["y"] = 0; self.translation["z"] = 0; 
+        # TRS shortcuts state, see cameraHandling()/event_input_process()
+        self.translation = {"x": 0.0, "y": 0.0, "z": 0.0}
+        self.rotation = {"x": 0.0, "y": 0.0, "z": 0.0}
+        self.scale = {"x": 0.0, "y": 0.0, "z": 0.0}
 
-        self.rotation = {};
-        self.rotation["x"] = 0; self.rotation["y"] = 0; self.rotation["z"] = 0; 
-
-        self.scale = {};
-        self.scale["x"] = 0; self.scale["y"] = 0; self.scale["z"] = 0; 
-
-        #this is not used anywhere
-        self.color = [255, 50, 50];
-
-        self.lctrl = False
-        
         self.traverseCamera()
 
     @property
     def wrapeeWindow(self):
         return self._wrapeeWindow
-    
-    
-    def init(self):
+
+    def init(self) -> None:
         """
-        [summary]
+        Initialise the wrapee window and then this decorator.
         """
         self._wrapeeWindow.init()
         print(f'RenderDecorator: init()')
-        
-        
-    def display(self):
+
+    def display(self) -> None:
         """
         Main decorator display method
         """
         self._wrapeeWindow.display()
-        
-        
-    def shutdown(self):
+
+    def shutdown(self) -> None:
         """
-        [summary]
+        Shutdown the wrapee window and then this decorator.
         """
         self._wrapeeWindow.shutdown()
-        print(f'RenderDecorator: shutdown()')   
+        print(f'RenderDecorator: shutdown()')
 
-    def traverseCamera(self):
+    def traverseCamera(self) -> None:
+        """
+        Look for an Entity whose name contains "camera" (case-insensitive) directly under the scene root
+        and keep a reference to it in self.cam, or None if there isn't one.
+        """
         self.cam = None
-        found = False
-        if self.wrapeeWindow.scene is not None:
-            rootComp = self.wrapeeWindow.scene.world.root
-            if rootComp._children is not None:
-                Iterator = iter(rootComp._children)
-                done_traversing = False
-                while not found and not done_traversing:
-                    try:
-                        comp = next(Iterator)
-                    except StopIteration:
-                        done_traversing = True
-                    else:
-                        if "camera" in comp.name.lower(): # just put the "Camera" string in the Entity that holds the camera
-                            self.cam = comp
-                            found = True
-                        
-    def createViewMatrix(self, eye, lookAt, upVector):
+        scene = self.wrapeeWindow.scene
+        if scene is None:
+            return
+        children = scene.world.root._children
+        if not children:
+            return
+        self.cam = next((child for child in children if "camera" in child.name.lower()), None)
+
+    def createViewMatrix(self, eye: Iterable[float], lookAt: Iterable[float], upVector: Iterable[float]) -> None:
+        """
+        Build a view matrix from eye/target/up, push it to the wrapee window and the camera Event.
+        """
         self._eye = tuple(eye)
         self._target = tuple(lookAt)
-        #self._up = tuple(upVector)
-        #directionVector = util.normalise(lookAt - eye) 
-        #rightVector = util.normalise(np.cross(directionVector, upVector))
-        #upVector = util.normalise(np.cross(rightVector, directionVector))
-        self._updateCamera.value = util.lookat(eye, lookAt, upVector)
-    
-    def updateCamera(self, moveX, moveY, moveZ, rotateX, rotateY):  
-        if self.cam != None:
-            #for examples 7-11 and pyJANVRED implementations
+        self._up = tuple(upVector)
+        view_matrix = util.lookat(eye, lookAt, upVector)
+        self.wrapeeWindow._cameraEye = np.array(eye, dtype=np.float32)
+        self.wrapeeWindow._cameraTarget = np.array(lookAt, dtype=np.float32)
+        self.wrapeeWindow._myCamera = view_matrix
+        self._updateCamera.value = view_matrix
+
+    def updateCamera(self, moveX: bool, moveY: bool, moveZ: bool, rotateX: bool, rotateY: bool) -> None:
+        """
+        Apply one camera move/rotate step, either to an Entity-based camera (self.cam) when the scene
+        has one, or to a free eye/target/up camera otherwise.
+        """
+        if self.cam is not None:
+            # camera is an Entity in the scenegraph (examples 7-11 and pyJANVRED)
             cameraspeed = 5
-            #scaleMat = util.scale(self.scale["x"], self.scale["y"], self.scale["z"])
-            #combinedMat = scaleMat
-            if rotateX:# or rotateY: 
-                #rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
+            if rotateX:
                 rotMatY = util.rotate((0, 1, 0), self.rotation["x"] * cameraspeed)
-                #rotMatZ = util.rotate((0, 0, 1), self.rotation["z"] * cameraspeed)
-                #combinedMat = rotMatX @ rotMatY @ rotMatZ @ combinedMat 
-                #combinedMat = rotMatY #@ combinedMat 
                 self.cam.trans1.trs = rotMatY @ self.cam.trans1.trs
-            elif rotateY: 
+            elif rotateY:
                 rotMatX = util.rotate((1, 0, 0), -self.rotation["y"] * cameraspeed)
-                #combinedMat = rotMatX #@ combinedMat 
                 self.cam.trans1.trs = self.cam.trans1.trs @ rotMatX
             if moveX or moveY or moveZ:
                 transMat = util.translate(self.translation["x"], self.translation["y"], -self.translation["z"])
-                #combinedMat = transMat #@ combinedMat
-                self.cam.trans1.trs =  self.cam.trans1.trs @ transMat
+                self.cam.trans1.trs = self.cam.trans1.trs @ transMat
         else:
-            #for examples 4-5-6-8-9-10 implementations
+            # free eye/target/up camera, no Entity in the scenegraph (examples 4-6, 8-10)
             cameraspeed = 0.2
             teye = np.array(self._eye)
             ttarget = np.array(self._target)
@@ -440,7 +403,7 @@ class RenderDecorator(RenderWindow):
 
             forwardDir = util.normalise(ttarget - teye)
             rightDir = util.normalise(np.cross(forwardDir, tup))
-   
+
             if rotateX:
                 rotMatY = util.rotate(tup, self.rotation["x"] * cameraspeed*15)
                 transMatY = util.translate(ttarget) @ rotMatY @ util.translate(-ttarget)
@@ -461,24 +424,23 @@ class RenderDecorator(RenderWindow):
                 teye += zoom
                 ttarget += zoom
             self.createViewMatrix(teye, ttarget, tup)
-            
+
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
-        
- 
-    def on_mouse_motion(self, event, x, y, dx, dy):
+
+    def on_mouse_motion(self, event, x, y, dx, dy) -> None:
         """Called when the mouse is moved.
 
-            event: sdl2.events.SDL_Event, 
+            event: sdl2.events.SDL_Event,
             x: horiz coord relative to window, y: vert coord relative to window,
             dx: relative horizontal motion, dy: relative vertical motion
         """
         pass
 
-    def on_mouse_press(self, event, x, y, button, dclick):
+    def on_mouse_press(self, event, x, y, button, dclick) -> None:
         """Called when mouse buttons are pressed.
 
-            event: sdl2.events.SDL_Event, 
+            event: sdl2.events.SDL_Event,
             x: horiz coord relative to window, y: vert coord relative to window,
             dx: relative horizontal motion, dy: relative vertical motion
             button: RIGHT - MIDDLE - LEFT
@@ -486,18 +448,14 @@ class RenderDecorator(RenderWindow):
         """
         pass
 
-    def resetAll(self):
-        self.translation["x"] = 0.0
-        self.translation["y"] = 0.0
-        self.translation["z"] = 0.0
-        self.rotation["x"] = 0.0
-        self.rotation["y"] = 0.0
-        self.rotation["z"] = 0.0
-        self.scale["x"]= 1.0
-        self.scale["y"]= 1.0
-        self.scale["z"]= 1.0
+    def resetAll(self) -> None:
+        """Zero the per-frame translation/rotation deltas and reset scale to identity."""
+        self.translation["x"] = self.translation["y"] = self.translation["z"] = 0.0
+        self.rotation["x"] = self.rotation["y"] = self.rotation["z"] = 0.0
+        self.scale["x"] = self.scale["y"] = self.scale["z"] = 1.0
 
-    def cameraHandling(self, x, y, height, width):
+    def cameraHandling(self, x: float, y: float, height: int, width: int) -> None:
+        """Translate a mouse-wheel or right-drag delta into a translate/rotate camera update."""
         keystatus = sdl2.SDL_GetKeyboardState(None)
         self.resetAll()
 
@@ -508,8 +466,8 @@ class RenderDecorator(RenderWindow):
             else:
                 self.translation["y"] =  y/height*60 #np.sign(event.wheel.y)
                 self.updateCamera(False, True, False, False, False)
-        elif keystatus[sdl2.SDL_SCANCODE_LCTRL] or self.lctrl:
-            self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y) 
+        elif keystatus[sdl2.SDL_SCANCODE_LCTRL]:
+            self.translation["z"] =  y/height*60 #-np.sign(event.wheel.y)
             self.updateCamera(False, False, True, False, False)
         else:
             if abs(x) > abs(y):
@@ -519,16 +477,37 @@ class RenderDecorator(RenderWindow):
                 self.rotation["y"] = np.sign(y) #event.wheel.y/width*180
                 self.updateCamera(False, False,False, False, True)
 
+    def toggle_Wireframe(self) -> None:
+        """
+        Flip wireframe rendering ON/OFF on the underlying window. If this decorator is (or wraps into)
+        an ImGUI decorator with its own wireframe checkbox/Event, keep those in sync too, the same way
+        createViewMatrix() reaches into ImGUIDecorator's camera Event.
+        """
+        wireframeMode = not self._wrapeeWindow._wireframeMode
+        self._wrapeeWindow._wireframeMode = wireframeMode
 
-    # def event_input_process(self):
-    #     """
-    #     extra decorator method to handle input events
-    #     :param running: [description], defaults to True
-    #     :type running: bool, optional
-    #     """
-    #     return self._wrapeeWindow.event_input_process()
-    
-    def event_input_process(self):
+        if hasattr(self, "_wireframeMode"):
+            self._wireframeMode = wireframeMode
+        if getattr(self, "_updateWireframe", None) is not None:
+            self._updateWireframe.value = wireframeMode
+            if self._wrapeeWindow.eventManager is not None:
+                self.wrapeeWindow.eventManager.notify(self, self._updateWireframe)
+
+    def _isNodeShortcutsActive(self) -> bool:
+        """
+        True when the TRS keyboard shortcuts (W/E/R/T/Y/U/I/O/P) should apply to a selected scenegraph
+        node. Only Elements.pyGLV.GUI.ImguiDecorator.ImGUIecssDecorator supports node selection this
+        way; its class name is compared as a string here to avoid a circular import between this module
+        and ImguiDecorator.py.
+        """
+        scene = self._wrapeeWindow.scene
+        return (
+            hasattr(scene, "_gContext")
+            and scene._gContext.__class__.__name__ == "ImGUIecssDecorator"
+            and bool(self.selected)
+        )
+
+    def event_input_process(self) -> bool:
         """
         process SDL2 basic events and input
         """
@@ -537,174 +516,91 @@ class RenderDecorator(RenderWindow):
         width = self.wrapeeWindow._windowWidth
         height = self.wrapeeWindow._windowHeight
 
-        ### set up a hot key to easily switch between common keys like shift,ctrl etc
-        ### default at left alt
-        alt_Key = sdl2.KMOD_ALT
-        leftShift_Key = sdl2.KMOD_LSHIFT
-        rightShift_Key = sdl2.KMOD_RSHIFT
-        ctrl_Key = sdl2.KMOD_CTRL
-
-        shortcut_HotKey = alt_Key
-        
         for event in events:
             if event.type == sdl2.SDL_MOUSEWHEEL:
-                x = event.wheel.x
-                y = event.wheel.y
-                self.cameraHandling(x,y,height,width)
+                self.cameraHandling(event.wheel.x, event.wheel.y, height, width)
 
-            # on_mouse_press
             elif event.type == sdl2.SDL_MOUSEMOTION:
-                buttons = event.motion.state
-                if buttons & sdl2.SDL_BUTTON_RMASK:
-                    x = -event.motion.xrel  
-                    y = event.motion.yrel 
-                    self.cameraHandling(x, y, height, width)               
-            
-            #keyboard events
+                if event.motion.state & sdl2.SDL_BUTTON_RMASK:
+                    self.cameraHandling(-event.motion.xrel, event.motion.yrel, height, width)
+
             elif event.type == sdl2.SDL_KEYDOWN:
-                ##################  toggle the wireframe using the alt+F buttons  #############################
-                if (event.key.keysym.sym == sdl2.SDLK_f and (sdl2.SDL_GetModState() & shortcut_HotKey)):
+                ################## toggle the wireframe using the F key #############################
+                if event.key.keysym.sym == sdl2.SDLK_f:
                     self.toggle_Wireframe()
-                
-                ########## shortcuts for selected node from the tree ###########
-                if hasattr(self._wrapeeWindow._scene, "_gContext") and self._wrapeeWindow._scene._gContext.__class__.__name__ == "ImGUIecssDecorator" and self.selected:
-                    # we must first check if the ImGUIecssDecorator is active otherwise we will get an error on click
-                    ################# - translate on x axis when node is selected using W+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_w and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.translation["x"] -= 0.1
-                    ################# + translate on x axis when node is selected using W ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_w):
-                        self.translation["x"] += 0.1
-                    
-                    # ################# - translate on y axis when node is selected using E+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_e and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.translation["y"] -= 0.1
-                    ################# + translate on y axis when node is selected using E ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_e):
-                        self.translation["y"] += 0.1 
-                    
-                    # ################# - translate on z axis when node is selected using R+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_r and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.translation["z"] -= 0.1
-                    # ################# + translate on z axis when node is selected using R ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_r):
-                        self.translation["z"] += 0.1
-                    
 
-                    # ################# - rotate on x axis when node is selected using T+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_t and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.rotation["x"] -= 0.1
-                    # ################# + rotate on x axis when node is selected using T ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_t):
-                        self.rotation["x"] += 0.1
-                    
-                    # ################# - rotate on y axis when node is selected using Y+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_y and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.rotation["y"] -= 0.1
-                    # ################# + rotate on y axis when node is selected using Y ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_y):
-                        self.rotation["y"] += 0.1 
-                    
-                    # ################# - rotate on z axis when node is selected using U+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_u and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.rotation["z"] -= 0.1
-                    # ################# + rotate on z axis when node is selected using U ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_u):
-                        self.rotation["z"] += 0.1
-                    
-                    ################# scale down on x axis when node is selected using I+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_i  and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.scale["x"] -= 0.1
-                    ################# scale up on x axis when node is selected using I ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_i ):
-                        self.scale["x"] += 0.1
-                    
-                    ################# scale down on y axis when node is selected using O+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_o  and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.scale["y"] -= 0.1
-                    ################# scale up on y axis when node is selected using O ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_o ):
-                        self.scale["y"] += 0.1 
-                    
-                    ################# scale down on z axis when node is selected using P+alt ###########################
-                    if(event.key.keysym.sym == sdl2.SDLK_p  and (sdl2.SDL_GetModState() & shortcut_HotKey)):
-                        self.scale["z"] -= 0.1
-                    ################# scale up on z axis when node is selected using P ###########################
-                    elif(event.key.keysym.sym == sdl2.SDLK_p ):
-                        self.scale["z"] += 0.1
-
-                if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
+                elif event.key.keysym.sym == sdl2.SDLK_ESCAPE:
                     running = False
-            elif event.type == sdl2.SDL_KEYUP and event.key.keysym.sym == sdl2.SDLK_LCTRL:
-                self.lctrl = False
 
-            
-                
+                ########## shortcuts for selected node from the tree, e.g. W (+alt: -) translates x ###
+                elif self._isNodeShortcutsActive():
+                    binding = self._TRS_KEY_BINDINGS.get(event.key.keysym.sym)
+                    if binding is not None:
+                        group, axis = binding
+                        step = -0.1 if (sdl2.SDL_GetModState() & self._MODIFIER_KEY) else 0.1
+                        getattr(self, group)[axis] += step
+
             elif event.type == sdl2.SDL_QUIT:
                 running = False
-                
-            elif  event.type == sdl2.SDL_WINDOWEVENT:
-                window = self.wrapeeWindow
+
+            elif event.type == sdl2.SDL_WINDOWEVENT:
                 if event.window.event == sdl2.SDL_WINDOWEVENT_RESIZED:
                     print("Window Resized to ", event.window.data1, " X " , event.window.data2)
-                    window._windowWidth = event.window.data1
-                    window._windowHeight = event.window.data2
+                    self.wrapeeWindow._windowWidth = event.window.data1
+                    self.wrapeeWindow._windowHeight = event.window.data2
                     # new width and height: event.window.data1 and event.window.data2
                     gl.glViewport(0, 0, event.window.data1, event.window.data2)
-            
+
             #imgui event
             self._imguiRenderer.process_event(event)
         #imgui input
         self._imguiRenderer.process_inputs()
-        return running #self._wrapeeWindow.event_input_process() & running
-    
-    def display_post(self):
+        return running
+
+    def display_post(self) -> None:
         """
         Post diplay method after all other display calls have been issued
         """
         self._wrapeeWindow.display_post()
-    
-    
-    def init_post(self):
+
+    def init_post(self) -> None:
         """
         Post init method
         this should be ctypiically alled AFTER all other GL contexts have been created, e.g. ImGUI context
         """
         self._wrapeeWindow.init_post()
-        
-    def accept(self, system: Elements.pyECSS.System, event = None):
+
+    def accept(self, system: System, event: Event | None = None) -> None:
         pass
-                    
-        
+
 
 class RenderGLStateSystem(System):
     """
     System that operates on a RenderDecorator (ImGUIDecorator) and affect GL State
 
     """
-    
+
     def __init__(self, name=None, type=None, id=None):
         super().__init__(name, type, id)
-        
-    def update(self):
+
+    def update(self) -> None:
         """
-        method to be subclassed for  behavioral or logic computation 
+        method to be subclassed for  behavioral or logic computation
 
         """
         pass
-    
-    
-    def apply2ImGUIDecorator(self, imGUIDecorator, event = None):
+
+    def apply2ImGUIDecorator(self, imGUIDecorator, event: Event | None = None) -> None:
         """
-        method for  behavioral or logic computation 
-        when visits Components. 
-        
+        method for  behavioral or logic computation
+        when visits Components.
+
         In this case update GL State from ImGUIDecorator
-        
+
         """
         pass
 
-    def apply2SDLWindow(self, sdlWindow, event=None):
+    def apply2SDLWindow(self, sdlWindow: SDL2Window, event: Event | None = None) -> None:
         """method for  behavioral or logic computation
         when visits Components.
 
@@ -716,24 +612,22 @@ class RenderGLStateSystem(System):
         :type event: [type], optional
         """
         if event.name == "OnUpdateWireframe":
-            # print(f"RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
             sdlWindow._wireframeMode = event.value
 
         if event.name == "OnUpdateCamera":
-            # print(f"OnUpdateCamera: RenderGLStateSystem():apply2SDLWindow() actuator system for: {event}")
             sdlWindow._myCamera = event.value
 
 
 if __name__ == "__main__":
-    # The client code.        
-    gWindow = SDL2Window(openGLversion=3)    
-    # uses openGL version 3.2 instead of the default 4.1        
-    gWindow.init()        
-    gWindow.init_post()        
-    running = True        
-    # MAIN RENDERING LOOP        
-    while running:              
-        gWindow.display()              
-        running = gWindow.event_input_process(running)              
-        gWindow.display_post()            
+    # The client code.
+    gWindow = SDL2Window(openGLversion=3)
+    # uses openGL version 3.2 instead of the default 4.1
+    gWindow.init()
+    gWindow.init_post()
+    running = True
+    # MAIN RENDERING LOOP
+    while running:
+        gWindow.display()
+        running = gWindow.event_input_process(running)
+        gWindow.display_post()
     gWindow.shutdown()

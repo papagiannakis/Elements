@@ -12,10 +12,10 @@ def save_screenshot(filename="screenshot.png", width=1024, height=768):
     try:
         gl_pixels = glReadPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE)
         image = Image.frombytes("RGB", (width, height), gl_pixels)
-        # flip giati OpenGL exei to kentro katw aristera
+        # flip because OpenGL has the origin at the bottom-left corner
         image = image.transpose(Image.FLIP_TOP_BOTTOM)
         image.save(filename)
-        print(f"To screnshot exei apothikeutei ws: {filename}")
+        print(f"Screenshot saved: {filename}")
     except Exception as e:
-        print(f"Den travixtike to screenshot: {e}")
+        print(f"Failed to capture screenshot: {e}")
 

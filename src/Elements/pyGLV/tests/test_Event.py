@@ -24,6 +24,7 @@ from Elements.pyECSS.ECSSManager import ECSSManager
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
+from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
 
 class TestEvent(unittest.TestCase):
     
@@ -168,7 +169,8 @@ class TestEvent(unittest.TestCase):
         
         gGUI.init() #calls ImGUIDecorator::init()-->SDL2Window::init()
         gGUI.wrapeeWindow.eventManager.print()
-        
+
+        auto_quit_after()
         running = True
         # MAIN RENDERING LOOP
         while running:
@@ -305,6 +307,7 @@ class TestEvent(unittest.TestCase):
         
         # print (gWindow._myCamera)
 
+        auto_quit_after()
         while running:
             running = self.scene.render()
             self.scene.world.traverse_visit(self.renderUpdate, self.scene.world.root)

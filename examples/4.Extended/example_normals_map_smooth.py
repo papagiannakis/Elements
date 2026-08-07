@@ -18,6 +18,16 @@ import Elements.utils.normals as norm
 from PIL import Image
 import os
 
+from Elements.utils.Shortcuts import displayGUI_text
+example_description = \
+"This example demonstrates tangent-space normal mapping on a single UV-mapped cube. \n\
+Per-face normals are averaged across vertices that share a position, giving the \n\
+cube SMOOTH shading, on top of which a generated normal map adds fine surface \n\
+detail via a custom PHONG_NORMALS_v2 shader (tangents/bitangents from the UVs). \n\
+Point/Directional/Spot lights can be added, removed and animated live through the \n\
+ImGUI panel, which also toggles the normal/albedo maps and a normals debug view. \n\
+Hit ESC OR Close the window to quit."
+
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 SHADERS_DIR = os.path.join(BASE_DIR, "Shaders")
 TEXTURES_DIR = os.path.join(BASE_DIR, "Textures")
@@ -126,7 +136,7 @@ def generate_cube_with_uvs():
     vertices = np.array(positions, dtype=np.float32)
     colors = np.array([[1.0, 1.0, 1.0, 1.0]] * len(vertices), dtype=np.float32)
 
-    # Indices (36= 6*2*3)
+    # Indices (24= 6*2*3)
     indices = np.array([
         0, 1, 2, 0, 2, 3,       # Front
         4, 5, 6, 4, 6, 7,       # Right
@@ -431,6 +441,22 @@ for i in range(0, len(indices), 3):
     normals[ib][:3] = fn
     normals[ic][:3] = fn
 
+# Group verices by position and average normals
+# for smooth shading
+pos_groups = {}
+for idx, v in enumerate(vertices):
+    key = (float(v[0]), float(v[1]), float(v[2]))
+    pos_groups.setdefault(key, []).append(idx)
+
+for key, idxs in pos_groups.items():
+    avg = np.zeros(3, dtype=np.float32)
+    for i in idxs:
+        avg += normals[i][:3]
+    avg_len = np.linalg.norm(avg) + 1e-9
+    avg_normal = (avg / avg_len)
+    for i in idxs:
+        normals[i][0:3] = avg_normal
+
 normals[:, 3] = 0.0
 
 # Compute tangent and bitangent vectors
@@ -521,6 +547,7 @@ start_time = time.time()
 
 while running:
     running = scene.render()
+    displayGUI_text(example_description)
     scene.world.traverse_visit_pre_camera(camUpdate, mainCam)
     scene.world.traverse_visit(transUpdate, scene.world.root)
     scene.world.traverse_visit(camUpdate, scene.world.root)
