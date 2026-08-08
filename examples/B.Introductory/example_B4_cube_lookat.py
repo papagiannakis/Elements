@@ -10,43 +10,30 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import SHADER_DIR
+
 example_description = \
-"This is a scene with some simple geometry, i.e., a colored cube. \n\
-The cube is rendered via the simplest vertex and fragment shader. \n\
-You cannot move the camera through the GUI. Hit ESC OR Close the window to quit." 
+"One coloured cube, placed on screen by a single Model-View-Projection matrix:\n\n\
+  model   where the cube sits in the world\n\
+  view    where the camera is  (util.lookat, from eye / target / up)\n\
+  projMat how the world is flattened onto the screen\n\n\
+The MVP is sent to the shader once, before the loop, so the camera cannot move.\n\
+Hit ESC OR Close the window to quit."
 
 winWidth = 1024
 winHeight = 768
 
-scene = Scene()    
+# ---------------- geometry: the 8 corners of a cube, a colour for each ----------------
 
-# Scenegraph with Entities, Components
-rootEntity = scene.world.createEntity(Entity(name="RooT"))
-
-entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-
-node4 = scene.world.createEntity(Entity(name="node4"))
-scene.world.addEntityChild(rootEntity, node4)
-mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
-
-
-axes = scene.world.createEntity(Entity(name="axes"))
-scene.world.addEntityChild(rootEntity, axes)
-axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-
-
-#Simple Cube
 vertexCube = np.array([
     [-0.5, -0.5, 0.5, 1.0],
     [-0.5, 0.5, 0.5, 1.0],
     [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0], 
-    [-0.5, -0.5, -0.5, 1.0], 
-    [-0.5, 0.5, -0.5, 1.0], 
-    [0.5, 0.5, -0.5, 1.0], 
+    [0.5, -0.5, 0.5, 1.0],
+    [-0.5, -0.5, -0.5, 1.0],
+    [-0.5, 0.5, -0.5, 1.0],
+    [0.5, 0.5, -0.5, 1.0],
     [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32) 
+],dtype=np.float32)
 colorCube = np.array([
     [0.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
@@ -58,55 +45,56 @@ colorCube = np.array([
     [0.0, 1.0, 1.0, 1.0]
 ], dtype=np.float32)
 
-#index arrays for above vertex Arrays
-
-indexCube = np.array((1,0,3, 1,3,2, 
+# which corners each triangle joins: 6 faces, 2 triangles per face
+indexCube = np.array((1,0,3, 1,3,2,
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
                   6,5,1, 6,1,2,
                   4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
+                  5,4,0, 5,0,1), np.uint32)
 
+# ---------------- the scene: RooT -> cube ----------------
 
+scene = Scene()
+rootEntity = scene.world.createEntity(Entity(name="RooT"))
 
+cube = scene.world.createEntity(Entity(name="cube"))
+scene.world.addEntityChild(rootEntity, cube)
 
-## ADD CUBE ##
-# attach a simple cube in a RenderMesh so that VertexArray can pick it up
-mesh4.vertex_attributes.append(vertexCube)
-mesh4.vertex_attributes.append(colorCube)
-mesh4.vertex_index.append(indexCube)
-vArray4 = scene.world.addComponent(node4, VertexArray())
-# decorated components and systems with sample, default pass-through shader with uniform MVP
+# RenderMesh holds the data, VertexArray uploads it to the GPU, ShaderGLDecorator draws it
+cube_mesh = scene.world.addComponent(cube, RenderMesh(name="cube_mesh"))
+cube_mesh.vertex_attributes.append(vertexCube)      # attribute 0, read by the shader as vPosition
+cube_mesh.vertex_attributes.append(colorCube)       # attribute 1, read as vColor
+cube_mesh.vertex_index.append(indexCube)
+cube_vArray = scene.world.addComponent(cube, VertexArray())
+cube_shader = scene.world.addComponent(cube, ShaderGLDecorator(
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
+# ---------------- the MVP matrix ----------------
 
+model = util.translate(0.0,0.0,0.5) @ util.scale(3)
 
-model = util.translate(0.0,0.0,0.5)@util.scale(3)
-eye = util.vec(1.0, 1.0, 1.0)
-target = util.vec(0,0.0,0)
+eye = util.vec(3.0, 3.0, 3.0)
+target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
 view = util.lookat(eye, target, up)
 
-# projMat = util.perspective(120.0, 1.33, 0.1, 100.0)
-projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -10, 10.0)
+projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -10.0, 10.0)
+# projMat = util.perspective(120.0, 1.33, 0.1, 100.0)   ## try this instead
 
-mvpMat =  projMat @ view @ model
+# right-to-left: the cube is placed, then seen from the camera, then projected
+cube_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ model, mat4=True)
 
+# ---------------- systems ----------------
 
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
-
-
-# Systems
 initUpdate = scene.world.createSystem(InitGLShaderSystem())
 renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 
-
 scene.world.print()
 
+# MAIN RENDERING LOOP
 
 running = True
-# MAIN RENDERING LOOP
 scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "A Cube Scene via ECSS")
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
@@ -118,6 +106,5 @@ while running:
     displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
-    
-scene.shutdown()
 
+scene.shutdown()
