@@ -35,7 +35,7 @@ import Elements.extensions.UV_Mapping as UV
 #from Elements.extensions.UV_Mapping.TextureMapping import TextureGUI
 example_description = \
 "This is the  examples demonstates the two-step UV mapping onto a complex object.  " \
-"\n\The Seam moves with the offset U value. WE can watch it move throught the object and how it interacts with it." \
+"\nThe Seam moves with the offset U value. WE can watch it move throught the object and how it interacts with it."
 
 #Light
 Lposition = util.vec(5.0, 2.0, 2.0) #uniform lightpos
