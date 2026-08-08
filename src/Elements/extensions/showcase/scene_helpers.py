@@ -487,6 +487,11 @@ class OrbitCamera:
         focus_on_point() has been called at least once."""
         if self.target_trans is None and self._fixed_point is None:
             return
+        if self.window.is_right_mouse_held():
+            # RenderDecorator's right-button look/fly is driving the camera (mouse to look,
+            # WASD/QE to move), so stand down instead of fighting it over WASD. Orbit state is
+            # re-derived from the live eye every frame below, so resuming on release is automatic.
+            return
 
         eye = self.eye
         desired_target = _orbit_target_of(self.target_trans) if self.target_trans is not None else self._fixed_point

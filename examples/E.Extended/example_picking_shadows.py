@@ -513,7 +513,9 @@ while running and AppState.running:
         imgui.end()
 
     key_states = sdl2.SDL_GetKeyboardState(None)
-    if selected_object_trans is not None:
+    # Right button held means RenderDecorator's own look/fly is driving the camera (mouse to look,
+    # WASD/QE to move), so the orbit below stands down rather than fighting it over WASD.
+    if selected_object_trans is not None and not gWindow.is_right_mouse_held():
         camera_eye = np.array(gWindow._cameraEye, dtype=np.float32)
         desired_orbit_target = get_orbit_target(selected_object_trans)
         target_delta = desired_orbit_target - orbit_target
