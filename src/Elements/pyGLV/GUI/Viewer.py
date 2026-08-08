@@ -124,6 +124,13 @@ class RenderDecorator(RenderWindow):
         self.rotation = {"x": 0.0, "y": 0.0, "z": 0.0}
         self.scale = {"x": 0.0, "y": 0.0, "z": 0.0}
 
+        #: world units per frame for the WASD/QE fly controls. Not a constant: no single value
+        #: suits scenes framed anywhere from 1 to 12 units from their target, so scrolling with the
+        #: right button held retunes it live -- see handleScroll()/adjustFlySpeed().
+        self.flySpeed = CameraControl.FLY_SPEED
+        #: so adjustFlySpeed() reports hitting a bound once instead of once per scroll notch
+        self._flySpeedLimitReported = False
+
         self.traverseCamera()
 
     @property
@@ -249,6 +256,48 @@ class RenderDecorator(RenderWindow):
                 self.rotation["y"] = np.sign(y) #event.wheel.y/width*180
                 self.updateCamera(False, False,False, False, True)
 
+    def handleScroll(self, x: float, y: float) -> None:
+        """
+        Scrolling retunes the WASD/QE fly speed and nothing else -- it never moves the camera.
+
+        It used to drive the camera directly (orbit, or pan/zoom with shift/ctrl), which is
+        deliberately gone: mixing "move the camera" into the same input as "set how fast the camera
+        moves" jolted the view every time the speed was adjusted mid-flight. Camera motion is all
+        on the right button now -- drag to look, WASD/QE to fly, shift/ctrl+drag to pan/dolly.
+
+        x is accepted so both backends can pass their event through unchanged, but only the
+        vertical axis is used: one axis keeps "scroll up = faster" unambiguous.
+        """
+        self.adjustFlySpeed(y)
+
+    def adjustFlySpeed(self, notches: float) -> None:
+        """
+        Scale self.flySpeed by FLY_SPEED_SCROLL_STEP per scroll notch (fractional notches, as
+        trackpads report, scale proportionally), clamped to MIN/MAX_FLY_SPEED, and report the new
+        value on the terminal so it can actually be dialled in.
+        """
+        if not notches:
+            return
+
+        previous = self.flySpeed
+        self.flySpeed = float(np.clip(
+            self.flySpeed * (CameraControl.FLY_SPEED_SCROLL_STEP ** notches),
+            CameraControl.MIN_FLY_SPEED,
+            CameraControl.MAX_FLY_SPEED,
+        ))
+
+        if self.flySpeed == previous:
+            # Already at a bound. Report it once rather than on every further notch: silence would
+            # read as unresponsive, but a line per notch just spams the terminal.
+            if not self._flySpeedLimitReported:
+                limit = "minimum" if notches < 0 else "maximum"
+                print(f"Camera fly speed: {self.flySpeed:.4f} units/frame (at {limit})")
+                self._flySpeedLimitReported = True
+            return
+
+        self._flySpeedLimitReported = False
+        print(f"Camera fly speed: {self.flySpeed:.4f} units/frame")
+
     def toggle_Wireframe(self) -> None:
         """
         Flip wireframe rendering ON/OFF on the underlying window. If this decorator is (or wraps into)
@@ -284,7 +333,7 @@ class RenderDecorator(RenderWindow):
 
         for event in events:
             if event.type == sdl2.SDL_MOUSEWHEEL:
-                self.cameraHandling(event.wheel.x, event.wheel.y, height, width)
+                self.handleScroll(event.wheel.x, event.wheel.y)
 
             elif event.type == sdl2.SDL_KEYDOWN:
                 if event.key.keysym.sym == sdl2.SDLK_ESCAPE:
@@ -326,13 +375,101 @@ class RenderDecorator(RenderWindow):
 
     def _poll_camera_and_wireframe(self, width: int, height: int) -> None:
         """Backend-agnostic: both SDL2Window and GLFWWindow implement poll_right_drag_delta()/
-        consume_wireframe_toggle_key() by polling, so this needs no backend branch."""
+        poll_camera_fly_keys()/consume_wireframe_toggle_key() by polling, so this needs no backend
+        branch."""
         drag = self._wrapeeWindow.poll_right_drag_delta()
         if drag is not None:
-            self.cameraHandling(drag[0], drag[1], height, width)
+            self.freeLookAndFly(drag, width, height)
+
+        # Consumed unconditionally (so the rising edge never goes stale) but acted on only while
+        # the right button is held, like the rest of the camera keys -- so SPACE stays free for
+        # examples that want it for something else.
+        if self._wrapeeWindow.consume_target_reset_key() and self._wrapeeWindow.is_right_mouse_held():
+            self.resetTarget()
 
         if self._wrapeeWindow.consume_wireframe_toggle_key():
             self.toggle_Wireframe()
+
+    def resetTarget(self) -> None:
+        """
+        Re-aim the camera at the world origin without moving it: the eye and up stay exactly as
+        they are, only the target changes, so this recovers a lost view after free-looking around
+        rather than restoring some saved camera pose.
+
+        Declines in the two cases where (eye, origin, up) has no lookat basis to build -- the eye
+        sitting on the origin, and the eye directly above/below it, where the look direction would
+        be parallel to up and cross(forward, up) would collapse to zero.
+        """
+        if self.cam is not None:
+            return  # Entity-based camera moves its own BasicTransform; no eye/target pair here
+
+        eye = np.array(self._eye, dtype=np.float64)
+        toOrigin = -eye
+        distance = np.linalg.norm(toOrigin)
+        if distance < 1e-8:
+            print("Camera target unchanged: the camera is sitting on the origin")
+            return
+
+        upDot = abs(np.dot(toOrigin / distance, util.normalise(np.array(self._up, dtype=np.float64))))
+        if upDot > np.cos(np.radians(CameraControl.MIN_POLAR_ANGLE)):
+            print("Camera target unchanged: looking at the origin from here would be straight "
+                  "along the up vector")
+            return
+
+        self.createViewMatrix(self._eye, (0.0, 0.0, 0.0), self._up)
+        if self._wrapeeWindow.eventManager is not None:
+            self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
+        print("Camera target reset to (0, 0, 0)")
+
+    def freeLookAndFly(self, drag: tuple[float, float], width: int, height: int) -> None:
+        """
+        Right-button-held navigation for the free eye/target/up camera: the drag swings the look
+        direction about a stationary eye (compute_look_step), W/A/S/D move the eye and carry the
+        target along so the look direction survives the move (compute_fly_step), and Q/E raise or
+        lower the eye against a *fixed* target, tilting the camera (compute_rise_step).
+
+        Holding the right button is what arms those keys, and that is the whole conflict-avoidance
+        story: examples that bind W/A/S/D themselves -- the picking ones orbit a selected object
+        with them, and keep +/- for its zoom -- stay in sole charge whenever it isn't held.
+
+        Two cases deliberately fall through to the older cameraHandling() path instead:
+        shift/ctrl+drag, which keep their existing pan/dolly meaning, and an Entity-based camera
+        (self.cam), which has no eye/target pair to swing -- it moves its own BasicTransform.
+        """
+        shift, ctrl = self._wrapeeWindow.get_modifier_state()
+        if shift or ctrl or self.cam is not None:
+            self.cameraHandling(drag[0], drag[1], height, width)
+            return
+
+        eye, target = self._eye, self._target
+        changed = False
+
+        if drag[0] or drag[1]:
+            target = CameraControl.compute_look_step(eye, target, self._up, drag[0], drag[1])
+            changed = True
+
+        keys = self._wrapeeWindow.poll_camera_fly_keys()
+        if keys["forward"] or keys["right"]:
+            eye, target = CameraControl.compute_fly_step(
+                eye, target, self._up, keys["forward"], keys["right"], 0, self.flySpeed,
+            )
+            changed = True
+
+        if keys["up"]:
+            # Q/E deliberately take the other deal: the eye rises/sinks and the target stays put,
+            # so the camera tilts to keep the same point in view. Returns the eye unmoved when the
+            # step would reach straight-above/below the target, hence the comparison.
+            risen = CameraControl.compute_rise_step(eye, target, self._up, keys["up"], self.flySpeed)
+            if not np.allclose(risen, eye):
+                eye = risen
+                changed = True
+
+        if not changed:
+            return  # button held but neither moved nor a key down: leave the camera alone
+
+        self.createViewMatrix(eye, target, self._up)
+        if self._wrapeeWindow.eventManager is not None:
+            self.wrapeeWindow.eventManager.notify(self, self._updateCamera)
 
     def display_post(self) -> None:
         """
@@ -350,11 +487,9 @@ class RenderDecorator(RenderWindow):
             self._wrapeeWindow.register_scroll_callback(self._on_glfw_scroll)
 
     def _on_glfw_scroll(self, xoffset: float, yoffset: float) -> None:
-        """Scroll-wheel zoom for the GLFW backend, reusing the same cameraHandling() path SDL2's
+        """Scroll wheel for the GLFW backend, reusing the same handleScroll() path SDL2's
         SDL_MOUSEWHEEL event drives."""
-        width = self.wrapeeWindow._windowWidth
-        height = self.wrapeeWindow._windowHeight
-        self.cameraHandling(xoffset, yoffset, height, width)
+        self.handleScroll(xoffset, yoffset)
 
     def accept(self, system: System, event: Event | None = None) -> None:
         pass

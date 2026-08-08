@@ -41,8 +41,18 @@ def displayShortcutsGUI():
             imgui.set_window_position(shortcuts_x,shortcuts_y,imgui.FIRST_USE_EVER)
 
         imgui.text("List of shortcuts:")
-        
-        imgui.bullet_text("Toggle Wireframe                 F")
-        imgui.bullet_text("Vertical Scroll:                 Vertical camera translate")
-        imgui.bullet_text("Horizontal Scroll:               Vertical camera translate")
+
+        imgui.bullet_text("Toggle Wireframe:                F")
+
+        imgui.text("Camera -- hold RIGHT mouse button:")
+        imgui.bullet_text("Drag:                            Look around (position stays put)")
+        imgui.bullet_text("W / S:                           Fly forward / back along the view")
+        imgui.bullet_text("A / D:                           Fly left / right")
+        imgui.bullet_text("Q / E:                           Lower / raise (target stays put)")
+        imgui.bullet_text("Space:                           Aim back at the origin (0,0,0)")
+        imgui.bullet_text("Shift + Drag:                    Pan")
+        imgui.bullet_text("Ctrl + Drag:                     Zoom along the view")
+
+        imgui.text("Camera -- anytime:")
+        imgui.bullet_text("Scroll:                          Fly speed up / down (see terminal)")
         imgui.end()

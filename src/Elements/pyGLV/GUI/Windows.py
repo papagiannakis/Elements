@@ -87,6 +87,7 @@ class SDL2Window(RenderWindow):
 
         #polling state for the duck-typed helpers below, mirroring GLFWWindow's
         self._fKeyWasPressed = False
+        self._spaceKeyWasPressed = False
 
     @property
     def gWindow(self):
@@ -246,6 +247,26 @@ class SDL2Window(RenderWindow):
             return (-xrel.value, yrel.value)
         return None
 
+    def is_right_mouse_held(self) -> bool:
+        """Right-button state *without* consuming the drag delta: SDL_GetMouseState() leaves the
+        relative-motion accumulator alone, unlike SDL_GetRelativeMouseState() in
+        poll_right_drag_delta(). Public because example code needs to ask the same question --
+        the picking examples suspend their own WASD orbit while the button is held, so it can
+        drive RenderDecorator's look/fly instead."""
+        buttons = sdl2.SDL_GetMouseState(None, None)
+        return bool(buttons & sdl2.SDL_BUTTON_RMASK)
+
+    def poll_camera_fly_keys(self) -> dict[str, int]:
+        """W/A/S/D/Q/E collapsed into three -1/0/+1 axes (forward, right, up), so RenderDecorator
+        needs no SDL scancodes of its own -- same shape as GLFWWindow's version. Opposite keys
+        held together cancel, as they should."""
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        return {
+            "forward": bool(keystatus[sdl2.SDL_SCANCODE_W]) - bool(keystatus[sdl2.SDL_SCANCODE_S]),
+            "right": bool(keystatus[sdl2.SDL_SCANCODE_D]) - bool(keystatus[sdl2.SDL_SCANCODE_A]),
+            "up": bool(keystatus[sdl2.SDL_SCANCODE_E]) - bool(keystatus[sdl2.SDL_SCANCODE_Q]),
+        }
+
     def consume_wireframe_toggle_key(self) -> bool:
         """True exactly once per F keypress (rising edge), polled the same way GLFWWindow's
         version is (rather than SDL2's own SDL_KEYDOWN event), so RenderDecorator can treat both
@@ -254,6 +275,16 @@ class SDL2Window(RenderWindow):
         pressed = bool(keystatus[sdl2.SDL_SCANCODE_F])
         edge = pressed and not self._fKeyWasPressed
         self._fKeyWasPressed = pressed
+        return edge
+
+    def consume_target_reset_key(self) -> bool:
+        """True exactly once per SPACE keypress (rising edge), like consume_wireframe_toggle_key().
+        One-shot rather than held-repeating because re-aiming the camera is a single action, not
+        something to apply every frame the key is down."""
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        pressed = bool(keystatus[sdl2.SDL_SCANCODE_SPACE])
+        edge = pressed and not self._spaceKeyWasPressed
+        self._spaceKeyWasPressed = pressed
         return edge
 
 
@@ -308,6 +339,7 @@ class GLFWWindow(RenderWindow):
         self._lastCursorX = 0.0
         self._lastCursorY = 0.0
         self._fKeyWasPressed = False
+        self._spaceKeyWasPressed = False
 
     @property
     def gWindow(self):
@@ -439,12 +471,38 @@ class GLFWWindow(RenderWindow):
         ctrl = glfw.get_key(self._gWindow, glfw.KEY_LEFT_CONTROL) == glfw.PRESS
         return shift, ctrl
 
+    def is_right_mouse_held(self) -> bool:
+        """Right-button state without consuming the drag delta (poll_right_drag_delta() advances
+        _lastCursorX/Y; this doesn't touch them). Public for the same reason as SDL2Window's
+        version: example code that binds WASD itself needs to know when to stand down."""
+        return glfw.get_mouse_button(self._gWindow, glfw.MOUSE_BUTTON_RIGHT) == glfw.PRESS
+
+    def poll_camera_fly_keys(self) -> dict[str, int]:
+        """W/A/S/D/Q/E as three -1/0/+1 axes (forward, right, up), the GLFW equivalent of
+        SDL2Window's SDL_GetKeyboardState scan."""
+        def held(key):
+            return glfw.get_key(self._gWindow, key) == glfw.PRESS
+
+        return {
+            "forward": held(glfw.KEY_W) - held(glfw.KEY_S),
+            "right": held(glfw.KEY_D) - held(glfw.KEY_A),
+            "up": held(glfw.KEY_E) - held(glfw.KEY_Q),
+        }
+
     def consume_wireframe_toggle_key(self) -> bool:
         """True exactly once per F keypress (rising edge), since GLFW has no keydown event queue
         to check "was this key just pressed" against, unlike SDL2's SDL_KEYDOWN."""
         pressed = glfw.get_key(self._gWindow, glfw.KEY_F) == glfw.PRESS
         edge = pressed and not self._fKeyWasPressed
         self._fKeyWasPressed = pressed
+        return edge
+
+    def consume_target_reset_key(self) -> bool:
+        """True exactly once per SPACE keypress (rising edge), the GLFW equivalent of SDL2Window's
+        version."""
+        pressed = glfw.get_key(self._gWindow, glfw.KEY_SPACE) == glfw.PRESS
+        edge = pressed and not self._spaceKeyWasPressed
+        self._spaceKeyWasPressed = pressed
         return edge
 
     def register_scroll_callback(self, handler: Callable[[float, float], None]) -> None:
