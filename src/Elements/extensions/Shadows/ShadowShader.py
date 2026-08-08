@@ -18,7 +18,7 @@ class ShadowShader(Component):
     An OpenGL-GLSL Shader container Component class specifically for Shadows.
     """
     
-    # Every GLSL shader this class uses lives in its own file under Elements/files/shaders,
+    # Every GLSL shader this class uses lives in its own file under Elements/assets/shaders,
     # each carrying the explanation that used to sit here:
     #   pass 1 (depth maps)  DirDepth.vert/.frag, PointDepth.vert/.geom/.frag
     #   pass 2 (shading)     DirPhong.vert/.frag, PointPhong.vert/.frag

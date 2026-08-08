@@ -36,10 +36,10 @@ class Shader(Component):
     # ------------------------------------------------------------------
     #  The last-resort defaults, used only when a Shader is constructed
     #  with neither a *_source nor a *_import_file. Deliberately spelled
-    #  out here rather than read from Elements/files/shaders: they are
+    #  out here rather than read from Elements/assets/shaders: they are
     #  the fallback, so importing this module must not depend on any file
     #  being present. Every other shader lives in its own file under
-    #  Elements/files/shaders -- pass it with vertex_import_file= /
+    #  Elements/assets/shaders -- pass it with vertex_import_file= /
     #  fragment_import_file=, e.g.
     #      Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert",
     #             fragment_import_file=SHADER_DIR / "Color.frag")

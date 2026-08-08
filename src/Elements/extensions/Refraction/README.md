@@ -22,8 +22,10 @@ Class of 2025
 - `refraction_component.py` - Core component factory for creating refractive entities
 - `refraction_example_cube.py` - Simple cube demonstration
 - `refraction_example_bunny.py` - Complex geometry demonstration (Stanford Bunny)
-- `bunny.obj` - 3D model file
 - `tests/` - Unit tests for validation
+
+The Stanford Bunny model itself (`bunny.obj`) ships with Elements, alongside every other
+bundled model under `Elements/assets/models` (`Elements.definitions.MODEL_DIR`).
 
 ## Examples
 

@@ -34,8 +34,6 @@ reflective object's position, in all 6 directions, every frame -- which is a muc
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import imgui
 
@@ -53,15 +51,14 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture3D
-from Elements.definitions import MODEL_DIR, TEXTURE_DIR, SHADER_DIR
+from Elements.definitions import MODEL_DIR, SKYBOX_DIR, SHADER_DIR
 from Elements.extensions.Refraction.refraction_component import create_refractive_entity
 from Elements.extensions.environment_mapping.environment_mapping import EnvironmentMapping
 
-#: Refraction/refraction_example_bunny.py's bunny.obj and example_environment_mapping_pigs.py's pig model
-#: both live next to their own example script, not under Elements.definitions.MODEL_DIR.
-_EXTENSIONS_DIR = Path(__file__).resolve().parent.parent
-BUNNY_PATH = _EXTENSIONS_DIR / "Refraction" / "bunny.obj"
-PIG_PATH = _EXTENSIONS_DIR / "environment_mapping" / "pigs" / "models" / "pighighpoly1.obj"
+#: Refraction/refraction_example_bunny.py's bunny and example_environment_mapping_pigs.py's pig
+#: both ship with Elements, alongside every other bundled model under MODEL_DIR.
+BUNNY_PATH = MODEL_DIR / "bunny.obj"
+PIG_PATH = MODEL_DIR / "pighighpoly1.obj"
 
 #: Anywhere far outside the view frustum/far-clip-plane: the standard "hide this entity" trick
 #: already used elsewhere in Elements (e.g. MultiLights_and_Normals's example_multi_lights_3cubes_flat.py).
@@ -145,7 +142,7 @@ def _skybox_box_geometry(size):
 def load_cubemap(texture_set_name):
     """A Texture3D for one of TEXTURE_DIR/Skyboxes/<name>'s front/back/top/bottom/left/right.jpg.
     Call only after scene.init() -- Texture3D() issues real GL calls in its own constructor."""
-    folder = TEXTURE_DIR / "Skyboxes" / texture_set_name
+    folder = SKYBOX_DIR / texture_set_name
     face_data = get_texture_faces(
         folder / "front.jpg", folder / "back.jpg", folder / "top.jpg",
         folder / "bottom.jpg", folder / "left.jpg", folder / "right.jpg",

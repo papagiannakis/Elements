@@ -27,8 +27,9 @@ PREFABS_DIR     = SHARED_DIR  / "prefabs"
 CACHE_DIR       = SHARED_DIR  / "cache"
 CUSTOM_MODELS_DIR = SHARED_DIR / "custom_models"
 
-# Textures live with every other bundled texture, under Elements/files/textures
-from Elements.definitions import TEXTURE_DIR
+# The bundled models/textures this extension ships live with every other bundled asset,
+# under Elements/assets/models and Elements/assets/textures
+from Elements.definitions import MODEL_DIR, TEXTURE_DIR
 
 # ── File paths ────────────────────────────────────────────────────────────────
 PROJECT_SCENE_IR_FILE = SRC_DIR / "scene_ir.json"

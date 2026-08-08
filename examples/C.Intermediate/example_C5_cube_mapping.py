@@ -14,7 +14,7 @@ import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
 from Elements.pyGLV.GL.Textures import get_single_texture_faces
 
-from Elements.definitions import TEXTURE_DIR, SHADER_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR, SKYBOX_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 example_description = \
@@ -144,8 +144,8 @@ projMat = util.perspective(50.0, 1.0, 0.01, 100.0)
 
 gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
 
-# skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Cloudy"
-skybox_texture_locations = TEXTURE_DIR / "Skyboxes" / "Sea"
+# skybox_texture_locations = SKYBOX_DIR / "Cloudy"
+skybox_texture_locations = SKYBOX_DIR / "Sea"
 front_img = skybox_texture_locations / "front.jpg"
 right_img = skybox_texture_locations / "right.jpg"
 left_img = skybox_texture_locations / "left.jpg"

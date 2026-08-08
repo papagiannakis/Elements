@@ -25,7 +25,7 @@ from Elements.extensions.textToScene.src.llm_parser import (
 from Elements.extensions.textToScene.src.prefabs import build_house, build_tree, build_gift_box, build_street_light, build_chair, build_bench, build_bed, build_table, build_lamp
 
 from Elements.extensions.textToScene.src.config import (
-    TEXTURE_CATALOGUE, TEXTURE_DIR, CUSTOM_MODELS_DIR,
+    TEXTURE_CATALOGUE, MODEL_DIR, TEXTURE_DIR, CUSTOM_MODELS_DIR,
     SHARED_DIR, HISTORY_DIR, SAVED_SCENES_DIR, PREFABS_DIR,
     PROJECT_SCENE_IR_FILE,
     SCENE_IR_FILE, PREVIEW_IR_FILE, AI_REQUEST_FILE,
@@ -75,11 +75,7 @@ DEFAULT_NEW_SCENE_IR = {
     "children": []
 }
 
-# Models bundled with the extension (in models/ subfolder)
-_EXTENSION_DIR = Path(__file__).resolve().parent.parent
-MODELS_DIR = _EXTENSION_DIR / "models"
-
-# Friendly-name → filename mapping for bundled USDZ models
+# Friendly-name → filename mapping for the bundled USDZ models under MODEL_DIR
 _KNOWN_MODELS = {
     "chameleon":  "chameleon_anim_mtl_variant.usdz",
     "baseball":   "ball_baseball_realistic.usdz",
@@ -1666,7 +1662,7 @@ def detect_procedural_action(prompt):
     if _load_verbs.search(text):
         for model_name, filename in _KNOWN_MODELS.items():
             if re.search(r'\b' + re.escape(model_name) + r'\b', text):
-                full_path = MODELS_DIR / filename
+                full_path = MODEL_DIR / filename
                 if full_path.exists():
                     print("[controller] Detected known model '{}' in prompt.".format(model_name))
                     return {"action": "add_custom_model", "model_path": str(full_path)}
@@ -3311,8 +3307,8 @@ def apply_action_to_ir(scene_ir, action):
         else:
             full_path = CUSTOM_MODELS_DIR / model_path
             if not full_path.exists():
-                # Also search bundled models/ folder
-                bundled = MODELS_DIR / model_path
+                # Also search the bundled models folder
+                bundled = MODEL_DIR / model_path
                 if bundled.exists():
                     full_path = bundled
         if not full_path.exists():
