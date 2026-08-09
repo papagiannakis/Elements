@@ -23,8 +23,6 @@ name/picking-id and starts orbiting the camera around it (W/A/S/D rotate, +/- zo
 skybox or empty space orbits around the world origin (0,0,0) instead.
 """
 
-from pathlib import Path
-
 import imgui
 import sdl2
 import OpenGL.GL as gl
@@ -278,13 +276,6 @@ help_menu = menu_bar.add_menu("Help")
 help_menu.add_item(
     "shortcuts", "Keyboard Shortcuts", toggle_shortcuts_window, Keybinding(sdl2.SDL_SCANCODE_SLASH, sdl2.KMOD_GUI)
 )
-
-# Written next to this script on first run; hand-edit it (e.g. "mods": "Alt") to change a
-# shortcut without touching this file. See MenuBar.py for the "mods" format.
-keybindings_path = Path(__file__).with_name("showcase_keybindings.json")
-if not keybindings_path.exists():
-    menu_bar.save_keybindings_json(keybindings_path)
-menu_bar.load_keybindings_json(keybindings_path)
 
 
 # ==============================================================================================
