@@ -1,29 +1,23 @@
 """
-BasicWindow example, showcasing the pyglGA SDK ECSS
-    
-glGA SDK v2021.0.5 ECSS (Entity Component System in a Scenegraph)
-@Coopyright 2020-2021 George Papagiannakis
-    
-The classes below are all related to the GUI and Display of 3D 
-content using the OpenGL, GLSL and SDL2, ImGUI APIs, on top of the
-Elements ECSS package
+The Camera System: a camera that lives in the scenegraph as an Entity, rather than a view matrix
+built by hand with util.lookat().
+
+CameraSystem walks the graph and hands every object an l2cam matrix -- its own place in the world,
+already expressed from the camera's point of view -- so the render loop below feeds l2cam straight
+to modelViewProj and never touches a view or projection matrix itself.
 """
 
-from __future__         import annotations
-from asyncore import dispatcher
-from math import sin, cos, radians
-from enum import Enum
-from random import uniform;
+from __future__ import annotations
+
 import numpy as np
+import OpenGL.GL as gl
+from OpenGL.GL import GL_LINES
 
-import OpenGL.GL as gl;
 import Elements.pyECSS.math_utilities as util
-from Elements.pyECSS.System import  TransformSystem, CameraSystem
+from Elements.pyECSS.System import TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform,  RenderMesh
-from Elements.pyECSS.Event import Event
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
 
-from Elements.pyGLV.GUI.Viewer import  RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
@@ -32,20 +26,22 @@ from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.normals import Convert
-from OpenGL.GL import GL_LINES
 
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import SHADER_DIR
+
 example_description = \
 "This is the first examples that demonstrates the usage of the Camera System \n\
 instead of the use of the lookAt function to create the view matrix. \n\
 You may move the camera using the mouse or the Scenegraph GUI. \n\n\
 NOTE: To change any TRS via the Scenegraph GUI, only this TRS must be toggled on!\n\n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
+various information about them. Hit ESC OR Close the window to quit."
 
 
 class GameObjectEntity(Entity):
+    """An Entity that carries its own transform, mesh, shader and vertex array."""
+
     def __init__(self, name=None, type=None, id=None) -> None:
         super().__init__(name, type, id);
 
@@ -54,7 +50,6 @@ class GameObjectEntity(Entity):
         # Create basic components of a primitive object
         self.trans          = BasicTransform(name="trans", trs=util.identity());
         self.mesh           = RenderMesh(name="mesh");
-        # self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"));
         self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"));
         self.vArray         = VertexArray();
         # Add components to entity
@@ -107,14 +102,13 @@ def CubeSpawn(cubename = "Cube"):
         [0.0, 1.0, 0.0, 1.0],
         [0.0, 1.0, 0.0, 1.0]                    
     ];
-    # OR
-    # colors =  [cube.color] * len(vertices) 
-    
-    
-    #index arrays for above vertex Arrays
+    # OR, for a single flat colour:
+    # colors =  [cube.color] * len(vertices)
+
+    #which corners each triangle joins: 6 faces, 2 triangles each
     indices = np.array(
         (
-            1,0,3, 1,3,2, 
+            1,0,3, 1,3,2,
             2,3,7, 2,7,6,
             3,0,4, 3,4,7,
             6,5,1, 6,1,2,
@@ -122,7 +116,7 @@ def CubeSpawn(cubename = "Cube"):
             5,4,0, 5,0,1
         ),
         dtype=np.uint32
-    ) #rhombus out of two triangles
+    )
 
     vertices, colors, indices, normals = Convert(vertices, colors, indices, produceNormals=True);
     cube.SetVertexAttributes(vertices, colors, indices, normals);
@@ -133,15 +127,12 @@ def CubeSpawn(cubename = "Cube"):
 
 
 def main(imguiFlag = False):
-    ##########################################################
-    # Instantiate a simple complete ECSS with Entities, 
-    # Components, Camera, Shader, VertexArray and RenderMesh
-    #########################################################
-    
+    # A complete ECSS: Entities, Components, Camera, Shader, VertexArray and RenderMesh
+
     winWidth = 1024
     winHeight = 1024
-    
-    scene = Scene()    
+
+    scene = Scene()
 
     # Initialize Systems used for this script
     transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -152,11 +143,11 @@ def main(imguiFlag = False):
     # Scenegraph with Entities, Components
     rootEntity = scene.world.createEntity(Entity(name="Root"))
 
-    # Spawn Camera
+    # The camera is an Entity under the root, with two nested transforms: trans2 pulls it back
+    # from what it orbits, trans1 turns it. Its name is what the GUI looks for to drive it.
     mainCamera = SimpleCamera("Simple Camera")
-    # Camera Settings
     mainCamera.trans2.trs = util.translate(0, 0, 8) # VIEW
-    mainCamera.trans1.trs = util.rotate((1, 0, 0), -45); 
+    mainCamera.trans1.trs = util.rotate((1, 0, 0), -45);
 
     #-----------------------------------------
     # Spawn Two Homes on top of each other
@@ -195,83 +186,51 @@ def main(imguiFlag = False):
         Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
     
     scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-    # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-    
+
     # MAIN RENDERING LOOP
     running = True
     scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A CameraSystem Example", customImGUIdecorator = ImGUIecssDecorator2)
 
-    #imGUIecss = scene.gContext
-
-
-    # ---------------------------------------------------------
-    #   Run pre render GLInit traversal for once!
-    #   pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
-    #   needs an active GL context
-    # ---------------------------------------------------------
-    
     gl.glClear(gl.GL_COLOR_BUFFER_BIT | gl.GL_DEPTH_BUFFER_BIT)
     gl.glDisable(gl.GL_CULL_FACE);
-
-    # gl.glDepthMask(gl.GL_FALSE);  
     gl.glEnable(gl.GL_DEPTH_TEST);
     gl.glDepthFunc(gl.GL_LESS);
+
+    # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
+    # needs an active GL context
     scene.world.traverse_visit(initUpdate, rootEntity)
-    
 
-    ############################################
-    # Instantiate all Event-related key objects
-    ############################################
-    
-    # instantiate new EventManager
-    # need to pass that instance to all event publishers e.g. ImGUIDecorator
-    eManager = scene.world.eventManager
-    gWindow = scene.renderWindow
-    gGUI = scene.gContext
-    
-    #simple Event actuator System
-    renderGLEventActuator = RenderGLStateSystem()
-    
-    #setup Events and add them to the EventManager
-    updateTRS = Event(name="OnUpdateTRS", id=100, value=None)
-    updateBackground = Event(name="OnUpdateBackground", id=200, value=None)
-    eManager._events[updateTRS.name] = updateTRS
-    eManager._events[updateBackground.name] = updateBackground
+    # ---------------- the window, the GUI and the camera ----------------
 
+    gWindow = scene.renderWindow    # the SDL2 window: the pixels, the mouse and the keyboard
+    gGUI = scene.gContext           # the ImGUI layer wrapped around it
 
-    eManager._subscribers[updateTRS.name] = gGUI
-    eManager._subscribers[updateBackground.name] = gGUI
-   
-    eManager._subscribers['OnUpdateWireframe'] = gWindow
-    eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-    eManager._subscribers['OnUpdateCamera'] = gWindow
-    eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-    
+    # No gGUI.createViewMatrix() here, unlike the other examples: the GUI finds mainCamera by name
+    # (any root child with "camera" in it) and drags mainCamera.trans1.trs directly, so there is no
+    # eye/target pair to seed and gWindow._myCamera is never read below.
 
-    # Add RenderWindow to the EventManager publishers
-    eManager._publishers[updateBackground.name] = gGUI
-
-
-    
     while running:
 
-        scene.world.traverse_visit(transUpdate, scene.world.root) 
+        scene.world.traverse_visit(transUpdate, scene.world.root)
+        # the camera's own branch first, so l2cam is ready when the rest of the graph is visited
         scene.world.traverse_visit_pre_camera(camUpdate, mainCamera.camera)
         scene.world.traverse_visit(camUpdate, scene.world.root)
+
+        # l2cam is already model @ view @ projection -- no matrix multiplication needed here
         home1.getChild(1).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(1).trans.l2cam, mat4=True);
         home1.getChild(2).shaderDec.setUniformVariable(key='modelViewProj', value=home1.getChild(2).trans.l2cam, mat4=True);
         home1.getChild(1).shaderDec.setUniformVariable(key='my_color;', value=[0.4, 0.4, 0.4, 1.0], float4=True);
 
-        terrain_shader.setUniformVariable(key='modelViewProj', value=terrain_trans.l2cam, mat4=True);  
-        
+        terrain_shader.setUniformVariable(key='modelViewProj', value=terrain_trans.l2cam, mat4=True);
+
         # call SDLWindow/ImGUI display() and ImGUI event input process
         running = scene.render()
         displayGUI_text(example_description)
         # call the GL State render System
         scene.world.traverse_visit(renderUpdate, scene.world.root)
-        # ImGUI post-display calls and SDLWindow swap 
+        # ImGUI post-display calls and SDLWindow swap
         scene.render_post()
-        
+
     scene.shutdown()
 
 
