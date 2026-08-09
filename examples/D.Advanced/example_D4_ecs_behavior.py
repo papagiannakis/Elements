@@ -5,8 +5,8 @@ import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import TransformSystem, CameraSystem
-from Elements.pyGLV.GL.ActionSystems import InsertAction, InsertCollider, RemoveAction, RemoveComponent
-from Elements.pyGLV.GL.GameObject import GameObject
+from Elements.extensions.Actions.ActionSystems import InsertAction, InsertCollider, RemoveAction, RemoveComponent
+from Elements.extensions.Actions.GameObject import GameObject
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
@@ -14,7 +14,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
-from Elements.utils.objimporter.entities import ModelEntity
+from Elements.extensions.objimporter.entities import ModelEntity
 from Elements.utils.terrain import generateTerrain
 from Elements.definitions import MODEL_DIR, SHADER_DIR
 

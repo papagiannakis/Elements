@@ -13,7 +13,7 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture, Texture3D
 from Elements.utils.normals import generateSmoothNormalsMesh, generateUniqueVertices
-from Elements.utils.objimporter.wavefront import Wavefront
+from Elements.extensions.objimporter.wavefront import Wavefront
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import MODEL_DIR, SHADER_DIR, SKYBOX_DIR
 from Elements.extensions.environment_mapping import EnvironmentMapping
