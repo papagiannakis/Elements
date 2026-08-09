@@ -17,7 +17,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from OpenGL.GL import GL_LINES
 import OpenGL.GL as gl
 
-import Elements.extensions.Normals_USDimporter_BSP.normals as norm
+import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 

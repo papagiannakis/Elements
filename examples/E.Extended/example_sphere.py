@@ -18,7 +18,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Textures import Texture
 
 from Elements.definitions import TEXTURE_DIR, SHADER_DIR
-import Elements.extensions.Normals_USDimporter_BSP.normals as norm
+import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
 
 example_description = \

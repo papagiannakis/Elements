@@ -38,14 +38,7 @@ import numpy as np
 import imgui
 
 import Elements.pyECSS.math_utilities as util
-# Elements.utils.normals's generateFlatNormalsMesh decides whether to explode a mesh into
-# per-triangle vertices by checking the *vertex position array* for exact duplicate rows -- a
-# check that silently does the wrong thing (falls back to smooth-like accumulated normals) the
-# moment a model happens to have even one coincidental duplicate vertex position anywhere (teapot
-# and cow both do). Normals_USDimporter_BSP's version checks the *index array* for shared
-# indices instead, which is what actually determines whether triangles share vertices, so it
-# doesn't have that failure mode -- it's what Normals_USDimporter_BSP/example_cow.py itself uses.
-import Elements.extensions.Normals_USDimporter_BSP.normals as norm
+import Elements.utils.normals as norm
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray

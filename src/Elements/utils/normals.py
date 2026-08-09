@@ -1,3 +1,16 @@
+"""
+Normal generation utilities, part of Elements.utils
+
+Elements.pyGLV (Computer Graphics for Deep Learning and Scientific Visualization)
+@Copyright 2021-2022 Dr. George Papagiannakis
+
+@Authors: Almani Iosif csd4824, Kapetanakis Ioannis csd4641
+
+Flat and smooth shading need opposite vertex layouts -- one vertex per triangle corner, or vertices
+shared between neighbouring faces -- and the two mesh functions here convert a mesh into whichever
+one they need before accumulating the normals.
+"""
+
 import numpy as np
 import Elements.pyECSS.math_utilities as util
 
