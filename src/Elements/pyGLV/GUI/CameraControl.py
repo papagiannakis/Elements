@@ -28,8 +28,7 @@ ENTITY_CAMERA_SPEED = 5
 LOOK_SENSITIVITY = 0.15
 
 #: starting world-units-per-frame for the WASD/QE fly controls (compute_fly_step). One value can't
-#: suit every scene -- examples frame their cameras anywhere from ~1 unit off the target
-#: (B.Introductory/example_B5_cube_axes_terrain.py) to ~12 (A.Showcase/example_showcase.py) -- so
+#: suit every scene -- examples frame their cameras anywhere from ~1 unit off the target -- so
 #: this is only the starting point: RenderDecorator.flySpeed is adjustable at runtime by scrolling
 #: with the right button held.
 FLY_SPEED = 0.05
@@ -226,7 +225,7 @@ def compute_entity_camera_step(
     cameraspeed: float = ENTITY_CAMERA_SPEED,
 ) -> np.ndarray:
     """
-    One step of the Entity-based camera (examples 7-11 and pyJANVRED): rotate/translate a
+    One step of the Entity-based camera: rotate/translate a
     BasicTransform's own `trs` matrix directly, rather than an eye/target/up pair. Returns the new
     `trs`.
     """
