@@ -1,5 +1,5 @@
 """
-Copy of examples/B.Introductory/example_B5_cube_axes_terrain.py that recreates the Eye/Target/Up
+Copy of examples/B.Introductory/example_B5_cube_free_fly.py that recreates the Eye/Target/Up
 camera sliders that used to be part of every example's default "Elements ImGUI window" panel
 (Elements.pyGLV.GUI.ImguiDecorator.ImGUIDecorator.extra()). They were removed from there because
 editing them silently did nothing on several examples: whenever a scene has an Entity-based camera

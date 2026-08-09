@@ -16,8 +16,8 @@ These examples are suitable for introduction to Computer Graphics and Elements.
   * [Example B1](./B.Introductory/example_B1_component_system.py): A plain example of a component and a system, without any rendering
   * [Example B2](./B.Introductory/example_B2_empty_window.py): A plain empty window rendered. Demonstrates the basic setup of a window and a renderer.
   * [Example B3](./B.Introductory/example_B3_empty_window_with_GUI.py): A plain empty window rendered with GUI enabled. You may change the background color via the GUI and check the FPS, as well as information on the openGL version and the renderer.
-  * [Example B4](./B.Introductory/example_B4_cube_lookat.py): A scene containing a cube. The camera is staticly defined within the code and the `lookAt` is used to create the projection matrix. 
-  * [Example B5](./B.Introductory/example_B5_cube_axes_terrain.py): A scene containing a cube, and a terrain. 
+  * [Example B4](./B.Introductory/example_B4_simple_cube.py): A scene containing a cube. The camera is staticly defined within the code and the `lookAt` is used to create the projection matrix. 
+  * [Example B5](./B.Introductory/example_B5_cube_free_fly.py): A scene containing a cube, and a terrain. 
   The camera can be altered via the GUI or the mouse. The Scenegraph is also shown in a separate GUI (read-only).
   * [Example B6](./B.Introductory/example_B6_lights_cube.py): A scene containing a cube, terrain, axes. Lights via 
   the Blinn-Phong algorithm. Camera can be altered via the GUI or the mouse. The Scenegraph is also shown in a separate GUI. 
