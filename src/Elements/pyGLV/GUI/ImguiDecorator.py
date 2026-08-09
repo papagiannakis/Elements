@@ -99,10 +99,14 @@ class ImGUIDecorator(RenderDecorator):
         self.wrapeeWindow.display_post()
 
     def _draw_wireframe_checkbox(self):
-        """Wireframe toggle checkbox, kept in sync with the OnUpdateWireframe Event."""
+        """Wireframe toggle checkbox. Sets the flag on the window directly *and* notifies the
+        OnUpdateWireframe Event.
+
+        The direct write is what lets an example work without wiring up an EventManager at all """
         self._changed, self._checkbox = imgui.checkbox("Wireframe", self._wireframeMode)
         if self._changed:
             self._wireframeMode = self._checkbox
+            self._wrapeeWindow._wireframeMode = self._wireframeMode
             self._updateWireframe.value = self._wireframeMode
             if self._wrapeeWindow.eventManager is not None:
                 self.wrapeeWindow.eventManager.notify(self, self._updateWireframe)
