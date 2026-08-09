@@ -89,7 +89,7 @@ cube = scene.world.createEntity(Entity(name="cube"))
 scene.world.addEntityChild(rootEntity, cube)
 # translate @ rotate @ scale, applied right-to-left: scaled first, then turned, then moved
 cube_trans = scene.world.addComponent(cube, BasicTransform(name="cube_trans",
-    trs=util.translate(0,0.5,0) @ util.rotate(axis=(0.0, 1.0, 0.0), angle=0.0) @ util.scale(1.0,1.0,1.0)))
+    trs=util.translate(0,0.5,0) @ util.rotate(axis=(0.0, 1.0, 0.0), angle=45.0) @ util.scale(1.1,1.1,1.1)))
 cube_mesh = scene.world.addComponent(cube, RenderMesh(name="cube_mesh"))
 cube_mesh.vertex_attributes.append(vertexCube)      # attribute 0, read by the shader as vPosition
 cube_mesh.vertex_attributes.append(colorCube)       # attribute 1, read as vColor
