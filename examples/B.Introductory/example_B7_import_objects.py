@@ -1,234 +1,158 @@
-
-import os
-import numpy as np
-
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
-from Elements.pyECSS.System import TransformSystem, CameraSystem
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIecssDecorator2
+from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.definitions import MODEL_DIR, SHADER_DIR
 
 from OpenGL.GL import GL_LINES
-import OpenGL.GL as gl
 
 import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.utils.Shortcuts import displayGUI_text
-example_description = \
-"This is a scene with the famous Newell teapot. This example demonstrates the \n\
-ability to load complex objects instead of inputing them manually. \n\
-The scene is being lit using the Blinn-Phong algorithm. \n\
-You may move the camera using the mouse or the GUI. \n\
-You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them (read-only). Hit ESC OR Close the window to quit." 
 
-#Light
-Lposition = util.vec(2.0, 5.5, 2.0) #uniform lightpos
-Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
-Lambientstr = 0.3 #uniform ambientStr
-LviewPos = util.vec(2.5, 2.8, 5.0) #uniform viewpos
-Lcolor = util.vec(1.0,1.0,1.0)
+example_description = \
+"The Newell teapot, loaded from a .obj file instead of typed in by hand.\n\n\
+Two lines do the work:\n\
+  obj_to_mesh              positions and triangles out of the file\n\
+  generateSmoothNormalsMesh a normal per vertex, which the Phong shader needs\n\n\
+A .obj carries no colours, so obj_to_mesh paints every vertex the same, and no\n\
+normals either that Elements uses -- they are computed from the geometry.\n\n\
+Swap MODEL below for any other file in Elements/assets/models. Unlike the\n\
+positions of a cube, none of this scales with how complex the model is.\n\n\
+Hold the RIGHT mouse button to fly: drag to look, W/A/S/D to move, Q/E to\n\
+rise/sink, SPACE to aim at the origin, scroll or +/- for speed.\n\
+Hit ESC OR Close the window to quit."
+
+# ---------------- what to load ----------------
+
+#: any .obj under Elements/assets/models -- cow.obj, teddy.obj, bunny.obj, sphere.obj,
+#: LivingRoom/Chair/Chair.obj ... obj_to_mesh reads v, v/vt, v//vn and v/vt/vn face formats and
+#: triangulates quads, so files with uv coordinates load too (their uvs are simply not used here)
+MODEL = MODEL_DIR / "teapot.obj"
+# MODEL = MODEL_DIR / "cow.obj"
+# MODEL = MODEL_DIR / "teddy.obj" # too big model, use MODEL_SCALE = 0.05
+# MODEL = MODEL_DIR / "sphere.obj"
+# MODEL = MODEL_DIR / "bunny.obj"
+# MODEL = MODEL_DIR / "Hand" /"Hand.obj" # too small model, use MODEL_SCALE = 3.4
+MODEL_COLOR = [168/255, 168/255, 210/255, 1.0]
+MODEL_SCALE = 0.4
+
+# ---------------- light and material ----------------
+
+Lposition = util.vec(2.0, 5.5, 2.0)
+Lambientcolor = util.vec(1.0, 1.0, 1.0)
+Lambientstr = 0.3
+Lcolor = util.vec(1.0, 1.0, 1.0)
 Lintensity = 0.8
-#Material
-Mshininess = 0.4 
-#: How tight the specular highlight is (Mshininess above is how strong it is).
-#: 8 = broad sheen, 32 = plastic, 256+ = mirror glint. See example_B10_specular_grid.py.
+Mshininess = 0.4
 MspecularExponent = 32.0
-Mcolor = util.vec(0.8, 0.0, 0.8)
+
 winWidth = 1200
 winHeight = 800
 
-scene = Scene()    
+# ---------------- geometry ----------------
 
-# Scenegraph with Entities, Components
+# positions + triangles from the file, then a normal per vertex from the geometry
+vert, ind, col = obj_to_mesh(MODEL, color=MODEL_COLOR)
+vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert, ind, col)
+print("%s: %d vertices, %d triangles" % (MODEL.name, len(vertices), len(indices) // 3))
+
+vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4)
+
+# ---------------- the scene: RooT -> teapot, terrain ----------------
+
+scene = Scene()
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
-entityCam1 = scene.world.createEntity(Entity(name="Entity1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="Entity1_TRS", trs=util.translate(0,0,-8)))
 
-eye = util.vec(1, 0.54, 1.0)
-target = util.vec(0.02, 0.14, 0.217)
-up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
-# projMat = util.perspective(90.0, 1.33, 0.1, 100)  
-projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
+## THE LOADED OBJECT, lit ##
+teapot = scene.world.createEntity(Entity(name="teapot"))
+scene.world.addEntityChild(rootEntity, teapot)
+teapot_trans = scene.world.addComponent(teapot, BasicTransform(name="teapot_trans", trs=util.scale(MODEL_SCALE)))
+teapot_mesh = scene.world.addComponent(teapot, RenderMesh(name="teapot_mesh"))
+teapot_mesh.vertex_attributes.append(vertices)
+teapot_mesh.vertex_attributes.append(colors)
+teapot_mesh.vertex_attributes.append(normals)     # attribute 2, the one the lighting needs
+teapot_mesh.vertex_index.append(indices)
+teapot_vArray = scene.world.addComponent(teapot, VertexArray())
+teapot_shader = scene.world.addComponent(teapot, ShaderGLDecorator(
+    Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
-
-node4 = scene.world.createEntity(Entity(name="Object"))
-scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.scale(0.1, 0.1, 0.1) ))
-mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
-
-
-# a simple triangle
-vertexData = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.5, 1.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0]
-],dtype=np.float32) 
-colorVertexData = np.array([
-    [1.0, 0.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
-
-#Colored Axes
-vertexAxes = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.5, 0.0, 0.0, 1.0],
-    [0.0, 0.0, 0.0, 1.0],
-    [0.0, 1.5, 0.0, 1.0],
-    [0.0, 0.0, 0.0, 1.0],
-    [0.0, 0.0, 1.5, 1.0]
-],dtype=np.float32) 
-colorAxes = np.array([
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
-
-
-#index arrays for above vertex Arrays
-index = np.array((0,1,2), np.uint32) #simple triangle
-indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B lines
-
-
-# Systems
-transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
-initUpdate = scene.world.createSystem(InitGLShaderSystem())
-
-
-
-## object load 
-
-# NOTICE THAT OBJECTS WITH UVs are currently NOT SUPPORTED
-obj_to_import = MODEL_DIR / "teapot.obj"
-# obj_to_import = MODEL_DIR / "cow.obj"
-# obj_to_import = MODEL_DIR / "teddy.obj"
-
-obj_color = [168/255, 168/255 , 210/255, 1.0]
-vert , ind, col = obj_to_mesh(obj_to_import, color=obj_color)
-vertices, indices, colors, normals = norm.generateSmoothNormalsMesh(vert , ind, col)
-
-mesh4.vertex_attributes.append(vertices)
-mesh4.vertex_attributes.append(colors)
-mesh4.vertex_attributes.append(normals)
-mesh4.vertex_index.append(indices)
-vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
-
-
-
-
-# Generate terrain
-
-vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
-# Add terrain
+## THE TERRAIN, unlit ##
 terrain = scene.world.createEntity(Entity(name="terrain"))
 scene.world.addEntityChild(rootEntity, terrain)
 terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
 terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
-terrain_mesh.vertex_attributes.append(vertexTerrain) 
+terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
-## ADD AXES ##
-axes = scene.world.createEntity(Entity(name="axes"))
-scene.world.addEntityChild(rootEntity, axes)
-axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.001, 0.0))) #util.identity()
-axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-axes_mesh.vertex_attributes.append(vertexAxes) 
-axes_mesh.vertex_attributes.append(colorAxes)
-axes_mesh.vertex_index.append(indexAxes)
-axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES)) # note the primitive change
+# ---------------- systems ----------------
 
-# shaderDec_axes = scene.world.addComponent(axes, Shader())
-# OR
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-# axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
-
+# TransformSystem is what turns each BasicTransform's own trs into the l2world used below. The other
+# examples multiply trs in directly, which works only while nothing is parented to anything else.
+transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
+initUpdate = scene.world.createSystem(InitGLShaderSystem())
+renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
 
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: Tea anyone?", openGLversion = 4, customImGUIdecorator=ImGUIecssDecorator2)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight,
+           windowTitle = "Elements: Tea anyone?", openGLversion = 4,
+           customImGUIdecorator = ImGUIecssDecorator2)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
-################### EVENT MANAGER ###################
+# ---------------- the window, the GUI and the camera ----------------
 
-eManager = scene.world.eventManager
 gWindow = scene.renderWindow
 gGUI = scene.gContext
-
-renderGLEventActuator = RenderGLStateSystem()
-
-
-eManager._subscribers['OnUpdateWireframe'] = gWindow
-eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
-eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
-# projMat = util.perspective(90.0, 1.33, 0.1, 100)  
-projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
+# also stores eye/target/up, which the mouse camera reads and the shader needs below as viewPos
+gGUI.createViewMatrix(eye, target, up)
 
-gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-
-model_terrain_axes = util.translate(0.0,0.0,0.0)
-model_teapot = util.scale(0.1) @ util.translate(0.0,0.5,0.0)
-
-
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 
 while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    view =  gWindow._myCamera # updates view via the imgui
 
-    mvp_object = projMat @ view @ trans4.l2world
-    mvp_terrain = projMat @ view @ terrain_trans.l2world
-    mvp_axes = projMat @ view @ axes_trans.l2world
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+    view = gWindow._myCamera        # the mouse and the GUI both write here
+    viewPos = gWindow._cameraEye    # world-space camera position, follows the view matrix above
 
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_object, mat4=True)
-    shaderDec4.setUniformVariable(key='model',value=trans4.l2world,mat4=True)
-    shaderDec4.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
-    shaderDec4.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
-    shaderDec4.setUniformVariable(key='viewPos',value=LviewPos,float3=True)
-    shaderDec4.setUniformVariable(key='lightPos',value=Lposition,float3=True)
-    shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
-    shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
-    shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='specularExponent',value=MspecularExponent,float1=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ terrain_trans.l2world, mat4=True)
+
+    teapot_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ teapot_trans.l2world, mat4=True)
+    # must be the very same model matrix modelViewProj is built from, otherwise the shader lights a
+    # world-space position/normal that does not match the geometry being drawn
+    teapot_shader.setUniformVariable(key='model',value=teapot_trans.l2world,mat4=True)
+    teapot_shader.setUniformVariable(key='ambientColor',value=Lambientcolor,float3=True)
+    teapot_shader.setUniformVariable(key='ambientStr',value=Lambientstr,float1=True)
+    teapot_shader.setUniformVariable(key='viewPos',value=viewPos,float3=True)
+    teapot_shader.setUniformVariable(key='lightPos',value=Lposition,float3=True)
+    teapot_shader.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
+    teapot_shader.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
+    teapot_shader.setUniformVariable(key='shininess',value=Mshininess,float1=True)
+    teapot_shader.setUniformVariable(key='specularExponent',value=MspecularExponent,float1=True)
+
+    # render after the uniforms are set, so this frame draws with this frame's camera
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
-    
+
 scene.shutdown()
-
-
-
