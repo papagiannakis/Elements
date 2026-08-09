@@ -52,7 +52,7 @@ def generateSimpleVertices(vertices,indices,color=None):
     count = 0
     for i in range(len(indices)):
         val = tuple(vertices[indices[i]])
-        clr = tuple(color[indices[i]])
+        clr = tuple(color[indices[i]]) if color is not None else None
         flag = False
         valid = -1
         total = __getdictSize(verticesSet)
@@ -101,21 +101,25 @@ def __getdictSize(d,c=0):
             c +=1
     return c
 
-def __hasUniqueVertices(vertices):
+def __hasSharedIndices(indices):
     """
-    Checks if a Vertex Array has unique Vertices
+    True if every vertex is referenced by more than one triangle, i.e. the mesh shares its
+    vertices between neighbouring faces -- the layout smooth shading needs.
     Arguments:
-        vertices: Vertex Array
-    Returns:
-        c: True if there is at least one vertex that appears more than one time, False otherwise
+        indices: Index/Triangle Array
     """
-    v = set()
-    for i in range(len(vertices)):
-        for vertex in v:
-            if (vertex == tuple(vertices[i])):
-                return True
-        v.add(tuple(vertices[i]))
-    return False
+    _, counts = np.unique(indices, return_counts=True)
+    return not np.any(counts == 1)
+
+def __hasUniqueIndices(indices):
+    """
+    True if no vertex is referenced twice, i.e. the mesh is already exploded into one vertex per
+    triangle corner -- the layout flat shading needs.
+    Arguments:
+        indices: Index/Triangle Array
+    """
+    _, counts = np.unique(indices, return_counts=True)
+    return not np.any(counts > 1)
 
 def generateNormals(vertices, indices):
     """
@@ -143,11 +147,19 @@ def generateNormals(vertices, indices):
         v1 = util.vec(p2[0]-p0[0],p2[1]-p0[1],p2[2]-p0[2])
         v2 = util.vec(p1[0]-p0[0],p1[1]-p0[1],p1[2]-p0[2])
         cross_product = np.cross(v2,v1)
+
+        # not divided by 2: the cross product's length is twice the triangle's area, so summing
+        # them weights each face by its area, and the normalisation below removes the factor
         normals[in1] += cross_product
         normals[in2] += cross_product
         normals[in3] += cross_product
-    
-    return normals
+
+    # unit length, so a vertex shared by many faces does not end up with a longer normal than one
+    # shared by few. Degenerate (zero-area) triangles leave a zero-length sum, which is divided by
+    # 1 instead of 0 -- a zero normal, rather than a NaN that would blacken the whole mesh.
+    normals_lengths = np.linalg.norm(normals, axis=1)
+    normals_lengths[normals_lengths == 0] = 1
+    return normals / normals_lengths[:, None]
 
 def generateSmoothNormalsMesh(vertices, indices, color=None):
     """
@@ -163,7 +175,11 @@ def generateSmoothNormalsMesh(vertices, indices, color=None):
         color:Color Array for Smooth shading
         normals: Normals for Smooth shading
     """
-    if __hasUniqueVertices(vertices)==True:
+    # the decision is made from the *index* array, not the vertex positions: whether triangles
+    # share vertices is exactly what the indices say. Scanning positions for duplicate rows -- as
+    # this used to -- gets it wrong the moment a model happens to hold two coincident vertices
+    # anywhere (the bundled teapot and cow both do), and costs O(n^2) to find out.
+    if __hasSharedIndices(indices) == False:
         newvertices,newindices,newcolor = generateSimpleVertices(vertices,indices,color)
         return newvertices,newindices,newcolor,generateNormals(newvertices,newindices)
     return vertices, indices, color, generateNormals(vertices,indices)
@@ -182,7 +198,8 @@ def generateFlatNormalsMesh(vertices,indices,color=None):
         color:Color Array for Flat shading
         normals: Normals for Flat shading
     """
-    if __hasUniqueVertices(vertices)==False:
+    # see generateSmoothNormalsMesh above on why this reads the indices rather than the positions
+    if __hasUniqueIndices(indices) == False:
         newvertices,newindices,newcolor = generateUniqueVertices(vertices,indices,color)
         return newvertices,newindices,newcolor,generateNormals(newvertices,newindices)
 
