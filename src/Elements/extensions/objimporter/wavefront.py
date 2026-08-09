@@ -1,9 +1,9 @@
 import codecs, os
 from typing import Dict, List, Tuple
-from Elements.utils.objimporter.material import Material, StandardMaterial
-from Elements.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
-from Elements.utils.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
-from Elements.utils.objimporter.model import Model
+from Elements.extensions.objimporter.material import Material, StandardMaterial
+from Elements.extensions.objimporter.wavefront_obj_face import WavefrontObjectFace
+from Elements.extensions.objimporter.wavefront_obj_mesh import WavefrontObjectMesh
+from Elements.extensions.objimporter.model import Model
 from PIL import Image
 from pathlib import Path
 import traceback

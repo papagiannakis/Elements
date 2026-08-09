@@ -6,7 +6,7 @@ from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL import Shader
 from Elements.pyGLV.GL.Shader import ShaderGLDecorator, Shader
-from Elements.utils.objimporter.material import Material
+from Elements.extensions.objimporter.material import Material
 from Elements.pyECSS.Entity import Entity
 
 from Elements.pyECSS.Component import Component

@@ -3,12 +3,12 @@ from Elements.pyECSS import Entity
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.utils.normals import generateSmoothNormalsMesh
 from Elements.utils.obj_to_mesh import obj_to_mesh
-from Elements.utils.objimporter.entities import ModelEntity
-from Elements.utils.objimporter.mesh import Mesh
-from Elements.utils.objimporter.model import Model
-from Elements.utils.objimporter.wavefront import Wavefront
+from Elements.extensions.objimporter.entities import ModelEntity
+from Elements.extensions.objimporter.mesh import Mesh
+from Elements.extensions.objimporter.model import Model
+from Elements.extensions.objimporter.wavefront import Wavefront
 from PIL import Image
-from Elements.utils.objimporter.material import StandardMaterial
+from Elements.extensions.objimporter.material import StandardMaterial
 
 
 class GameObject:

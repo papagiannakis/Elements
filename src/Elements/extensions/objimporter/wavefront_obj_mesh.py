@@ -1,8 +1,8 @@
-from Elements.utils.objimporter.mesh import Mesh
+from Elements.extensions.objimporter.mesh import Mesh
 import Elements.utils.normals as norm
 import numpy as np
 
-from Elements.utils.objimporter.wavefront_obj_face import WavefrontObjectFace
+from Elements.extensions.objimporter.wavefront_obj_face import WavefrontObjectFace
 
 class WavefrontObjectMesh(Mesh):
     """
