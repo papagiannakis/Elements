@@ -2,101 +2,43 @@ import numpy as np
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
-from Elements.pyECSS.System import  TransformSystem, CameraSystem
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from Elements.utils.terrain import generateTerrain
+from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 
 from OpenGL.GL import GL_LINES
 
-from Elements.utils.Shortcuts import displayGUI_text
-from Elements.definitions import SHADER_DIR
 example_description = \
-"This is a scene with a cube, a terrain and axes. \n\
-The cube and axes are rendered with a simple shader. \n\
-that allow camera movement too, via the Elements GUI. \n\n\
-A Scenegraph shows the Entities and Components of the \n\
-scene, in read only way, i.e., you cannot manipulate  \n\
-any information via the Scenegraph GUI. \n\n\
-You can move the camera through the Elements GUI \n\
-or the mouse. Hit ESC OR Close the window to quit." 
+"A cube, a ground grid and the RGB axes. All three are built the same way:\n\
+an Entity holding a BasicTransform, a RenderMesh, a VertexArray and a shader.\n\
+Only the primitive differs -- triangles for the cube, GL_LINES for the other two.\n\n\
+The panel on the left is the scenegraph, read only.\n\n\
+Hold the RIGHT mouse button to fly: drag to look, W/A/S/D to move,\n\
+Q/E to rise/sink, SPACE to aim back at the origin. Scroll changes the speed.\n\
+Hit ESC OR Close the window to quit."
 
 winWidth = 1024
 winHeight = 768
 
-scene = Scene()    
+# ---------------- geometry ----------------
 
-# Scenegraph with Entities, Components
-rootEntity = scene.world.createEntity(Entity(name="RooT"))
-entityCam1 = scene.world.createEntity(Entity(name="entityCam1"))
-scene.world.addEntityChild(rootEntity, entityCam1)
-trans1 = scene.world.addComponent(entityCam1, BasicTransform(name="trans1", trs=util.identity()))
-
-eye = util.vec(1, 0.54, 1.0)
-target = util.vec(0.02, 0.14, 0.217)
-up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
-m = np.linalg.inv(projMat @ view)
-
-entityCam2 = scene.world.createEntity(Entity(name="entityCam2"))
-scene.world.addEntityChild(entityCam1, entityCam2)
-trans2 = scene.world.addComponent(entityCam2, BasicTransform(name="trans2", trs=util.identity()))
-# orthoCam = scene.world.addComponent(entityCam2, Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0), "orthoCam","Camera","500"))
-orthoCam = scene.world.addComponent(entityCam2, Camera(m, "orthoCam","Camera","500"))
-
-node4 = scene.world.createEntity(Entity(name="node4"))
-scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.translate(0,0.5,0))) #util.identity()
-mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
-
-
-# a simple triangle
-vertexData = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.5, 1.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0]
-],dtype=np.float32) 
-colorVertexData = np.array([
-    [1.0, 0.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
-
-#Colored Axes
-vertexAxes = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [0.0, 0.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-],dtype=np.float32) 
-colorAxes = np.array([
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
-
-#Simple Cube
+# the 8 corners of a cube, a colour for each
 vertexCube = np.array([
     [-0.5, -0.5, 0.5, 1.0],
     [-0.5, 0.5, 0.5, 1.0],
     [0.5, 0.5, 0.5, 1.0],
-    [0.5, -0.5, 0.5, 1.0], 
-    [-0.5, -0.5, -0.5, 1.0], 
-    [-0.5, 0.5, -0.5, 1.0], 
-    [0.5, 0.5, -0.5, 1.0], 
+    [0.5, -0.5, 0.5, 1.0],
+    [-0.5, -0.5, -0.5, 1.0],
+    [-0.5, 0.5, -0.5, 1.0],
+    [0.5, 0.5, -0.5, 1.0],
     [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32) 
+],dtype=np.float32)
 colorCube = np.array([
     [0.0, 0.0, 0.0, 1.0],
     [1.0, 0.0, 0.0, 1.0],
@@ -107,133 +49,140 @@ colorCube = np.array([
     [1.0, 1.0, 1.0, 1.0],
     [0.0, 1.0, 1.0, 1.0]
 ], dtype=np.float32)
-
-#index arrays for above vertex Arrays
-index = np.array((0,1,2), np.uint32) #simple triangle
-indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B lines
-indexCube = np.array((1,0,3, 1,3,2, 
+# which corners each triangle joins: 6 faces, 2 triangles per face
+indexCube = np.array((1,0,3, 1,3,2,
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
                   6,5,1, 6,1,2,
                   4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
+                  5,4,0, 5,0,1), np.uint32)
 
+# three lines out of the origin, one per axis: x red, y green, z blue
+vertexAxes = np.array([
+    [0.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
+    [0.0, 0.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 0.0, 0.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0]
+],dtype=np.float32)
+colorAxes = np.array([
+    [1.0, 0.0, 0.0, 1.0],
+    [1.0, 0.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 1.0, 0.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0],
+    [0.0, 0.0, 1.0, 1.0]
+], dtype=np.float32)
+indexAxes = np.array((0,1,2,3,4,5), np.uint32)
 
+# the ground grid: 2*size across, cells 1 unit wide (see Elements.utils.terrain)
+vertexTerrain, indexTerrain, colorTerrain = generateTerrain(size=4)
 
-# Systems
-transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
-camUpdate = scene.world.createSystem(CameraSystem("camUpdate", "CameraUpdate", "200"))
-renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
-initUpdate = scene.world.createSystem(InitGLShaderSystem())
+# ---------------- the scene: RooT -> cube, terrain, axes ----------------
 
+scene = Scene()
+rootEntity = scene.world.createEntity(Entity(name="RooT"))
 
-## ADD CUBE ##
-# attach a simple cube in a RenderMesh so that VertexArray can pick it up
-mesh4.vertex_attributes.append(vertexCube)
-mesh4.vertex_attributes.append(colorCube)
-mesh4.vertex_index.append(indexCube)
-vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
+## THE CUBE ##
+cube = scene.world.createEntity(Entity(name="cube"))
+scene.world.addEntityChild(rootEntity, cube)
+# translate @ rotate @ scale, applied right-to-left: scaled first, then turned, then moved
+cube_trans = scene.world.addComponent(cube, BasicTransform(name="cube_trans",
+    trs=util.translate(0,0.5,0) @ util.rotate(axis=(0.0, 1.0, 0.0), angle=0.0) @ util.scale(1.0,1.0,1.0)))
+cube_mesh = scene.world.addComponent(cube, RenderMesh(name="cube_mesh"))
+cube_mesh.vertex_attributes.append(vertexCube)      # attribute 0, read by the shader as vPosition
+cube_mesh.vertex_attributes.append(colorCube)       # attribute 1, read as vColor
+cube_mesh.vertex_index.append(indexCube)
+cube_vArray = scene.world.addComponent(cube, VertexArray())
+cube_shader = scene.world.addComponent(cube, ShaderGLDecorator(
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
-
-
-# Generate terrain
-
-vertexTerrain, indexTerrain, colorTerrain= generateTerrain(size=4,N=20)
-# Add terrain
+## THE TERRAIN ##
 terrain = scene.world.createEntity(Entity(name="terrain"))
 scene.world.addEntityChild(rootEntity, terrain)
 terrain_trans = scene.world.addComponent(terrain, BasicTransform(name="terrain_trans", trs=util.identity()))
 terrain_mesh = scene.world.addComponent(terrain, RenderMesh(name="terrain_mesh"))
-terrain_mesh.vertex_attributes.append(vertexTerrain) 
+terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
-## ADD AXES ##
+## THE AXES ##
 axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
+# lifted a hair off the ground, or the x and z axes would fight the grid lines they sit on
 axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.001, 0.0)))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-axes_mesh.vertex_attributes.append(vertexAxes) 
+axes_mesh.vertex_attributes.append(vertexAxes)
 axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
-axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES)) # note the primitive change
+axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES))
+axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(
+    Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
-# shaderDec_axes = scene.world.addComponent(axes, Shader())
-## OR
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-# axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
+# ---------------- systems ----------------
 
+initUpdate = scene.world.createSystem(InitGLShaderSystem())
+renderUpdate = scene.world.createSystem(RenderGLShaderSystem())
+
+scene.world.print()
 
 # MAIN RENDERING LOOP
 
 running = True
-scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowTitle = "Elements: A Working Event Manager", customImGUIdecorator = ImGUIecssDecorator2, openGLversion = 4)
+scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight,
+           windowTitle = "Cube, axes and terrain", customImGUIdecorator = ImGUIecssDecorator2,
+           openGLversion = 4)
 
 # pre-pass scenegraph to initialise all GL context dependent geometry, shader classes
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
-################### EVENT MANAGER ###################
+# ---------------- the window, the GUI and the camera ----------------
 
-eManager = scene.world.eventManager
-gWindow = scene.renderWindow
-gGUI = scene.gContext
+gWindow = scene.renderWindow    # the SDL2 window: the pixels, the mouse and the keyboard
+gGUI = scene.gContext           # the ImGUI layer wrapped around it, which also owns the camera
 
-renderGLEventActuator = RenderGLStateSystem()
-
-
-eManager._subscribers['OnUpdateWireframe'] = gWindow
-eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
-eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-
+# Both are plain objects -- print them, or reach in and change things while the scene runs:
+#
+#   gWindow._myCamera                    the view matrix; read below, written by the mouse
+#   gWindow._cameraEye / _cameraTarget   where the camera is and what it looks at
+#   gWindow._windowWidth / _windowHeight kept up to date when the window is resized
+#   gWindow._wireframeMode               True draws every triangle as lines (the F key)
+#
+#   gGUI.createViewMatrix(eye, target, up)   place the camera from code, as below
+#   gGUI._eye / _target / _up                where it is right now
+#   gGUI.flySpeed                            world units per frame for W/A/S/D and Q/E
+#   gGUI.resetTarget()                       aim back at the origin (the SPACE key)
+#   gGUI._colorEditor                        background colour, (r, g, b) in 0..1
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
+# createViewMatrix, rather than setting gWindow._myCamera: it also stores eye/target/up, which is
+# what the mouse/keyboard camera reads and updates
+gGUI.createViewMatrix(eye, target, up)
 
-projMat = util.perspective(50.0, 1.0, 0.01, 10.0) 
-## OR
-# projMat = util.perspective(90.0, 1.33, 0.1, 100) 
-## OR
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0) 
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 
-gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-
-
-model_cube = trans4.trs
-## OR
-# model_cube = util.scale(0.3) @ util.translate(0.0,0.5,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
-## OR
-# model_cube =  trans4.trs @ util.scale(0.3) @ util.translate(0.0,0.5,0.0) ## TAMPER WITH OBJECT's TRS
-
-model_terrain = terrain.getChild(0).trs # notice that terrain.getChild(0) == terrain_trans
-# OR 
-# model_terrain = util.translate(0.0,0.0,0.0) ## COMPLETELY OVERRIDE OBJECT's TRS
+# each object's own placement in the world; the camera supplies the rest of the MVP each frame
+model_cube = cube_trans.trs
+model_terrain = terrain_trans.trs
 model_axes = axes_trans.trs
 
 while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(renderUpdate, scene.world.root)
-    scene.world.traverse_visit_pre_camera(camUpdate, orthoCam)
-    scene.world.traverse_visit(camUpdate, scene.world.root)
 
-    view =  gWindow._myCamera # updates view via the imgui
-    mvp_cube = projMat @ view @ model_cube
-    mvp_terrain = projMat @ view @ model_terrain
-    mvp_axes = projMat @ view @ model_axes
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
-    shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
+    view = gWindow._myCamera   # the mouse and the GUI both write here
+    cube_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ model_cube, mat4=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ model_terrain, mat4=True)
+    axes_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ model_axes, mat4=True)
+
     scene.render_post()
-    
+
 scene.shutdown()
-
-
-
