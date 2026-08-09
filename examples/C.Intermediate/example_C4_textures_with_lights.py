@@ -1,24 +1,20 @@
-import os
 import numpy as np
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
-from Elements.pyECSS.System import TransformSystem, CameraSystem
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES
-import OpenGL.GL as gl
 
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import Texture
 from Elements.utils.terrain import generateTerrain
-from Elements.utils.obj_to_mesh import obj_to_mesh
 
 from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 
@@ -36,51 +32,26 @@ various information about them. Hit ESC OR Close the window to quit."
 Lposition = util.vec(5.0, 2.0, 2.0) #uniform lightpos
 Lambientcolor = util.vec(1.0, 1.0, 1.0) #uniform ambient color
 Lambientstr = 0.2 #uniform ambientStr
-# the uniform viewPos is NOT a constant: the specular term depends on where the viewer is,
-# so it is read back from the camera every frame in the render loop (see gWindow._cameraEye)
+# the uniform viewPos is not a constant: the specular term depends on where the viewer is, so it
+# is read back from the camera every frame in the render loop (see gWindow._cameraEye)
 Lcolor = util.vec(1.0,1.0,1.0)
 Lintensity = 0.8
 #Material
-Mshininess = 0.4 
-#: How tight the specular highlight is (Mshininess above is how strong it is).
-#: 8 = broad sheen, 32 = plastic, 256+ = mirror glint. See example_B10_specular_grid.py.
+Mshininess = 0.4 # how strong the specular highlight is
+#: How tight it is: 8 = broad sheen, 32 = plastic, 256+ = mirror glint. See example_B10.
 MspecularExponent = 32.0
-Mcolor = util.vec(0.8, 0.0, 0.8)
 
 winWidth = 1200
 winHeight = 800
-scene = Scene()    
+scene = Scene()
 
 # Scenegraph with Entities, Components
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
-
-
-eye = util.vec(1, 0.54, 1.0)
-target = util.vec(0.02, 0.14, 0.217)
-up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
-# projMat = util.perspective(90.0, 1.33, 0.1, 100)  projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
-
-
 
 node4 = scene.world.createEntity(Entity(name="Object"))
 scene.world.addEntityChild(rootEntity, node4)
 trans4 = scene.world.addComponent(node4, BasicTransform(name="Object_TRS", trs=util.translate(0,0.5,0) ))
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="Object_mesh"))
-
-
-# a simple triangle
-vertexData = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [0.5, 1.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0]
-],dtype=np.float32) 
-colorVertexData = np.array([
-    [1.0, 0.0, 0.0, 0.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0]
-], dtype=np.float32)
 
 #Colored Axes
 vertexAxes = np.array([
@@ -110,27 +81,16 @@ vertexCube = np.array([
     [-0.5, 0.5, -0.5, 1.0], 
     [0.5, 0.5, -0.5, 1.0], 
     [0.5, -0.5, -0.5, 1.0]
-],dtype=np.float32) 
-colorCube = np.array([
-    [0.0, 0.0, 0.0, 1.0],
-    [1.0, 0.0, 0.0, 1.0],
-    [1.0, 1.0, 0.0, 1.0],
-    [0.0, 1.0, 0.0, 1.0],
-    [0.0, 0.0, 1.0, 1.0],
-    [1.0, 0.0, 1.0, 1.0],
-    [1.0, 1.0, 1.0, 1.0],
-    [0.0, 1.0, 1.0, 1.0]
-], dtype=np.float32)
+],dtype=np.float32)
 
 #index arrays for above vertex Arrays
-index = np.array((0,1,2), np.uint32) #simple triangle
 indexAxes = np.array((0,1,2,3,4,5), np.uint32) #3 simple colored Axes as R,G,B lines
-indexCube = np.array((1,0,3, 1,3,2, 
+indexCube = np.array((1,0,3, 1,3,2,
                   2,3,7, 2,7,6,
                   3,0,4, 3,4,7,
                   6,5,1, 6,1,2,
                   4,5,6, 4,6,7,
-                  5,4,0, 5,0,1), np.uint32) #rhombus out of two triangles
+                  5,4,0, 5,0,1), np.uint32) #6 faces, 2 triangles each
 
 # Systems
 transUpdate = scene.world.createSystem(TransformSystem("transUpdate", "TransformSystem", "001"))
@@ -161,22 +121,18 @@ terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
 terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-# terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 ## ADD AXES ##
 axes = scene.world.createEntity(Entity(name="axes"))
 scene.world.addEntityChild(rootEntity, axes)
-axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.001, 0.0))) #util.identity()
+# lifted a hair off the ground, or the x and z axes would fight the grid lines they sit on
+axes_trans = scene.world.addComponent(axes, BasicTransform(name="axes_trans", trs=util.translate(0.0, 0.001, 0.0)))
 axes_mesh = scene.world.addComponent(axes, RenderMesh(name="axes_mesh"))
-axes_mesh.vertex_attributes.append(vertexAxes) 
+axes_mesh.vertex_attributes.append(vertexAxes)
 axes_mesh.vertex_attributes.append(colorAxes)
 axes_mesh.vertex_index.append(indexAxes)
-axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES)) # note the primitive change
-
-# shaderDec_axes = scene.world.addComponent(axes, Shader())
-# OR
+axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=GL_LINES)) # note the primitive change
 axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
-# axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
 # MAIN RENDERING LOOP
@@ -188,33 +144,18 @@ scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowT
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
-################### EVENT MANAGER ###################
+# ---------------- the window, the GUI and the camera ----------------
 
-eManager = scene.world.eventManager
 gWindow = scene.renderWindow
 gGUI = scene.gContext
-
-renderGLEventActuator = RenderGLStateSystem()
-
-
-eManager._subscribers['OnUpdateWireframe'] = gWindow
-eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
-eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-# projMat = util.ortho(-10.0, 10.0, -10.0, 10.0, -1.0, 10.0)  
-# projMat = util.perspective(90.0, 1.33, 0.1, 100)  
-projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)   
+# also stores eye/target/up, which the mouse camera reads and the shader needs below as viewPos
+gGUI.createViewMatrix(eye, target, up)
 
-gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
-gWindow._cameraEye = eye # seed the world-space eye, so viewPos is correct before the first camera move
-
-model_terrain_axes = util.translate(0.0,0.0,0.0)
-model_cube = util.translate(0.0,0.5,0.0)
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 
 rotate_y = 0.0
 rotation_speed = 0.5
@@ -229,22 +170,19 @@ while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    view =  gWindow._myCamera # updates view via the imgui
-    viewPos = gWindow._cameraEye # world-space camera position, follows the view matrix above
+    view = gWindow._myCamera        # the mouse and the GUI both write here
+    viewPos = gWindow._cameraEye    # world-space camera position, follows the view matrix above
 
-    model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)
-    
     if want_to_rotate:
+        model_cube = util.translate(0.0,0.5,0.0) @ util.rotate((0.0,1.0,0.0),rotate_y)
         rotate_y += rotation_speed
     else:
         model_cube = trans4.l2world
 
-    mvp_terrain = projMat @ view @ terrain_trans.l2world
-    mvp_axes = projMat @ view @ axes_trans.l2world
-    axes_shader.setUniformVariable(key='modelViewProj', value = mvp_axes, mat4=True)
+    axes_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ axes_trans.l2world, mat4=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ terrain_trans.l2world, mat4=True)
 
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
-
+    # SimpleTexturePhong.vert wants model/View/Proj separately, rather than one combined matrix
     shaderDec4.setUniformVariable(key='model', value=model_cube, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
@@ -256,9 +194,9 @@ while running:
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
     shaderDec4.setUniformVariable(key='specularExponent',value=MspecularExponent,float1=True)
-    #shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
 
+    # render after the uniforms are set, so this frame draws with this frame's camera
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
-    
+
 scene.shutdown()

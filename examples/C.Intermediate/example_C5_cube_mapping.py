@@ -1,11 +1,9 @@
 import numpy as np
-import os
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
-from Elements.pyECSS.System import  TransformSystem, CameraSystem
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
@@ -29,27 +27,21 @@ various information about them. Hit ESC OR Close the window to quit."
 winWidth = 1024
 winHeight = 768
 
-eye = util.vec(1, 0.54, 1.0)
-target = util.vec(0.02, 0.14, 0.217)
-up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-projMat = util.perspective(50.0, 1.0, 1.0, 10.0)   
-
 # Scenegraph with Entities, Components
-scene = Scene()    
+scene = Scene()
 rootEntity = scene.world.createEntity(Entity(name="RooT"))
 
 skybox = scene.world.createEntity(Entity(name="Skybox"))
 scene.world.addEntityChild(rootEntity, skybox)
-transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity())) #util.identity()
+transSkybox = scene.world.addComponent(skybox, BasicTransform(name="transSkybox", trs=util.identity()))
 meshSkybox = scene.world.addComponent(skybox, RenderMesh(name="meshSkybox"))
 
 node4 = scene.world.createEntity(Entity(name="node4"))
 scene.world.addEntityChild(rootEntity, node4)
-trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.identity())) #util.identity()
+trans4 = scene.world.addComponent(node4, BasicTransform(name="trans4", trs=util.identity()))
 mesh4 = scene.world.addComponent(node4, RenderMesh(name="mesh4"))
 
-#Cube
+# The skybox cube: big enough to enclose everything else in the scene
 minbox = -30
 maxbox = 30
 vertexSkybox = np.array([
@@ -121,30 +113,20 @@ scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight, windowT
 # needs an active GL context
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
-################### EVENT MANAGER ###################
+# ---------------- the window, the GUI and the camera ----------------
 
-eManager = scene.world.eventManager
 gWindow = scene.renderWindow
 gGUI = scene.gContext
-
-renderGLEventActuator = RenderGLStateSystem()
-
-
-eManager._subscribers['OnUpdateWireframe'] = gWindow
-eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
-eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
-projMat = util.perspective(50.0, 1.0, 0.01, 100.0)   
+# also stores eye/target/up, which the mouse camera reads and updates
+gGUI.createViewMatrix(eye, target, up)
 
-gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 
-# skybox_texture_locations = SKYBOX_DIR / "Cloudy"
+# The six faces of the cube map. "Cloudy" is also bundled.
 skybox_texture_locations = SKYBOX_DIR / "Sea"
 front_img = skybox_texture_locations / "front.jpg"
 right_img = skybox_texture_locations / "right.jpg"
@@ -154,6 +136,7 @@ bottom_img = skybox_texture_locations / "bottom.jpg"
 top_img = skybox_texture_locations / "top.jpg"
 
 
+# the small cube gets a cube map too, but with the same image on all six faces
 mat_img = TEXTURE_DIR / "dark_wood_texture.jpg"
 
 face_data = get_texture_faces(front_img,back_img,top_img,bottom_img,left_img,right_img)
@@ -162,13 +145,12 @@ face_data_2 = get_single_texture_faces(mat_img)
 shaderSkybox.setUniformVariable(key='cubemap', value=face_data, texture3D=True)
 shaderDec4.setUniformVariable(key='cubemap', value=face_data_2, texture3D=True)
 
-
 while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    
-    view =  gWindow._myCamera # updates view via the imgui
+
+    view = gWindow._myCamera    # the mouse and the GUI both write here
 
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
@@ -177,7 +159,8 @@ while running:
     shaderSkybox.setUniformVariable(key='Proj', value=projMat, mat4=True)
     shaderSkybox.setUniformVariable(key='View', value=view, mat4=True)
 
+    # render after the uniforms are set, so this frame draws with this frame's camera
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
-    
+
 scene.shutdown()

@@ -1,12 +1,10 @@
 import numpy as np
-import os
 
 import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Entity import Entity
-from Elements.pyECSS.Component import BasicTransform,  Camera, RenderMesh
-from Elements.pyECSS.System import  TransformSystem, CameraSystem
+from Elements.pyECSS.Component import BasicTransform, RenderMesh
+from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
-from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
@@ -22,12 +20,16 @@ from OpenGL.GL import GL_LINES
 from Elements.utils.Shortcuts import displayGUI_text
 
 example_description = \
-"This example demonstrates the ability to apply image textures to geometry. \n\
+"The same texture mapped six different ways, one per cube face: the UV_MAP below \n\
+decides which part of the image each face gets. One face takes the whole image, \n\
+one tiles it 2x2, the rest take a single cell out of the 3x3 grid. \n\
+Note also that this example's vertex shader is written inline, as a string. \n\
 You may move the camera using the mouse or the GUI. \n\
 You may see the ECS Scenegraph showing Entities & Components of the scene and \n\
-various information about them. Hit ESC OR Close the window to quit." 
+various information about them. Hit ESC OR Close the window to quit."
 
 
+# A vertex shader given as a string rather than a file -- Shader accepts either.
 myshader =  """
         #version 410
 
@@ -126,7 +128,10 @@ indexCube = np.array((1,0,3, 1,3,2,
 
 vertices, indices, _ = norm.generateUniqueVertices(vertexCube,indexCube)
 
-UV_MAP = [ 
+# One (u, v) per vertex, six vertices per face: where each corner lands on the texture image.
+# The first face tiles the whole image once, the second tiles it 2x2, the rest pick one cell each
+# out of the 3x3 grid in 3x3.jpg.
+UV_MAP = [
     [0.0, 1], [0.0, 0.0], [1, 0.0], [0.0, 1], [1, 0.0], [1, 1],
     [0.0, 2], [0.0, 0.0], [2, 0.0], [0.0, 2], [2, 0.0], [2, 2],
     [0.0, 2/3], [0.0, 1/3], [1/3, 1/3], [0.0, 2/3], [1/3, 1/3], [1/3, 2/3],
@@ -157,49 +162,39 @@ scene.init(imgui=True, windowWidth = winWidth, windowHeight = winHeight,
            openGLversion = 4)
 scene.world.traverse_visit(initUpdate, scene.world.root)
 
-################### EVENT MANAGER - START ###################
+# ---------------- the window, the GUI and the camera ----------------
 
-eManager = scene.world.eventManager
 gWindow = scene.renderWindow
 gGUI = scene.gContext
-renderGLEventActuator = RenderGLStateSystem()
-eManager._subscribers['OnUpdateWireframe'] = gWindow
-eManager._actuators['OnUpdateWireframe'] = renderGLEventActuator
-eManager._subscribers['OnUpdateCamera'] = gWindow 
-eManager._actuators['OnUpdateCamera'] = renderGLEventActuator
-
-################### EVENT MANAGER - END ###################
 
 eye = util.vec(2.5, 2.5, 2.5)
 target = util.vec(0.0, 0.0, 0.0)
 up = util.vec(0.0, 1.0, 0.0)
-view = util.lookat(eye, target, up)
+# also stores eye/target/up, which the mouse camera reads and updates
+gGUI.createViewMatrix(eye, target, up)
 
-projMat = util.perspective(50.0, 1.0, 0.01, 100.0)   
-
-gWindow._myCamera = view # otherwise, an imgui slider must be moved to properly update
+projMat = util.perspective(50.0, winWidth/winHeight, 0.01, 100.0)
 
 texturePath = TEXTURE_DIR / "3x3.jpg"
 texture = Texture(texturePath)
 shaderDec4.setUniformVariable(key='ImageTexture', value=texture, texture=True)
 
-
 while running:
     running = scene.render()
     displayGUI_text(example_description)
     scene.world.traverse_visit(transUpdate, scene.world.root)
-    view =  gWindow._myCamera # updates view via the imgui
-    mvp_terrain = projMat @ view @ terrain.getChild(0).l2world 
-    mvp_axes = projMat @ view @ axes.getChild(0).l2world 
 
-    axes_shader.setUniformVariable(key='modelViewProj', value=mvp_axes, mat4=True)
-    terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
+    view = gWindow._myCamera    # the mouse and the GUI both write here
+
+    axes_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ axes_trans.l2world, mat4=True)
+    terrain_shader.setUniformVariable(key='modelViewProj', value=projMat @ view @ terrain_trans.l2world, mat4=True)
     shaderDec4.setUniformVariable(key='model', value=trans4.l2world, mat4=True)
     shaderDec4.setUniformVariable(key='View', value=view, mat4=True)
     shaderDec4.setUniformVariable(key='Proj', value=projMat, mat4=True)
-    
+
+    # render after the uniforms are set, so this frame draws with this frame's camera
     scene.world.traverse_visit(renderUpdate, scene.world.root)
     scene.render_post()
-    
+
 scene.shutdown()
 
