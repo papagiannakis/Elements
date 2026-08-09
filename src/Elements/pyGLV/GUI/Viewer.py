@@ -258,16 +258,23 @@ class RenderDecorator(RenderWindow):
 
     def handleScroll(self, x: float, y: float) -> None:
         """
-        Scrolling retunes the WASD/QE fly speed and nothing else -- it never moves the camera.
+        Scrolling retunes the WASD/QE fly speed while the right button is held, and does nothing at
+        all otherwise. It never moves the camera.
 
-        It used to drive the camera directly (orbit, or pan/zoom with shift/ctrl), which is
-        deliberately gone: mixing "move the camera" into the same input as "set how fast the camera
-        moves" jolted the view every time the speed was adjusted mid-flight. Camera motion is all
-        on the right button now -- drag to look, WASD/QE to fly, shift/ctrl+drag to pan/dolly.
+        Requiring the button makes the rule for this camera exact: *every* camera change needs the
+        right button down -- look, fly, rise, pan, dolly, re-aim, and now speed. A scroll with
+        nothing held is left to the application (an ImGui panel, a scrollable list) instead of
+        quietly changing how the camera will behave the next time it is flown.
 
-        x is accepted so both backends can pass their event through unchanged, but only the
-        vertical axis is used: one axis keeps "scroll up = faster" unambiguous.
+        Scrolling used to drive the camera itself (orbit, or pan/zoom with shift/ctrl); that is
+        deliberately gone.
+
+        x is accepted so both backends can pass their event through unchanged, but only the vertical
+        axis is used: one axis keeps "scroll up = faster" unambiguous.
         """
+        if not self._wrapeeWindow.is_right_mouse_held():
+            return
+
         self.adjustFlySpeed(y)
 
     def adjustFlySpeed(self, notches: float) -> None:
@@ -382,10 +389,17 @@ class RenderDecorator(RenderWindow):
             self.freeLookAndFly(drag, width, height)
 
         # Consumed unconditionally (so the rising edge never goes stale) but acted on only while
-        # the right button is held, like the rest of the camera keys -- so SPACE stays free for
-        # examples that want it for something else.
-        if self._wrapeeWindow.consume_target_reset_key() and self._wrapeeWindow.is_right_mouse_held():
+        # the right button is held, like the rest of the camera keys -- so SPACE and +/- stay free
+        # for examples that want them for something else (the picking ones zoom with +/-).
+        rightHeld = self._wrapeeWindow.is_right_mouse_held()
+
+        if self._wrapeeWindow.consume_target_reset_key() and rightHeld:
             self.resetTarget()
+
+        # +/- does what scrolling does, for trackpads where scrolling ends the right-button hold
+        speedSteps = self._wrapeeWindow.consume_speed_key()
+        if speedSteps and rightHeld:
+            self.adjustFlySpeed(speedSteps)
 
         if self._wrapeeWindow.consume_wireframe_toggle_key():
             self.toggle_Wireframe()

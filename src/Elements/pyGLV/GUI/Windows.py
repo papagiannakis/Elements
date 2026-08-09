@@ -88,6 +88,8 @@ class SDL2Window(RenderWindow):
         #polling state for the duck-typed helpers below, mirroring GLFWWindow's
         self._fKeyWasPressed = False
         self._spaceKeyWasPressed = False
+        self._plusKeyWasPressed = False
+        self._minusKeyWasPressed = False
 
     @property
     def gWindow(self):
@@ -287,6 +289,21 @@ class SDL2Window(RenderWindow):
         self._spaceKeyWasPressed = pressed
         return edge
 
+    def consume_speed_key(self) -> int:
+        """+1 once per + keypress, -1 once per - keypress, 0 otherwise (rising edges, like
+        consume_target_reset_key). Both the main row and the numpad count.
+
+        A keyboard alternative to scrolling for the fly speed, because on a trackpad a two-finger
+        scroll tends to end the right-button hold that arms the camera controls, leaving no way to
+        adjust it there. One press is one step, the same amount as one scroll notch."""
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        plus = bool(keystatus[sdl2.SDL_SCANCODE_EQUALS]) or bool(keystatus[sdl2.SDL_SCANCODE_KP_PLUS])
+        minus = bool(keystatus[sdl2.SDL_SCANCODE_MINUS]) or bool(keystatus[sdl2.SDL_SCANCODE_KP_MINUS])
+        steps = (plus and not self._plusKeyWasPressed) - (minus and not self._minusKeyWasPressed)
+        self._plusKeyWasPressed = plus
+        self._minusKeyWasPressed = minus
+        return steps
+
 
 class GLFWWindow(RenderWindow):
     """The concrete subclass of RenderWindow for the GLFW GUI API"""
@@ -340,6 +357,8 @@ class GLFWWindow(RenderWindow):
         self._lastCursorY = 0.0
         self._fKeyWasPressed = False
         self._spaceKeyWasPressed = False
+        self._plusKeyWasPressed = False
+        self._minusKeyWasPressed = False
 
     @property
     def gWindow(self):
@@ -504,6 +523,19 @@ class GLFWWindow(RenderWindow):
         edge = pressed and not self._spaceKeyWasPressed
         self._spaceKeyWasPressed = pressed
         return edge
+
+    def consume_speed_key(self) -> int:
+        """+1 once per + keypress, -1 once per - keypress, 0 otherwise, the GLFW equivalent of
+        SDL2Window's version."""
+        def held(key):
+            return glfw.get_key(self._gWindow, key) == glfw.PRESS
+
+        plus = held(glfw.KEY_EQUAL) or held(glfw.KEY_KP_ADD)
+        minus = held(glfw.KEY_MINUS) or held(glfw.KEY_KP_SUBTRACT)
+        steps = (plus and not self._plusKeyWasPressed) - (minus and not self._minusKeyWasPressed)
+        self._plusKeyWasPressed = plus
+        self._minusKeyWasPressed = minus
+        return steps
 
     def register_scroll_callback(self, handler: Callable[[float, float], None]) -> None:
         """Chains `handler` onto whatever scroll callback is already installed (GlfwRenderer's,

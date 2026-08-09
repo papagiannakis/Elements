@@ -50,9 +50,8 @@ def displayShortcutsGUI():
         imgui.bullet_text("A / D:                           Fly left / right")
         imgui.bullet_text("Q / E:                           Lower / raise (target stays put)")
         imgui.bullet_text("Space:                           Aim back at the origin (0,0,0)")
+        imgui.bullet_text("Scroll or + / -:                 Fly speed up / down (see terminal)")
         imgui.bullet_text("Shift + Drag:                    Pan")
         imgui.bullet_text("Ctrl + Drag:                     Zoom along the view")
-
-        imgui.text("Camera -- anytime:")
-        imgui.bullet_text("Scroll:                          Fly speed up / down (see terminal)")
+        imgui.text("(nothing moves the camera unless the right button is held)")
         imgui.end()
