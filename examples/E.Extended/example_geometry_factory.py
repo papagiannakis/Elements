@@ -1,6 +1,6 @@
 """
 A minimal ECS scene -- camera, one point light, a few stacked primitives -- built the same way as
-Normals_USDimporter_BSP/example_cow.py's neighbors but sourcing its shapes from
+examples/E.Extended/example_cow.py's neighbors but sourcing its shapes from
 Elements.extensions.Shapes.geometry_factory instead of the older
 Elements.extensions.BasicShapes.BasicShapes module: geometry_factory is the actively maintained
 one (it's what showcase/scene_helpers.py and textToScene's code generator both build on), and

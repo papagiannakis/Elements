@@ -6,7 +6,7 @@ readable -- open that file only if you're curious how a given feature works unde
 
   View > Objects...    (5) -- an OBJ model (Teapot/Cow/Teddy) you can swap and toggle
                               smooth/flat shading on, as in
-                              Normals_USDimporter_BSP/example_cow.py.
+                              examples/E.Extended/example_cow.py.
   View > Skybox...     (6) -- a cube-mapped sky around the scene, on by default, with a
                               swappable texture set, as in
                               examples/C.Intermediate/example_C5_cube_mapping.py.
@@ -309,7 +309,7 @@ while running and AppState.running:
         AppState.show_objects, objects_changed = objGallery.draw_panel()
         if objects_changed:
             # swapping model/shading needs the new mesh re-uploaded to the GPU, same as
-            # Normals_USDimporter_BSP/example_cow.py does in its own main loop
+            # examples/E.Extended/example_cow.py does in its own main loop
             scene.world.traverse_visit(initUpdate, scene.world.root)
 
     if AppState.show_skybox:

@@ -10,7 +10,7 @@ calls (glGenTextures, ...) in their own constructors, which needs a GL context t
 So: build entities/meshes any time, but only bind actual images/cubemaps *after* scene.init().
 
   - ObjGallery: swap a single entity between a few OBJ models (default Teapot/Cow/Teddy) and
-    between smooth/flat shading, as in Normals_USDimporter_BSP/example_cow.py.
+    between smooth/flat shading, as in examples/E.Extended/example_cow.py.
 
   - Skybox: a big cube around the scene textured with a 6-image cube map, as in
     examples/C.Intermediate/example_C5_cube_mapping.py -- off by default, texture set swappable.
@@ -150,13 +150,13 @@ def load_cubemap(texture_set_name):
 class ObjGallery:
     """
     A single OBJ-model entity you can swap between a few named models, and toggle between smooth
-    and flat shading -- as in Normals_USDimporter_BSP/cow_example.py. Lit by a plain single-light
+    and flat shading -- as in examples/E.Extended/example_cow.py. Lit by a plain single-light
     Phong shader (SHADER_DIR / "Phong.frag"): not shadow-mapped, and only lit by one light (lights[0] of
     whatever LightManager you pass to update_lighting()), unlike SceneBuilder's objects.
     """
 
     #: (obj path, uniform scale) -- 0.1 for teapot/cow matches the scale already used elsewhere in
-    #: Elements (example_object_picker.py, Normals_USDimporter_BSP/example_cow.py); teddy/sphere
+    #: Elements (examples/E.Extended/example_object_picker.py and example_cow.py); teddy/sphere
     #: are untested elsewhere, adjust here if they look mis-sized.
     DEFAULT_MODELS = {
         "Teapot": (MODEL_DIR / "teapot.obj", 0.1),
