@@ -24,7 +24,6 @@ skybox or empty space orbits around the world origin (0,0,0) instead.
 """
 
 import imgui
-import sdl2
 import OpenGL.GL as gl
 
 import Elements.pyECSS.math_utilities as util
@@ -34,7 +33,6 @@ from Elements.pyECSS.Component import BasicTransform
 from Elements.pyECSS.System import TransformSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
-from Elements.pyGLV.GUI.MenuBar import MenuBar, Keybinding
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, RenderGLShaderSystem
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import TEXTURE_DIR
@@ -160,6 +158,8 @@ scene.world.createSystem(pickingSystem)
 # ==============================================================================================
 scene.init(imgui=True, windowWidth=width, windowHeight=height, windowTitle="Elements: Picking Showcase", openGLversion=4)
 
+
+
 shadowSystem.init()
 shadowSystem.set_viewport_dimensions(width, height)
 builder.init_shaders()  # compiles every add_*() call's shader -- needs the GL context we just made
@@ -254,6 +254,9 @@ def toggle_refraction_panel():
 def toggle_reflection_panel():
     AppState.show_reflection = not AppState.show_reflection
 
+
+import sdl2
+from Elements.pyGLV.GUI.MenuBar import MenuBar, Keybinding
 
 menu_bar = MenuBar()
 
