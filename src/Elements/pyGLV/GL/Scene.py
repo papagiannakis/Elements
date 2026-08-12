@@ -10,8 +10,7 @@ from abc import ABC, abstractmethod
 from typing import List, Dict
 
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Windows import SDL2Window
-from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
+
 
 class Scene():
     """
@@ -49,19 +48,43 @@ class Scene():
     
     
     def init(self, sdl2 = True, imgui = False, windowWidth = None, windowHeight = None, windowTitle = None,
-            customImGUIdecorator = None, openGLversion = 4, windowClass = None):
+            customImGUIdecorator = None, openGLversion = 4, windowClass = None, imgui_bundle = True):
         """call the init() of all systems attached to this Scene based on the Visitor pattern
+
+        ``imgui_bundle`` is enabled by default when available. Pass ``False`` to force classic
+        pyimgui. The existing ImGui decorator and already-imported example GUI functions use the
+        docking-capable bundle context without requiring example-specific changes.
         """
+        bundle_backend = None
+        if imgui and imgui_bundle:
+            from Elements.pyGLV.GUI.ImguiBundle import create_imgui_bundle_backend, ImguiBundleBackend
+
+            backend_name = getattr(windowClass, "BACKEND_NAME", "SDL2")
+            if ImguiBundleBackend.native_libraries_ready(backend_name):
+                ImguiBundleBackend.prepare_native_libraries(backend_name)
+                bundle_backend = create_imgui_bundle_backend(backend_name)
+            else:
+                print("imgui_bundle native libraries were already loaded; falling back to classic pyimgui")
+
         #init Viewer GUI subsystem with just a RenderWindow or also an ImGUI decorator. `sdl2`
         #only gates whether a window is created at all (kept for backward compatibility); which
         #RenderWindow subclass is used is controlled by `windowClass` (e.g.
         #Elements.pyGLV.GUI.Windows.GLFWWindow), defaulting to SDL2Window as before.
         if sdl2 == True:
+            from Elements.pyGLV.GUI.Windows import SDL2Window
+
             WindowCls = windowClass if windowClass is not None else SDL2Window
             #create a basic RenderWindow with a reference to the Scene and thus ECSSManager and EventManager
             self._renderWindow = WindowCls(windowWidth, windowHeight, windowTitle, self, openGLversion = openGLversion)
             self._gContext = self._renderWindow
         
+        from Elements.pyGLV.GUI.ImguiDecorator import (
+            ImGUIecssDecorator,
+            ImGUIDecorator,
+            configure_imgui_backend,
+        )
+        configure_imgui_backend(bundle_backend)
+
         if imgui == True and customImGUIdecorator == None:
             gGUI = ImGUIDecorator(self._renderWindow)
             self._gContext = gGUI
@@ -119,4 +142,3 @@ if __name__ == "__main__":
         print("Singleton works, both Scenes contain the same instance.")
     else:
         print("Singleton failed, Scenes contain different instances.")
-        

@@ -1,13 +1,26 @@
 import numpy as np
 import imgui
+_classic_imgui = imgui
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GUI.Viewer import RenderWindow, RenderDecorator
 from Elements.pyECSS.Component import BasicTransform
 from Elements.pyECSS.Entity import Entity
-from imgui.integrations.sdl2 import SDL2Renderer
 import OpenGL.GL as gl
 from Elements.pyECSS.Event import Event
 from Elements.pyECSS.System import System
+
+_active_imgui_backend = None
+
+
+def configure_imgui_backend(backend):
+    """Select the GUI implementation for this process and already-imported example modules."""
+    global imgui, _active_imgui_backend
+    if _active_imgui_backend is not None:
+        _active_imgui_backend.restore_imported_imgui_modules()
+    _active_imgui_backend = backend
+    imgui = _classic_imgui if backend is None else backend.imgui
+    if backend is not None:
+        backend.patch_imported_imgui_modules(_classic_imgui)
 
 class ImGUIDecorator(RenderDecorator):
     """
@@ -18,6 +31,7 @@ class ImGUIDecorator(RenderDecorator):
     """
     def __init__(self, wrapee: RenderWindow, imguiContext = None):
         super().__init__(wrapee)
+        self._imguiBackend = _active_imgui_backend
         if imguiContext is None:
             self._imguiContext = imgui.create_context()
         else:
@@ -31,20 +45,25 @@ class ImGUIDecorator(RenderDecorator):
         self._changed = False
         self._checkbox = False
         self._colorEditor = wrapee._colorEditor
+        self._bundleStylePushed = False
 
     def init(self):
         """
         Calls Decoratee init() and also sets up events
         """
         self.wrapeeWindow.init()
-        if self._imguiContext is None:
+        if self._imguiBackend is None and self._imguiContext is None:
             print("Window could not be created! ImGUI Error: ")
             exit(1)
         else:
             # print("Yay! ImGUI context created successfully")
             pass
 
-        if self.wrapeeWindow.BACKEND_NAME == "SDL2":
+        if self._imguiBackend is not None:
+            self._imguiRenderer = self._imguiBackend
+            self._imguiBackend.init(self.wrapeeWindow)
+        elif self.wrapeeWindow.BACKEND_NAME == "SDL2":
+            from imgui.integrations.sdl2 import SDL2Renderer
             self._imguiRenderer = SDL2Renderer(self.wrapeeWindow._gWindow)
         elif self.wrapeeWindow.BACKEND_NAME == "GLFW":
             # Lazy import: keeps `glfw` an opt-in dependency -- this module is imported by nearly
@@ -91,12 +110,20 @@ class ImGUIDecorator(RenderDecorator):
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
         # render imgui (after 3D scene and just before the SDL double buffer swap window)
+        if self._bundleStylePushed:
+            imgui.pop_style_color(3)
+            self._bundleStylePushed = False
         imgui.render()
         self._imguiRenderer.render(imgui.get_draw_data())
 
 
         # call the SDL window window swapping in the end of the scene as final render action
         self.wrapeeWindow.display_post()
+
+    def shutdown(self):
+        if self._imguiBackend is not None:
+            self._imguiBackend.shutdown()
+        super().shutdown()
 
     def _draw_wireframe_checkbox(self):
         """Wireframe toggle checkbox. Sets the flag on the window directly *and* notifies the
@@ -118,10 +145,20 @@ class ImGUIDecorator(RenderDecorator):
     def extra(self):
         """sample ImGUI widgets to be rendered on a RenderWindow
         """
-        imgui.set_next_window_size(300.0, 200.0)
-
         #start new ImGUI frame context
+        if self._imguiBackend is not None:
+            self._imguiBackend.new_frame()
         imgui.new_frame()
+        if self._imguiBackend is not None:
+            imgui.push_style_color(imgui.TITLE_BG, 0.06, 0.16, 0.22, 0.96)
+            imgui.push_style_color(imgui.TITLE_BG_ACTIVE, 0.08, 0.42, 0.52, 1.0)
+            imgui.push_style_color(imgui.TITLE_BG_COLLAPSED, 0.04, 0.10, 0.14, 0.90)
+            self._bundleStylePushed = True
+            imgui.dock_space_over_viewport(
+                imgui.get_main_viewport(),
+                imgui.DockNodeFlags_.passthru_central_node,
+            )
+        imgui.set_next_window_size(300.0, 200.0)
         #demo ImGUI window with all widgets
         # imgui.show_test_window()
         #new custom imgui window

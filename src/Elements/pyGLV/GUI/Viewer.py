@@ -20,8 +20,6 @@ from collections.abc import Iterable
 from typing import Any
 
 import numpy as np
-import sdl2
-import sdl2.ext
 import OpenGL.GL as gl
 
 import Elements.pyECSS.math_utilities as util
@@ -332,6 +330,9 @@ class RenderDecorator(RenderWindow):
         """
         if self._wrapeeWindow.BACKEND_NAME == "GLFW":
             return self._event_input_process_glfw()
+
+        import sdl2
+        import sdl2.ext
 
         running = True
         events = sdl2.ext.get_events()
