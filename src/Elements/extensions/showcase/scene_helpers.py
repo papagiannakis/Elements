@@ -29,7 +29,6 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 
 import numpy as np
-import sdl2
 import imgui
 
 import Elements.pyECSS.math_utilities as util
@@ -485,6 +484,8 @@ class OrbitCamera:
     def handle_keys(self, key_states):
         """Call once per frame with sdl2.SDL_GetKeyboardState(None). No-op until focus_on()/
         focus_on_point() has been called at least once."""
+        import sdl2
+
         if self.target_trans is None and self._fixed_point is None:
             return
         if self.window.is_right_mouse_held():

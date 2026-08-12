@@ -8,7 +8,6 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.pyECSS.math_utilities as util
-import sdl2
 from typing import Optional, Tuple
 from Elements.definitions import SHADER_DIR
 
@@ -226,6 +225,8 @@ class PickingSystem(System):
 
     def check_for_click(self):
         """Capture mouse click from SDL mouse state."""
+        import sdl2
+
         x = sdl2.Sint32()
         y = sdl2.Sint32()
 
