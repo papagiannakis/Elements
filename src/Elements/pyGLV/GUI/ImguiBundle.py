@@ -102,15 +102,16 @@ class _ImguiBundleAdapter:
             return getattr(enum, constant[1])
         return getattr(self._imgui, name)
 
-    def begin(self, name, opened=True, *args, **kwargs):
-        # pyimgui accepts a bool for its mutable close flag; bundle accepts an optional pointer.
-        if isinstance(opened, bool):
-            result = self._imgui.begin(name, *args, **kwargs)
-        else:
-            result = self._imgui.begin(name, opened, *args, **kwargs)
-        if isinstance(result, tuple):
-            return result
-        return result, opened
+    def begin(self, name, closable=False, *args, **kwargs):
+        """pyimgui's ``begin(label, closable, flags) -> (expanded, opened)``.
+
+        The bundle instead takes ``p_open`` and returns it back, so a caller unpacking two values
+        gets ``None`` for ``opened`` unless a bool went in -- and callers treat that ``None`` as
+        "window was closed", hiding it after one frame. Pass a real bool when the window is meant
+        to be closable, and report ``opened`` as True when it is not.
+        """
+        expanded, opened = self._imgui.begin(name, True if closable else None, *args, **kwargs)
+        return expanded, True if opened is None else opened
 
     def begin_menu(self, label, enabled=True, *args, **kwargs):
         return _BeginEndResult(self._imgui.begin_menu(label, enabled, *args, **kwargs))
@@ -143,6 +144,13 @@ class _ImguiBundleAdapter:
         return self._imgui.set_window_pos(self._vec2(x, y), *args, **kwargs)
 
     set_window_pos = set_window_position
+
+    def get_content_region_available(self):
+        # pyimgui's name for what the bundle calls get_content_region_avail().
+        return self._imgui.get_content_region_avail()
+
+    def get_content_region_available_width(self):
+        return self._imgui.get_content_region_avail().x
 
     def push_style_color(self, color, *values):
         values = values[0] if len(values) == 1 and isinstance(values[0], (list, tuple)) else values
@@ -186,15 +194,17 @@ class ImguiBundleBackend:
 
     @staticmethod
     def native_libraries_ready(window_backend: str) -> bool:
-        """Return whether the bundle can be loaded without creating a native-library conflict."""
+        """Return whether the bundle can be loaded without creating a native-library conflict.
+
+        Both SDL2 *and* GLFW matter regardless of which window backend is in play: the bundle's
+        extension links both, so importing it maps both. If either is already mapped from somewhere
+        else, that copy can no longer be redirected and loading the bundle would duplicate it.
+        open3d is the unfixable case -- its GLFW is compiled into its own extension, so there is no
+        library path to redirect.
+        """
         if sys.platform != "darwin":
             return True
-        if "open3d" in sys.modules:
-            return False
-        return (
-            (window_backend == "SDL2" and "sdl2" not in sys.modules)
-            or (window_backend == "GLFW" and "glfw" not in sys.modules)
-        )
+        return not any(name in sys.modules for name in ("open3d", "sdl2", "glfw"))
 
     @staticmethod
     def is_available() -> bool:
@@ -224,17 +234,19 @@ class ImguiBundleBackend:
         if package_dir is None:
             return
 
-        if window_backend == "SDL2":
-            linked = _bundle_linked_library(package_dir, "libSDL2")
-            if linked is not None:
-                # Overwrite rather than setdefault: on macOS a stale value points at a second copy.
-                os.environ["PYSDL2_DLL_PATH"] = str(_sole_candidate_dir(linked, "libSDL2.dylib"))
-                importlib.import_module("sdl2")
-        else:
-            linked = _bundle_linked_library(package_dir, "libglfw") or _bundle_linked_library(package_dir, "glfw3")
-            if linked is not None:
-                os.environ["PYGLFW_LIBRARY"] = str(linked)
-                importlib.import_module("glfw")
+        # Pin both, not just the backend in use: the extension links both, so both get mapped when
+        # it loads. Pinning only SDL2 while running on GLFW still leaves pyglfw free to load a
+        # second GLFW, and vice versa.
+        linked = _bundle_linked_library(package_dir, "libSDL2")
+        if linked is not None and importlib.util.find_spec("sdl2") is not None:
+            # Overwrite rather than setdefault: on macOS a stale value points at a second copy.
+            os.environ["PYSDL2_DLL_PATH"] = str(_sole_candidate_dir(linked, "libSDL2.dylib"))
+            importlib.import_module("sdl2")
+
+        linked = _bundle_linked_library(package_dir, "libglfw") or _bundle_linked_library(package_dir, "glfw3")
+        if linked is not None and importlib.util.find_spec("glfw") is not None:
+            os.environ["PYGLFW_LIBRARY"] = str(linked)
+            importlib.import_module("glfw")
 
     def patch_imported_imgui_modules(self, classic_imgui) -> None:
         """Route every ``import imgui`` in the process to the bundle instead.

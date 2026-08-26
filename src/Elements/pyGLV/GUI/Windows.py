@@ -17,8 +17,6 @@ from typing import Any, Callable
 import ctypes
 
 import numpy as np
-import sdl2
-import sdl2.ext
 import OpenGL.GL as gl
 
 from Elements.pyGLV.GUI.Viewer import RenderWindow
@@ -55,6 +53,13 @@ class SDL2Window(RenderWindow):
         :param windowTitle: [description], defaults to None
         :type windowTitle: [type], optional
         """
+        # lazy import, mirroring GLFWWindow's `import glfw` below -- see this module's docstring.
+        # Importing sdl2 at module scope would map a second SDL2 before Scene.init() gets the
+        # chance to point pysdl2 at the one imgui_bundle links (ImguiBundle.py explains why).
+        global sdl2
+        import sdl2
+        import sdl2.ext
+
         super().__init__()
 
         self._gWindow = None

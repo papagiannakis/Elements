@@ -139,8 +139,17 @@ class ImGUIDecorator(RenderDecorator):
                 self.wrapeeWindow.eventManager.notify(self, self._updateWireframe)
 
     def _draw_background_color_picker(self):
-        """Background color picker, backing Viewer.py's SDL2Window/GLFWWindow.display() clear color."""
-        self._changed, self._colorEditor = imgui.color_edit3("Background Color", *self._colorEditor)
+        """Background color picker, backing Viewer.py's SDL2Window/GLFWWindow.display() clear color.
+
+        The caption is drawn above rather than passed as the label, because widget labels clip
+        instead of wrapping and a narrow column would swallow it. "##" then keeps the text as the
+        widget's ID without drawing it a second time -- a bare "" would collide with any other
+        unlabelled widget in this window. Width -1 means "up to the right edge", stretching the
+        swatches over the ~35% of the column that ImGui's default item width leaves empty.
+        """
+        imgui.text("Background Color")
+        imgui.set_next_item_width(-1)
+        self._changed, self._colorEditor = imgui.color_edit3("##Background Color", *self._colorEditor)
 
     def extra(self):
         """sample ImGUI widgets to be rendered on a RenderWindow
