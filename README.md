@@ -52,9 +52,36 @@ The main steps summarize as follows:
  ```pip install -e ."[all]"```
 * Start exploring the examples in the ```Elements/examples``` folder.
 
+## Known Issues
 
+* **`imgui_bundle` (optional, `extras`/`all`) fails to build on macOS**: `pip install imgui_bundle`
+  may try to build it from source and fail with a CMake error inside its vendored `freetype`
+  dependency (`Compatibility with CMake < 3.5 has been removed from CMake`). This happens when pip
+  can't find a prebuilt wheel matching your exact platform tag and falls back to a source build,
+  which then hits a modern CMake (4.x) refusing to process `freetype`'s older
+  `cmake_minimum_required()` version pin.
 
+  * **Quickest fix** -- skip the source build entirely and force pip to use a prebuilt wheel,
+    bypassing macOS's `SYSTEM_VERSION_COMPAT` compatibility shim (which can otherwise make Python
+    misreport your OS version to pip and rule out a wheel that would actually match):
 
+    ```bash
+    SYSTEM_VERSION_COMPAT=0 pip install --only-binary=:all: imgui_bundle
+    ```
+
+    Note this may resolve to an older `imgui_bundle` release than the latest on GitHub/PyPI, if
+    that's the newest version with a prebuilt wheel for your platform/Python combination.
+
+  * **To get the latest version** (building from source): allow CMake to process the old version
+    pin instead of erroring out on it, and skip pip's local cache so it re-resolves the latest
+    release rather than reusing a previously-downloaded older sdist:
+
+    ```bash
+    CMAKE_POLICY_VERSION_MINIMUM=3.5 pip install --no-cache-dir --upgrade imgui_bundle
+    ```
+
+    This compiles Dear ImGui + hello_imgui + freetype + backends from C++ source, so expect it to
+    take several minutes rather than seconds.
 
 ## Folder Structure
 
