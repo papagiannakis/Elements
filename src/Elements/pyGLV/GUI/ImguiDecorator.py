@@ -173,8 +173,8 @@ class ImGUIDecorator(RenderDecorator):
         #new custom imgui window
         imgui.begin("Elements ImGUI window", True)
         #labels inside the window
-        imgui.text(f"PyImgui + {self._wrapeeWindow.BACKEND_NAME} integration successful!")
-        imgui.text(self._wrapeeWindow._gVersionLabel)
+        imgui.text_wrapped(f"PyImgui + {self._wrapeeWindow.BACKEND_NAME} integration successful!")
+        imgui.text_wrapped(self._wrapeeWindow._gVersionLabel)
 
         # populate window with extra UI elements
         imgui.separator()
