@@ -130,7 +130,6 @@ Elements/
 │       ├── GATE/                  # Geometric Algebra Transformation Engine
 │       ├── SciCom/                # Scientific Computation
 │       └── neuralCG/              # Neural Networks in Computer Graphics
-├── docs/                          # Documentation source files
 ├── tests/                         # (Optional) Top-level tests
 ├── setup.py                       # Build and installation configuration
 └── README.md                      # Project overview and instructions
