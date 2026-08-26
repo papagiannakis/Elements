@@ -5,6 +5,7 @@ import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import sdl2 as sdl
+import sdl2.ext  # sdl.ext.init() below; sdl2 does not import its submodules for us
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from ctypes import c_int, byref
 from OpenGL.GL import GL_LINES
