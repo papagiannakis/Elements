@@ -12,6 +12,7 @@ sys.modules['OpenGL'] = OpenGLPlaceholder()
 sys.modules['OpenGL.GL'] = OpenGLPlaceholder()
 
 from Elements.extensions.Shadows.ShadowShader import ShadowShader
+from Elements.definitions import SHADER_DIR
 
 def test_shader_constructor():
     """
@@ -80,5 +81,5 @@ def test_default_shaders_are_assigned():
         shader.init()
 
     # After init, the default sources should be assigned
-    assert shader._vertex_source == ShadowShader.VERT_DIR_PHONG
-    assert shader._fragment_source == ShadowShader.FRAG_DIR_PHONG
+    assert shader._vertex_source == (SHADER_DIR / "DirPhong.vert").read_text()
+    assert shader._fragment_source == (SHADER_DIR / "DirPhong.frag").read_text()

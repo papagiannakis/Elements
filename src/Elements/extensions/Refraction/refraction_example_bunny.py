@@ -11,9 +11,8 @@ from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorat
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.utils.normals as norm
 from Elements.pyGLV.GL.Textures import get_texture_faces
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR, SKYBOX_DIR
 import OpenGL.GL as gl
-from pathlib import Path
 from Elements.extensions.Refraction.refraction_component import create_refractive_entity   # Import refraction component factory function
 from Elements.utils.Shortcuts import displayGUI_text
 
@@ -23,9 +22,7 @@ Demonstrates light refraction through a complex 3D model (Stanford Bunny).\n\
 The bunny is loaded from an OBJ file and rendered with refractive properties.\n\
 Refractive index can be adjusted in real-time via GUI slider."
 
-# Get the directory of the script
-script_dir = Path(__file__).parent
-bunny_path = str(script_dir / "bunny.obj")
+bunny_path = MODEL_DIR / "bunny.obj"
 
 # Storage for parsed geometry data
 vertices = []    # Vertex positions (x, y, z)
@@ -120,7 +117,7 @@ meshSkybox.vertex_index.append(iS)
 
 # Add vertex array and skybox shader
 scene.world.addComponent(skybox, VertexArray())
-shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_source=Shader.STATIC_SKYBOX_VERT, fragment_source=Shader.STATIC_SKYBOX_FRAG)))
+shaderSkybox = scene.world.addComponent(skybox, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "StaticSkybox.vert", fragment_import_file=SHADER_DIR / "StaticSkybox.frag")))
 
 # Create glass bunny using factory function from refraction_component
 # This handles all the mesh setup, normal calculation, and shader assignment
@@ -165,7 +162,7 @@ gWindow._myCamera = util.lookat(
 )
 
 # Load cubemap textures for environment mapping
-sky_path = TEXTURE_DIR / "Skyboxes" / "Sea"
+sky_path = SKYBOX_DIR / "Sea"
 face_data = get_texture_faces(
     sky_path / "front.jpg", 
     sky_path / "back.jpg", 

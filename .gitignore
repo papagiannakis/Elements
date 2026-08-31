@@ -131,7 +131,7 @@ dmypy.json
 
 
 # imgui preferences file
-imgui.ini
+imgui*.ini
 .DS_Store
 data/GeometricShapes
 *.off

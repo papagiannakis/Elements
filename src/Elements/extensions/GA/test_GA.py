@@ -29,7 +29,7 @@ class TestGAComponent(unittest.TestCase):
     
     def test_init(self):
 
-        print("\TestGAComponent:test_init() START")
+        print("\nTestGAComponent:test_init() START")
         
         myComponent = GATransform()
         myComponent.name = "myComponent"
@@ -51,7 +51,7 @@ class TestGAComponent(unittest.TestCase):
         print("TestGAComponent:test_init() END") 
     
     def test_constructors(self):
-        print("\TestGAComponent:test_constructors() START")
+        print("\nTestGAComponent:test_constructors() START")
         
         myComponent = GATransform(trs=util.translate(1.0, 2.0, 3.0))
         mT = np.array([

@@ -9,6 +9,9 @@ Tests are written for pytest
 <Proper Normals Task:>
 Implemented correct flat/smooth normal handling by detecting shared vs unique vertex indexing and converting the vertex/index buffers accordingly. Helper utilities determine whether vertices are shared or unique by analyzing index usage. This fixes smooth-shading artifacts caused by incorrect vertex-sharing assumptions and ensures the appropriate flat or smooth shading path is selected.
 
+This work now lives in Elements.utils.normals (src/Elements/utils/normals.py), which replaced the
+previous implementation there; the copy that used to sit in this folder has been removed.
+
 Usage:
     python example_cow.py
     python example_sphere.py

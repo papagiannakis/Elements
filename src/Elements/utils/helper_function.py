@@ -12,10 +12,14 @@ from Elements.pyECSS.Component import BasicTransform, Camera
 import imgui
 
 def displayGUI_text(text:str):
-    # imgui.set_next_window_size(100.0, 200.0)
     # imgui.new_frame()
+    # a starting width gives text_wrapped() something to wrap against on the first frame;
+    # 0 height keeps the height auto-fitting to the text
+    imgui.set_next_window_size(560, 0, imgui.FIRST_USE_EVER)
     imgui.begin("Information", True)
-    imgui.text(text)
+    # wraps at the content edge, so narrowing the window (or the dock column it sits in) reflows
+    # the description instead of clipping it
+    imgui.text_wrapped(text)
     imgui.end()
 
 class SimpleCamera:

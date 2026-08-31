@@ -23,6 +23,7 @@ import imgui
 from PointCloudToMesh import generateTrianglesFromCustomList
 from PointCloudToMesh import generateBunnyExample
 from Elements.utils.Shortcuts import displayGUI_text
+from Elements.definitions import SHADER_DIR
 
 example_description = \
 "This example shows the conversion of a point cloud to a mesh. \n\
@@ -120,7 +121,7 @@ def main():
     mesh4.vertex_attributes.append(mesh_normals)
     mesh4.vertex_index.append(mesh_indices)
     vArray4 = scene.world.addComponent(object1, VertexArray())
-    shaderDec4 = scene.world.addComponent(object1, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+    shaderDec4 = scene.world.addComponent(object1, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
     # attach object
     mesh5.vertex_attributes.append(bunny_vertices)
@@ -128,7 +129,7 @@ def main():
     mesh5.vertex_attributes.append(bunny_normals)
     mesh5.vertex_index.append(bunny_indices)
     vArray5 = scene.world.addComponent(bunny, VertexArray())
-    shaderDec5 = scene.world.addComponent(bunny, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+    shaderDec5 = scene.world.addComponent(bunny, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
     # Generate terrain
 
@@ -142,7 +143,7 @@ def main():
     terrain_mesh.vertex_attributes.append(colorTerrain)
     terrain_mesh.vertex_index.append(indexTerrain)
     terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-    terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+    terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
     # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
     # MAIN RENDERING LOOP
@@ -207,8 +208,6 @@ def main():
         shaderDec4.setUniformVariable(key='lightColor', value=lghtCol, float3=True)
         shaderDec4.setUniformVariable(key='lightIntensity', value=lghtInt, float1=True)
         shaderDec4.setUniformVariable(key='shininess', value=str, float1=True)
-        shaderDec4.setUniformVariable(key='matColor', value=matCol, float3=True)
-        
         shaderDec5.setUniformVariable(key='modelViewProj', value=ovp_2, mat4=True)
         shaderDec5.setUniformVariable(key='model', value=bunny_trans, mat4=True)
         shaderDec5.setUniformVariable(key='ambientColor', value=ambColor, float3=True)
@@ -218,8 +217,6 @@ def main():
         shaderDec5.setUniformVariable(key='lightColor', value=lghtCol, float3=True)
         shaderDec5.setUniformVariable(key='lightIntensity', value=lghtInt, float1=True)
         shaderDec5.setUniformVariable(key='shininess', value=str, float1=True)
-        shaderDec5.setUniformVariable(key='matColor', value=matCol, float3=True)
-        
         terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain_axes, mat4=True)
 
         scene.render_post()

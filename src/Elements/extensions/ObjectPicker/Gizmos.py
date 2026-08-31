@@ -5,6 +5,7 @@ import Elements.pyECSS.math_utilities as util
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import sdl2 as sdl
+import sdl2.ext  # sdl.ext.init() below; sdl2 does not import its submodules for us
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from ctypes import c_int, byref
 from OpenGL.GL import GL_LINES
@@ -13,6 +14,7 @@ import numpy as np
 import Elements.utils.normals as norm
 import imgui
 import enum
+from Elements.definitions import SHADER_DIR
 
 def generateCircle(radius=1.0, axis='X',points=50,color=[1.0,0.0,0.0,1.0]):
     """
@@ -342,7 +344,7 @@ class Gizmos:
         self.gizmos_x_mesh.vertex_attributes.append(COLOR_X)
         self.gizmos_x_mesh.vertex_index.append(ARROW_INDEX2)
         self.gizmos_x_vArray = self.scene.world.addComponent(self.gizmos_x, VertexArray())
-        self.gizmos_x_shader = self.scene.world.addComponent(self.gizmos_x, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_x_shader = self.scene.world.addComponent(self.gizmos_x, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         self.gizmos_y = self.scene.world.createEntity(Entity(name="Gizmos_Y"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y)
@@ -352,7 +354,7 @@ class Gizmos:
         self.gizmos_y_mesh.vertex_attributes.append(COLOR_Y)
         self.gizmos_y_mesh.vertex_index.append(ARROW_INDEX2)
         self.gizmos_y_vArray = self.scene.world.addComponent(self.gizmos_y, VertexArray())
-        self.gizmos_y_shader = self.scene.world.addComponent(self.gizmos_y, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_y_shader = self.scene.world.addComponent(self.gizmos_y, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         self.gizmos_z = self.scene.world.createEntity(Entity(name="Gizmos_Z"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z)
@@ -362,7 +364,7 @@ class Gizmos:
         self.gizmos_z_mesh.vertex_attributes.append(COLOR_Z)
         self.gizmos_z_mesh.vertex_index.append(ARROW_INDEX2)
         self.gizmos_z_vArray = self.scene.world.addComponent(self.gizmos_z, VertexArray())
-        self.gizmos_z_shader = self.scene.world.addComponent(self.gizmos_z, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_z_shader = self.scene.world.addComponent(self.gizmos_z, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         ##############
 
         ############## Scale components
@@ -374,7 +376,7 @@ class Gizmos:
         self.gizmos_x_S_line_mesh.vertex_attributes.append(XS_LINE_COLOR)
         self.gizmos_x_S_line_mesh.vertex_index.append(LINE_INDEX)
         self.gizmos_x_S_line_vArray = self.scene.world.addComponent(self.gizmos_x_S_line, VertexArray(primitive=GL_LINES))
-        self.gizmos_x_S_line_shader = self.scene.world.addComponent(self.gizmos_x_S_line, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_x_S_line_shader = self.scene.world.addComponent(self.gizmos_x_S_line, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         self.gizmos_y_S_line = self.scene.world.createEntity(Entity(name="Gizmos_y_S_line"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y_S_line)
@@ -384,7 +386,7 @@ class Gizmos:
         self.gizmos_y_S_line_mesh.vertex_attributes.append(YS_LINE_COLOR)
         self.gizmos_y_S_line_mesh.vertex_index.append(LINE_INDEX)
         self.gizmos_y_S_line_vArray = self.scene.world.addComponent(self.gizmos_y_S_line, VertexArray(primitive=GL_LINES))
-        self.gizmos_y_S_line_shader = self.scene.world.addComponent(self.gizmos_y_S_line, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_y_S_line_shader = self.scene.world.addComponent(self.gizmos_y_S_line, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         
         self.gizmos_z_S_line = self.scene.world.createEntity(Entity(name="Gizmos_z_S_line"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z_S_line)
@@ -394,7 +396,7 @@ class Gizmos:
         self.gizmos_z_S_line_mesh.vertex_attributes.append(ZS_LINE_COLOR)
         self.gizmos_z_S_line_mesh.vertex_index.append(LINE_INDEX)
         self.gizmos_z_S_line_vArray = self.scene.world.addComponent(self.gizmos_z_S_line, VertexArray(primitive=GL_LINES))
-        self.gizmos_z_S_line_shader = self.scene.world.addComponent(self.gizmos_z_S_line, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_z_S_line_shader = self.scene.world.addComponent(self.gizmos_z_S_line, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         
         self.gizmos_x_S_cube = self.scene.world.createEntity(Entity(name="Gizmos_x_S_cube"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_x_S_cube)
@@ -405,7 +407,7 @@ class Gizmos:
         self.gizmos_x_S_cube_mesh.vertex_attributes.append(NORMALS_XS)
         self.gizmos_x_S_cube_mesh.vertex_index.append(INDEX_XS)
         self.gizmos_x_S_cube_vArray = self.scene.world.addComponent(self.gizmos_x_S_cube, VertexArray())
-        self.gizmos_x_S_cube_shader = self.scene.world.addComponent(self.gizmos_x_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        self.gizmos_x_S_cube_shader = self.scene.world.addComponent(self.gizmos_x_S_cube, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
         self.gizmos_y_S_cube = self.scene.world.createEntity(Entity(name="Gizmos_y_S_cube"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y_S_cube)
@@ -416,7 +418,7 @@ class Gizmos:
         self.gizmos_y_S_cube_mesh.vertex_attributes.append(NORMALS_YS)
         self.gizmos_y_S_cube_mesh.vertex_index.append(INDEX_YS)
         self.gizmos_y_S_cube_vArray = self.scene.world.addComponent(self.gizmos_y_S_cube, VertexArray())
-        self.gizmos_y_S_cube_shader = self.scene.world.addComponent(self.gizmos_y_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        self.gizmos_y_S_cube_shader = self.scene.world.addComponent(self.gizmos_y_S_cube, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
         self.gizmos_z_S_cube = self.scene.world.createEntity(Entity(name="Gizmos_z_S_cube"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z_S_cube)
@@ -427,7 +429,7 @@ class Gizmos:
         self.gizmos_z_S_cube_mesh.vertex_attributes.append(NORMALS_ZS)
         self.gizmos_z_S_cube_mesh.vertex_index.append(INDEX_ZS)
         self.gizmos_z_S_cube_vArray = self.scene.world.addComponent(self.gizmos_z_S_cube, VertexArray())
-        self.gizmos_z_S_cube_shader = self.scene.world.addComponent(self.gizmos_z_S_cube, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        self.gizmos_z_S_cube_shader = self.scene.world.addComponent(self.gizmos_z_S_cube, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
         ##############
 
         ############## Rotation Gizmos components
@@ -439,7 +441,7 @@ class Gizmos:
         self.gizmos_x_R_mesh.vertex_attributes.append(rcolor_x)
         self.gizmos_x_R_mesh.vertex_index.append(rindex_x)
         self.gizmos_x_R_vArray = self.scene.world.addComponent(self.gizmos_x_R, VertexArray())
-        self.gizmos_x_R_shader = self.scene.world.addComponent(self.gizmos_x_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_x_R_shader = self.scene.world.addComponent(self.gizmos_x_R, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         self.gizmos_y_R = self.scene.world.createEntity(Entity(name="Gizmos_y_R"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_y_R)
@@ -449,7 +451,7 @@ class Gizmos:
         self.gizmos_y_R_mesh.vertex_attributes.append(rcolor_y)
         self.gizmos_y_R_mesh.vertex_index.append(rindex_y)
         self.gizmos_y_R_vArray = self.scene.world.addComponent(self.gizmos_y_R, VertexArray())
-        self.gizmos_y_R_shader = self.scene.world.addComponent(self.gizmos_y_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_y_R_shader = self.scene.world.addComponent(self.gizmos_y_R, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         self.gizmos_z_R = self.scene.world.createEntity(Entity(name="Gizmos_z_R"))
         self.scene.world.addEntityChild(rootEntity, self.gizmos_z_R)
@@ -459,7 +461,7 @@ class Gizmos:
         self.gizmos_z_R_mesh.vertex_attributes.append(rcolor_z)
         self.gizmos_z_R_mesh.vertex_index.append(rindex_z)
         self.gizmos_z_R_vArray = self.scene.world.addComponent(self.gizmos_z_R, VertexArray())
-        self.gizmos_z_R_shader = self.scene.world.addComponent(self.gizmos_z_R, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.gizmos_z_R_shader = self.scene.world.addComponent(self.gizmos_z_R, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         #Translation gizmos bounding boxes
         self.x_min_bb, self.x_max_bb = self.calculate_bounding_box(self.gizmos_x_mesh.vertex_attributes[0])
@@ -486,7 +488,7 @@ class Gizmos:
         self.mesh_BoundingBox.vertex_attributes.append(colorBB)
         self.mesh_BoundingBox.vertex_index.append(indexBB)
         self.vArray_BoundingBox = self.scene.world.addComponent(self.BoundingBox, VertexArray(primitive=GL_LINES)) 
-        self.shaderDec_BoundingBox = self.scene.world.addComponent(self.BoundingBox, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec_BoundingBox = self.scene.world.addComponent(self.BoundingBox, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         #add an entity under root to display the Ray from the camera to point clicked by the user
         self.ray = self.scene.world.createEntity(Entity(name="Ray"))
@@ -497,7 +499,7 @@ class Gizmos:
         self.ray_mesh.vertex_attributes.append(colorRay)
         self.ray_mesh.vertex_index.append(indexRay)
         self.ray_vArray = self.scene.world.addComponent(self.ray, VertexArray(primitive=GL_LINES))
-        self.ray_shader = self.scene.world.addComponent(self.ray, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.ray_shader = self.scene.world.addComponent(self.ray, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
         self.count_components() # Count Basic transform components in the scene, besides the Gizmos
 
@@ -704,8 +706,6 @@ class Gizmos:
         self.gizmos_x_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
         self.gizmos_x_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
         self.gizmos_x_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-        self.gizmos_x_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
-            
         Lposition = util.vec(model_YS_cube[0,3],model_YS_cube[1,3]+0.5,model_YS_cube[2,3]+0.5)
             
         self.gizmos_y_S_cube_shader.setUniformVariable(key='model',value=model_YS_cube,mat4=True)
@@ -716,8 +716,6 @@ class Gizmos:
         self.gizmos_y_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
         self.gizmos_y_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
         self.gizmos_y_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-        self.gizmos_y_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
-            
         Lposition = util.vec(model_ZS_cube[0,3],model_ZS_cube[1,3]+0.5,model_ZS_cube[2,3]+0.5)
 
         self.gizmos_z_S_cube_shader.setUniformVariable(key='model',value=model_ZS_cube,mat4=True)
@@ -728,8 +726,6 @@ class Gizmos:
         self.gizmos_z_S_cube_shader.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
         self.gizmos_z_S_cube_shader.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
         self.gizmos_z_S_cube_shader.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-        self.gizmos_z_S_cube_shader.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
-
     def __update_positions(self):
         """
         Update model matrices of all Gizmo components and update their shaders

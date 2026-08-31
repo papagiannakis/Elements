@@ -9,50 +9,12 @@ from PIL import Image
 import Elements.pyECSS.math_utilities as util
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.Textures import Texture3D, texture_data
+from Elements.definitions import SHADER_DIR
 
 
-ENV_MAP_VERT = """
-#version 410
-layout (location=0) in vec4 vPosition;
-layout (location=1) in vec4 vColor;
-layout (location=2) in vec4 vNormal;
+ENV_MAP_VERT = (SHADER_DIR / "EnvironmentMapping.vert").read_text()
 
-out vec4 pos;
-out vec3 normal;
-
-uniform mat4 modelViewProj;
-uniform mat4 model;
-
-void main() {
-    gl_Position = modelViewProj * vPosition;
-    pos = model * vPosition;
-    // Calculate normal in world space
-    normal = mat3(transpose(inverse(model))) * vNormal.xyz;
-}
-"""
-
-ENV_MAP_FRAG = """
-#version 410
-in vec4 pos;
-in vec3 normal;
-out vec4 outputColor;
-
-uniform samplerCube environmentMap;
-uniform vec3 tintColor;
-uniform float tintStrength;
-uniform vec3 viewPos;
-
-void main() {
-    vec3 N = normalize(normal);
-    vec3 I = normalize(pos.xyz - viewPos); // Incident vector
-    vec3 R = reflect(I, N);                // Reflection vector
-
-    vec3 envColor = texture(environmentMap, R).rgb;
-    vec3 finalColor = mix(envColor, envColor * tintColor, tintStrength);
-    
-    outputColor = vec4(finalColor, 1.0);
-}
-"""
+ENV_MAP_FRAG = (SHADER_DIR / "EnvironmentMapping.frag").read_text()
 #helpers to create cubemaps
 def create_solid_cubemap(color=(0.5, 0.7, 1.0, 1.0), size=1024):
     """Creates a single-color cubemap for testing/fallback."""

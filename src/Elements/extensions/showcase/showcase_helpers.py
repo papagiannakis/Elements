@@ -10,10 +10,10 @@ calls (glGenTextures, ...) in their own constructors, which needs a GL context t
 So: build entities/meshes any time, but only bind actual images/cubemaps *after* scene.init().
 
   - ObjGallery: swap a single entity between a few OBJ models (default Teapot/Cow/Teddy) and
-    between smooth/flat shading, as in Normals_USDimporter_BSP/example_cow.py.
+    between smooth/flat shading, as in examples/E.Extended/example_cow.py.
 
   - Skybox: a big cube around the scene textured with a 6-image cube map, as in
-    examples/2.Intermediate/example_10_cube_mapping.py -- off by default, texture set swappable.
+    examples/C.Intermediate/example_C5_cube_mapping.py -- off by default, texture set swappable.
 
   - RefractionShowcase: a "glass" object (Snell's-law refraction of the skybox), as in
     Refraction/refraction_example_bunny.py -- refractive index and which model to use are both
@@ -34,34 +34,24 @@ reflective object's position, in all 6 directions, every frame -- which is a muc
 
 from __future__ import annotations
 
-from pathlib import Path
-
 import numpy as np
 import imgui
 
 import Elements.pyECSS.math_utilities as util
-# Elements.utils.normals's generateFlatNormalsMesh decides whether to explode a mesh into
-# per-triangle vertices by checking the *vertex position array* for exact duplicate rows -- a
-# check that silently does the wrong thing (falls back to smooth-like accumulated normals) the
-# moment a model happens to have even one coincidental duplicate vertex position anywhere (teapot
-# and cow both do). Normals_USDimporter_BSP's version checks the *index array* for shared
-# indices instead, which is what actually determines whether triangles share vertices, so it
-# doesn't have that failure mode -- it's what Normals_USDimporter_BSP/example_cow.py itself uses.
-import Elements.extensions.Normals_USDimporter_BSP.normals as norm
+import Elements.utils.normals as norm
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.Textures import get_texture_faces, Texture3D
-from Elements.definitions import MODEL_DIR, TEXTURE_DIR
+from Elements.definitions import MODEL_DIR, SKYBOX_DIR, SHADER_DIR
 from Elements.extensions.Refraction.refraction_component import create_refractive_entity
 from Elements.extensions.environment_mapping.environment_mapping import EnvironmentMapping
 
-#: Refraction/refraction_example_bunny.py's bunny.obj and example_environment_mapping_pigs.py's pig model
-#: both live next to their own example script, not under Elements.definitions.MODEL_DIR.
-_EXTENSIONS_DIR = Path(__file__).resolve().parent.parent
-BUNNY_PATH = _EXTENSIONS_DIR / "Refraction" / "bunny.obj"
-PIG_PATH = _EXTENSIONS_DIR / "environment_mapping" / "pigs" / "models" / "pighighpoly1.obj"
+#: Refraction/refraction_example_bunny.py's bunny and example_environment_mapping_pigs.py's pig
+#: both ship with Elements, alongside every other bundled model under MODEL_DIR.
+BUNNY_PATH = MODEL_DIR / "bunny.obj"
+PIG_PATH = MODEL_DIR / "pighighpoly1.obj"
 
 #: Anywhere far outside the view frustum/far-clip-plane: the standard "hide this entity" trick
 #: already used elsewhere in Elements (e.g. MultiLights_and_Normals's example_multi_lights_3cubes_flat.py).
@@ -145,7 +135,7 @@ def _skybox_box_geometry(size):
 def load_cubemap(texture_set_name):
     """A Texture3D for one of TEXTURE_DIR/Skyboxes/<name>'s front/back/top/bottom/left/right.jpg.
     Call only after scene.init() -- Texture3D() issues real GL calls in its own constructor."""
-    folder = TEXTURE_DIR / "Skyboxes" / texture_set_name
+    folder = SKYBOX_DIR / texture_set_name
     face_data = get_texture_faces(
         folder / "front.jpg", folder / "back.jpg", folder / "top.jpg",
         folder / "bottom.jpg", folder / "left.jpg", folder / "right.jpg",
@@ -160,13 +150,13 @@ def load_cubemap(texture_set_name):
 class ObjGallery:
     """
     A single OBJ-model entity you can swap between a few named models, and toggle between smooth
-    and flat shading -- as in Normals_USDimporter_BSP/example_cow.py. Lit by a plain single-light
-    Phong shader (Shader.FRAG_PHONG): not shadow-mapped, and only lit by one light (lights[0] of
+    and flat shading -- as in examples/E.Extended/example_cow.py. Lit by a plain single-light
+    Phong shader (SHADER_DIR / "Phong.frag"): not shadow-mapped, and only lit by one light (lights[0] of
     whatever LightManager you pass to update_lighting()), unlike SceneBuilder's objects.
     """
 
     #: (obj path, uniform scale) -- 0.1 for teapot/cow matches the scale already used elsewhere in
-    #: Elements (example_object_picker.py, Normals_USDimporter_BSP/example_cow.py); teddy/sphere
+    #: Elements (examples/E.Extended/example_object_picker.py and example_cow.py); teddy/sphere
     #: are untested elsewhere, adjust here if they look mis-sized.
     DEFAULT_MODELS = {
         "Teapot": (MODEL_DIR / "teapot.obj", 0.1),
@@ -194,7 +184,7 @@ class ObjGallery:
         self.mesh = scene.world.addComponent(self.entity, RenderMesh(name="ObjGallery_Mesh"))
         scene.world.addComponent(self.entity, VertexArray())
         self.shader = scene.world.addComponent(
-            self.entity, ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
+            self.entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"))
         )
         self._apply_mesh()
 
@@ -245,8 +235,6 @@ class ObjGallery:
         self.shader.setUniformVariable(key="lightColor", value=primary.color, float3=True)
         self.shader.setUniformVariable(key="lightIntensity", value=primary.intensity, float1=True)
         self.shader.setUniformVariable(key="shininess", value=shininess, float1=True)
-        self.shader.setUniformVariable(key="matColor", value=self.color, float3=True)
-
     def update_transform(self, projection, view):
         """Call once per frame."""
         mvp = projection @ view @ self.trans.l2world
@@ -286,29 +274,19 @@ class ObjGallery:
 # 2. Skybox
 # ================================================================================================
 
-#: Shader.STATIC_SKYBOX_VERT/FRAG (example_10_cube_mapping.py's skybox shader) always draws --
+#: SHADER_DIR / "StaticSkybox.vert"/".frag" (example_C5_cube_mapping.py's skybox shader) always draws --
 #: it has no "model" uniform at all (deliberately: a skybox always surrounds the camera,
 #: ignoring any transform), so there's no transform-based trick to hide it with. This is the
 #: same fragment shader plus one line so it can actually be turned off.
 #: plain Shader/ShaderGLDecorator (unlike ShadowShader) has no boolean uniform helper, only
 #: float/mat -- so "enabled" is a float (1.0/0.0) here, not a GLSL bool.
-_SKYBOX_FRAG_TOGGLEABLE = """
-    #version 410
-    out vec4 FragColor;
-    in vec3 TexCoords;
-    uniform samplerCube cubemap;
-    uniform float enabled;
-    void main() {
-        if (enabled < 0.5) discard;
-        FragColor = texture(cubemap, TexCoords);
-    }
-"""
+_SKYBOX_FRAG_TOGGLEABLE = (SHADER_DIR / "StaticSkyboxToggleable.frag").read_text()
 
 
 class Skybox:
     """
     A big cube around the whole scene, textured with a 6-image cube map (as in
-    examples/2.Intermediate/example_10_cube_mapping.py). Off by default (pass enabled=True to
+    examples/C.Intermediate/example_C5_cube_mapping.py). Off by default (pass enabled=True to
     start with it on); its texture set (a folder under TEXTURE_DIR/Skyboxes) is swappable at
     runtime and cached once loaded.
     """
@@ -335,7 +313,7 @@ class Skybox:
         mesh.vertex_index.append(indices)
         scene.world.addComponent(self.entity, VertexArray())
         self.shader = scene.world.addComponent(
-            self.entity, ShaderGLDecorator(Shader(vertex_source=Shader.STATIC_SKYBOX_VERT, fragment_source=_SKYBOX_FRAG_TOGGLEABLE))
+            self.entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "StaticSkybox.vert", fragment_source=_SKYBOX_FRAG_TOGGLEABLE))
         )
 
     def load_textures(self):

@@ -11,7 +11,8 @@ from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.System import System, TransformSystem, CameraSystem, RenderSystem
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyECSS.ECSSManager import ECSSManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window, RenderGLStateSystem
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.Windows import SDL2Window
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator, ImGUIDecorator
 
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
@@ -24,6 +25,7 @@ from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
 from Elements.utils.helper_function import displayGUI_text
+from Elements.definitions import SHADER_DIR
 
 class Test_ObjectPicker(unittest.TestCase):
 
@@ -276,7 +278,7 @@ move the cursor to see the result
         mesh4_pink.vertex_attributes.append(self.normals_pink)
         mesh4_pink.vertex_index.append(self.Index_pink)
         vArray4 = self.scene.world.addComponent(node4_pink, VertexArray())
-        shaderDec4_pink = self.scene.world.addComponent(node4_pink, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        shaderDec4_pink = self.scene.world.addComponent(node4_pink, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
         self.scene.world.addComponent(node4_pink, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh4_pink.vertex_attributes[0]))
 
@@ -324,8 +326,6 @@ move the cursor to see the result
         shaderDec4_pink.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
         shaderDec4_pink.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
         shaderDec4_pink.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-        shaderDec4_pink.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
-
         auto_quit_after()
         while running:
             running = self.scene.render()
@@ -370,7 +370,7 @@ move the cursor to see the result
         mesh4_pink.vertex_attributes.append(self.normals_pink)
         mesh4_pink.vertex_index.append(self.Index_pink)
         vArray_pink = self.scene.world.addComponent(node4_pink, VertexArray())
-        shaderDec4_pink = self.scene.world.addComponent(node4_pink, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        shaderDec4_pink = self.scene.world.addComponent(node4_pink, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
         self.scene.world.addComponent(node4_pink, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh4_pink.vertex_attributes[0]))
         
@@ -379,7 +379,7 @@ move the cursor to see the result
         mesh4_yellow.vertex_attributes.append(self.normals_yellow)
         mesh4_yellow.vertex_index.append(self.Index_yellow)
         vArray4_yellow = self.scene.world.addComponent(node4_yellow, VertexArray())
-        shaderDec4_yellow = self.scene.world.addComponent(node4_yellow, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+        shaderDec4_yellow = self.scene.world.addComponent(node4_yellow, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
         self.scene.world.addComponent(node4_yellow, AABoundingBox(name="AABoundingBox",
                                         vertices = mesh4_yellow.vertex_attributes[0]))
 
@@ -427,8 +427,6 @@ move the cursor to see the result
         shaderDec4_pink.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
         shaderDec4_pink.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
         shaderDec4_pink.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-        shaderDec4_pink.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
-
         shaderDec4_yellow.setUniformVariable(key='ambientColor',value=self.Lambientcolor,float3=True)
         shaderDec4_yellow.setUniformVariable(key='ambientStr',value=self.Lambientstr,float1=True)
         shaderDec4_yellow.setUniformVariable(key='viewPos',value=self.LviewPos,float3=True)
@@ -436,8 +434,6 @@ move the cursor to see the result
         shaderDec4_yellow.setUniformVariable(key='lightColor',value=self.Lcolor,float3=True)
         shaderDec4_yellow.setUniformVariable(key='lightIntensity',value=self.Lintensity,float1=True)
         shaderDec4_yellow.setUniformVariable(key='shininess',value=self.Mshininess,float1=True)
-        shaderDec4_yellow.setUniformVariable(key='matColor',value=self.Mcolor,float3=True)
-
         auto_quit_after()
         while running:
             running = self.scene.render()
