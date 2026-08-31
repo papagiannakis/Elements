@@ -277,16 +277,16 @@ class RenderDecorator(RenderWindow):
 
     def adjustFlySpeed(self, notches: float) -> None:
         """
-        Scale self.flySpeed by FLY_SPEED_SCROLL_STEP per scroll notch (fractional notches, as
-        trackpads report, scale proportionally), clamped to MIN/MAX_FLY_SPEED, and report the new
-        value on the terminal so it can actually be dialled in.
+        Add or remove FLY_SPEED_SCROLL_STEP of the current self.flySpeed per scroll notch
+        (fractional notches, as trackpads report, scale proportionally), clamped to
+        MIN/MAX_FLY_SPEED, and report the new value on the terminal so it can actually be dialled in.
         """
         if not notches:
             return
 
         previous = self.flySpeed
         self.flySpeed = float(np.clip(
-            self.flySpeed * (CameraControl.FLY_SPEED_SCROLL_STEP ** notches),
+            self.flySpeed * (1.0 + CameraControl.FLY_SPEED_SCROLL_STEP * notches),
             CameraControl.MIN_FLY_SPEED,
             CameraControl.MAX_FLY_SPEED,
         ))

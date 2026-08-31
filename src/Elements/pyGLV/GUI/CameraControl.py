@@ -33,10 +33,8 @@ LOOK_SENSITIVITY = 0.15
 #: with the right button held.
 FLY_SPEED = 0.05
 
-#: multiplier applied per scroll notch when adjusting flySpeed. Multiplicative, not additive: the
-#: useful range spans an order of magnitude between examples, which a fixed increment would step
-#: through far too coarsely at the bottom and too finely at the top.
-FLY_SPEED_SCROLL_STEP = 1.10
+#: percentage of the current flySpeed added or removed per scroll notch
+FLY_SPEED_SCROLL_STEP = 0.01
 
 #: bounds for the runtime-adjusted flySpeed, in world units per frame
 MIN_FLY_SPEED = 0.001
