@@ -97,48 +97,39 @@ def create_refractive_entity(scene, parent, name, vertices, indices):
 
     # Check if normals were provided
     if n is None or len(n) == 0:
-        # Calculate normals manually using smooth shading
-        
-        # Initialize zero normals for each vertex
+        # Calculate normals manually using smooth shading -- vectorized over every triangle at
+        # once instead of a per-face/per-vertex Python loop (the previous version took several
+        # seconds on the bunny's 144k faces; this is the same math, just batched through numpy).
+
         indices_array = np.array(i, dtype=np.uint32)
         num_verts = len(pos_data)
+        tris = indices_array.reshape(-1, 3)
+
+        # Two edge vectors and their cross product, for every triangle at once.
+        v0 = pos_data[tris[:, 0]]
+        v1 = pos_data[tris[:, 1]]
+        v2 = pos_data[tris[:, 2]]
+        face_normals = np.cross(v1 - v0, v2 - v0)
+
+        # Normalize each face normal to unit length (matches the original per-face normalize,
+        # so shared vertices still average equally-weighted face normals, not area-weighted ones).
+        face_lengths = np.linalg.norm(face_normals, axis=1)
+        nonzero_face = face_lengths > 0
+        face_normals[nonzero_face] /= face_lengths[nonzero_face, np.newaxis]
+
+        # Scatter-accumulate each face's normal onto its three vertices. np.add.at is required
+        # (not norm_data[tris[:, 0]] +=) because a vertex can appear more than once within the
+        # same triangle list and plain fancy-index += only applies the last write per index.
         norm_data = np.zeros((num_verts, 3), dtype=np.float32)
-        
-        # Iterate through each triangle face
-        for face_idx in range(0, len(indices_array), 3):
-            # Get the three vertex indices for this triangle
-            i0, i1, i2 = indices_array[face_idx:face_idx+3]
-            
-            # Get vertex positions
-            v0 = pos_data[i0]
-            v1 = pos_data[i1]
-            v2 = pos_data[i2]
-            
-            # Calculate two edge vectors of the triangle
-            edge1 = v1 - v0
-            edge2 = v2 - v0
-            
-            # Cross product gives the face normal (perpendicular to triangle)
-            face_normal = np.cross(edge1, edge2)
-            
-            # Normalize the face normal to unit length
-            length = np.linalg.norm(face_normal)
-            if length > 0:
-                face_normal = face_normal / length
-            
-            # Accumulate this face normal to all three vertices of the triangle
-            # This creates smooth shading by averaging normals at shared vertices
-            norm_data[i0] += face_normal
-            norm_data[i1] += face_normal
-            norm_data[i2] += face_normal
-        
-        # Normalize all accumulated normals to unit length
-        for idx in range(num_verts):
-            length = np.linalg.norm(norm_data[idx])
-            if length > 0.0001:
-                norm_data[idx] = norm_data[idx] / length
-            else:
-                norm_data[idx] = np.array([0.0, 1.0, 0.0])  # Default to up vector
+        np.add.at(norm_data, tris[:, 0], face_normals)
+        np.add.at(norm_data, tris[:, 1], face_normals)
+        np.add.at(norm_data, tris[:, 2], face_normals)
+
+        # Normalize all accumulated normals to unit length.
+        vertex_lengths = np.linalg.norm(norm_data, axis=1)
+        smooth = vertex_lengths > 0.0001
+        norm_data[smooth] /= vertex_lengths[smooth, np.newaxis]
+        norm_data[~smooth] = (0.0, 1.0, 0.0)  # Default to up vector
     else:
         # Use the provided normals
         norm_data = np.array(n).reshape(-1, 3).astype(np.float32)
