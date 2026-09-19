@@ -397,10 +397,10 @@ while running and AppState.running:
         pcf_radius=AppState.pcf_disk_radius, shadow_bias=AppState.shadow_bias,
     )
     objGallery.update_lighting(lightManager, orbitCamera.eye)
-    objGallery.update_transform(projMat, view)
-    skybox.update(projMat, view)
-    refractionShowcase.update(projMat, view, orbitCamera.eye)
-    reflectionShowcase.update(projMat, view, orbitCamera.eye)
+    objGallery.update_transform(projMat, shader_view)
+    skybox.update(projMat, shader_view)
+    refractionShowcase.update(projMat, shader_view, orbitCamera.eye)
+    reflectionShowcase.update(projMat, shader_view, orbitCamera.eye)
 
     # ShadowMappingSystem.render() sets its own glViewport back to whatever it was last told
     # via set_viewport_dimensions() (once, at startup) -- keep it in sync with the *actual*
