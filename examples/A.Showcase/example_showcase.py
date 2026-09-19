@@ -17,10 +17,11 @@ readable -- open that file only if you're curious how a given feature works unde
                               tintable (Gold/Chrome/Blue presets or any custom color/strength),
                               as in environment_mapping/example_environment_mapping_pigs.py.
 
-WHAT YOU CAN CLICK: any SceneBuilder object (cubes/spheres/etc., see section 2 below), the
-ObjGallery model, or the currently-visible Refraction/Reflection model -- clicking one prints its
-name/picking-id and starts orbiting the camera around it (W/A/S/D rotate, +/- zoom). Clicking the
-skybox or empty space orbits around the world origin (0,0,0) instead.
+WHAT YOU CAN ALT+CLICK: any SceneBuilder object (cubes/spheres/etc., see section 2 below), the
+ObjGallery model, or the currently-visible Refraction/Reflection model -- Alt+clicking one prints
+its name/picking-id and starts orbiting the camera around it (W/A/S/D rotate, +/- zoom). Alt+
+clicking the skybox or empty space orbits around the world origin (0,0,0) instead. Plain clicking
+(without Alt) is left free, e.g. for imgui panel interaction.
 """
 
 import imgui
@@ -44,8 +45,8 @@ from Elements.extensions.showcase.showcase_helpers import ObjGallery, Skybox, Re
 
 
 assignment_goals = (
-    "Picking showcase: click any cube/sphere/etc. to print its name/id and orbit around it with\n"
-    "W/A/S/D (+/- to zoom). View > Lights.../Projection.../Shadow Settings... (3/4/2) tweak the\n"
+    "Picking showcase: Alt+click any cube/sphere/etc. to print its name/id and orbit around it\n"
+    "with W/A/S/D (+/- to zoom). View > Lights.../Projection.../Shadow Settings... (3/4/2) tweak the\n"
     "point/directional/spot lights, perspective vs orthographic, and shadow quality live.\n"
     "View > Objects.../Skybox.../Refraction.../Reflection... (5/6/7/8) add an OBJ model viewer, a\n"
     "toggleable cube-mapped sky, a glass (refractive) object and a mirror (reflective) object.\n"
@@ -348,8 +349,8 @@ while running and AppState.running:
     if (pickingSystem.width, pickingSystem.height) != (scene.renderWindow._windowWidth, scene.renderWindow._windowHeight):
         pickingSystem.resize(scene.renderWindow._windowWidth, scene.renderWindow._windowHeight)
 
-    # -- picking: did the user click the window this frame? --
-    click_coords = pickingSystem.check_for_click()
+    # -- picking: did the user Alt+click the window this frame? --
+    click_coords = pickingSystem.check_for_click(require_alt=True)
     if click_coords:
         mouse_x, mouse_y = click_coords
         pickingSystem.set_camera_matrices(projMat, view)

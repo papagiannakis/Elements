@@ -223,8 +223,9 @@ class PickingSystem(System):
         return self.id_to_entity.get(picked_id, None), picked_id
     
 
-    def check_for_click(self):
-        """Capture mouse click from SDL mouse state."""
+    def check_for_click(self, require_alt=False):
+        """Capture mouse click from SDL mouse state. With require_alt=True, only reports a
+        click while Alt is held (left-click alone is then free for other uses, e.g. orbiting)."""
         import sdl2
 
         x = sdl2.Sint32()
@@ -238,6 +239,8 @@ class PickingSystem(System):
         self._mouse_state = buttons
 
         if left_down and not prev_left_down:
+            if require_alt and not (sdl2.SDL_GetModState() & sdl2.KMOD_ALT):
+                return None
             return int(x.value), int(y.value)
 
 
