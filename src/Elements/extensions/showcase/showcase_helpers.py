@@ -485,7 +485,11 @@ class ReflectionShowcase:
 
     PRESETS = {
         "Gold": ((1.0, 0.8, 0.0), 0.7),
-        "Chrome": ((1.0, 1.0, 1.0), 0.0),
+        # Not (1,1,1): the shader does mix(envColor, envColor * tintColor, tintStrength) --
+        # multiplying by white is a no-op, so a pure-white tint makes Tint Strength do nothing
+        # no matter how it's set. 127/255 is a neutral mid-gray instead, so raising the slider
+        # visibly dims/neutralizes the reflection like a real chrome tint would.
+        "Chrome": ((127 / 255, 127 / 255, 127 / 255), 0.0),
         "Blue": ((0.2, 0.2, 1.0), 0.5),
     }
 
