@@ -65,7 +65,6 @@ def InitShaderDec(shaderDec):
     shaderDec.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
     shaderDec.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
     shaderDec.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shaderDec.setUniformVariable(key='matColor', value=Mcolor, float3=True)
     shaderDecs.append(shaderDec)
 
 
@@ -334,7 +333,7 @@ class UsdModel:
 
         scene.world.addComponent(entityNode, VertexArray())
         shaderDec = scene.world.addComponent(entityNode, ShaderGLDecorator(
-            Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+            Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
         # Light
         Lposition = util.vec(2.0, 5.5, 2.0)  # uniform lightpos
@@ -365,7 +364,6 @@ class UsdModel:
         shaderDec.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
         shaderDec.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
         shaderDec.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-        shaderDec.setUniformVariable(key='matColor', value=Mcolor, float3=True)
         # self.objectPath = _objectPath
 
         return shaderDec

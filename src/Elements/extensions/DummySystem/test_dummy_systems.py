@@ -11,7 +11,7 @@ from Elements.extensions.DummySystem.dummy_rotate import Rotate, RotateSystem
 
 class TestDummyGravityComponent(unittest.TestCase):
     def test_constructors(self):
-        print("\TestDummyGravityComponent:test_init() START")
+        print("\nTestDummyGravityComponent:test_init() START")
 
         myComponent = RigidBody()
         myComponent.name = "myComponent"

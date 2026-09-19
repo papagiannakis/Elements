@@ -14,6 +14,7 @@ from OpenGL.GL import GL_LINES
 
 import OpenGL.GL as gl
 import imgui
+from Elements.definitions import SHADER_DIR
 
 plot_boundaries = 1, -1, 1, -1 #max X, min X, max Y, min Y
 f_x = 'x**2+x*4'
@@ -103,7 +104,7 @@ class FunctionPlotting:
                                                       VertexArray(primitive=GL_LINES))  # note the primitive change
 
         plotting2d_shader = self.scene.world.addComponent(self.function2d_entity, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+            Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.shader_2d.append(plotting2d_shader)
 
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)
@@ -134,7 +135,7 @@ class FunctionPlotting:
                                                       VertexArray())
 
         plotting3d_shader = self.scene.world.addComponent(self.function3d_entity, ShaderGLDecorator(
-            Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+            Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
         self.shader_3d.append(plotting3d_shader)
 
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)

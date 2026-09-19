@@ -40,6 +40,7 @@ from numpy import gcd, lcm, mod, remainder
 from numpy import power
 from numpy import maximum, minimum
 from numpy import sqrt, cbrt
+from Elements.definitions import SHADER_DIR
 
 
 class InvalidExpression(Exception):
@@ -113,68 +114,10 @@ if use_taichi:
 	ti_hi2tc.from_numpy(hi2tc)
 
 '''double-face vertex shader'''
-Surface3D_VERT = """
-#version 410
-
-layout (location=0) in vec4 vPosition;
-layout (location=1) in vec4 vNormal;
-
-out vec3 position;
-out vec3 normal;
-
-uniform mat4 modelViewProj;
-uniform mat4 model;
-
-void main()
-{
-    gl_Position = modelViewProj * vPosition;
-    position = (model * vPosition).xyz;
-    normal = mat3(transpose(inverse(model))) * vNormal.xyz;
-    normal = normalize(normal);
-}
-"""
+Surface3D_VERT = (SHADER_DIR / "Surface3D.vert").read_text()
 
 '''double-face fragmant shader'''
-Surface3D_FRAG = """
-#version 410
-
-uniform vec3 colour_front;
-uniform vec3 colour_back;
-uniform vec3 view_pos;
-
-uniform float specular_strength;
-
-in vec3 position;
-in vec3 normal;
-
-out vec4 outputColor;
-
-void main()
-{
-	vec3 lighting_dir = vec3(-0.71f, 0.71f, 0.0f);
-	vec3 view_dir = normalize(view_pos - position);
-    vec3 reflectDir = reflect(-lighting_dir, normal);
-
-	float diffuseStr = (dot(normal, lighting_dir) + 2) / 3;
-	float specularStr = pow(max(dot(view_dir, reflectDir), 0.0), 32) * specular_strength;
-	float ambientStr = 0.2f;
-	float lightIntensity = 0.7f;
-
-	float factor = ambientStr + (diffuseStr + specularStr) * lightIntensity; // (pow(dot(lighting_dir, normal), 5) + 1) / 2;
-
-	if (dot(normal, view_dir) >= 0) {
-		outputColor = vec4(colour_front - normal * 0.07f, 1.0f);
-	}
-	else {
-		outputColor = vec4(colour_back - normal * 0.07f, 1.0f);
-	}
-
-	outputColor *= factor;
-
-	// outputColor = vec4(normal, 1.f);
-}
-
-"""
+Surface3D_FRAG = (SHADER_DIR / "Surface3D.frag").read_text()
 
 
 if use_taichi:

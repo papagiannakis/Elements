@@ -72,7 +72,7 @@ class TestUtilities(unittest.TestCase):
         self.assertEqual(point1, 1)
         self.assertEqual(pointb, 0.5)
         
-        print("\TestUtilities:test_lerp() END")
+        print("\nTestUtilities:test_lerp() END")
         
     def test_identity(self):
         """

@@ -18,13 +18,15 @@ from Elements.pyECSS.System import System, TransformSystem, CameraSystem
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, Camera, RenderMesh
 from Elements.pyECSS.Event import Event, EventManager
-from Elements.pyGLV.GUI.Viewer import SDL2Window, RenderGLStateSystem
+from Elements.pyGLV.GUI.Viewer import RenderGLStateSystem
+from Elements.pyGLV.GUI.Windows import SDL2Window
 from Elements.pyGLV.GUI.ImguiDecorator import ImGUIDecorator
 from Elements.pyECSS.ECSSManager import ECSSManager
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.tests.gui_test_utils import auto_quit_after
+from Elements.definitions import SHADER_DIR
 
 class TestEvent(unittest.TestCase):
     
@@ -215,7 +217,7 @@ class TestEvent(unittest.TestCase):
         #l2cMat = self.node4.l2cam
         
         # decorated components and systems with sample, default pass-through shader with uniform MVP
-        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+        self.shaderDec4 = self.scene.world.addComponent(self.node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         # direct uniform variable shader setup
         self.shaderDec4.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
         

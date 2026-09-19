@@ -18,6 +18,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.pyECSS.math_utilities as util
 import OpenGL.GL as gl
 from pathlib import Path
+from Elements.definitions import SHADER_DIR
 
 """
 GlobalArray that holds all shaders of loaded objects.
@@ -64,7 +65,6 @@ def InitShaderDec(shaderDec):
     shaderDec.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
     shaderDec.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
     shaderDec.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shaderDec.setUniformVariable(key='matColor', value=Mcolor, float3=True)
     shaderDecs.append(shaderDec)
 
 def get_parent_name_blender(prim, stage):
@@ -224,8 +224,8 @@ def LoadScene_Blender(scene, path, colored_flag):
             scene.world.addComponent(parent_entity, VertexArray(primitive=gl.GL_TRIANGLES))
             
             shader_dec = scene.world.addComponent(parent_entity, ShaderGLDecorator(
-                    Shader(vertex_import_file=Path(__file__).resolve().parent / "usd_shader.vert",
-                        fragment_import_file=Path(__file__).resolve().parent / "usd_shader.frag")))
+                    Shader(vertex_import_file=SHADER_DIR / "usd_shader.vert",
+                        fragment_import_file=SHADER_DIR / "usd_shader.frag")))
 
             InitShaderDec(shader_dec)
             shaderDecs.append(shader_dec)

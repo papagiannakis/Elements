@@ -1,10 +1,10 @@
 ﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from Elements.extensions.textToScene.src.code_generator import generate_scene_script, save_script
 
-_MODELS   = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "models"))
-BASEBALL  = os.path.join(_MODELS, "ball_baseball_realistic.usdz")
-TEAPOT    = os.path.join(_MODELS, "teapot.usdz")
-CHAMELEON = os.path.join(_MODELS, "chameleon_anim_mtl_variant.usdz")
+from Elements.definitions import MODEL_DIR
+BASEBALL  = str(MODEL_DIR / "ball_baseball_realistic.usdz")
+TEAPOT    = str(MODEL_DIR / "teapot.usdz")
+CHAMELEON = str(MODEL_DIR / "chameleon_anim_mtl_variant.usdz")
 
 scene_ir = {
     "node_type": "scene",

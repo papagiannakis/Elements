@@ -27,7 +27,9 @@ setup(
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
     install_requires=[
+        'glfw',
         'imgui',
+        'imgui_bundle==1.0.0',
         'ipykernel',
         'jupyter',
         'numpy<2',
@@ -52,11 +54,11 @@ setup(
             'clifford',
             'pyganja',
         ],
-        # Optional features 
+        # Optional features
         'extras': [
             'bezier',
             'open3d',
-            'pyassimp==4.1.3',        
+            'pyassimp==4.1.3',
         ],
         # Install everything optional
         'all': [

@@ -8,6 +8,7 @@ from Elements.pyGLV.GL.Shader import ShaderGLDecorator, Shader
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.pyECSS.math_utilities as util
 from OpenGL.GL import GL_LINES
+from Elements.definitions import SHADER_DIR
 
 shaderDecs = []
 
@@ -43,7 +44,6 @@ def InitShaderDec(shaderDec):
     shaderDec.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
     shaderDec.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
     shaderDec.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-    shaderDec.setUniformVariable(key='matColor', value=Mcolor, float3=True)
     shaderDecs.append(shaderDec)
 
 
@@ -84,12 +84,12 @@ def LoadScene(scene, path):
                 print('skipping')
                 # scene.world.addComponent(parentEntity, VertexArray(primitive=GL_LINES))
                 # shaderDec = scene.world.addComponent(parentEntity, ShaderGLDecorator(
-                #   Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+                #   Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
             else:
                 scene.world.addComponent(parentEntity, VertexArray())
                 shaderDec = scene.world.addComponent(parentEntity, ShaderGLDecorator(
-                    Shader(vertex_source=Shader.SIMPLE_TEXTURE_PHONG_VERT,
-                           fragment_source=Shader.SIMPLE_TEXTURE_PHONG_FRAG)))
+                    Shader(vertex_import_file=SHADER_DIR / "SimpleTexturePhong.vert",
+                           fragment_import_file=SHADER_DIR / "SimpleTexturePhong.frag")))
                 InitShaderDec(shaderDec)
 
 
@@ -268,7 +268,7 @@ class UsdModel:
 
         scene.world.addComponent(entityNode, VertexArray())
         shaderDec = scene.world.addComponent(entityNode, ShaderGLDecorator(
-            Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+            Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
         # Light
         Lposition = util.vec(2.0, 5.5, 2.0)  # uniform lightpos
@@ -299,7 +299,6 @@ class UsdModel:
         shaderDec.setUniformVariable(key='lightColor', value=Lcolor, float3=True)
         shaderDec.setUniformVariable(key='lightIntensity', value=Lintensity, float1=True)
         shaderDec.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-        shaderDec.setUniformVariable(key='matColor', value=Mcolor, float3=True)
         # self.objectPath = _objectPath
 
         return shaderDec

@@ -17,6 +17,7 @@ import imgui
 import time
 
 from Elements.extensions.Shadows.ShadowShader import ShadowShader, ShadowMappingSystem
+from Elements.definitions import SHADER_DIR
 
 
 example_description = f"SHADOW MAPPING DEMO 2 (POINT LIGHTS)\n\n" + \
@@ -46,8 +47,8 @@ def main():
     scene = Scene()
     rootEntity = scene.world.createEntity(Entity(name="Root"))
 
-    shader_vert = ShadowShader.VERT_POINT_PHONG
-    shader_frag = ShadowShader.FRAG_POINT_PHONG
+    shader_vert = (SHADER_DIR / "PointPhong.vert").read_text()
+    shader_frag = (SHADER_DIR / "PointPhong.frag").read_text()
   
     # Initial Light Position
     Lposition = [-3.0, 1.0, -1.2] 

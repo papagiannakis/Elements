@@ -19,7 +19,7 @@ import OpenGL.GL as gl
 import Elements.utils.normals as norm
 from Elements.utils.terrain import generateTerrain
 from Elements.utils.obj_to_mesh import obj_to_mesh
-from Elements.definitions import MODEL_DIR
+from Elements.definitions import MODEL_DIR, SHADER_DIR
 
 from Elements.extensions.SkinnedMesh.skinned_mesh import Skinned_mesh
 
@@ -132,7 +132,7 @@ mesh4.vertex_attributes.append(colors)
 # mesh4.vertex_attributes.append(normals)
 mesh4.vertex_index.append(indices)
 vArray4 = scene.world.addComponent(node4, VertexArray())
-shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_source = Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG)))
+shaderDec4 = scene.world.addComponent(node4, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag")))
 
 
 node5 = scene.world.createEntity(Entity(name="node5"))
@@ -149,7 +149,7 @@ mesh5.vertex_attributes.append(b.oldv)
 mesh5.vertex_attributes.append(b.colors)
 mesh5.vertex_index.append(b.f)
 vArray5 = scene.world.addComponent(node5, VertexArray())
-shaderDec5 = scene.world.addComponent(node5, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+shaderDec5 = scene.world.addComponent(node5, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 
 
 
@@ -165,7 +165,7 @@ terrain_mesh.vertex_attributes.append(vertexTerrain)
 terrain_mesh.vertex_attributes.append(colorTerrain)
 terrain_mesh.vertex_index.append(indexTerrain)
 terrain_vArray = scene.world.addComponent(terrain, VertexArray(primitive=GL_LINES))
-terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+terrain_shader = scene.world.addComponent(terrain, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # terrain_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 ## ADD AXES ##
@@ -180,7 +180,7 @@ axes_vArray = scene.world.addComponent(axes, VertexArray(primitive=gl.GL_LINES))
 
 # shaderDec_axes = scene.world.addComponent(axes, Shader())
 # OR
-axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_source = Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+axes_shader = scene.world.addComponent(axes, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
 # axes_shader.setUniformVariable(key='modelViewProj', value=mvpMat, mat4=True)
 
 
@@ -246,9 +246,6 @@ while running:
     shaderDec4.setUniformVariable(key='lightColor',value=Lcolor,float3=True)
     shaderDec4.setUniformVariable(key='lightIntensity',value=Lintensity,float1=True)
     shaderDec4.setUniformVariable(key='shininess',value=Mshininess,float1=True)
-    shaderDec4.setUniformVariable(key='matColor',value=Mcolor,float3=True)
-
-
     scene.render_post()
     
 scene.shutdown()

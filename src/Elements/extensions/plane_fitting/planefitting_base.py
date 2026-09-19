@@ -12,6 +12,7 @@ from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
 from OpenGL.GL import GL_LINES, GL_POINTS, glPointSize
+from Elements.definitions import SHADER_DIR
 
 
 input_fitting_nodes = [[0, 0, 0], [1, 0, 0.5], [-1, 0.5, 1], [0.5, 0.5, 0.5], [-1, 1, 0.5], [1, 0.5, -1]]
@@ -88,7 +89,7 @@ class PlaneFitting:
                                                       VertexArray()) 
 
         planefitting_shader = self.scene.world.addComponent(self.planefitting_entity, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+            Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.all_shaders.append(planefitting_shader)
 
 
@@ -109,7 +110,7 @@ class PlaneFitting:
                                                       VertexArray(primitive=GL_LINES)) 
 
         projection_lines_shader = self.scene.world.addComponent(projection_lines_entity, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG))) 
+            Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"))) 
         self.all_shaders.append(projection_lines_shader)
 
 
@@ -131,7 +132,7 @@ class PlaneFitting:
         fitting_nodes_vArray = self.scene.world.addComponent(fitting_nodes, VertexArray(primitive=GL_POINTS))
 
         fitting_nodes_shader = self.scene.world.addComponent(fitting_nodes, ShaderGLDecorator(
-            Shader(vertex_source=Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG)))
+            Shader(vertex_import_file=SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag")))
         self.all_shaders.append(fitting_nodes_shader)
 
         self.scene.world.traverse_visit(self.initUpdate, self.scene.world.root)

@@ -18,7 +18,7 @@ The extension includes two example scripts one with the basics and one more adva
 
 #### 1. Cow Model - Basic Example
 
-python examples/4.Extended/example_environment_mapping_cow.py
+python examples/E.Extended/example_environment_mapping_cow.py
 
 This example demonstrates environment mapping on a cow model with:
 - A skybox environment from the images directory
@@ -28,7 +28,7 @@ This example demonstrates environment mapping on a cow model with:
 
 #### 2. Three Pigs Example
 
-python examples/4.Extended/example_environment_mapping_pigs.py
+python examples/E.Extended/example_environment_mapping_pigs.py
 
 This example demonstrates environment mapping on three pig models with different material properties:
 - **Pig_Gold**: Gold-tinted reflective surface

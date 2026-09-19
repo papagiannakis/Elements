@@ -264,7 +264,7 @@ class TestBasicTransform(unittest.TestCase):
     
     def test_init(self):
         #default constructor of Component class
-        print("\TestBasicTransform:test_init() START")
+        print("\nTestBasicTransform:test_init() START")
         
         myComponent = BasicTransform()
         myComponent.name = "myComponent"
@@ -288,7 +288,7 @@ class TestBasicTransform(unittest.TestCase):
     
     def test_extract_TRS_atributes(self):
         #default constructor of Component class
-        print("\TestBasicTransform:test_init() START")
+        print("\nTestBasicTransform:test_init() START")
         
         rot = util.rotate([0,0,1], 70) @ util.rotate([0,1,0], 20) @ util.rotate([1,0,0], 90 )
         trans = util.translate(3,2,4)
@@ -346,7 +346,7 @@ class TestRenderMesh(unittest.TestCase):
     
     def test_init(self):
         #Default constructor for the basic RenderMesh class        
-        print("\TestRenderMesh:test_init() START")
+        print("\nTestRenderMesh:test_init() START")
         
         myComponent = RenderMesh()
         myComponent.name = "BasicMesh"
@@ -377,7 +377,7 @@ class TestCamera(unittest.TestCase):
     
     def test_init(self):
         #default constructor of Component class
-        print("\TestCamera:test_init() START")
+        print("\nTestCamera:test_init() START")
         
         myComponent = Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0))
         myComponent.name = "baseCamera"
@@ -395,7 +395,7 @@ class TestCamera(unittest.TestCase):
 
     def test_update(self):
         #default update
-        print("\TestCamera:test_update() START")
+        print("\nTestCamera:test_update() START")
         
         myComponent = Camera(util.ortho(-100.0, 100.0, -100.0, 100.0, 1.0, 100.0))
         myComponent.name = "baseCamera"

@@ -12,9 +12,9 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator 
 import Elements.pyECSS.math_utilities as util
 from pathlib import Path
+from Elements.definitions import SHADER_DIR
 
 # Locate and load the standard vertex shader
-SHADER_DIR = Path(__file__).parent.parent.parent / "files" / "shaders"
 STANDARD_VERT_PATH = SHADER_DIR / "Standard.vert"
 
 # Read the Standard.vert shader file
@@ -22,57 +22,7 @@ with open(STANDARD_VERT_PATH, 'r') as f: REFRACTION_VERT = f.read()
 
 # Custom fragment shader implementing refraction (Snell's Law)
 # Inputs match Standard.vert outputs
-REFRACTION_FRAG = """
-#version 410 core
-
-// Output color
-out vec4 FragColor;
-
-// Inputs from vertex shader (Standard.vert)
-in vec3 WorldPos;      // Fragment position in world space
-in vec3 Normal;        // Surface normal in world space
-
-// Uniforms
-uniform vec3 camPos;         // Camera position for calculating view direction
-uniform float u_Ratio;       // Refractive index ratio (n1/n2, e.g., air/glass = 1.0/1.52)
-uniform samplerCube cubemap; // Environment cubemap for reflection/refraction
-
-void main() {
-    // Calculate incident ray: direction from camera to fragment
-    vec3 I = normalize(WorldPos - camPos);
-    
-    // Normalize the interpolated normal
-    vec3 N = normalize(Normal);
-    
-    // Ensure normal always faces the camera (handles back-facing polygons)
-    // If dot product is positive, normal points away from camera
-    if (dot(N, I) > 0.0) {
-        N = -N;  // Flip normal to face camera
-    }
-    
-    // Apply Snell's law: calculate refracted ray direction
-    // refract(I, N, eta) returns the refraction vector
-    // eta = ratio of indices of refraction (n1/n2)
-    vec3 R = refract(I, N, u_Ratio);
-    
-    // Handle total internal reflection
-    // When refraction is impossible (returns zero vector), use reflection instead
-    // This occurs when light tries to exit a denser medium at too steep an angle
-    if (length(R) < 0.01) {
-        R = reflect(I, N);  // Fallback to mirror reflection
-    }
-    
-    // Sample the environment cubemap using refracted direction
-    vec3 color = texture(cubemap, R).rgb;
-    
-    // Apply subtle blue tint to simulate glass appearance
-    vec3 glassTint = vec3(0.85, 0.92, 1.0);  // Light blue tint
-    color = mix(color, glassTint, 0.12);      // Blend 12% tint
-    
-    // Output final color with full opacity
-    FragColor = vec4(color, 1.0);
-}
-"""
+REFRACTION_FRAG = (SHADER_DIR / "Refraction.frag").read_text()
 
 def create_refractive_entity(scene, parent, name, vertices, indices):
     """
@@ -147,48 +97,39 @@ def create_refractive_entity(scene, parent, name, vertices, indices):
 
     # Check if normals were provided
     if n is None or len(n) == 0:
-        # Calculate normals manually using smooth shading
-        
-        # Initialize zero normals for each vertex
+        # Calculate normals manually using smooth shading -- vectorized over every triangle at
+        # once instead of a per-face/per-vertex Python loop (the previous version took several
+        # seconds on the bunny's 144k faces; this is the same math, just batched through numpy).
+
         indices_array = np.array(i, dtype=np.uint32)
         num_verts = len(pos_data)
+        tris = indices_array.reshape(-1, 3)
+
+        # Two edge vectors and their cross product, for every triangle at once.
+        v0 = pos_data[tris[:, 0]]
+        v1 = pos_data[tris[:, 1]]
+        v2 = pos_data[tris[:, 2]]
+        face_normals = np.cross(v1 - v0, v2 - v0)
+
+        # Normalize each face normal to unit length (matches the original per-face normalize,
+        # so shared vertices still average equally-weighted face normals, not area-weighted ones).
+        face_lengths = np.linalg.norm(face_normals, axis=1)
+        nonzero_face = face_lengths > 0
+        face_normals[nonzero_face] /= face_lengths[nonzero_face, np.newaxis]
+
+        # Scatter-accumulate each face's normal onto its three vertices. np.add.at is required
+        # (not norm_data[tris[:, 0]] +=) because a vertex can appear more than once within the
+        # same triangle list and plain fancy-index += only applies the last write per index.
         norm_data = np.zeros((num_verts, 3), dtype=np.float32)
-        
-        # Iterate through each triangle face
-        for face_idx in range(0, len(indices_array), 3):
-            # Get the three vertex indices for this triangle
-            i0, i1, i2 = indices_array[face_idx:face_idx+3]
-            
-            # Get vertex positions
-            v0 = pos_data[i0]
-            v1 = pos_data[i1]
-            v2 = pos_data[i2]
-            
-            # Calculate two edge vectors of the triangle
-            edge1 = v1 - v0
-            edge2 = v2 - v0
-            
-            # Cross product gives the face normal (perpendicular to triangle)
-            face_normal = np.cross(edge1, edge2)
-            
-            # Normalize the face normal to unit length
-            length = np.linalg.norm(face_normal)
-            if length > 0:
-                face_normal = face_normal / length
-            
-            # Accumulate this face normal to all three vertices of the triangle
-            # This creates smooth shading by averaging normals at shared vertices
-            norm_data[i0] += face_normal
-            norm_data[i1] += face_normal
-            norm_data[i2] += face_normal
-        
-        # Normalize all accumulated normals to unit length
-        for idx in range(num_verts):
-            length = np.linalg.norm(norm_data[idx])
-            if length > 0.0001:
-                norm_data[idx] = norm_data[idx] / length
-            else:
-                norm_data[idx] = np.array([0.0, 1.0, 0.0])  # Default to up vector
+        np.add.at(norm_data, tris[:, 0], face_normals)
+        np.add.at(norm_data, tris[:, 1], face_normals)
+        np.add.at(norm_data, tris[:, 2], face_normals)
+
+        # Normalize all accumulated normals to unit length.
+        vertex_lengths = np.linalg.norm(norm_data, axis=1)
+        smooth = vertex_lengths > 0.0001
+        norm_data[smooth] /= vertex_lengths[smooth, np.newaxis]
+        norm_data[~smooth] = (0.0, 1.0, 0.0)  # Default to up vector
     else:
         # Use the provided normals
         norm_data = np.array(n).reshape(-1, 3).astype(np.float32)

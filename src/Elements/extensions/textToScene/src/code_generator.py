@@ -425,66 +425,14 @@ from Elements.pyGLV.GL.Textures import Texture
 import Elements.utils.normals as norm
 
 from Elements.utils.terrain import generateTerrain
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 
 import OpenGL.GL as gl
 
-TEXTURE_VERTEX_SHADER = """
-#version 410
-layout (location=0) in vec4 vPos;
-layout (location=1) in vec2 vTexCoord;
-layout (location=2) in vec3 vNormal;
-
-out vec2 fragTexCoord;
-out vec3 fragNormal;
-out vec3 fragPos;
-
-uniform mat4 model;
-uniform mat4 view;
-uniform mat4 proj;
-
-void main()
-{{
-    vec4 worldPos = model * vPos;
-    fragPos = worldPos.xyz;
-    fragNormal = mat3(transpose(inverse(model))) * vNormal;
-    fragTexCoord = vTexCoord;
-    gl_Position = proj * view * worldPos;
-}}
-"""
-TEXTURE_FRAGMENT_SHADER = """
-#version 410
-in vec2 fragTexCoord;
-in vec3 fragNormal;
-in vec3 fragPos;
-
-out vec4 outputColor;
-
-uniform sampler2D texSampler;
-uniform vec3  Lambientcolor;
-uniform float Lambientstr;
-uniform vec3  LviewPos;
-uniform vec3  Lposition;
-uniform vec3  Lcolor;
-uniform float Lintensity;
-
-void main()
-{{
-    vec4  texColor  = texture(texSampler, fragTexCoord);
-    vec3  norm      = normalize(fragNormal);
-    vec3  ambient   = Lambientstr * Lambientcolor * texColor.rgb;
-    vec3  lightDir  = normalize(Lposition - fragPos);
-    float diff      = max(dot(norm, lightDir), 0.0);
-    vec3  diffuse   = diff * Lcolor * Lintensity * texColor.rgb;
-    vec3  viewDir   = normalize(LviewPos - fragPos);
-    vec3  reflDir   = reflect(-lightDir, norm);
-    float spec      = pow(max(dot(viewDir, reflDir), 0.0), 32.0);
-    vec3  specular  = 0.2 * spec * Lcolor * Lintensity;
-    outputColor = vec4(ambient + diffuse + specular, texColor.a);
-}}
-"""
+TEXTURE_VERTEX_SHADER = (SHADER_DIR / "TextToSceneTexture.vert").read_text()
+TEXTURE_FRAGMENT_SHADER = (SHADER_DIR / "TextToSceneTexture.frag").read_text()
 example_description = "Generated scene from hierarchical IR"
 
 # Ambient / view defaults
@@ -1798,7 +1746,7 @@ scene.world.addEntityChild({parent_entity_var}, {entity_var})
 scene.world.addComponent({entity_var}, VertexArray())
 {shader_var} = scene.world.addComponent(
     {entity_var},
-    ShaderGLDecorator(Shader(vertex_source=Shader.VERT_PHONG_MVP, fragment_source=Shader.FRAG_PHONG))
+    ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"))
 )
 """.format(name=name, suffix=suffix, entity_var=entity_var, parent_entity_var=parent_entity_var,
            trans_var=trans_var, local_trs_expr=local_trs_expr, mesh_var=mesh_var,
@@ -1817,7 +1765,6 @@ mvp_{suffix} = projMat @ view @ model_{suffix}
 {shader_var}.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
 {shader_var}.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
 {shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-{shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
 """.format(suffix=suffix, shader_var=shader_var, world_trs_expr=world_trs_expr,
            mat_color_expr=mat_color_expr)
 
@@ -1868,8 +1815,8 @@ scene.world.addComponent({entity_var}, VertexArray())
     {entity_var},
     ShaderGLDecorator(
         Shader(
-            vertex_source=Shader.VERT_PHONG_MVP,
-            fragment_source=Shader.FRAG_PHONG
+            vertex_import_file=SHADER_DIR / "Phong.vert",
+            fragment_import_file=SHADER_DIR / "Phong.frag"
         )
     )
 )
@@ -1906,7 +1853,6 @@ scene.world.addComponent({entity_var}, VertexArray())
 {shader_var}.setUniformVariable(key='lightColor', value=activeLightColor, float3=True)
 {shader_var}.setUniformVariable(key='lightIntensity', value=activeLightIntensity, float1=True)
 {shader_var}.setUniformVariable(key='shininess', value=Mshininess, float1=True)
-{shader_var}.setUniformVariable(key='matColor', value={mat_color_expr}, float3=True)
 """.format(
         model_line=model_line,
         suffix=suffix,

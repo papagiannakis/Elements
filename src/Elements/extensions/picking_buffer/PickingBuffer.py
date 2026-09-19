@@ -8,25 +8,13 @@ from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.Shader import Shader, ShaderGLDecorator
 from Elements.pyGLV.GL.VertexArray import VertexArray
 import Elements.pyECSS.math_utilities as util
-import sdl2
 from typing import Optional, Tuple
+from Elements.definitions import SHADER_DIR
 
 
-PICKING_VERT = """#version 410
-layout(location = 0) in vec4 vPosition;
-uniform mat4 modelViewProj;
-void main() {
-    gl_Position = modelViewProj * vPosition;
-}
-"""
+PICKING_VERT = (SHADER_DIR / "PickingBuffer.vert").read_text()
 
-PICKING_FRAG = """#version 410
-uniform vec3 objectIDColor;
-out vec4 FragColor;
-void main() {
-    FragColor = vec4(objectIDColor, 1.0);
-}
-"""
+PICKING_FRAG = (SHADER_DIR / "PickingBuffer.frag").read_text()
 
 
 class PickingSystem(System):
@@ -235,8 +223,11 @@ class PickingSystem(System):
         return self.id_to_entity.get(picked_id, None), picked_id
     
 
-    def check_for_click(self):
-        """Capture mouse click from SDL mouse state."""
+    def check_for_click(self, require_alt=False):
+        """Capture mouse click from SDL mouse state. With require_alt=True, only reports a
+        click while Alt is held (left-click alone is then free for other uses, e.g. orbiting)."""
+        import sdl2
+
         x = sdl2.Sint32()
         y = sdl2.Sint32()
 
@@ -248,6 +239,8 @@ class PickingSystem(System):
         self._mouse_state = buttons
 
         if left_down and not prev_left_down:
+            if require_alt and not (sdl2.SDL_GetModState() & sdl2.KMOD_ALT):
+                return None
             return int(x.value), int(y.value)
 
 

@@ -24,82 +24,13 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.pyGLV.GL.SimpleCamera import SimpleCamera
 from Elements.utils import normals
-from build.lib.Elements.pyGLV.GL.Textures import Texture
-from build.lib.Elements.utils.normals import Convert
+from Elements.pyGLV.GL.Textures import Texture
+from Elements.utils.normals import Convert
+from Elements.definitions import SHADER_DIR
 
 
-TEXTURE_VERT = """
-        #version 410
-
-        layout (location=0) in vec4 vPos;
-        layout (location=1) in vec4 vNormal;
-        layout (location=2) in vec2 vTexCoord;
-
-        out vec2 fragmentTexCoord;
-        out vec4 pos;
-        out vec3 normal;
-
-        uniform mat4 model;
-        uniform mat4 View;
-        uniform mat4 Proj;
-
-        void main()
-        {
-            gl_Position =  Proj * View * model * vPos;
-            pos = model * vPos;
-            fragmentTexCoord = vTexCoord;
-            normal = mat3(transpose(inverse(model))) * vNormal.xyz;
-        }
-    """
-TEXTURE_FRAG = """
-        #version 410
-        
-        in vec2 fragmentTexCoord;
-        in vec4 pos;
-        in vec3 normal;
-
-        out vec4 outputColor;
-
-        // Phong products
-        uniform vec3 ambientColor;
-        uniform float ambientStr;
-
-        // Lighting 
-        uniform vec3 viewPos;
-        uniform vec3 lightPos;
-        uniform vec3 lightColor;
-        uniform float lightIntensity;
-
-        // Material
-        uniform float shininess;
-        //uniform vec3 matColor;
-
-        uniform sampler2D ImageTexture;
-
-        void main()
-        {
-            vec3 norm = normalize(normal);
-            vec3 lightDir = normalize(lightPos - pos.xyz);
-            vec3 viewDir = normalize(viewPos - pos.xyz);
-            vec3 reflectDir = reflect(-lightDir, norm);
-
-            // Ambient
-            vec3 ambientProduct = ambientStr * ambientColor;
-            // Diffuse
-            float diffuseStr = max(dot(norm, lightDir), 0.0);
-            vec3 diffuseProduct = diffuseStr * lightColor;
-            // Specular
-            float specularStr = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-
-            vec4 tex = texture(ImageTexture,fragmentTexCoord);
-
-            vec3 specularProduct = shininess * specularStr * tex.xyz;
-            
-            vec3 result = (ambientProduct + (diffuseProduct + specularProduct) * lightIntensity) * tex.xyz;
-            outputColor = vec4(result, 1);
-        }
-
-    """
+TEXTURE_VERT = (SHADER_DIR / "UVMappingTexture.vert").read_text()
+TEXTURE_FRAG = (SHADER_DIR / "UVMappingTexture.frag").read_text()
 
 class UVObjectGenerator(Entity):
     def __init__(self, name=None, type=None, id=None) -> None:
@@ -112,8 +43,8 @@ class UVObjectGenerator(Entity):
         self.mesh           = RenderMesh(name="mesh");
         # THIS IS THE SHADER WITH TEXTURE SUPPORT
         # CAN ALSO BE CHANGED TO OTHER SHADERS AS NEEDED THOURGH A PROGRAM
-        self.shaderDec      = ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_PHONG_VERT, fragment_source=Shader.SIMPLE_TEXTURE_PHONG_FRAG));
-        #self.shaderDec      = ShaderGLDecorator(Shader(vertex_source= Shader.COLOR_VERT_MVP, fragment_source=Shader.COLOR_FRAG));
+        self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "SimpleTexturePhong.vert", fragment_import_file=SHADER_DIR / "SimpleTexturePhong.frag"));
+        #self.shaderDec      = ShaderGLDecorator(Shader(vertex_import_file= SHADER_DIR / "ColorMVP.vert", fragment_import_file=SHADER_DIR / "Color.frag"));
         self.vArray         = VertexArray();
         # Add components to entity
         scene = Scene();

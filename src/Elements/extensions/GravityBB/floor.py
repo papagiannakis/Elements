@@ -14,6 +14,7 @@ from Elements.pyGLV.GL.VertexArray import VertexArray
 from Elements.pyGLV.GL.Scene import Scene
 from Elements.extensions.GravityBB.AABoundingBox import AABoundingBox
 from Elements.pyGLV.GL.Textures import Texture
+from Elements.definitions import SHADER_DIR
 
 # Generates a floor with a bounding box WITH TEXTURE SHADER
 def generate_floor_with_bb(rootEntity, size=12):
@@ -64,6 +65,6 @@ def generate_floor_with_bb(rootEntity, size=12):
     
     scene.world.addComponent(floor, VertexArray())
     
-    floor_shader = scene.world.addComponent(floor, ShaderGLDecorator(Shader(vertex_source = Shader.SIMPLE_TEXTURE_VERT, fragment_source=Shader.SIMPLE_TEXTURE_FRAG)))
+    floor_shader = scene.world.addComponent(floor, ShaderGLDecorator(Shader(vertex_import_file = SHADER_DIR / "SimpleTexture.vert", fragment_import_file=SHADER_DIR / "SimpleTexture.frag")))
     
     return floor_trans, floor_shader, floor_bb

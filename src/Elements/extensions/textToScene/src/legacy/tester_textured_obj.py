@@ -1,10 +1,12 @@
 ﻿import sys, os; sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from Elements.extensions.textToScene.src.code_generator import generate_scene_script, save_script
 
-CUBE_OBJ     = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\files\models\cube\cube.obj"
-CUBE_TEX     = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\files\models\cube\CubeTexture.png"
-HAND_OBJ     = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\files\models\Hand\Hand.obj"
-HAND_TEX     = r"C:\Users\yanni\Documents\GitHub\Elements\Elements\files\models\Hand\HandTexture.png"
+from Elements.definitions import MODEL_DIR
+# str(), not Path: save_script json.dumps the scene_ir these end up in.
+CUBE_OBJ     = str(MODEL_DIR / "cube" / "cube.obj")
+CUBE_TEX     = str(MODEL_DIR / "cube" / "CubeTexture.png")
+HAND_OBJ     = str(MODEL_DIR / "Hand" / "Hand.obj")
+HAND_TEX     = str(MODEL_DIR / "Hand" / "HandTexture.png")
 
 scene_ir = {
     "node_type": "scene",

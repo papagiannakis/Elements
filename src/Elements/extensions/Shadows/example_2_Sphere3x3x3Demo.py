@@ -14,7 +14,7 @@ from Elements.pyGLV.GL.Textures import Texture
 from Elements.pyECSS.Event import Event
 
 from Elements.utils.normals import generateFlatNormalsMesh
-from Elements.definitions import TEXTURE_DIR
+from Elements.definitions import SHADER_DIR, TEXTURE_DIR
 
 from Elements.utils.Shortcuts import displayGUI_text
 import imgui
@@ -56,8 +56,8 @@ class ObjectCreator():
         
         if vertex_source is None or frag_source is None:
             # fallback if no shader specified
-            vertex_source = ShadowShader.VERT_DIR_PHONG
-            frag_source = ShadowShader.FRAG_DIR_PHONG
+            vertex_source = (SHADER_DIR / "DirPhong.vert").read_text()
+            frag_source = (SHADER_DIR / "DirPhong.frag").read_text()
 
         self.entity.shadowShader = ShadowShader(name=f"{name}Shader", vertex_source=vertex_source, fragment_source=frag_source)
         self.entity.vArray = VertexArray()
@@ -125,14 +125,14 @@ def main():
     if LIGHT_TYPE == "point":
         # Point Light Settings
         Lposition = [10.0, 10.0, 10.0] 
-        target_shader_vert = ShadowShader.VERT_POINT_PHONG
-        target_shader_frag = ShadowShader.FRAG_POINT_PHONG
+        target_shader_vert = (SHADER_DIR / "PointPhong.vert").read_text()
+        target_shader_frag = (SHADER_DIR / "PointPhong.frag").read_text()
         orbit_radius = 6.0
     else:
         # Directional Light Settings
         Lposition = [10.0, 10.0, 10.0] 
-        target_shader_vert = ShadowShader.VERT_DIR_PHONG
-        target_shader_frag = ShadowShader.FRAG_DIR_PHONG
+        target_shader_vert = (SHADER_DIR / "DirPhong.vert").read_text()
+        target_shader_frag = (SHADER_DIR / "DirPhong.frag").read_text()
         orbit_radius = 15.0
 
     Ltarget = [0.0, 0.0, 0.0]

@@ -373,7 +373,9 @@ Every textured-model scene automatically includes a **dynamic orbiting point lig
 
 ### Bundled model library
 
-Four USDZ models are included in `models/` and can be loaded by name from natural language:
+Four USDZ models ship with Elements, alongside every other bundled model under
+`Elements/assets/models` (`Elements.definitions.MODEL_DIR`), and can be loaded by name from
+natural language:
 
 | Keyword(s) | File | Description |
 |---|---|---|
@@ -693,7 +695,7 @@ Results are written to `docs/all_results.json`.
 
 ### Adding a bundled model
 
-1. Drop the `.usdz` / `.obj` file into `models/`.
+1. Drop the `.usdz` / `.obj` file into `Elements/assets/models` (`Elements.definitions.MODEL_DIR`).
 2. Open `src/mock_ai_contoller.py` and add an entry to `_KNOWN_MODELS` (around line 230):
    ```python
    _KNOWN_MODELS = {

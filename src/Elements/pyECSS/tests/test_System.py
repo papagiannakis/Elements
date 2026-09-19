@@ -24,7 +24,7 @@ class TestSystem(unittest.TestCase):
         """
         default constructor of System class
         """
-        print("\TestSystem:test_init() START")
+        print("\nTestSystem:test_init() START")
         
         #mySystem = System(100, "baseSystem", "abstract")
         mySystem = System()
