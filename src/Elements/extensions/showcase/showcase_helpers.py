@@ -39,6 +39,7 @@ import imgui
 
 import Elements.pyECSS.math_utilities as util
 import Elements.utils.normals as norm
+from Elements.extensions.showcase.scene_helpers import _LIGHT_TYPES
 from Elements.pyECSS.Entity import Entity
 from Elements.pyECSS.Component import BasicTransform, RenderMesh
 from Elements.pyGLV.GL.VertexArray import VertexArray
@@ -150,9 +151,12 @@ def load_cubemap(texture_set_name):
 class ObjGallery:
     """
     A single OBJ-model entity you can swap between a few named models, and toggle between smooth
-    and flat shading -- as in examples/E.Extended/example_cow.py. Lit by a plain single-light
-    Phong shader (SHADER_DIR / "Phong.frag"): not shadow-mapped, and only lit by one light (lights[0] of
-    whatever LightManager you pass to update_lighting()), unlike SceneBuilder's objects.
+    and flat shading -- as in examples/E.Extended/example_cow.py. Lit by a single-light Phong
+    shader that also understands Directional/Spot (SHADER_DIR / "Phong_with_directional.frag" --
+    a copy of the plain Phong.frag used elsewhere, plus ShowcaseMultiLight.frag's type/cutoff
+    logic, so this model reacts to the showcase's LightManager the same way SceneBuilder's
+    objects do): not shadow-mapped, and only lit by one light (lights[0] of whatever LightManager
+    you pass to update_lighting()), unlike SceneBuilder's objects.
     """
 
     #: (obj path, uniform scale) -- 0.1 for teapot/cow matches the scale already used elsewhere in
@@ -184,7 +188,7 @@ class ObjGallery:
         self.mesh = scene.world.addComponent(self.entity, RenderMesh(name="ObjGallery_Mesh"))
         scene.world.addComponent(self.entity, VertexArray())
         self.shader = scene.world.addComponent(
-            self.entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong.frag"))
+            self.entity, ShaderGLDecorator(Shader(vertex_import_file=SHADER_DIR / "Phong.vert", fragment_import_file=SHADER_DIR / "Phong_with_directional.frag"))
         )
         self._apply_mesh()
 
@@ -234,6 +238,12 @@ class ObjGallery:
         self.shader.setUniformVariable(key="lightPos", value=primary.position, float3=True)
         self.shader.setUniformVariable(key="lightColor", value=primary.color, float3=True)
         self.shader.setUniformVariable(key="lightIntensity", value=primary.intensity, float1=True)
+        # Matches SceneBuilder's objects (ShowcaseMultiLight.frag): without these, this gallery's
+        # model stayed lit like a point light even when the primary light is a Directional/Spot
+        # one pointed elsewhere, unlike everything else in the scene.
+        self.shader.setUniformVariable(key="lightType", value=float(_LIGHT_TYPES.index(primary.light_type)), float1=True)
+        self.shader.setUniformVariable(key="lightDirection", value=primary.direction, float3=True)
+        self.shader.setUniformVariable(key="lightCutoff", value=primary.cutoff_degrees, float1=True)
         self.shader.setUniformVariable(key="shininess", value=shininess, float1=True)
     def update_transform(self, projection, view):
         """Call once per frame."""

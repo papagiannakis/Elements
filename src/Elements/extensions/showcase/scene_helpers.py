@@ -244,17 +244,33 @@ class SceneBuilder:
 
 _LIGHT_TYPES = ("point", "directional", "spot")
 
+#: Where SceneBuilder's objects (and ObjGallery/Refraction/Reflection) actually sit -- see
+#: example_showcase.py section 2 -- so a new directional/spot light's default direction can aim
+#: there instead of straight down (0,-1,0), which -- from the default position below -- misses
+#: the stage entirely and leaves it lit only by whatever's ambient.
+_STAGE_CENTER = (0.0, 0.0, 0.0)
+
+
+def _direction_towards(position, target=_STAGE_CENTER):
+    """Normalized direction vector from `position` to `target`, falling back to straight down if
+    `position` already sits at `target` (degenerate zero-length vector)."""
+    vec = np.asarray(target, dtype=np.float64) - np.asarray(position, dtype=np.float64)
+    length = np.linalg.norm(vec)
+    return list(vec / length) if length > 1e-6 else [0.0, -1.0, 0.0]
+
 
 @dataclass
 class Light:
     """One light: light_type is "point", "directional" or "spot". `position` is used by point
     and spot; `direction` by directional and spot; `cutoff_degrees` (half-angle of the cone) only
-    by spot."""
+    by spot. `direction` defaults to aiming at the stage center (see _STAGE_CENTER above) from
+    the default `position`, so a freshly-added Directional/Spot light actually lights the
+    objects instead of the ground well off to the side of them."""
 
     name: str
     light_type: str = "point"
     position: list = field(default_factory=lambda: [4.0, 8.0, 5.0])
-    direction: list = field(default_factory=lambda: [0.0, -1.0, 0.0])
+    direction: list = field(default_factory=lambda: _direction_towards([4.0, 8.0, 5.0]))
     color: list = field(default_factory=lambda: [1.0, 1.0, 1.0])
     intensity: float = 1.0
     cutoff_degrees: float = 20.0
@@ -276,7 +292,7 @@ class LightManager:
     MAX_LIGHTS = 4
 
     def __init__(self, position=(4.0, 8.0, 5.0), color=(1.0, 1.0, 1.0)):
-        self.lights = [Light("Light_0", "point", list(position), [0.0, -1.0, 0.0], list(color))]
+        self.lights = [Light("Light_0", "point", list(position), _direction_towards(position), list(color))]
 
     @property
     def primary(self):

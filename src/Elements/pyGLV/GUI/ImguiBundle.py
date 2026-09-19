@@ -156,6 +156,10 @@ class _ImguiBundleAdapter:
         values = values[0] if len(values) == 1 and isinstance(values[0], (list, tuple)) else values
         return self._imgui.push_style_color(color, self._imgui.ImVec4(*values))
 
+    def text_colored(self, text, r, g, b, a=1.0):
+        """pyimgui's ``text_colored(text, r, g, b, a=1.)``; the bundle takes ``(ImVec4, text)``."""
+        return self._imgui.text_colored(self._imgui.ImVec4(r, g, b, a), text)
+
     def color_edit3(self, label, *values, **kwargs):
         values = values[0] if len(values) == 1 and isinstance(values[0], (list, tuple)) else values
         return self._imgui.color_edit3(label, list(values), **kwargs)
