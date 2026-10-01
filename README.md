@@ -1,6 +1,5 @@
 # Welcome to project Elements!
 
-[![Documentation](https://readthedocs.org/projects/elementsproject/badge/)](http://ElementsProject.readthedocs.io/en/latest/)
 [![Project's GitHub Page](https://github.com/papagiannakis/Elements/actions/workflows/pages/pages-build-deployment/badge.svg?branch=github_page)](https://papagiannakis.github.io/Elements)
 [![arXiv](https://img.shields.io/badge/arXiv-2302.07691-b31b1b.svg)](https://arxiv.org/abs/2302.07691)
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
@@ -30,7 +29,7 @@ To dive in the details of the project check [its detailed developer documentatio
 
 ## Getting Started - Installation Instructions
 
-Begin by following the installation instructions, found [HERE](https://elementsproject.readthedocs.io/en/latest/source/getting_started/installation.html). For **Computer Graphics Course students**, the instructions are [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions-for-Computer-Graphics-Course-students).
+Begin by following the installation instructions, found [HERE](https://github.com/papagiannakis/Elements/wiki/Installation-Instructions).
 
 > [!NOTE]
 > We strongly recommend using:
