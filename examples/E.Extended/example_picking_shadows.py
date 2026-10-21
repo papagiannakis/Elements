@@ -19,7 +19,8 @@ Elements.extensions.Shadows.example_1_PointLightDemo), plus:
      terrain even where nothing occludes it). It's still live-tunable from the panel above if a
      given light position/GPU needs a different value.
 
-File > Screenshot still defaults to "P", View > Toggle Wireframe to "F" (app-wide, from
+Screenshot is native to every Elements window: P saves the scene alone, Ctrl+P (Cmd+P) with the ImGui widgets,
+next to this script (File menu shows them). View > Toggle Wireframe to "F" (app-wide, from
 RenderDecorator), View > Toggle Shadows to "1"; all shortcuts are hardcoded below (the
 Keybinding(...) argument in each menu_bar add_item() call) -- edit those directly, or call
 menu_bar.rebind(...) at runtime, to change one.
@@ -43,7 +44,6 @@ from Elements.pyGLV.GL.Textures import Texture
 from Elements.definitions import TEXTURE_DIR, SHADER_DIR
 import Elements.utils.normals as norm
 from Elements.utils.Shortcuts import displayGUI_text
-from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
 from Elements.extensions.Shadows.ShadowShader import ShadowShader, ShadowMappingSystem
 from Elements.extensions.Shapes import geometry_factory
 import sdl2
@@ -441,8 +441,9 @@ class AppState:
     view_from_light = False
 
 
-def take_screenshot():
-    save_screenshot(width=scene.renderWindow._windowWidth, height=scene.renderWindow._windowHeight)
+def take_screenshot(withGui=False):
+    # P / Ctrl+P are handled natively by the window (RenderDecorator); the menu items just ask for the same
+    scene.renderWindow.request_screenshot(withGui=withGui)
 
 
 def quit_app():
@@ -464,7 +465,8 @@ def toggle_shadow_settings_panel():
 menu_bar = MenuBar()
 
 file_menu = menu_bar.add_menu("File")
-file_menu.add_item("screenshot", "Screenshot", take_screenshot, Keybinding(sdl2.SDL_SCANCODE_P))
+file_menu.add_item("screenshot", "Screenshot", take_screenshot, shortcut_label="P")  # native key, see RenderDecorator
+file_menu.add_item("screenshot_gui", "Screenshot with GUI", lambda: take_screenshot(True), shortcut_label="Ctrl+P")
 # Esc already quits via RenderDecorator's own handling; shown here for discoverability only,
 # so this entry does not also poll for Esc itself.
 file_menu.add_item("quit", "Quit", quit_app, shortcut_label="Esc")

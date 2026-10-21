@@ -109,6 +109,9 @@ class ImGUIDecorator(RenderDecorator):
         # this is important to draw the ImGUI in full mode and not wireframe!
         gl.glPolygonMode(gl.GL_FRONT_AND_BACK, gl.GL_FILL)
 
+        # P: the 3D scene alone, read before the widgets are drawn over it
+        self._take_pending_screenshot(guiDrawn=False)
+
         # render imgui (after 3D scene and just before the SDL double buffer swap window)
         if self._bundleStylePushed:
             imgui.pop_style_color(3)
@@ -116,6 +119,8 @@ class ImGUIDecorator(RenderDecorator):
         imgui.render()
         self._imguiRenderer.render(imgui.get_draw_data())
 
+        # Ctrl+P: the whole window, widgets included
+        self._take_pending_screenshot(guiDrawn=True)
 
         # call the SDL window window swapping in the end of the scene as final render action
         self.wrapeeWindow.display_post()

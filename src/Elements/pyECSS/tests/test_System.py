@@ -123,6 +123,41 @@ class TestTransformSystem(unittest.TestCase):
         
         print("TestTransformSystem:test_getLocal2World() END")
         
+    def test_getLocal2World_root_transform(self):
+        """
+        Each ancestor's TRS, including a non-identity Root's, is applied exactly once
+        """
+        print("TestTransformSystem:test_getLocal2World_root_transform() START")
+        root = Entity("Root", "Entity", "0")
+        e1 = Entity("e1", "Entity", "1")
+        e2 = Entity("e2", "Entity", "2")
+
+        tr0 = BasicTransform("tr0", "BasicTransform", "10", trs=util.translate(10.0, 0.0, 0.0))
+        tr1 = BasicTransform("tr1", "BasicTransform", "11", trs=util.rotate((0.0, 0.0, 1.0), 90.0))
+        tr2 = BasicTransform("tr2", "BasicTransform", "12", trs=util.translate(2.0, 0.0, 0.0))
+
+        root.add(tr0)
+        root.add(e1)
+        e1.add(tr1)
+        e1.add(e2)
+        e2.add(tr2)
+
+        transUpdate = TransformSystem("transUpdate", "TransformSystem", "001")
+        for tr in (tr0, tr1, tr2):
+            tr.accept(transUpdate)
+
+        v = np.array([1.0, 0.0, 0.0, 1.0])
+        np.testing.assert_allclose(tr0.l2world, tr0.trs, atol=1e-5)
+        np.testing.assert_allclose(tr1.l2world, tr0.trs @ tr1.trs, atol=1e-5)
+        np.testing.assert_allclose(tr2.l2world, tr0.trs @ tr1.trs @ tr2.trs, atol=1e-5)
+        np.testing.assert_allclose((tr2.l2world @ v)[:3], [10.0, 3.0, 0.0], atol=1e-5)
+
+        # topComp stops the climb before that Entity, which is not multiplied in
+        np.testing.assert_allclose(transUpdate.getLocal2World(tr2, topComp=root),
+                                   tr1.trs @ tr2.trs, atol=1e-5)
+
+        print("TestTransformSystem:test_getLocal2World_root_transform() END")
+
     def test_TransformSystem_use(self):
         """
         TransformSystem() use case test

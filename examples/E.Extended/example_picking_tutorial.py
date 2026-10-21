@@ -36,7 +36,6 @@ from Elements.pyGLV.GUI.MenuBar import MenuBar, Keybinding
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem
 from Elements.utils.Shortcuts import displayGUI_text
 from Elements.definitions import TEXTURE_DIR
-from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
 from Elements.extensions.Shadows.ShadowShader import ShadowMappingSystem
 from Elements.extensions.picking_buffer import PickingBuffer as pb
 from Elements.extensions.showcase.scene_helpers import SceneBuilder, OrbitCamera, LightManager, ProjectionSettings
@@ -171,8 +170,9 @@ class AppState:
     show_projection = False
 
 
-def take_screenshot():
-    save_screenshot(width=scene.renderWindow._windowWidth, height=scene.renderWindow._windowHeight)
+def take_screenshot(withGui=False):
+    # P / Ctrl+P are handled natively by the window (RenderDecorator); the menu items just ask for the same
+    scene.renderWindow.request_screenshot(withGui=withGui)
 
 
 def quit_app():
@@ -202,7 +202,8 @@ def toggle_projection_panel():
 menu_bar = MenuBar()
 
 file_menu = menu_bar.add_menu("File")
-file_menu.add_item("screenshot", "Screenshot", take_screenshot, Keybinding(sdl2.SDL_SCANCODE_P))
+file_menu.add_item("screenshot", "Screenshot", take_screenshot, shortcut_label="P")  # native key, see RenderDecorator
+file_menu.add_item("screenshot_gui", "Screenshot with GUI", lambda: take_screenshot(True), shortcut_label="Ctrl+P")
 file_menu.add_item("quit", "Quit", quit_app, shortcut_label="Esc")  # Esc already quits (RenderDecorator)
 
 view_menu = menu_bar.add_menu("View")

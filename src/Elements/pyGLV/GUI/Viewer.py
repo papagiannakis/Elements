@@ -129,6 +129,10 @@ class RenderDecorator(RenderWindow):
         #: so adjustFlySpeed() reports hitting a bound once instead of once per scroll notch
         self._flySpeedLimitReported = False
 
+        #: 0 = nothing pending, 1 = screenshot without the ImGui widgets, 2 = with them; set by the
+        #: P / Ctrl+P keys or request_screenshot(), served by display_post() -- see _take_pending_screenshot()
+        self._pendingScreenshot = 0
+
         self.traverseCamera()
 
     @property
@@ -405,6 +409,37 @@ class RenderDecorator(RenderWindow):
         if self._wrapeeWindow.consume_wireframe_toggle_key():
             self.toggle_Wireframe()
 
+        # P = screenshot of the scene alone, Ctrl+P (Cmd+P) = with the ImGui widgets; taken at the
+        # end of this frame's display_post(), once everything is drawn
+        screenshotKey = self._wrapeeWindow.consume_screenshot_key()
+        if screenshotKey:
+            self.request_screenshot(withGui=(screenshotKey == 2))
+
+    def request_screenshot(self, withGui: bool = False) -> None:
+        """
+        Save a screenshot of what this window shows, as screenshot_<timestamp>.png next to the
+        running example. Bound to P (scene only) and Ctrl+P / Cmd+P (with the ImGui widgets), but
+        public so a menu item or example code can ask for one too. The capture itself happens at the
+        end of the current frame's display_post(), when the frame is complete.
+        """
+        self._pendingScreenshot = 2 if withGui else 1
+
+    def _take_pending_screenshot(self, guiDrawn: bool | None = None) -> None:
+        """
+        Serve a request_screenshot(), if one is pending and this is the right moment for it: a
+        "without ImGui" shot has to be read before the widgets are drawn into the back buffer, a
+        "with ImGui" one after. guiDrawn=None means this decorator has no ImGui layer, so any
+        request can be served right away.
+        """
+        if not self._pendingScreenshot:
+            return
+        if guiDrawn is not None and (self._pendingScreenshot == 2) != guiDrawn:
+            return
+        self._pendingScreenshot = 0
+        # lazy: Pillow is only needed once somebody actually takes a screenshot
+        from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
+        save_screenshot(width=self._wrapeeWindow._windowWidth, height=self._wrapeeWindow._windowHeight)
+
     def resetTarget(self) -> None:
         """
         Re-aim the camera at the world origin without moving it: the eye and up stay exactly as
@@ -490,6 +525,7 @@ class RenderDecorator(RenderWindow):
         """
         Post diplay method after all other display calls have been issued
         """
+        self._take_pending_screenshot()
         self._wrapeeWindow.display_post()
 
     def init_post(self) -> None:
