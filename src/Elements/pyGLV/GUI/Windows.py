@@ -92,6 +92,7 @@ class SDL2Window(RenderWindow):
 
         #polling state for the duck-typed helpers below, mirroring GLFWWindow's
         self._fKeyWasPressed = False
+        self._pKeyWasPressed = False
         self._spaceKeyWasPressed = False
         self._plusKeyWasPressed = False
         self._minusKeyWasPressed = False
@@ -284,6 +285,22 @@ class SDL2Window(RenderWindow):
         self._fKeyWasPressed = pressed
         return edge
 
+    def consume_screenshot_key(self) -> int:
+        """Once per P keypress (rising edge): 1 for plain P (screenshot without the ImGui widgets),
+        2 for Ctrl+P or Cmd+P (with them), 0 otherwise. Same polling model as
+        consume_wireframe_toggle_key(); other modifiers (Alt, Shift) don't count, so e.g. an
+        example's own Alt+P binding stays free."""
+        keystatus = sdl2.SDL_GetKeyboardState(None)
+        pressed = bool(keystatus[sdl2.SDL_SCANCODE_P])
+        edge = pressed and not self._pKeyWasPressed
+        self._pKeyWasPressed = pressed
+        if not edge:
+            return 0
+        mods = sdl2.SDL_GetModState()
+        if mods & (sdl2.KMOD_ALT | sdl2.KMOD_SHIFT):
+            return 0
+        return 2 if mods & (sdl2.KMOD_CTRL | sdl2.KMOD_GUI) else 1
+
     def consume_target_reset_key(self) -> bool:
         """True exactly once per SPACE keypress (rising edge), like consume_wireframe_toggle_key().
         One-shot rather than held-repeating because re-aiming the camera is a single action, not
@@ -361,6 +378,7 @@ class GLFWWindow(RenderWindow):
         self._lastCursorX = 0.0
         self._lastCursorY = 0.0
         self._fKeyWasPressed = False
+        self._pKeyWasPressed = False
         self._spaceKeyWasPressed = False
         self._plusKeyWasPressed = False
         self._minusKeyWasPressed = False
@@ -520,6 +538,22 @@ class GLFWWindow(RenderWindow):
         edge = pressed and not self._fKeyWasPressed
         self._fKeyWasPressed = pressed
         return edge
+
+    def consume_screenshot_key(self) -> int:
+        """The GLFW equivalent of SDL2Window's version: 1 for plain P (without the ImGui widgets),
+        2 for Ctrl+P or Cmd+P (with them), 0 otherwise, once per keypress."""
+        def held(key):
+            return glfw.get_key(self._gWindow, key) == glfw.PRESS
+
+        pressed = held(glfw.KEY_P)
+        edge = pressed and not self._pKeyWasPressed
+        self._pKeyWasPressed = pressed
+        if not edge:
+            return 0
+        if held(glfw.KEY_LEFT_ALT) or held(glfw.KEY_RIGHT_ALT) or held(glfw.KEY_LEFT_SHIFT) or held(glfw.KEY_RIGHT_SHIFT):
+            return 0
+        withGui = held(glfw.KEY_LEFT_CONTROL) or held(glfw.KEY_RIGHT_CONTROL) or held(glfw.KEY_LEFT_SUPER) or held(glfw.KEY_RIGHT_SUPER)
+        return 2 if withGui else 1
 
     def consume_target_reset_key(self) -> bool:
         """True exactly once per SPACE keypress (rising edge), the GLFW equivalent of SDL2Window's

@@ -38,6 +38,8 @@ collapseShortcutsWindow = True
 #: laid out at runtime -- padding spaces cannot survive a window narrow enough to wrap.
 general_shortcuts = [
     ("F", "Toggle Wireframe"),
+    ("P", "Screenshot of the scene (no GUI)"),
+    ("Ctrl + P", "Screenshot with the GUI (Cmd + P on macOS)"),
 ]
 camera_shortcuts = [
     ("Drag", "Look around (position stays put)"),
