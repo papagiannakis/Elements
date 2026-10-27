@@ -245,25 +245,19 @@ class TransformSystem(System):
         
         # get parent Entity this BasicTransform Component belongs to
         componentEntity = leafComp.parent
-        topAccessedEntity = componentEntity
 
+        l2worldTRS = util.identity()
 
-        l2worldTRS = util.identity(); # # correct one   
-        
+        # climb from the leaf's Entity up to (excluding) topComp, or up to and including
+        # the root when topComp is None; each ancestor's TRS is left-multiplied exactly once
         while(componentEntity is not topComp):
             # get that parent's TRS by type
             parentBasicTrans = componentEntity.getChildByType("BasicTransform")
             if(parentBasicTrans is not None and parentBasicTrans):
                 l2worldTRS = parentBasicTrans.trs @ l2worldTRS
 
-            topAccessedEntity = componentEntity
             componentEntity = componentEntity.parent
-        else: #parent is now the root node, so check if it has a Transform component
-            parentBasicTrans = topAccessedEntity.getChildByType("BasicTransform")
-            if(parentBasicTrans is not None):
-                # l2world = multiply current with parent's TRS 
-                l2worldTRS = l2worldTRS @ parentBasicTrans.trs
-                
+
         return l2worldTRS
         
     def apply2BasicTransform(self, basicTransform: Elements.pyECSS.Component.BasicTransform):

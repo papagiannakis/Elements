@@ -14,9 +14,7 @@ from Elements.pyGLV.GUI.ImguiDecorator import ImGUIecssDecorator2
 from Elements.pyGLV.GL.Shader import InitGLShaderSystem, Shader, ShaderGLDecorator, RenderGLShaderSystem
 from Elements.pyGLV.GL.VertexArray import VertexArray
 
-import sdl2 # gia to P tou screenshot apo keyboard
 from Elements.extensions.Captions_Screenshot.beautification import generateElegantFloor, generateSkybox, generateGrid
-from Elements.extensions.Captions_Screenshot.screenshot import save_screenshot
 from OpenGL.GL import GL_LINES, GL_TRIANGLES
 
 from Elements.utils.Shortcuts import displayGUI_text
@@ -293,11 +291,7 @@ while running:
     terrain_shader.setUniformVariable(key='modelViewProj', value=mvp_terrain, mat4=True)
     shaderDec4.setUniformVariable(key='modelViewProj', value=mvp_cube, mat4=True)
     
-    # --- Screenshot (Press P) ---
-    keys = sdl2.SDL_GetKeyboardState(None)
-    if keys[sdl2.SDL_SCANCODE_P]:
-        save_screenshot(width=winWidth, height=winHeight)
-    
+    # --- Screenshot: P (scene only) / Ctrl+P (with ImGui) are native to the window, nothing to do here ---
     scene.render_post()
     
 scene.shutdown()
