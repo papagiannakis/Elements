@@ -399,7 +399,7 @@ class TestUtilities(unittest.TestCase):
         rot_euler = R.from_euler('y', [90], degrees=True)
         quat_euler = quaternion_from_euler(0.0,90.0,0.0)
         
-        rot_ab = rot * rot_b; #somehow this scipy quat mult yields different results than ours or glm!!!
+        rot_ab = rot * rot_b
         rot_ab_glm = R.from_quat( [0.365148, 0.182574,0.547723, -0.730297])
         quat_ab = quaternion_mul(quat_a_vec_norm, quat_b)
         
@@ -437,7 +437,10 @@ class TestUtilities(unittest.TestCase):
         np.testing.assert_array_almost_equal(rot.as_quat(),quat_a_vec_norm)
         np.testing.assert_array_almost_equal(rot_b.as_quat(),quat_b)
         np.testing.assert_array_almost_equal(rot_c.as_quat(),quat_c)
-        np.testing.assert_array_almost_equal(rot_ab_glm.as_quat(),quat_ab)
+        np.testing.assert_array_almost_equal(rot_ab.as_quat(),quat_ab)                       # Hamilton product, scalar-last, same as scipy
+        np.testing.assert_array_almost_equal(rot_ab.as_matrix(),quaternion_matrix(quat_ab)[:3,:3])
+        np.testing.assert_array_almost_equal(rot_b.as_matrix(),quaternion_matrix(quat_b)[:3,:3])
+        np.testing.assert_array_almost_equal(rot_c.as_quat(),quaternion_from_axis_angle([0.0,0.0,1.0],radians=np.pi/2))
         np.testing.assert_array_almost_equal(rot_ab_glm_slerp.as_quat(),quat_slerp)
     
         print("TestUtilities:test_quaternion() END")

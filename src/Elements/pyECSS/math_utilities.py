@@ -255,7 +255,7 @@ def sincos(degrees=0.0, radians=None):
     :param radians: [description], defaults to None
     :type radians: [type], optional
     """
-    radians = radians if radians else math.radians(degrees)
+    radians = radians if radians is not None else math.radians(degrees)
     return math.sin(radians), math.cos(radians) 
 
 def rotate(axis=(1.0,0.0,0.0), angle=0.0, radians=None):
@@ -416,7 +416,7 @@ def quaternion_from_axis_angle(axis:vec, degrees=0.0, radians=None):
     :param radians: [description], defaults to None
     :type radians: [type], optional
     """
-    sin, cos = sincos(radians * 0.5) if radians else sincos(degrees * 0.5)
+    sin, cos = sincos(degrees * 0.5, radians * 0.5 if radians is not None else None)
     return quaternion(normalise(vec(axis)) * sin, w=cos)
 
 def quaternion_from_euler(pitch=0.0, yaw=0.0, roll=0.0, radians=None):
@@ -448,13 +448,14 @@ def quaternion_mul(q1, q2):
     :param q2: [description]
     :type q2: [type]
     """
+    x1, y1, z1, w1 = q1
     return np.dot(np.array([
-                            [q1[1],  q1[0], -q1[3],  q1[2]],
-                            [q1[2],  q1[3],  q1[0], -q1[1]],
-                            [q1[3], -q1[2],  q1[1],  q1[0]],
-                            [q1[0], -q1[1], -q1[2], -q1[3]]
+                            [ w1, -z1,  y1, x1],
+                            [ z1,  w1, -x1, y1],
+                            [-y1,  x1,  w1, z1],
+                            [-x1, -y1, -z1, w1]
                             ],dtype=np.float32,order='F'), q2)
-                        
+
 
 def quaternion_matrix(q):
     """Compute and return a 4x4 matrix from the quaternion q, scalar-last like scipy
@@ -464,9 +465,10 @@ def quaternion_matrix(q):
     :type q: [type]
     """
     q = normalise(q)  # only unit quaternions are valid rotations.
-    nxx, nyy, nzz = -q[1]*q[1], -q[2]*q[2], -q[3]*q[3]
-    qwx, qwy, qwz = q[0]*q[1], q[0]*q[2], q[0]*q[3]
-    qxy, qxz, qyz = q[1]*q[2], q[1]*q[3], q[2]*q[3]
+    x, y, z, w = q
+    nxx, nyy, nzz = -x*x, -y*y, -z*z
+    qwx, qwy, qwz = w*x, w*y, w*z
+    qxy, qxz, qyz = x*y, x*z, y*z
     return np.array([
                     [2*(nyy + nzz)+1, 2*(qxy - qwz),   2*(qxz + qwy),   0],
                      [2 * (qxy + qwz), 2 * (nxx + nzz) + 1, 2 * (qyz - qwx), 0],
