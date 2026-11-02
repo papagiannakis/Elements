@@ -26,7 +26,7 @@ class Quaternion(object):
       assert False
 
   def __str__(self):
-    return np.str(self.q)
+    return str(self.q)
 
   def __repr__(self):
     return "<Quaternion x:{} y:{} z:{} w:{}>".format(self.x, self.y, self.z, self.w)
@@ -104,13 +104,20 @@ class Quaternion(object):
 
   @classmethod
   def from_rotation_matrix(cls, rotation_matrix):
-    w = np.sqrt(
-        1.0 + rotation_matrix[0, 0] + rotation_matrix[1, 1] + rotation_matrix[2, 2]) / 2
-    w4 = 4.0 * w
-    x = (rotation_matrix[2, 1] - rotation_matrix[1, 2]) / w4
-    y = (rotation_matrix[0, 2] - rotation_matrix[2, 0]) / w4
-    z = (rotation_matrix[1, 0] - rotation_matrix[0, 1]) / w4
-    return cls(x, y, z, w)
+    """ Quaternion of a [3x3] rotation matrix (Shepperd's method: divides by the largest of w, x, y, z, so it also works for a rotation of 180 degrees). """
+    m = rotation_matrix
+    trace = m[0, 0] + m[1, 1] + m[2, 2]
+    if trace > 0.0:
+      s = 2.0 * np.sqrt(1.0 + trace)
+      return cls((m[2, 1] - m[1, 2]) / s, (m[0, 2] - m[2, 0]) / s, (m[1, 0] - m[0, 1]) / s, 0.25 * s)
+    if m[0, 0] > m[1, 1] and m[0, 0] > m[2, 2]:
+      s = 2.0 * np.sqrt(1.0 + m[0, 0] - m[1, 1] - m[2, 2])
+      return cls(0.25 * s, (m[0, 1] + m[1, 0]) / s, (m[0, 2] + m[2, 0]) / s, (m[2, 1] - m[1, 2]) / s)
+    if m[1, 1] > m[2, 2]:
+      s = 2.0 * np.sqrt(1.0 + m[1, 1] - m[0, 0] - m[2, 2])
+      return cls((m[0, 1] + m[1, 0]) / s, 0.25 * s, (m[1, 2] + m[2, 1]) / s, (m[0, 2] - m[2, 0]) / s)
+    s = 2.0 * np.sqrt(1.0 + m[2, 2] - m[0, 0] - m[1, 1])
+    return cls((m[0, 2] + m[2, 0]) / s, (m[1, 2] + m[2, 1]) / s, 0.25 * s, (m[1, 0] - m[0, 1]) / s)
 
   @classmethod
   def from_angle_axis(cls, angle, axis):
@@ -122,7 +129,7 @@ class Quaternion(object):
     return cls(q=q.q.copy())
 
   @classmethod
-  def get_random(cls, min_angle=0., max_angle=np.math.pi):
+  def get_random(cls, min_angle=0., max_angle=np.pi):
     axis = np.random.uniform(-1.0, 1.0, 3)
     axis /= np.linalg.norm(axis)
     assert np.isclose(np.linalg.norm(axis), 1., atol=1e-8)
