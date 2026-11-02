@@ -22,7 +22,7 @@ class Texture:
     [0.0, 1.0]]*6
 
 
-    def __init__(self, filepath:str=None, img_data:Tuple[bytes, int, int]=None, texture_channel:int=0):
+    def __init__(self, filepath:str=None, img_data:Tuple[bytes, int, int]=None, texture_channel:int=0, flip:bool=True):
         """
         Used to initialize a 2D texture
 
@@ -34,12 +34,17 @@ class Texture:
             If filepath is not specified, these bytes will be used as texture. The format is (image bytes: bytes, image width: int, image height: int)
         texture_channel: int, default 0
             A texture channel from 0 to 31
+        flip: bool, default True
+            Only used with filepath. True turns the image upside down on loading, so that the texture coordinate
+            (0, 0) is the bottom-left corner of the picture as displayed and v runs up, as in OpenGL convention.
+            False keeps the image as it is displayed, so that (0, 0) is its top-left corner and v runs down, like
+            the pixel row y: u = x / width, v = y / height. img_data are used as given, flip does not apply to them.
         """
         img_bytes = img_data[0] if img_data is not None else None
         img = None
         if filepath is not None:
             img = Image.open(filepath)
-            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1)
+            img_bytes = img.convert("RGBA").tobytes("raw", "RGBA", 0, -1 if flip else 1)
 
         self._texture = gl.glGenTextures(1)
         
@@ -50,7 +55,9 @@ class Texture:
         gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_S,gl.GL_REPEAT)
         gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_WRAP_T,gl.GL_REPEAT)
 
-        gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_MIN_FILTER,gl.GL_LINEAR)
+        # mipmaps are generated below, so a minified texture can use them instead of aliasing (plain GL_LINEAR
+        # would never read them)
+        gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_MIN_FILTER,gl.GL_LINEAR_MIPMAP_LINEAR)
         gl.glTexParameteri(gl.GL_TEXTURE_2D,gl.GL_TEXTURE_MAG_FILTER,gl.GL_LINEAR)
 
         gl.glTexImage2D(gl.GL_TEXTURE_2D, #Target

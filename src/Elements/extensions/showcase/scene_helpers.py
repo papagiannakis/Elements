@@ -156,7 +156,11 @@ class SceneBuilder:
         # ShadowShader always expects a per-vertex color even when it's about to be overridden by
         # a texture; plain white keeps the lighting math correct without tinting the image.
         placeholder_colors = np.ones((raw_vertices.shape[0], 4), dtype=np.float32)
-        vertices, indices, colors, normals = norm.generateFlatNormalsMesh(raw_vertices, raw_indices, placeholder_colors)
+        # The textured cube already has its own 4 vertices per face (that is what lets each face have its own
+        # UVs), so its normals are flat as they are. generateFlatNormalsMesh() must not be used here: it would
+        # unshare the 24 vertices into 36 and leave `uv` (24 rows) out of step with them, scrambling the image.
+        vertices, indices, colors = raw_vertices, raw_indices, placeholder_colors
+        normals = norm.generateNormals(vertices, indices)
         return self._add_entity(
             name, util.translate(*position), vertices, indices, colors, normals,
             uv=np.asarray(uv, dtype=np.float32), textured=True,
