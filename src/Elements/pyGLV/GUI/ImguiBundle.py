@@ -164,9 +164,31 @@ class _ImguiBundleAdapter:
         values = values[0] if len(values) == 1 and isinstance(values[0], (list, tuple)) else values
         return self._imgui.color_edit3(label, list(values), **kwargs)
 
+    # pyimgui's drag-widget keyword names -> the bundle's. ``power`` was removed from ImGui; drop it.
+    _DRAG_KWARGS = {"change_speed": "v_speed", "min_value": "v_min", "max_value": "v_max"}
+
+    def _drag_kwargs(self, kwargs):
+        kwargs = {self._DRAG_KWARGS.get(key, key): value for key, value in kwargs.items()}
+        kwargs.pop("power", None)
+        return kwargs
+
     def _vector_widget(self, function_name, label, values, args, kwargs):
         function = getattr(self._imgui, function_name)
-        return function(label, list(values), *args, **kwargs)
+        return function(label, list(values), *args, **self._drag_kwargs(kwargs))
+
+    def drag_float(self, label, value, *args, **kwargs):
+        return self._imgui.drag_float(label, value, *args, **self._drag_kwargs(kwargs))
+
+    def drag_int(self, label, value, *args, **kwargs):
+        return self._imgui.drag_int(label, value, *args, **self._drag_kwargs(kwargs))
+
+    def drag_float2(self, label, x, y=None, *args, **kwargs):
+        values = x if y is None else (x, y)
+        return self._vector_widget("drag_float2", label, values, args, kwargs)
+
+    def drag_float4(self, label, x, y=None, z=None, w=None, *args, **kwargs):
+        values = x if y is None and z is None and w is None else (x, y, z, w)
+        return self._vector_widget("drag_float4", label, values, args, kwargs)
 
     def drag_float3(self, label, x, y=None, z=None, *args, **kwargs):
         values = x if y is None and z is None else (x, y, z)
